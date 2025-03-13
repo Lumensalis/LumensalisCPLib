@@ -33,7 +33,7 @@ class QtRotary(object):
         position = -self.encoder.position
     
         if position != self.last_position:
-            delta = self.last_position - position
+            delta = position - self.last_position
             self.last_position = position
             if self.moveCB is not None:
                 self.moveCB(delta)

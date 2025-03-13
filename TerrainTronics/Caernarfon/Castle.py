@@ -10,7 +10,7 @@ import TerrainTronics.BoardBase
 
 # import time, board, microcontroller, busio, pwmio, adafruit_motor.servo, neopixel, TerrainTronics.BoardBase
 
-class CaernfarfonCastle(TerrainTronics.BoardBase.BoardBase):
+class CaernarfonCastle(TerrainTronics.BoardBase.BoardBase):
     def __init__(self, config=None, **kwds ):
         super().__init__( config, **kwds )
         c = self.config
