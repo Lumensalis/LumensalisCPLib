@@ -1,37 +1,18 @@
 
-import time, math, asyncio, wifi
+import time, math, asyncio, wifi, traceback
 import TerrainTronics.I2C.I2CFactory
+from TerrainTronics.Controllers.ConfigurableBase import ConfigurableBase
+from .ControlVariables import ControlVariable
 
-class ControlVariable(object):
-    def __init__(self, name:str, description:str="", kind:str=None, startingValue=None,
-                 min = None, max = None ):
-        self.name = name
-        self.description = description or name
-        self.kind = kind
+import rainbowio
+
+class MainManager(ConfigurableBase):
+    
+    def __init__(self, config = None, **kwds ):
+        super().__init__(config, **kwds )
+        #if config is None:
+        #    config = os.getenv("TTCP_CONTROLLER")
         
-        self._min = min
-        self._max = max
-        
-        self._value = startingValue or min or max
-
-    value = property( lambda self: self._value )
-    
-    def set( self, value ):
-        if value != self._value:
-            if self._min is not None and value < self._min:
-                value = self._min
-            elif self._max is not None and value > self._max:
-                value = self._max
-            
-            if value != self._value:
-                self._value = value
-    
-    def move( self, delta ):
-        self.set( self._value + delta )
-
-class MainManager(object):
-    
-    def __init__(self):
         self.__cycle = 0
         self.cyclesPerSecond = 40
         self.tasks = []
@@ -41,12 +22,17 @@ class MainManager(object):
         self.controlVariables = {}
         
         self.adafruitFactory =  TerrainTronics.I2C.I2CFactory.AdafruitFactory(main=self)
+        self.i2cFactory =  TerrainTronics.I2C.I2CFactory.I2CFactory(main=self)
         
     cycle = property( lambda self: self.__cycle )
 
+
+    def wheel( self, val:float ): return rainbowio.colorwheel(val)
+    
     def addControlVariable( self, name, *args, **kwds ):
         variable = ControlVariable( name, *args,**kwds )
         self.controlVariables[name] = variable
+        print( f"added ControlVariable {name}")
         return variable
 
     def addBasicWebServer( self, *args, **kwds ):
@@ -57,13 +43,24 @@ class MainManager(object):
             server.monitorControlVariable( v )
         return server
     
+    def handleWsChanges( self, changes:dict ):
+        
+        # print( f"handleWsChanges {changes}")
+        key = changes['name']
+        val = changes['value']
+        v = self.controlVariables.get(key,None)
+        if v is not None:
+            v.setFromWs( val )
+        else:
+            print( f"missing cv {key} in {self.controlVariables.keys()} for wsChanges {changes}")
+    
     async def msDelay( self, milliseconds ):
         await asyncio.sleep( milliseconds * 0.001 )
         
     
-    def addCaernarfon( self, *args, **kwds ):
+    def addCaernarfon( self, config=None, **kwds ):
         from TerrainTronics.Caernarfon import CaernarfonCastle
-        castle = CaernarfonCastle( *args, main=self, **kwds )
+        castle = CaernarfonCastle( config=config, main=self, **kwds )
         self.boards.append(castle)
         return castle
     
@@ -94,7 +91,9 @@ class MainManager(object):
                 self.__cycle += 1
 
         except Exception as inst:
-            print( "EXCEPTION : {}".format(inst) )
+            print( "EXCEPTION in tsak loop : {}".format(inst) )
+            print(traceback.format_exception(inst))
+
     
     def run( self ):
         if self.webServer is not None:

@@ -1,24 +1,16 @@
 
 import time
+import TerrainTronics.Controllers.ConfigurableBase
 import board
 import microcontroller
 import busio
 import os
 import TerrainTronics.Controllers
+from TerrainTronics.Controllers.ConfigurableBase import ConfigurableBase
 
-class BoardBase(object):
+class BoardBase(ConfigurableBase):
     def __init__(self, config=None, **kwds ):
-        if config is None:
-            config = os.getenv("TTCP_CONTROLLER")
-            
-        if type(config) is str:
-            config = TerrainTronics.Controllers.configs[config].copy()
-        elif config is None:
-            config = TerrainTronics.Controllers.ControllerConfig()
-        
-        assert type(config) is TerrainTronics.Controllers.ControllerConfig
-        config.bake( **kwds )
-        self.config = config
+        super().__init__( config, **kwds )
 
     def dbgOut(self, fmt, *args, **kwds): 
         print( fmt.format(*args,**kwds) )

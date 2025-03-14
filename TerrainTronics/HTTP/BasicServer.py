@@ -191,7 +191,13 @@ class BasicServer(Server):
             while True:
                 if self.websocket is not None:
                     if (data := self.websocket.receive(fail_silently=True)) is not None:
-                        print( f'websocket data = {data}' )
+                        
+                        try:
+                            # print( f'websocket data = {data}' )
+                            jdata = json.loads(data)
+                            self.main.handleWsChanges(jdata)
+                        except Exception as inst:
+                            print( f"error on incoming websocket data {data} : {inst}")
                         #r, g, b = int(data[1:3], 16), int(data[3:5], 16), int(data[5:7], 16)
                         #print( f'fill {(r, g, b)}')
                         #pixel.fill((r, g, b))
@@ -215,7 +221,6 @@ class BasicServer(Server):
                         message = json.dumps( payload )
                         print( "writing WS update : " + message )
                         self.websocket.send_message(message, fail_silently=True)
-
                 await async_sleep(1)
         except Exception  as error:
             print( f'send_websocket_messages error {error}' )
