@@ -46,8 +46,6 @@ class BasicServer(Server):
     <body>
 """
 
-#        <p>CPU temperature: <strong>-</strong>&deg;C</p>
-#        <p>NeoPixel Color: <input type="color"></p>
     HTML_TEMPLATE_B = """
         <script>
             console.log('client on ' + location.host );
@@ -56,14 +54,6 @@ class BasicServer(Server):
             ws.onopen = () => console.log('WebSocket connection opened');
             ws.onclose = () => console.log('WebSocket connection closed');
 """
-            
-#            const cpuTemp = document.querySelector('strong');
-#            const colorPicker = document.querySelector('input[type="color"]');
-
-#            colorPicker.oninput = debounce(() => ws.send(colorPicker.value), 200);
-
- 
-#            ws.onmessage = event => cpuTemp.textContent = event.data;
 #            ws.onerror = error => cpuTemp.textContent = error;
 
     HTML_TEMPLATE_Z = """            
@@ -79,46 +69,6 @@ class BasicServer(Server):
                 }
             }
             
-        </script>
-    </body>
-</html>
-"""
-
-    oldHTML_TEMPLATE = """
-<html lang="en">
-    <head>
-        <title>Websocket Client</title>
-    </head>
-    <body>
-        <p>CPU temperature: <strong>-</strong>&deg;C</p>
-        <p>NeoPixel Color: <input type="color"></p>
-        <script>
-            console.log('client on ' + location.host );
-            
-            ws.onopen = () => console.log('WebSocket connection opened');
-            ws.onclose = () => console.log('WebSocket connection closed');
-            
-            
-            const cpuTemp = document.querySelector('strong');
-            const colorPicker = document.querySelector('input[type="color"]');
-
-            let ws = new WebSocket('ws://' + location.host + '/connect-websocket');
-            colorPicker.oninput = debounce(() => ws.send(colorPicker.value), 200);
-
- 
-            ws.onmessage = event => cpuTemp.textContent = event.data;
-            ws.onerror = error => cpuTemp.textContent = error;
-
-            
-            function debounce(callback, delay = 1000) {
-                let timeout
-                return (...args) => {
-                    clearTimeout(timeout)
-                    timeout = setTimeout(() => {
-                    callback(...args)
-                  }, delay)
-                }
-            }
         </script>
     </body>
 </html>
@@ -234,9 +184,4 @@ class BasicServer(Server):
             create_task(self.handle_websocket_requests()),
             create_task(self.send_websocket_messages()),
         ]
-
-
-
-
-#server.start(str(wifi.radio.ipv4_address))
 

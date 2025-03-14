@@ -5,6 +5,7 @@ from TerrainTronics.Controllers.ConfigurableBase import ConfigurableBase
 from .ControlVariables import ControlVariable
 
 import rainbowio
+import gc
 
 class MainManager(ConfigurableBase):
     
@@ -14,7 +15,7 @@ class MainManager(ConfigurableBase):
         #    config = os.getenv("TTCP_CONTROLLER")
         
         self.__cycle = 0
-        self.cyclesPerSecond = 40
+        self.cyclesPerSecond = 100
         self.tasks = []
         self.when = time.monotonic()
         self.boards = []
@@ -83,8 +84,7 @@ class MainManager(ConfigurableBase):
                 self.when = time.monotonic()
                 
                 if self.__cycle % 100 == 0:
-                    print( "cycle {} at {} with {} tasks".format(   
-                        self.__cycle, self.when, len(self.tasks)))
+                    print( f"cycle {self.__cycle} at {self.when} with {len(self.tasks)} tasks, gmf={gc.mem_free()}" )
                 for task in self.tasks:
                     task()
                 await asyncio.sleep( 1.0 / (self.cyclesPerSecond *1.0) )

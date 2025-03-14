@@ -19,6 +19,7 @@ class CaernarfonCastle(TerrainTronics.BoardBase.BoardBase):
                 neoPixelCount = 1,
                 neoPixelOrder = neopixel.GRB,
                 neoPixelBrightness = 0.2,
+                servos = 0,
                 servo1pin =  c.D6,
                 servo2pin =  c.D7,
                 servo3pin =  c.D8,
@@ -28,6 +29,12 @@ class CaernarfonCastle(TerrainTronics.BoardBase.BoardBase):
             c.neoPixelPin, c.neoPixelCount, brightness=c.neoPixelBrightness, auto_write=False, pixel_order=c.neoPixelOrder
         )
         self.servos = [ None, None, None ]
+        if c.servos > 0:
+            self.initServo(1)
+            if c.servos > 1:
+                self.initServo(2)
+                if c.servos > 2:
+                    self.initServo(3)
         
     servo1 = property( lambda self: self.servos[0] )
     servo2 = property( lambda self: self.servos[1] )
