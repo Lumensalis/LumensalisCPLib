@@ -11,8 +11,8 @@ import TerrainTronics.BoardBase
 # import time, board, microcontroller, busio, pwmio, adafruit_motor.servo, neopixel, TerrainTronics.BoardBase
 
 class CaernarfonCastle(TerrainTronics.BoardBase.BoardBase):
-    def __init__(self, config=None, **kwds ):
-        super().__init__( config, **kwds )
+    def __init__(self, *args, **kwds ):
+        super().__init__( *args, **kwds )
         c = self.config
         c.updateDefaultOptions( 
                 neoPixelPin = c.D3,

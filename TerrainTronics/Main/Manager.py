@@ -56,7 +56,11 @@ class MainManager(object):
         for v in self.controlVariables.values():
             server.monitorControlVariable( v )
         return server
+    
+    async def msDelay( self, milliseconds ):
+        await asyncio.sleep( milliseconds * 0.001 )
         
+    
     def addCaernarfon( self, *args, **kwds ):
         from TerrainTronics.Caernarfon import CaernarfonCastle
         castle = CaernarfonCastle( *args, main=self, **kwds )

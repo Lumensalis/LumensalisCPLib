@@ -3,11 +3,14 @@ import time
 import board
 import microcontroller
 import busio
-
+import os
 import TerrainTronics.Controllers
 
 class BoardBase(object):
-    def __init__(self, config, **kwds ):
+    def __init__(self, config=None, **kwds ):
+        if config is None:
+            config = os.getenv("TTCP_CONTROLLER")
+            
         if type(config) is str:
             config = TerrainTronics.Controllers.configs[config].copy()
         elif config is None:
