@@ -38,10 +38,7 @@ Version {self.softwareVersion} Date: {self.softwareDate} Caernarfon HW Version {
                     # //Colors are arrange Pixel, R, G, B.
                     strip[i] = (randrange(160,255),randrange(0,50),randrange(0,10)); # Tjese numbers are tuned to be inthe range of red to orange 
             strip.show()
-            #self.main.msDelay(random(300,600));
-            delay = randrange(300,600) * 0.01
-            print( f'delay = {delay}' )
-            self.main.cyclesPerSecond = delay
+            self.main.cyclesPerSecond = randrange(300,600) * 0.01
 
 def demoMain(*args,**kwds):
     
