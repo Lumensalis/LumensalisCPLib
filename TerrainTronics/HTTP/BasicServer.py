@@ -3,12 +3,10 @@
 # SPDX-License-Identifier: Unlicense
 
 from asyncio import create_task, gather, run, sleep as async_sleep
-import board
-import microcontroller
-import neopixel
 import socketpool
 import wifi
 import json
+import mdns
 
 import adafruit_httpserver
 from adafruit_httpserver import Server, Request, Response, Websocket, GET
@@ -18,8 +16,12 @@ from .ControlVars import ControlValueTemplateHelper
 class BasicServer(Server):
     
     def __init__( self, *args, main=None, **kwds ):
+        
+        assert main is not None
+        
         self.pool = socketpool.SocketPool(wifi.radio)
         super().__init__(self.pool, debug=True)
+
 
         #pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)
 
@@ -31,6 +33,14 @@ class BasicServer(Server):
         self.priorMonitoredValue = {}
         self._setupRoutes()
         
+        TTCP_HOSTNAME = main.config.options.get('TTCP_HOSTNAME',None)
+        print(f"BasicServer TTCP_HOSTNAME = {TTCP_HOSTNAME}")
+        #if (TTCP_HOSTNAME := main.config.options.get('TTCP_HOSTNAME',None)) is not None:
+        if TTCP_HOSTNAME is not None:
+            print(f"setting HOSTNAME to {TTCP_HOSTNAME}")
+            self.mdns_server = mdns.Server(wifi.radio)
+            self.mdns_server.hostname = TTCP_HOSTNAME
+            self.mdns_server.advertise_service(service_type="_http", protocol="_tcp", port=5000)
         
     def monitorControlVariable( self, v ):
         self.monitoredVariables.append(v)
@@ -129,7 +139,7 @@ class BasicServer(Server):
                     pass
                 
                 #print( "handle_http_requests sleep..")
-                await async_sleep(0)
+                await async_sleep(0.05)
     
         except Exception  as error:
             print( f'handle_http_requests error {error}' )
@@ -152,7 +162,7 @@ class BasicServer(Server):
                         #print( f'fill {(r, g, b)}')
                         #pixel.fill((r, g, b))
 
-                await async_sleep(0)
+                await async_sleep(0.05)
         except Exception  as error:
             print( f'handle_websocket_requests error {error}' )
 
@@ -171,7 +181,7 @@ class BasicServer(Server):
                         message = json.dumps( payload )
                         print( "writing WS update : " + message )
                         self.websocket.send_message(message, fail_silently=True)
-                await async_sleep(1)
+                await async_sleep(0.5)
         except Exception  as error:
             print( f'send_websocket_messages error {error}' )
 

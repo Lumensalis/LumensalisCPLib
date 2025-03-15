@@ -1,21 +1,21 @@
 
-import time, math, asyncio, wifi, traceback
+import time, math, asyncio, traceback, os, gc, rainbowio, wifi
+
 import TerrainTronics.I2C.I2CFactory
 from TerrainTronics.Controllers.ConfigurableBase import ConfigurableBase
 from .ControlVariables import ControlVariable
 
-import rainbowio
-import gc
-
 class MainManager(ConfigurableBase):
     
     def __init__(self, config = None, **kwds ):
-        super().__init__(config, **kwds )
-        #if config is None:
-        #    config = os.getenv("TTCP_CONTROLLER")
-        
+        mainConfigDefaults = dict(
+            TTCP_HOSTNAME = os.getenv("TTCP_HOSTNAME")
+        )
+        super().__init__(config, defaults=mainConfigDefaults, **kwds )
+
         self.__cycle = 0
         self.cyclesPerSecond = 100
+        self.cycleDuration = 0.01
         self.tasks = []
         self.when = time.monotonic()
         self.boards = []
@@ -25,6 +25,7 @@ class MainManager(ConfigurableBase):
         self.adafruitFactory =  TerrainTronics.I2C.I2CFactory.AdafruitFactory(main=self)
         self.i2cFactory =  TerrainTronics.I2C.I2CFactory.I2CFactory(main=self)
         
+        print( f"MainManager options = {self.config.options}" )
     cycle = property( lambda self: self.__cycle )
 
 
@@ -84,10 +85,11 @@ class MainManager(ConfigurableBase):
                 self.when = time.monotonic()
                 
                 if self.__cycle % 100 == 0:
-                    print( f"cycle {self.__cycle} at {self.when} with {len(self.tasks)} tasks, gmf={gc.mem_free()}" )
+                    print( f"cycle {self.__cycle} at {self.when} with {len(self.tasks)} tasks, gmf={gc.mem_free()} cd={self.cycleDuration}" )
                 for task in self.tasks:
                     task()
-                await asyncio.sleep( 1.0 / (self.cyclesPerSecond *1.0) )
+                self.cycleDuration = 1.0 / (self.cyclesPerSecond *1.0)
+                await asyncio.sleep( 0 ) # self.cycleDuration )
                 self.__cycle += 1
 
         except Exception as inst:
