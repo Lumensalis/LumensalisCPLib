@@ -1,4 +1,4 @@
-from .DemoBase import DemoBase
+from TerrainTronics.Demos.DemoBase import DemoBase
 from random import randrange
 
 class CaernarfonLavaLights( DemoBase ):

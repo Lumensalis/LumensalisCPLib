@@ -1,8 +1,5 @@
-from TerrainTronics.Main import MainManager
-from .DemoBase import DemoBase
-
+from TerrainTronics.Demos.DemoBase import DemoBase
 from adafruit_simplemath import constrain
-
 
 class CaernarfonFrankenDemo( DemoBase ):
     def __init__(self, *args, **kwds):
