@@ -1,6 +1,6 @@
 
-import TerrainTronics.Controllers
-from  TerrainTronics.Controllers import ControllerConfig
+import LumensalisCP.Controllers
+from  LumensalisCP.Controllers import ControllerConfig
 import os, board
 
 class ConfigurableBase(object):
@@ -12,7 +12,7 @@ class ConfigurableBase(object):
                 config = board.board_id
             
         if type(config) is str:
-            config = TerrainTronics.Controllers.configs[config].copy()
+            config = LumensalisCP.Controllers.configs[config].copy()
         elif config is None:
             config = ControllerConfig()
         

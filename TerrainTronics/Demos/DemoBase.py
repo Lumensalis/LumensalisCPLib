@@ -1,4 +1,4 @@
-from TerrainTronics.Main import MainManager
+from LumensalisCP.Main import MainManager
 
 
 class DemoBase(object):

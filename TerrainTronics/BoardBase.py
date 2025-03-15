@@ -1,12 +1,12 @@
 
 import time
-import TerrainTronics.Controllers.ConfigurableBase
+import LumensalisCP.Controllers.ConfigurableBase
 import board
 import microcontroller
 import busio
 import os
-import TerrainTronics.Controllers
-from TerrainTronics.Controllers.ConfigurableBase import ConfigurableBase
+import LumensalisCP.Controllers
+from LumensalisCP.Controllers.ConfigurableBase import ConfigurableBase
 
 class BoardBase(ConfigurableBase):
     def __init__(self, config=None, **kwds ):

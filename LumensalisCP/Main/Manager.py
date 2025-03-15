@@ -1,8 +1,8 @@
 
 import time, math, asyncio, traceback, os, gc, rainbowio, wifi
 
-import TerrainTronics.I2C.I2CFactory
-from TerrainTronics.Controllers.ConfigurableBase import ConfigurableBase
+import LumensalisCP.I2C.I2CFactory
+from LumensalisCP.Controllers.ConfigurableBase import ConfigurableBase
 from .ControlVariables import ControlVariable
 
 class MainManager(ConfigurableBase):
@@ -22,8 +22,8 @@ class MainManager(ConfigurableBase):
         self.webServer = None
         self.controlVariables = {}
         
-        self.adafruitFactory =  TerrainTronics.I2C.I2CFactory.AdafruitFactory(main=self)
-        self.i2cFactory =  TerrainTronics.I2C.I2CFactory.I2CFactory(main=self)
+        self.adafruitFactory =  LumensalisCP.I2C.I2CFactory.AdafruitFactory(main=self)
+        self.i2cFactory =  LumensalisCP.I2C.I2CFactory.I2CFactory(main=self)
         
         print( f"MainManager options = {self.config.options}" )
         
