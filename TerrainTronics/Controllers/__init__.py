@@ -1,7 +1,7 @@
+import microcontroller, neopixel, board
 
-import microcontroller
-import neopixel
 
+# Map from specific controllers actual pins to D1 Mini pin names
 class ControllerPins(object):
     
     pinNames = [ "D0","D1","D2","D3","D4","D5","D6","D7","D8","A0","TX","RX" ]
@@ -18,7 +18,7 @@ class ControllerPins(object):
             elif tag.startswith("GPIO"):
                 pin = getattr( microcontroller.pin, tag )
             else:
-                pin = getattr(board, tag )
+                pin = getattr(board, tag, None )
             assert( pin is not None )
             return pin
             
@@ -77,7 +77,7 @@ class ControllerConfig(object):
                 self.setOption( tag, val)
 
 configs = dict(
-    WemosS2Mini = ControllerConfig(
+    lolin_s2_mini = ControllerConfig(
         TX = "GPIO39",
         RX = "GPIO37",
         D1 = "GPIO35", #SCL

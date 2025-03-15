@@ -1,14 +1,15 @@
 
 import TerrainTronics.Controllers
 from  TerrainTronics.Controllers import ControllerConfig
-import os
-
+import os, board
 
 class ConfigurableBase(object):
     
     def __init__(self, config=None, defaults:dict=None, **kwds ):
         if config is None:
             config = os.getenv("TTCP_CONTROLLER")
+            if config is None:
+                config = board.board_id
             
         if type(config) is str:
             config = TerrainTronics.Controllers.configs[config].copy()

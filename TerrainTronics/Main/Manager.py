@@ -26,8 +26,9 @@ class MainManager(ConfigurableBase):
         self.i2cFactory =  TerrainTronics.I2C.I2CFactory.I2CFactory(main=self)
         
         print( f"MainManager options = {self.config.options}" )
+        
     cycle = property( lambda self: self.__cycle )
-
+    millis = property( lambda self: int( self.when * 1000) )
 
     def wheel( self, val:float ): return rainbowio.colorwheel(val)
     
@@ -76,6 +77,7 @@ class MainManager(ConfigurableBase):
     def addTask( self, task ):
         
         self.tasks.append( task )
+        
     
     async def taskLoop( self ):
 
