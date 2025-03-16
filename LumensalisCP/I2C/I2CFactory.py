@@ -18,6 +18,9 @@ class I2CFactory(object):
         from .Display_SSD1306 import Display_SSD1306
         return Display_SSD1306( *args, **kwds )
 
+    def addDisplayIO_SSD1306(self, *args, **kwds ):
+        from .DisplayIO_SSD1306 import DisplayIO_SSD1306
+        return DisplayIO_SSD1306( *args, **kwds )
 
 class AdafruitFactory(I2CFactory):
     

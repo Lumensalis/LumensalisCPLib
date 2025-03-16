@@ -1,13 +1,4 @@
-
 from .I2CTarget import I2CTarget
-
-# import displayio
-# import terminalio
-# from adafruit_display_text import label
-# from i2cdisplaybus import I2CDisplayBus
-# import adafruit_displayio_ssd1306
-# displayio.release_displays()
-
 
 from adafruit_ssd1306 import SSD1306_I2C
 

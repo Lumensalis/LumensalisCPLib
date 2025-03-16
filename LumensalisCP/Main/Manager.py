@@ -1,5 +1,5 @@
 
-import time, math, asyncio, traceback, os, gc, rainbowio, wifi
+import time, math, asyncio, traceback, os, gc, rainbowio, wifi, displayio
 
 import LumensalisCP.I2C.I2CFactory
 from LumensalisCP.Controllers.ConfigurableBase import ConfigurableBase
@@ -11,6 +11,7 @@ class MainManager(ConfigurableBase):
         mainConfigDefaults = dict(
             TTCP_HOSTNAME = os.getenv("TTCP_HOSTNAME")
         )
+        displayio.release_displays()
         super().__init__(config, defaults=mainConfigDefaults, **kwds )
 
         self.__cycle = 0

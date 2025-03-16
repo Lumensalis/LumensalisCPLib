@@ -1,5 +1,9 @@
 from TerrainTronics.Demos.DemoBase import DemoBase
 from adafruit_simplemath import constrain
+import displayio, terminalio
+
+import adafruit_display_text.label
+import adafruit_display_shapes.arc
 
 class CaernarfonFrankenDemo( DemoBase ):
     def __init__(self, *args, **kwds):
@@ -30,10 +34,37 @@ class CaernarfonFrankenDemo( DemoBase ):
         self.nunchuk = main.adafruitFactory.createNunchuk(caernarfon.i2c)
 
         # add a display
-        self.display = main.i2cFactory.addDisplay_SSD1306(128, 32, caernarfon.i2c)
+        self.display = main.i2cFactory.addDisplayIO_SSD1306(128, 32, i2c=caernarfon.i2c)
 
+        bitmap = displayio.OnDiskBitmap(open("TTLogo32.bmp", "rb"))
+        image = displayio.TileGrid(bitmap, pixel_shader=bitmap.pixel_shader)
+        self.display.canvas.append(image) # shows the image
+
+
+        self.statLabel = adafruit_display_text.label.Label(
+            terminalio.FONT, text="---", color=0xFFFFFF, x=35, y=self.display.displayHeight // 2 - 1)
+        
+        self.display.canvas.append(self.statLabel)
+        
+        
+        arcRadius = self.display.displayHeight / 4
+        self.angleArc = adafruit_display_shapes.arc.Arc( radius = arcRadius,
+                        angle = 90, direction=180, segments=7, arc_width=2,
+                        fill = 0xFFFFFF )
+        self.angleArc.x = self.display.displayWidth - int(arcRadius * 2.5)
+        self.angleArc.y = int(arcRadius * 1.5)
+        self.display.canvas.append(self.angleArc)
+
+        
+        dot_bitmap = displayio.Bitmap(1, 1, 1)
+        dot_palette = displayio.Palette(1)
+        dot_palette[0] = 0xFFFFFF # White
+        self.dot_sprite = displayio.TileGrid(dot_bitmap, pixel_shader=dot_palette, x=0, y=0)
+        self.display.canvas.append(self.dot_sprite)
+        
         self.displayTargetPixel = [0,0]
         self.updateTextEveryNCycles = 10
+        self.priorS1angle = 0
     
     #########################################################################
 
@@ -75,20 +106,38 @@ class CaernarfonFrankenDemo( DemoBase ):
 
         #update display
         display = self.display
-        displayTargetPixel = self.displayTargetPixel
-        if main.cycle % self.updateTextEveryNCycles == 0:
-            display.fill(0)
-            display.text(f'{int(main.cycle/self.updateTextEveryNCycles)} {int(s1angle)}', 0, 0, 1, size=2 )
+
+        if 1:
+            # determine new location - wrapping based on cycle PLUS joystick position
+            self.dot_sprite.x = int(main.cycle + nx*display.displayWidth) % display.displayWidth
+            self.dot_sprite.y = int(main.cycle + ny*display.displayHeight) % display.displayHeight
+            
+            if self.priorS1angle != s1angle:
+                self.priorS1angle!= s1angle
+                self.angleArc.angle = -s1angle*2
+                
+                
+            if main.cycle % self.updateTextEveryNCycles == 0:
+                self.statLabel.text = f'{int(main.cycle/self.updateTextEveryNCycles)} {int(s1angle)}'
+                
         else:
-            # clear the pixel we set last loop
-            self.setDisplayPixel( 0, displayTargetPixel )
+            displayTargetPixel = self.displayTargetPixel
+            
+            if main.cycle % self.updateTextEveryNCycles == 0:
+                pass
+                #display.fill(0)
+                #display.text(f'{int(main.cycle/self.updateTextEveryNCycles)} {int(s1angle)}', 0, 0, 1, size=2 )
+            else:
+                # clear the pixel we set last loop
+                self.setDisplayPixel( 0, displayTargetPixel )
 
-        # determine new location - wrapping based on cycle PLUS joystick position
-        displayTargetPixel[0] = int(main.cycle + nx*display.displayWidth) % display.displayWidth
-        displayTargetPixel[1] = int(main.cycle + ny*display.displayHeight) % display.displayHeight
-        self.setDisplayPixel( 1, displayTargetPixel )
 
-        display.show()
+            # determine new location - wrapping based on cycle PLUS joystick position
+            displayTargetPixel[0] = int(main.cycle + nx*display.displayWidth) % display.displayWidth
+            displayTargetPixel[1] = int(main.cycle + ny*display.displayHeight) % display.displayHeight
+            self.setDisplayPixel( 1, displayTargetPixel )
+
+            display.show()
 
 
 def demoMain(*args,**kwds):
