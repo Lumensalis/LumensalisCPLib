@@ -72,7 +72,6 @@ class CaernarfonFrankenDemo( DemoBase ):
         self.targetAngle.move( delta )
         print( f"targetAngle now {self.targetAngle.value}")
 
-
     def setDisplayPixel( self, state, location ):
         self.display.pixel( location[0], location[1], state )
 
@@ -107,37 +106,17 @@ class CaernarfonFrankenDemo( DemoBase ):
         #update display
         display = self.display
 
-        if 1:
-            # determine new location - wrapping based on cycle PLUS joystick position
-            self.dot_sprite.x = int(main.cycle + nx*display.displayWidth) % display.displayWidth
-            self.dot_sprite.y = int(main.cycle + ny*display.displayHeight) % display.displayHeight
-            
-            if self.priorS1angle != s1angle:
-                self.priorS1angle!= s1angle
-                self.angleArc.angle = -s1angle*2
-                
-                
-            if main.cycle % self.updateTextEveryNCycles == 0:
-                self.statLabel.text = f'{int(main.cycle/self.updateTextEveryNCycles)} {int(s1angle)}'
-                
-        else:
-            displayTargetPixel = self.displayTargetPixel
-            
-            if main.cycle % self.updateTextEveryNCycles == 0:
-                pass
-                #display.fill(0)
-                #display.text(f'{int(main.cycle/self.updateTextEveryNCycles)} {int(s1angle)}', 0, 0, 1, size=2 )
-            else:
-                # clear the pixel we set last loop
-                self.setDisplayPixel( 0, displayTargetPixel )
+        # determine new location - wrapping based on cycle PLUS joystick position
+        self.dot_sprite.x = int(main.cycle + nx*display.displayWidth) % display.displayWidth
+        self.dot_sprite.y = int(main.cycle + ny*display.displayHeight) % display.displayHeight
+        
+        if self.priorS1angle != s1angle:
+            self.priorS1angle!= s1angle
+            self.angleArc.angle = -s1angle*2
 
+        if main.cycle % self.updateTextEveryNCycles == 0:
+            self.statLabel.text = f'{int(main.cycle/self.updateTextEveryNCycles)} {int(s1angle)}'
 
-            # determine new location - wrapping based on cycle PLUS joystick position
-            displayTargetPixel[0] = int(main.cycle + nx*display.displayWidth) % display.displayWidth
-            displayTargetPixel[1] = int(main.cycle + ny*display.displayHeight) % display.displayHeight
-            self.setDisplayPixel( 1, displayTargetPixel )
-
-            display.show()
 
 
 def demoMain(*args,**kwds):
