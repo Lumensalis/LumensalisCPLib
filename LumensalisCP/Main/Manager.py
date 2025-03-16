@@ -22,7 +22,7 @@ class MainManager(ConfigurableBase):
         self.boards = []
         self.webServer = None
         self.controlVariables = {}
-        
+        self._printStatCycles = 0
         self.adafruitFactory =  LumensalisCP.I2C.I2CFactory.AdafruitFactory(main=self)
         self.i2cFactory =  LumensalisCP.I2C.I2CFactory.I2CFactory(main=self)
         
@@ -87,7 +87,7 @@ class MainManager(ConfigurableBase):
             while True:
                 self.when = time.monotonic()
                 
-                if self.__cycle % 100 == 0:
+                if self._printStatCycles and self.__cycle % self._printStatCycles == 0:
                     print( f"cycle {self.__cycle} at {self.when} with {len(self.tasks)} tasks, gmf={gc.mem_free()} cd={self.cycleDuration}" )
                 for task in self.tasks:
                     task()

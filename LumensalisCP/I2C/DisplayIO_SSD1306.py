@@ -9,7 +9,7 @@ class DisplayIO_SSD1306( EZI2cDisplayIoBase, SSD1306_DIO ):
     
     def __init__(self, displayWidth=None, displayHeight=None, **kwds ):
         EZI2cDisplayIoBase.__init__( self, displayWidth=displayWidth, displayHeight=displayHeight, **kwds )
-        print( f"i2c is a {type(self.i2c)} / {dir(self.i2c)}")
+        # print( f"i2c is a {type(self.i2c)} / {dir(self.i2c)}")
 
         #SSD1306_DIO.__init__( self, self.displayBus, width=self.displayWidth, height=self.displayHeight )
         
@@ -22,5 +22,5 @@ class DisplayIO_SSD1306( EZI2cDisplayIoBase, SSD1306_DIO ):
             self.canvas.append(self.bg_sprite)
         
     def _initDisplayInstance(self):
-        print(f"DisplayIO_SSD1306  _initDisplayInstance...")
+        # print(f"DisplayIO_SSD1306  _initDisplayInstance...")
         SSD1306_DIO.__init__( self, self.displayBus, width=self.displayWidth, height=self.displayHeight )

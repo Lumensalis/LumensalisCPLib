@@ -13,7 +13,8 @@ class BoardBase(ConfigurableBase):
         super().__init__( config, **kwds )
 
     def dbgOut(self, fmt, *args, **kwds): 
-        print( fmt.format(*args,**kwds) )
+        if 0:
+            print( fmt.format(*args,**kwds) )
 
     def initI2C(self): 
         i2c = self.config.option('i2c')

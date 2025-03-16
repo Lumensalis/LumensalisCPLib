@@ -16,7 +16,7 @@ class EZI2cDisplayIoBase(I2CTarget, EZDisplayBase):
         
         self._initDisplayInstance()
         
-        print(f"EZI2cDisplayIoBase  set canvas...")
+        # print(f"EZI2cDisplayIoBase  set canvas...")
         self.canvas = displayio.Group()
         self.root_group = self.canvas
 
