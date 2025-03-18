@@ -30,8 +30,11 @@ class MainManager(ConfigurableBase):
         
     cycle = property( lambda self: self.__cycle )
     millis = property( lambda self: int( self.when * 1000) )
+    seconds:float = property( lambda self: self.when )
 
-    def wheel( self, val:float ): return rainbowio.colorwheel(val)
+    def wheel255( self, val:float ): return rainbowio.colorwheel(val)
+    
+    def wheel1( self, val:float ): return rainbowio.colorwheel(val*255.0)
     
     def addControlVariable( self, name, *args, **kwds ):
         variable = ControlVariable( name, *args,**kwds )
