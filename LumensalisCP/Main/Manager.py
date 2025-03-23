@@ -5,9 +5,18 @@ import LumensalisCP.I2C.I2CFactory
 from LumensalisCP.Controllers.ConfigurableBase import ConfigurableBase
 from .ControlVariables import ControlVariable
 
+from ..Scenes.Manager import SceneManager, Scene
+from LumensalisCP.CPTyping import Any, Callable, Mapping, List
+from LumensalisCP.CPTyping import override
+from .Expressions import EvaluationContext
+
 class MainManager(ConfigurableBase):
     
+    theManager : "MainManager"|None = None
+    
     def __init__(self, config = None, **kwds ):
+        assert MainManager.theManager is None
+        MainManager.theManager = self
         mainConfigDefaults = dict(
             TTCP_HOSTNAME = os.getenv("TTCP_HOSTNAME")
         )
@@ -17,36 +26,44 @@ class MainManager(ConfigurableBase):
         self.__cycle = 0
         self.cyclesPerSecond = 100
         self.cycleDuration = 0.01
-        self.tasks = []
-        self.when = time.monotonic()
-        self.boards = []
-        self.webServer = None
-        self.controlVariables = {}
-        self._printStatCycles = 0
+        self._tasks:List[Callable] = []
+        self._when = time.monotonic()
+        self._boards = []
+        self._webServer = None
+        self._controlVariables:Mapping[str,ControlVariable] = {}
+        self._monitorTargets = {}
+        self._scenes = SceneManager(main=self)
+        self._printStatCycles = 1000
         self.adafruitFactory =  LumensalisCP.I2C.I2CFactory.AdafruitFactory(main=self)
         self.i2cFactory =  LumensalisCP.I2C.I2CFactory.I2CFactory(main=self)
+        self.__evContext = EvaluationContext()
         
         print( f"MainManager options = {self.config.options}" )
-        
+    
+    when = property( lambda self: self._when )
     cycle = property( lambda self: self.__cycle )
-    millis = property( lambda self: int( self.when * 1000) )
-    seconds:float = property( lambda self: self.when )
+    millis = property( lambda self: int( self._when * 1000) )
+    seconds:float = property( lambda self: self._when )
 
     def wheel255( self, val:float ): return rainbowio.colorwheel(val)
     
     def wheel1( self, val:float ): return rainbowio.colorwheel(val*255.0)
     
-    def addControlVariable( self, name, *args, **kwds ):
+    def addControlVariable( self, name, *args, **kwds ) -> ControlVariable:
         variable = ControlVariable( name, *args,**kwds )
-        self.controlVariables[name] = variable
+        self._controlVariables[name] = variable
         print( f"added ControlVariable {name}")
         return variable
 
+    def addScene( self, name:str, *args, **kwds ) -> Scene:
+        scene = self._scenes.addScene( name, *args, **kwds )
+        return scene
+    
     def addBasicWebServer( self, *args, **kwds ):
-        from TerrainTronics.HTTP.BasicServer import BasicServer
+        from LumensalisCP.HTTP.BasicServer import BasicServer
         server = BasicServer( *args, main=self, **kwds )
-        self.webServer = server
-        for v in self.controlVariables.values():
+        self._webServer = server
+        for v in self._controlVariables.values():
             server.monitorControlVariable( v )
         return server
     
@@ -55,11 +72,11 @@ class MainManager(ConfigurableBase):
         # print( f"handleWsChanges {changes}")
         key = changes['name']
         val = changes['value']
-        v = self.controlVariables.get(key,None)
+        v = self._controlVariables.get(key,None)
         if v is not None:
             v.setFromWs( val )
         else:
-            print( f"missing cv {key} in {self.controlVariables.keys()} for wsChanges {changes}")
+            print( f"missing cv {key} in {self._controlVariables.keys()} for wsChanges {changes}")
     
     async def msDelay( self, milliseconds ):
         await asyncio.sleep( milliseconds * 0.001 )
@@ -68,19 +85,19 @@ class MainManager(ConfigurableBase):
     def addCaernarfon( self, config=None, **kwds ):
         from TerrainTronics.Caernarfon import CaernarfonCastle
         castle = CaernarfonCastle( config=config, main=self, **kwds )
-        self.boards.append(castle)
+        self._boards.append(castle)
         return castle
     
     def movingValue( self, min=0, max=100, duration:float =1.0 ):
-        base = math.floor( self.when / duration ) * duration
-        subSpan = self.when - base
+        base = math.floor( self._when / duration ) * duration
+        subSpan = self._when - base
         spanRatio = subSpan / duration
         value = ((max - min)*spanRatio) + min
         return value
 
     def addTask( self, task ):
         
-        self.tasks.append( task )
+        self._tasks.append( task )
         
     
     async def taskLoop( self ):
@@ -88,12 +105,14 @@ class MainManager(ConfigurableBase):
         print( "starting manager main run" )
         try:
             while True:
-                self.when = time.monotonic()
-                
+                self.__evContext.reset()
+                self._when = time.monotonic()
+                self._scenes.run(self.__evContext)
                 if self._printStatCycles and self.__cycle % self._printStatCycles == 0:
-                    print( f"cycle {self.__cycle} at {self.when} with {len(self.tasks)} tasks, gmf={gc.mem_free()} cd={self.cycleDuration}" )
-                for task in self.tasks:
+                    print( f"cycle {self.__cycle} at {self._when} with {len(self._tasks)} tasks, gmf={gc.mem_free()} cd={self.cycleDuration}" )
+                for task in self._tasks:
                     task()
+                self._scenes.run( self.__evContext )
                 self.cycleDuration = 1.0 / (self.cyclesPerSecond *1.0)
                 await asyncio.sleep( 0 ) # self.cycleDuration )
                 self.__cycle += 1
@@ -104,14 +123,14 @@ class MainManager(ConfigurableBase):
 
     
     def run( self ):
-        if self.webServer is not None:
-            self.webServer.start(str(wifi.radio.ipv4_address))
+        if self._webServer is not None:
+            self._webServer.start(str(wifi.radio.ipv4_address))
         async def main():      
             asyncTasks = [
                 asyncio.create_task( self.taskLoop() )
             ]
-            if self.webServer is not None:
-                asyncTasks.extend(self.webServer.createAsyncTasks())
+            if self._webServer is not None:
+                asyncTasks.extend(self._webServer.createAsyncTasks())
             await asyncio.gather( *asyncTasks )
             
         asyncio.run( main() )

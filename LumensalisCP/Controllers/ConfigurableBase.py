@@ -1,6 +1,8 @@
 
 import LumensalisCP.Controllers
 from  LumensalisCP.Controllers import ControllerConfig
+from  LumensalisCP.Identity.Local import NamedLocalIdentifiable
+from  LumensalisCP.Main.Dependents import MainChild
 import os, board
 
 class ConfigurableBase(object):
@@ -24,3 +26,9 @@ class ConfigurableBase(object):
 
         config.bake( **kwds )
         self.config = config
+
+class ControllerConfigurableChildBase(ConfigurableBase,MainChild):
+    def __init__( self, name:str=None,  main:"LumensalisCP.Main.Manager.MainManager" = None, **kwargs ):
+        MainChild.__init__(self, name=name, main=main )
+        ConfigurableBase.__init__( self, **kwargs )
+        print( f"D1MiniBoardBase.__init__( name={name} kwargs={kwargs})")

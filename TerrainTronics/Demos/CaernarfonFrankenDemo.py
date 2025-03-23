@@ -81,6 +81,22 @@ class CaernarfonFrankenDemo( DemoBase ):
         main = self.main
         caernarfon = self.caernarfon
         
+        # 
+        
+        lightLevel = caernarfon.analogInput( 0 )
+        
+        doorSwitch = caernarfon.input( "D1" )
+        plateSensor = caernarfon.input( "D2" )
+        led_0 = caernarfon.output( "D5" )
+        
+        led_0.setTo( 
+                    doorSwitch and not plateSensor 
+                ).when( 
+                    lightLevel > 35
+                ).otherwise(
+                    plateSensor 
+                )
+        
         # nx and ny will be the WII Nunchuck joystick position from -1.0 to 1.0
         nx, ny = self.nunchuk.scaledJoystick
 

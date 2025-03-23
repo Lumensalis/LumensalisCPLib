@@ -6,13 +6,26 @@ import busio
 import pwmio
 import adafruit_motor.servo
 import neopixel
-import TerrainTronics.BoardBase
+import TerrainTronics.D1MiniBoardBase
+from LumensalisCP.Main.Expressions import InputSource, OutputTarget, EvaluationContext
 
-# import time, board, microcontroller, busio, pwmio, adafruit_motor.servo, neopixel, TerrainTronics.BoardBase
+from LumensalisCP.CPTyping import *
 
-class CaernarfonCastle(TerrainTronics.BoardBase.BoardBase):
-    def __init__(self, *args, **kwds ):
-        super().__init__( *args, **kwds )
+# import time, board, microcontroller, busio, pwmio, adafruit_motor.servo, neopixel, TerrainTronics.D1MiniBoardBase
+
+class CaernarfonServo( adafruit_motor.servo.Servo, OutputTarget ):
+    def __init__(self, pwm=None, name:str=None, **kwds ):
+        adafruit_motor.servo.Servo.__init__(self, pwm, **kwds)
+        OutputTarget.__init__(self, name=name)
+
+    def set( self, value:Any, context:EvaluationContext ):
+        self.angle = max( 0, min(value,180))
+        
+        
+class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
+    def __init__(self, *args, name=None, **kwds ):
+        name = name or "Caernarfon"
+        super().__init__( *args, name=name, **kwds )
         c = self.config
         c.updateDefaultOptions( 
                 neoPixelPin = c.D3,
@@ -39,10 +52,14 @@ class CaernarfonCastle(TerrainTronics.BoardBase.BoardBase):
     servo1 = property( lambda self: self.servos[0] )
     servo2 = property( lambda self: self.servos[1] )
     servo3 = property( lambda self: self.servos[2] )
-        
-    def initServo( self, servoN:int, duty_cycle:int = 2 ** 15, frequency=50, ):
+
+    def analogInput( self, name, pin ):
+        return self.main.addInput( name, pin )
+    
+    def initServo( self, servoN:int, name:str = None, duty_cycle:int = 2 ** 15, frequency=50, ):
         assert( self.servos[servoN-1] is None )
         pin = self.config.option('servo{}pin'.format(servoN))
+        name = name or f"servo{servoN}"
         pwm = pwmio.PWMOut( pin, duty_cycle=duty_cycle, frequency=frequency)
-        servo = adafruit_motor.servo.Servo(pwm)
+        servo = CaernarfonServo(pwm,name)
         self.servos[servoN-1] = servo

@@ -8,6 +8,7 @@ NEO_PIXEL_COUNT = 9
 
 caernarfon = main.addCaernarfon( neoPixelCount=NEO_PIXEL_COUNT )
 
+priorSeconds = 0
 
 def singleRainbowWheel():
     """
@@ -38,14 +39,17 @@ between pixels
         caernarfon.pixels[px] = main.wheel1( A + (px * pxStep) )
         
     caernarfon.pixels.show()
-    
-    #print( f"elapsedSeconds={main.seconds}, A={A}")
+
 
 def singleLoop():
     singleRainbowWheel()
+    global priorSeconds
+    if main.seconds - priorSeconds > 5:
+        priorSeconds = main.seconds
+        print( f"elapsedSeconds={main.seconds}")
+
 
 def demoMain():
     main.addTask( singleLoop )
     main.run()
-    
 
