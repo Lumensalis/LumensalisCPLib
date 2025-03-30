@@ -1,35 +1,29 @@
 from ..Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.CPTyping import Any, Callable, Generator, List, Mapping, Tuple
 from LumensalisCP.CPTyping  import override
-from LumensalisCP.common import dictAddUnique
+from LumensalisCP.common import *
+from .Updates import UpdateContext
 
-class EvaluationContext(object):
-    def __init__( self ):
+class EvaluationContext(UpdateContext):
+    def __init__( self, *args, **kwds ):
+        super().__init__( *args, **kwds )
         self.__updateIndex = 0
         
         
-        self.__changedSources : List["InputSource"] = []
+        self.__changedTerms : List["ExpressionTerm"] = []
         
     def reset( self ):
-        self.__updateIndex += 1
-        self.__changedSources = []
+        super().reset()
         self.__changedTerms = []
-        
+
     @property
     def updateIndex(self): return self.__updateIndex
-
-
-    @property
-    def changedSources(self): return self.__changedSources
-
+    
     @property
     def changedTerms(self): return self.__changedTerms
     
     def addChangedTerm( self, changed:"ExpressionTerm"):
         self.__changedTerms.append( changed )
-        
-    def addChangedSource( self, changed:"InputSource"):
-        self.__changedSources.append( changed )
 
 #############################################################################
 
@@ -56,7 +50,7 @@ class ExpressionTerm(object):
     
         
     #def value(self, context:EvaluationContext) -> Any:
-    def value(self, context:EvaluationContext):
+    def getValue(self, context:EvaluationContext):
         # type: (EvaluationContext) -> Any
         """ current value of term"""
         raise NotImplemented
@@ -101,7 +95,7 @@ class ExpressionTerm(object):
     def __ge__( self, other:Any )-> "ExpressionTerm": return makeBinaryOperation( self, other, lambda c, a, b: a >= b )
 
     @override
-    def value(self, context:EvaluationContext)  -> Any:
+    def getValue(self, context:EvaluationContext)  -> Any:
         """ current value of term"""
         pass
 
@@ -133,8 +127,8 @@ class UnaryOperation(ExpressionOperation):
                 yield t2
 
     @override
-    def value(self, context:EvaluationContext) -> Any:
-        return self.op( context, self.term.value( context ) )
+    def getValue(self, context:EvaluationContext) -> Any:
+        return self.op( context, self.term.getValue( context ) )
 
 class BinaryOperation(ExpressionOperation):
     def __init__(self, term1:ExpressionTerm=None, term2:ExpressionTerm=None, op:Callable[[EvaluationContext,ExpressionTerm,ExpressionTerm]]=None ):
@@ -154,8 +148,8 @@ class BinaryOperation(ExpressionOperation):
                 yield t2
 
     @override
-    def value(self, context:EvaluationContext) -> Any:
-        return self.op( context, self.term1.value( context ), self.term2.value( context ) )
+    def getValue(self, context:EvaluationContext) -> Any:
+        return self.op( context, self.term1.getValue( context ), self.term2.getValue( context ) )
 
 
 class ExpressionConstant(ExpressionTerm):
@@ -167,7 +161,7 @@ class ExpressionConstant(ExpressionTerm):
         self.__constantValue = value
 
     @override
-    def value(self, context:EvaluationContext) -> Any:
+    def getValue(self, context:EvaluationContext) -> Any:
         return self.__constantValue
     
     
@@ -191,33 +185,123 @@ def makeUnaryOperation( term:ExpressionTerm=None, op:Callable[[EvaluationContext
 
 #############################################################################
 
-class InputSource(NamedLocalIdentifiable, ExpressionTerm):
+class EdgeTerm(ExpressionOperation,Debuggable):
+    def __init__(self, term:ExpressionTerm=None,
+                 reset:ExpressionTerm=None,
+                 rising:bool = False,
+                 falling:bool = False,
+                 name:str=None
+                 ):
+        super().__init__()
+        Debuggable.__init__(self)
+        self.name = name
+        self.term = ensureIsTerm(term)
+        self.__resetTerm = ensureIsTerm(reset) if reset is not None else None
+        self.__awaitingReset = False
+        assert rising or falling
+        self.__latestUpdateIndex = 0
+        self.__value = False
+        self.__priorTermValue = None
+        self.__onRising = rising
+        self.__onFalling = falling
+        
+    def terms(self) -> Generator["ExpressionTerm"]:
+        for term in super().terms():
+            yield term
+        for child in self.term.terms():
+            for t2 in child.terms():
+                yield t2
 
-    def __init__(self, name):
+    @override
+    def getValue(self, context:EvaluationContext = None ) -> Any:
+        assert context is not None
+        if context is not None and self.__latestUpdateIndex != context.updateIndex:
+            priorUpdateIndex = self.__latestUpdateIndex
+            self.__latestUpdateIndex = context.updateIndex
+            
+            #justReset = False
+            if self.__awaitingReset:
+                self.__value = False
+                resetValue = self.__resetTerm.getValue( context )
+                if resetValue:
+                    self.dbgOut( "reset succeeded, value=%s at %s", self.__value, self.__latestUpdateIndex  )
+                    self.__awaitingReset = False
+                    
+                return False
+                
+            termValue = self.term.getValue( context )
+            if self.__priorTermValue is None or termValue != self.__priorTermValue:
+                
+                prior = self.__priorTermValue
+                self.__priorTermValue = termValue 
+                
+                if termValue:
+                    self.__value = self.__onRising
+                else:
+                    self.__value = self.__onFalling
+                
+                if self.__resetTerm is not None:
+                    self.__awaitingReset = True
+                    
+                self.dbgOut( "edge from %s to %s, value=%s at %s", prior, termValue, self.__value, self.__latestUpdateIndex  )
+            else:
+                if self.__value != False:
+                    self.dbgOut( "no edge term=%s at %s", termValue, self.__latestUpdateIndex  )
+                self.__value = False
+        return self.__value
+
+def rising( term:ExpressionTerm=None, **kwds ) -> EdgeTerm:
+    return EdgeTerm( term=TERM(term), rising=True, **kwds )
+
+def falling( term:ExpressionTerm=None, **kwds )  -> EdgeTerm:
+    return EdgeTerm( term=TERM(term), falling=True, **kwds )
+
+#############################################################################
+
+class InputSource(NamedLocalIdentifiable, ExpressionTerm, Debuggable):
+
+    def __init__(self, name:str = None):
         NamedLocalIdentifiable.__init__(self,name=name)
         ExpressionTerm.__init__(self)
+        Debuggable.__init__(self)
 
         self.__latestValue = None
-        self.__latestUpdate:int = None
+        self.__latestUpdateIndex:int = None
+        self.__latestChangeIndex:int = None
+        self.__onChangedList = []
 
-    def getDerivedValue(self, context:EvaluationContext) -> Any:
+    def getDerivedValue(self, context:UpdateContext) -> Any:
         raise NotImplemented
+    
+    def onChange(self, cb:Callable):
+        self.__onChangedList.append(cb)
 
-    def updateValue(self, context:EvaluationContext) -> bool:
+    def updateValue(self, context:UpdateContext) -> bool:
+        assert isinstance( context, UpdateContext )
+        if self.__latestChangeIndex == context.updateIndex:
+            context.addChangedSource( self )
+            return self.__latestValue
+        
         val = self.getDerivedValue( context )
-        self.__latestUpdate = context.updateIndex
+        self.__latestUpdateIndex = context.updateIndex
         if val == self.__latestValue:
             return False
+        
         if 0: print( f"value changing on {self.name} from {self.__latestValue} to {val} on update {context.updateIndex}" )
         self.__latestValue = val
-        assert isinstance( context, EvaluationContext )
+        self.__latestChangeIndex = context.updateIndex
         context.addChangedSource( self )
+        for cb in self.__onChangedList:
+            cb( source=self, context=context )
+
         return True
         
-            
+    @property
+    def value(self): return self.__latestValue
+    
     @override
-    def value(self, context:EvaluationContext) -> Any:
-        if self.__latestUpdate != context.updateIndex:
+    def getValue(self, context:EvaluationContext = None ) -> Any:
+        if context is not None and self.__latestUpdateIndex != context.updateIndex:
             self.updateValue( context )
         return self.__latestValue
     
@@ -225,10 +309,11 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm):
 
 #############################################################################
 
-class OutputTarget(NamedLocalIdentifiable):
+class OutputTarget(NamedLocalIdentifiable,Debuggable):
 
     def __init__(self, name:str = None):
         super().__init__(name=name)
+        Debuggable.__init__(self)
 
     def set( self, value:Any, context:EvaluationContext ):
         raise NotImplemented
@@ -244,10 +329,14 @@ class CallbackSource( ExpressionTerm ):
         
 
     @override
-    def value(self, context:EvaluationContext) -> Any:
+    def getValue(self, context:EvaluationContext) -> Any:
         return self.__callback()
     
-    
+
+
+
+#############################################################################
+
 class Expression( object ):
     def __init__( self, term:ExpressionTerm ):
         self.__root = ensureIsTerm(term)
@@ -298,13 +387,13 @@ class Expression( object ):
     def updateValue(self, context:EvaluationContext ):
         term = self.term
         if self.whenClause is not None:
-            whenResult = self.whenClause.value( context )
+            whenResult = self.whenClause.getValue( context )
             if not whenResult:
                 if self.otherwiseClause is not None:
                     term = self.otherwiseClause
                 else:
                     return False
-        value = term.value(context)
+        value = term.getValue(context)
         if value == self.__latestValue:
             return False
         self.__latestValue = value

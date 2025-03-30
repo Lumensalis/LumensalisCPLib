@@ -23,3 +23,9 @@ class SceneManager(object):
             return
         self.__currentScene.runTasks(context)
         
+    @property
+    def currentScene(self): return self.__currentScene
+        
+        
+    def setScene(self, scene:Scene ):
+        self.__currentScene = scene

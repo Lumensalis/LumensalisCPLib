@@ -1,4 +1,4 @@
-from LumensalisCP.CPTyping import Mapping
+from LumensalisCP.CPTyping import *
 from ..Main.Dependents import MainChild
 from ..Main.Expressions import ExpressionTerm, Expression, InputSource, OutputTarget
 from LumensalisCP.common import *
@@ -7,8 +7,13 @@ from ..Main.Expressions import EvaluationContext
 class Setter(object):
     pass
 
+
+class SceneTaskKwargs(TypedDict):
+    task:Callable
+    period:float | None
+
 class SceneTask(object):
-    def __init__(self, task, period:float|None = None, **kwds ):
+    def __init__(self, task:Callable = None, period:float|None = 0.02 ):
         self.task_callback = task
         self.__period = period
         self.__nextRun = period
@@ -68,8 +73,8 @@ class Scene(MainChild):
     
         return rv
 
-    def addTask( self, task, **kwds  ) -> SceneTask:
-        task = SceneTask( task, **kwds )
+    def addTask( self, *args, **kwds:SceneTaskKwargs  ) -> SceneTask:
+        task = SceneTask( *args, **kwds )
         self.__tasks.append( task )
         return task
     
@@ -79,3 +84,9 @@ class Scene(MainChild):
             task.run( self, context )
         for tag, rule in self.__rules.items():
             rule.run( context )
+
+def addSceneTask( scene:Scene, name:str = None, **kwds:SceneTaskKwargs ):
+    def addTask( callable ):
+        scene.addTask(callable, **kwds)
+        
+    return addTask

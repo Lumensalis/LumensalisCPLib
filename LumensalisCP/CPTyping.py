@@ -11,10 +11,29 @@ except ImportError:
     pass # ignore the error
     ForwardRef = None
     Any = None
+    Optional = None
     Callable = None
     Mapping = None
     List = None
+    Dict = None
     Generator = None
     Tuple = None
     
+    class __TDM(object):
+        def __new__(cls, name, bases, ns, total=True):
+            pass
+    
+    #def TypedDict(typename, *args, fields=None, total=True, **kwargs):
+    #    return __TDM
+    
+    #_TypedDict = type.__new__(__TDM, 'TypedDict', (), {})
+    #TypedDict.__mro_entries__ = lambda bases: (_TypedDict,)
+    #TypedDict.__mro_entries__ = lambda bases: ()
+
+    class TypedDict(object):
+        pass
+    
+    
+        
     def override( f ): return f
+    def final( f ): return f
