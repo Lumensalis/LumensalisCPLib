@@ -1,6 +1,6 @@
 import adafruit_nunchuk
 
-from .I2CTarget import I2CTarget
+from ..I2CTarget import I2CTarget
 import simpleio
 
 

@@ -1,4 +1,4 @@
-from .I2CTarget import I2CTarget
+from ..I2CTarget import I2CTarget
 
 from adafruit_ssd1306 import SSD1306_I2C
 
