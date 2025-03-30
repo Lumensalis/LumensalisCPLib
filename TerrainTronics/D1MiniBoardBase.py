@@ -21,6 +21,7 @@ class DigitalPinHolder( PinHolder ):
 class AnalogInputPinProxy( InputSource, PinHolder ):
     def __init__(self, name:str, pin:"D1MiniPinProxy" ):
         InputSource.__init__(self,name=name)
+        
         PinHolder.__init__(self, pin=pin)
         self.pin = AnalogIn( self.actualPinId )
 
@@ -51,6 +52,10 @@ class D1MiniPinProxy(object):
         self._name = name
         self._board = board
 
+    @property 
+    def actualPin(self):
+        return getattr( self._board.config.pins, self._name )
+    
     @property
     def name(self) -> str: return self._name
     
@@ -76,6 +81,7 @@ class D1MiniBoardBase(ControllerConfigurableChildBase):
         self.RX = D1MiniPinProxy( 'RX', self )
         self.SDA= D1MiniPinProxy( 'SDA', self )
         self.SCL= D1MiniPinProxy( 'SCL', self )
+        self.D0= D1MiniPinProxy( 'D0', self )
         self.D1= D1MiniPinProxy( 'D1', self )
         self.D2= D1MiniPinProxy( 'D2', self )
         self.D3= D1MiniPinProxy( 'D3', self )
@@ -86,9 +92,6 @@ class D1MiniBoardBase(ControllerConfigurableChildBase):
         self.D8= D1MiniPinProxy( 'D8', self )
         self.A0= D1MiniPinProxy( 'A0', self )
 
-    def dbgOut(self, fmt, *args, **kwds): 
-        if 0:
-            print( fmt.format(*args,**kwds) )
 
     def initI2C(self): 
         i2c = self.config.option('i2c')
@@ -97,11 +100,11 @@ class D1MiniBoardBase(ControllerConfigurableChildBase):
         
         if i2c is None:
             if sdaPin is None and sclPin is None:
-                i2c = board.I2C()
+                i2c = self.main.defaultI2C()
             else:
-                self.dbgOut( "initializing busio.I2C, scl={}, sda={}", sclPin, sdaPin )
+                self.dbgOut( "initializing busio.I2C, scl=%s, sda=%s", sclPin, sdaPin )
                 i2c =  busio.I2C( sdaPin, sclPin ) 
-
+                self.main._addBoardI2C( self, i2c )
         assert( i2c is not None )
         
         self.i2c = i2c
