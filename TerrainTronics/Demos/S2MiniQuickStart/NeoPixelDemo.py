@@ -1,5 +1,5 @@
 #from TerrainTronics.Demos.DemoBase import DemoBase
-from LumensalisCP.Main import MainManager
+from LumensalisCP.Main.Manager import MainManager
 
 main = MainManager()
 

@@ -27,11 +27,11 @@ class CaernarfonFrankenDemo( DemoBase ):
         # I2C devices 
 
         # add an Adafruit QTRotaryEncoder, and set it up to adjust targetAngle
-        self.qtr = main.adafruitFactory.createQTRotaryEncoder(caernarfon.i2c)
+        self.qtr = main.adafruitFactory.addQTRotaryEncoder(caernarfon.i2c)
         self.qtr.onMove( self.encoderChanged )
 
         # add a WII Nunchuk
-        self.nunchuk = main.adafruitFactory.createNunchuk(caernarfon.i2c)
+        self.nunchuk = main.adafruitFactory.addNunchuk(caernarfon.i2c)
 
         # add a display
         self.display = main.i2cFactory.addDisplayIO_SSD1306(128, 32, i2c=caernarfon.i2c)

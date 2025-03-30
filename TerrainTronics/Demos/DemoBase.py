@@ -1,4 +1,4 @@
-from LumensalisCP.Main import MainManager
+from LumensalisCP.Main.Manager import MainManager
 
 
 class DemoBase(object):
