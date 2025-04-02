@@ -8,25 +8,26 @@ class ControllerPins(object):
     
     def __init__(self, **kwds):
         
-        def getPin( tag:str ):
-            if tag.startswith("m"):
-                pin = getattr( microcontroller.pin, tag[1:] )
-            elif tag.startswith("b"):
-                pin = getattr(board, tag[1:] )
-            #elif tag.startswith("D"):
-            #    pin = getattr(board, tag[1:] )
-            elif tag.startswith("GPIO"):
-                pin = getattr( microcontroller.pin, tag )
-            else:
-                pin = getattr(board, tag, None )
-            assert( pin is not None )
-            return pin
-            
+
         for pinName in ControllerPins.pinNames:
             pinTag = kwds.get( pinName, pinName )
-            pin = getPin( pinTag )
+            pin = self.lookupPin( pinTag )
             setattr(self, pinName, pin )
-
+    
+    def lookupPin( self, tag:str ):
+        if tag.startswith("m"):
+            pin = getattr( microcontroller.pin, tag[1:] )
+        elif tag.startswith("b"):
+            pin = getattr(board, tag[1:] )
+        #elif tag.startswith("D"):
+        #    pin = getattr(board, tag[1:] )
+        elif tag.startswith("GPIO"):
+            pin = getattr( microcontroller.pin, tag )
+        else:
+            pin = getattr(board, tag, None )
+        assert( pin is not None )
+        return pin
+            
 class ControllerConfig(object):
     def __init__( self, **kwds ):
         self.kwds = dict(**kwds)

@@ -1,10 +1,10 @@
 
-import board
 import busio
 from LumensalisCP.Controllers.ConfigurableBase import ControllerConfigurableChildBase
 from LumensalisCP.Main.Expressions import InputSource, OutputTarget, EvaluationContext
 from digitalio import DigitalInOut, Direction
 from analogio import AnalogIn
+import microcontroller
 
 from LumensalisCP.CPTyping import Any, Callable, Generator, List, Mapping, Tuple
 
@@ -47,13 +47,14 @@ class DigitalOutputPinProxy( OutputTarget, DigitalPinHolder ):
     def set( self, value:Any, context:EvaluationContext ): 
         self.pin.value = value
 
+
 class D1MiniPinProxy(object):
     def __init__( self, name:str, board:"D1MiniBoardBase" ):
         self._name = name
         self._board = board
 
     @property 
-    def actualPin(self):
+    def actualPin(self) -> microcontroller.Pin:
         return getattr( self._board.config.pins, self._name )
     
     @property
@@ -93,6 +94,16 @@ class D1MiniBoardBase(ControllerConfigurableChildBase):
         self.A0= D1MiniPinProxy( 'A0', self )
 
 
+    def asPin(self, pin ):
+        if not isinstance( pin, microcontroller.Pin ):
+            if hasattr( pin, 'actualPin' ):
+                pin = pin.actualPin
+            if type(pin) is str:
+                pin = getattr( self.config.pins.lookupPin(pin) )
+            
+        assert isinstance( pin, microcontroller.Pin )
+        return pin
+    
     def initI2C(self): 
         i2c = self.config.option('i2c')
         sdaPin = self.config.SDA
