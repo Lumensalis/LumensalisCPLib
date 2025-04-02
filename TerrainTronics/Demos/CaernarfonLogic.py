@@ -80,19 +80,6 @@ class CaernarfonLogicDemo( DemoBase ):
                                     
         act1 = main.addScene( "firstAct" )
 
-        ranger.checkRangerMode = 'startMeasurement'
-        
-        @addSceneTask( act1, period = 0.1 )
-        def checkRanger():
-            mode = getattr(ranger,'checkRangerMode', None)
-            if mode is None or mode == 'startMeasurement':
-                ranger.do_range_measurement()
-                ranger.checkRangerMode = "measuring"
-            elif ranger.checkRangerMode == "measuring":
-                if ranger.data_ready:
-                    range = ranger.range
-                    ranger.checkRangerMode = "startMeasurement"
-                    print( f"ranger range = {range}")
                     
         COLOR_CYCLE = 3.0
         NEO_PIXEL_SPREAD = 4

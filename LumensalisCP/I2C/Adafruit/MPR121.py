@@ -38,7 +38,7 @@ class MPR121(I2CTarget,adafruit_mpr121.MPR121):
     def derivedUpdateTarget(self, context:UpdateContext):
         allTouched = self.touched()
         if self.__lastTouched != allTouched:
-            # self.dbgOut( "MPR121 = %X" % allTouched )
+            self.dbgOut( "MPR121 = %X" % allTouched )
             self.__lastTouched != allTouched
             
         for input in self.__inputs:
@@ -50,7 +50,7 @@ class MPR121(I2CTarget,adafruit_mpr121.MPR121):
         input = self.__inputs[pin]
     
         if input is not None:
-            assert name == input.name
+            ensure( name == input.name, "%r != %r", name, input.name )
         else:
             input = MPR121Input( pin=pin, name=name, target=self)
             self.__inputs[pin] = input
