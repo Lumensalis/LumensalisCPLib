@@ -3,7 +3,8 @@
 import LumensalisCP.Debug
 
 import time, math, asyncio, traceback, os, gc, rainbowio, wifi, displayio
-import  busio, board
+import busio, board
+import collections
 
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
@@ -12,13 +13,16 @@ import LumensalisCP.I2C.I2CFactory
 import LumensalisCP.I2C.I2CTarget
 import LumensalisCP.I2C.Adafruit.AdafruitI2CFactory
 from LumensalisCP.Controllers.ConfigurableBase import ConfigurableBase
-from .ControlVariables import ControlVariable
+from .ControlVariables import ControlVariable, IntermediateVariable
 
 from ..Scenes.Manager import SceneManager, Scene
 from ..Triggers.Timer import PeriodicTimerManager
 
 from .Expressions import EvaluationContext
+from .Shutdown import ExitTask
 from LumensalisCP.Debug import Debuggable 
+import LumensalisCP.Audio 
+
 class MainManager(ConfigurableBase, Debuggable):
     
     theManager : "MainManager"|None = None
@@ -37,23 +41,31 @@ class MainManager(ConfigurableBase, Debuggable):
         Debuggable.__init__(self)
         self.name = "MainManager"
         
+        self._when = self.newNow
+        
+        self._printStatCycles = 1000
         self.__cycle = 0
         self.cyclesPerSecond = 100
         self.cycleDuration = 0.01
-        self._tasks:List[Callable] = []
-
-        self._boards = []
+        self.__defaultI2C:busio.I2C = None
         self._webServer = None
+        self.__deferredTasks = collections.deque( [], 99, True )
+        self.__audio = None
+        
+        self._tasks:List[Callable] = []
+        self.__shutdownTasks:List[ExitTask] = []
+        self._boards = []
+        self.__i2cTargets:List["LumensalisCP.I2C.I2CTarget.I2CTarget"] = []
+
         self._controlVariables:Mapping[str,ControlVariable] = {}
         self._monitorTargets = {}
-        self._scenes = SceneManager(main=self)
+
+        self.__evContext = EvaluationContext(self)
         self._timers = PeriodicTimerManager(main=self)
-        self._printStatCycles = 1000
+
+        self._scenes = SceneManager(main=self)
         self.adafruitFactory =  LumensalisCP.I2C.Adafruit.AdafruitI2CFactory.AdafruitFactory(main=self)
         self.i2cFactory =  LumensalisCP.I2C.I2CFactory.I2CFactory(main=self)
-        self.__defaultI2C:busio.I2C = None
-        self.__evContext = EvaluationContext(self)
-        self.__i2cTargets:List["LumensalisCP.I2C.I2CTarget.I2CTarget"] = []
         
         print( f"MainManager options = {self.config.options}" )
     
@@ -71,8 +83,7 @@ class MainManager(ConfigurableBase, Debuggable):
         return (ns - self.__startNs) * 0.000000001
 
     @property
-    def defaultI2C(self):
-        return self.__defaultI2C or board.I2C()
+    def defaultI2C(self): return self.__defaultI2C or board.I2C()
     
     @property
     def scenes(self) -> SceneManager: return self._scenes
@@ -80,6 +91,21 @@ class MainManager(ConfigurableBase, Debuggable):
     @property
     def timers(self) -> PeriodicTimerManager: return self._timers
 
+    def callLater( self, task ):
+        self.__deferredTasks.append( task )
+
+    def __runExitTasks(self):
+        print( "running Main exit tasks" )
+        for task in self.__shutdownTasks:
+            task.shutdown()
+            
+    def addExitTask(self,task:ExitTask|Callable):
+        if not isinstance( task, ExitTask ):
+            task = ExitTask( main=self,task=task)
+            
+        self.__shutdownTasks.append(task)
+        
+        
     def _addI2CTarget(self, target:"LumensalisCP.I2C.I2CTarget.I2CTarget" ):
         self.__i2cTargets.append(target)
         
@@ -93,6 +119,15 @@ class MainManager(ConfigurableBase, Debuggable):
         self.infoOut( f"added ControlVariable {name}")
         return variable
 
+    
+    def addIntermediateVariable( self, name, *args, **kwds ) -> IntermediateVariable:
+        variable = IntermediateVariable( name, *args,**kwds )
+        # self._controlVariables[name] = variable
+        self.infoOut( f"added Variable {name}")
+        variable.updateValue( self.__evContext )
+        return variable
+
+
     def addScene( self, name:str, *args, **kwds ) -> Scene:
         scene = self._scenes.addScene( name, *args, **kwds )
         return scene
@@ -104,6 +139,7 @@ class MainManager(ConfigurableBase, Debuggable):
         for v in self._controlVariables.values():
             server.monitorControlVariable( v )
         return server
+    
     
     def handleWsChanges( self, changes:dict ):
         
@@ -120,6 +156,19 @@ class MainManager(ConfigurableBase, Debuggable):
         await asyncio.sleep( milliseconds * 0.001 )
         
     
+    @property
+    def audio(self) -> "LumensalisCP.Audio.Audio":
+        if self.__audio is None:
+            self.addI2SAudio()
+            assert self.__audio is not None
+        return self.__audio
+
+    def addI2SAudio(self, *args, **kwds ) -> "LumensalisCP.Audio.Audio":
+        from LumensalisCP.Audio import Audio
+        assert self.__audio is None
+        self.__audio = Audio( *args, main=self,**kwds )
+        return self.__audio
+        
     def addCaernarfon( self, config=None, **kwds ):
         from TerrainTronics.Caernarfon import CaernarfonCastle
         castle = CaernarfonCastle( config=config, main=self, **kwds )
@@ -147,7 +196,15 @@ class MainManager(ConfigurableBase, Debuggable):
         
         self._tasks.append( task )
         
-    
+    def __runDeferredTasks(self):
+        while len( self.__deferredTasks ):
+            task = self.__deferredTasks.popleft()
+            print( f"running deferred {task}")
+            try:
+                task()
+            except Exception as inst:
+                print( f"exception on deferred task {task} : {inst}")
+            
     async def taskLoop( self ):
 
         self.infoOut( "starting manager main run" )
@@ -157,6 +214,8 @@ class MainManager(ConfigurableBase, Debuggable):
                 context = self.__evContext
                 self._when = self.newNow
                 self._timers.update( context )
+                if len( self.__deferredTasks ):
+                    self.__runDeferredTasks()
                 self._scenes.run(context)
                 for target in self.__i2cTargets:
                     target.updateTarget(context)
@@ -171,10 +230,17 @@ class MainManager(ConfigurableBase, Debuggable):
 
         except Exception as inst:
             self.errOut( "EXCEPTION in task loop : {}".format(inst) )
-            print(traceback.format_exception(inst))
+            print(''.join(traceback.format_exception(inst)))
+            
+        except KeyboardInterrupt:
+            self.errOut( "KeyboardInterrupt!" )
+            self.__runExitTasks()
+            raise
 
+        self.__runExitTasks()
     
     def run( self ):
+        
         if self._webServer is not None:
             self._webServer.start(str(wifi.radio.ipv4_address))
         async def main():      
@@ -186,3 +252,4 @@ class MainManager(ConfigurableBase, Debuggable):
             await asyncio.gather( *asyncTasks )
             
         asyncio.run( main() )
+        self.__runExitTasks()

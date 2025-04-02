@@ -287,12 +287,15 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm, Debuggable):
         if val == self.__latestValue:
             return False
         
-        if 0: print( f"value changing on {self.name} from {self.__latestValue} to {val} on update {context.updateIndex}" )
+        self.dbgOutEnabled and self.dbgOut( f"value changing on {self.name} from {self.__latestValue} to {val} on update {context.updateIndex}" )
         self.__latestValue = val
         self.__latestChangeIndex = context.updateIndex
         context.addChangedSource( self )
         for cb in self.__onChangedList:
-            cb( source=self, context=context )
+            try:
+                cb( source=self, context=context )
+            except Exception as inst:
+                self.SHOW_EXCEPTION( inst, "onChanged callback %r failed", cb )
 
         return True
         
@@ -309,11 +312,10 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm, Debuggable):
 
 #############################################################################
 
-class OutputTarget(NamedLocalIdentifiable,Debuggable):
+class OutputTarget(NamedLocalIdentifiable):
 
     def __init__(self, name:str = None):
         super().__init__(name=name)
-        Debuggable.__init__(self)
 
     def set( self, value:Any, context:EvaluationContext ):
         raise NotImplemented

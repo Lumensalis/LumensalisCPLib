@@ -25,12 +25,17 @@ class Trigger(Debuggable):
     def name(self): return self.__name
     
     def addAction( self, action:Callable ):
+        self.dbgOut( "addAction( %r )", action )
         self.__actions.append( action )
 
 
     def fire(self, **kwds ):
+        self.dbgOut( f"firing timer {self.name}[{len(self.__actions)}]")
         for action in self.__actions:
-            action( **kwds )
+            try:
+                action( **kwds )
+            except Exception as inst:
+                self.SHOW_EXCEPTION( inst, "firing action %s( %s )", action, kwds )
 
 
     def fireOnTrue( self, expression: Expression|ExpressionTerm ):
@@ -38,7 +43,7 @@ class Trigger(Debuggable):
             expression = Expression(expression)
 
         self._onTrueExpression = expression
-        def test(source:InputSource=None, context:UpdateContext = None):
+        def test(source:InputSource=None, context:UpdateContext = None, **kwargs):
             
             expression.updateValue(context)
             shouldFire = expression.value
@@ -51,11 +56,21 @@ class Trigger(Debuggable):
         
         return self
 
+    def fireOnSourcesSet( self, *sources:InputSource):
+        for source in sources:
+            assert isinstance(source, InputSource )
+            self.fireOnSet( source )
 
     def fireOnSet( self, source:InputSource):
-        def test(source:InputSource=None, context:UpdateContext = None):
+        
+        def test(source:InputSource=None, context:UpdateContext = None, **kwargs):
+            
             if source.getValue(context):
+                self.dbgOut( "firing on set of %s", source.name )
                 self.fire()
+            else:
+                self.dbgOut( "no fire on %s", source.name )
+                
             
         source.onChange( test )
         return self
@@ -68,4 +83,11 @@ class Trigger(Debuggable):
             return callable
         return on2        
     
+    
+    def addActionDef( self, **kwds ):
+        def on2( callable ):
+            self.addAction(callable)
+            return callable
+        return on2        
+
 #############################################################################

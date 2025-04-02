@@ -2,6 +2,7 @@
 import LumensalisCP
 import LumensalisCP.Main
 import LumensalisCP.Main.Manager
+import traceback
 #mm =  LumensalisCP.Main.Manager 
 
 class Debuggable( object ):
@@ -19,7 +20,7 @@ class Debuggable( object ):
     
     def __format( self, kind, fmtString:str, args, kwds ):
         try:
-            msg = self.__header("") + (  fmtString % args )
+            msg = self.__header(kind) + (  fmtString % args )
             return msg
         except Exception as inst:
             return f"error formatting {kind} {fmtString} : {inst}"
@@ -37,6 +38,11 @@ class Debuggable( object ):
     def warnOut( self, fmtString:str, *args, **kwds ):
         print( self.__format("WARNING", fmtString, args, kwds ) )
             
+            
+    def SHOW_EXCEPTION( self,  inst:Exception, fmtString:str, *args, **kwds):
+        print( self.__format("EXCEPTION", fmtString, args, kwds ) )
+        print( f"{inst}\n{''.join(traceback.format_exception(inst))}" )
+        
     @property
     def dbgOutEnabled(self) -> bool: return self.__dbgOutEnabled
     

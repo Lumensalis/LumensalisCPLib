@@ -3,17 +3,16 @@
 from ..Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.CPTyping import ForwardRef
 import LumensalisCP.Main.Manager
-from LumensalisCP.common import Debuggable
+from LumensalisCP.common import *
 
-class MainChild( NamedLocalIdentifiable,Debuggable):
+class MainChild( NamedLocalIdentifiable):
     
     def __init__( self, name:str, main:"LumensalisCP.Main.Manager.MainManager"):
         # type: (str, LumensalisCP.Main.Manager.MainManager ) -> None
-        NamedLocalIdentifiable.__init__( self, name = name )
-        Debuggable.__init__(self)
-        assert main is not None
+        NamedLocalIdentifiable.__init__( self, name = name or self.__class__.__name__)
+        ensure( main is not None )
         self.__main = main
-        print( f"MainChild __init__( name={name}, main={main})")
+        print( f"MainChild __init__( name={self.name}, main={main})")
         
     
     @property

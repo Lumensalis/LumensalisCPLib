@@ -7,19 +7,22 @@ from ..Main.Expressions import EvaluationContext
 class Setter(object):
     pass
 
-
 class SceneTaskKwargs(TypedDict):
     task:Callable
     period:float | None
 
 class SceneTask(object):
-    def __init__(self, task:Callable = None, period:float|None = 0.02 ):
+    def __init__(self, task:Callable = None, period:float|None = 0.02, name = None ):
         self.task_callback = task
+        self.__name = name or task.__name__
         self.__period = period
         self.__nextRun = period
         
     @property
     def period(self): return self.__period
+    
+    @property
+    def name(self): return self.__name
     
     def run( self, scene:"Scene", context: EvaluationContext ):
         if self.__nextRun is not None:
@@ -78,15 +81,31 @@ class Scene(MainChild):
         self.__tasks.append( task )
         return task
     
+    
     def runTasks(self, context:EvaluationContext):
         if 0: print( f"scene {self.name} run tasks ({len(self.__tasks)} tasks, {len(self.__rules)} rules) on update {context.updateIndex}..." )
         for task in self.__tasks:
-            task.run( self, context )
+            try:
+                task.run( self, context )
+            except Exception as inst:
+                self.SHOW_EXCEPTION(  inst, "running task %s", task.name )
         for tag, rule in self.__rules.items():
-            rule.run( context )
+            try:
+                rule.run( context )
+            except Exception as inst:
+                self.SHOW_EXCEPTION( inst, "running rule %s", rule.name  )
 
+
+
+"""def addTaskDef( self, name:str = None, **kwds:SceneTaskKwargs  ) -> SceneTask:
+
+        def addTask( callable ):
+            scene.addTask(callable, name = name or callable.__name__, **kwds)
+        return task
+        """
+    
 def addSceneTask( scene:Scene, name:str = None, **kwds:SceneTaskKwargs ):
     def addTask( callable ):
-        scene.addTask(callable, **kwds)
+        scene.addTask(callable, name = name or callable.__name__, **kwds)
         
     return addTask

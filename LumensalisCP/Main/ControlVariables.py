@@ -1,3 +1,7 @@
+
+from LumensalisCP.Main.Expressions import InputSource, OutputTarget, EvaluationContext
+from LumensalisCP.CPTyping  import *
+
 class ControlVariable(object):
     def __init__(self, name:str, description:str="", kind:str=None, startingValue=None,
                  min = None, max = None ):
@@ -36,3 +40,17 @@ class ControlVariable(object):
     
     def move( self, delta ):
         self.set( self._value + delta )
+
+class IntermediateVariable( InputSource, OutputTarget ):
+    def __init__(self, name:str, value:Any = None ):
+        InputSource.__init__(self,name=name)
+        OutputTarget.__init__(self,name=name)
+        self.__varValue = value
+        
+        
+    def getDerivedValue(self, context:EvaluationContext) -> Any:
+        return self.__varValue
+    
+    def set( self, value:Any, context:EvaluationContext ):
+        self.__varValue = value
+    

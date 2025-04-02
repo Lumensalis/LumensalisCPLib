@@ -1,3 +1,5 @@
+from ..Debug import Debuggable
+
 class LocalIdentifiable(object):
     
     __nextId = 1
@@ -14,10 +16,15 @@ class LocalIdentifiable(object):
     localId = property( lambda self: self.__localId )
     
     
-class NamedLocalIdentifiable(LocalIdentifiable):
+class NamedLocalIdentifiable(LocalIdentifiable,Debuggable):
     def __init__( self, name:str=None ):
         assert name is not None
-        self._name = name
-        super().__init__()
+        self.__name = name
+        LocalIdentifiable.__init__(self)
+        Debuggable.__init__(self)
         
-    name = property( lambda self: self._name )
+    @property
+    def name(self) -> str: return self.__name
+    
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.__name}:{self.localId})"

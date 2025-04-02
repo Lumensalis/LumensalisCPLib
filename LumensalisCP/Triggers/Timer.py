@@ -23,12 +23,17 @@ class PeriodicTimerManager( SubManagerBase ):
             self.dbgOut( "update now=%.3f", now )
             for t in timers:
                 now = self.main.newNow
-                if t._nextFire <= now:
-                    priorNf = t._nextFire
-                    t._timerExpired( now, context=context )
-                    self.dbgOutEnabled and self.dbgOut( f"timer {t.name} expired, nf={t._nextFire:0.3f} now={now:.3f} pnf={priorNf:.3f}" )
+                if t.nextFire <= now:
+                    priorNf = t.nextFire
+                    try:
+                        t._timerExpired( now, context=context )
+                    except Exception as inst:
+                        t.SHOW_EXCEPTION( inst, "timer expire exception" )
+                    #self.dbgOutEnabled and 
+                    self.dbgOut( f"timer {t.name} expired, nf={t.nextFire} now={now:.3f} pnf={priorNf}" )
                 else:
-                    self.dbgOutEnabled and self.dbgOut( f"timer {t.name} still waiting, nf={t._nextFire:0.3f}" )
+                    #self.dbgOutEnabled and 
+                    self.dbgOut( f"timer {t.name} still waiting, nf={t.nextFire:0.3f}" )
                                     
             self.__updating = False
             if self.__timerChanges:
@@ -40,7 +45,7 @@ class PeriodicTimerManager( SubManagerBase ):
             self.__timerChanges += 1
         else:
             self.__timerChanges = 0
-            self.__timers = sorted( filter( lambda t: t._nextFire is not None, self.__timers ) )
+            self.__timers = sorted( filter( lambda t: t.nextFire is not None, self.__timers ), key=lambda t: t.nextFire )
 
     def _addTimer( self, timer:"PeriodicTimer" ):
         assert timer not in self.__timers
@@ -64,7 +69,7 @@ class PeriodicTimer( Trigger ):
         super().__init__(name=name)
         self.__interval:TimeInSeconds = interval
         self.__lastFire:TimeInSeconds = 0.0
-        self._nextFire:TimeInSeconds|None = None
+        self.__nextFire:TimeInSeconds|None = None
         self.__oneShot:bool = oneShot
         self.__managerRef = ManagerRef(manager)
 
@@ -72,10 +77,13 @@ class PeriodicTimer( Trigger ):
     def manager(self) -> PeriodicTimerManager: return self.__managerRef()
 
     @property
-    def running(self) -> bool: return self._nextFire is not None
+    def running(self) -> bool: return self.__nextFire is not None
 
     @property
     def lastFire(self) -> TimeInSeconds: return self.__lastFire
+    
+    @property
+    def nextFire(self) -> TimeInSeconds: return self.__nextFire
     
     @property
     def interval(self) -> TimeInSeconds: return self.__interval
@@ -91,29 +99,30 @@ class PeriodicTimer( Trigger ):
     def start(self, interval:float|None =None ):
         """start or restart the time"""
         interval = interval or self.__interval    
+        print( f"start {self.name} when = {self.manager.main.when} interval={interval} _nextFire={self.__nextFire}" )
         next = self.manager.main.when + interval 
-        if self._nextFire is None:
-            self._nextFire = next
+        if self.__nextFire is None:
+            self.__nextFire = next
             self.manager._addTimer(self)
         else:
-            self._nextFire = next
+            self.__nextFire = next
             self.manager._updateTimer(self)
     
     @final
     def stop(self):
-        if self._nextFire is not None:
-            self._nextFire = None
+        if self.__nextFire is not None:
+            self.__nextFire = None
             self.manager._removeTimer( self )
     
     @final
     def restart(self, interval:float|None =None, when:TimeInSeconds|None = None ):
         """restart the timer"""
-        assert self._nextFire is not None
+        assert self.__nextFire is not None
         when = when or self.manager.main.when
         if interval is not None:
             self.__interval = interval
-        self._nextFire = when + self.__interval
-        self.dbgOut and self.dbgOut( "restart at %.3fs i=%.3fs nf=%.3fs", when, self.__interval, self._nextFire)
+        self.__nextFire = when + self.__interval
+        self.dbgOut and self.dbgOut( "restart at %.3fs i=%.3fs nf=%.3fs", when, self.__interval, self.__nextFire)
         #self._nextFire = min( when, self._nextFire + self.__interval )
         self.manager._updateTimer(self)
 
@@ -126,7 +135,7 @@ class PeriodicTimer( Trigger ):
         if self.__oneShot:
             self.stop()
         else:
-            if self._nextFire is not None:
+            if self.__nextFire is not None:
                 self.restart(when=when)
 
 
