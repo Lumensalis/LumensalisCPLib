@@ -2,7 +2,9 @@ from LumensalisCP.CPTyping import *
 from ..Main.Dependents import MainChild
 from ..Main.Expressions import ExpressionTerm, Expression, InputSource, OutputTarget
 from LumensalisCP.common import *
+from LumensalisCP.util.bags import *
 from ..Main.Expressions import EvaluationContext
+from ..Lights.Patterns import Pattern
 
 class Setter(object):
     pass
@@ -14,7 +16,13 @@ class SceneTaskKwargs(TypedDict):
 class SceneTask(object):
     def __init__(self, task:Callable = None, period:float|None = 0.02, name = None ):
         self.task_callback = task
-        self.__name = name or task.__name__
+        if name is None:
+            try:
+                name = task.__name__
+            except:
+                name = repr(task)
+
+        self.__name = name
         self.__period = period
         self.__nextRun = period
         
@@ -54,7 +62,21 @@ class Scene(MainChild):
         
         self.__rules: Mapping[str,SceneRule] = {}
         self.__tasks:List[SceneTask] = []
+        self.__patterns:List[Pattern] = NamedList()
         
+        self.__patternRefreshPeriod = 0.1
+        self.__nextPatternsRefresh = 0
+
+    @property
+    def patterns(self) -> NamedList[Pattern]:
+        return self.__patterns
+    
+    def addPatterns(self, *patterns, patternRefresh:float = None ):
+        if patternRefresh is not None:
+            self.__patternRefreshPeriod = patternRefresh
+        self.__patterns.extend(patterns)
+        
+    
     def addRule(self, target:OutputTarget=None, term:ExpressionTerm=None, name=None ) ->SceneRule:
             assert isinstance( term, ExpressionTerm )
             rule = SceneRule( target=target, term=term, name=name )
@@ -94,6 +116,14 @@ class Scene(MainChild):
                 rule.run( context )
             except Exception as inst:
                 self.SHOW_EXCEPTION( inst, "running rule %s", rule.name  )
+        if self.__nextPatternsRefresh <= context.when:
+            self.__nextPatternsRefresh = context.when +  self.__patternRefreshPeriod
+            for pattern in self.__patterns:
+                try:
+                    pattern.refresh(context)
+                except Exception as inst:
+                    pattern.SHOW_EXCEPTION( inst, "pattern refresh failed in %r", self )
+
 
 
 
@@ -106,6 +136,6 @@ class Scene(MainChild):
     
 def addSceneTask( scene:Scene, name:str = None, **kwds:SceneTaskKwargs ):
     def addTask( callable ):
-        scene.addTask(callable, name = name or callable.__name__, **kwds)
+        scene.addTask(callable, name = name, **kwds)
         
     return addTask

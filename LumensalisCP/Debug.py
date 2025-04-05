@@ -7,16 +7,15 @@ import traceback
 
 class Debuggable( object ):
     
-    
     def __init__(self):
         self.__dbgOutEnabled = False
         
     @property
-    def dbgName(self):
+    def _dbgName(self):
         return getattr(self,'name',None) or self.__class__.__name__ 
     
     def __header( self, kind:str )->str:
-        return "%.3f %s %s : " % (LumensalisCP.Main.Manager.MainManager.theManager.newNow, kind, self.dbgName )
+        return "%.3f %s %s : " % (LumensalisCP.Main.Manager.MainManager.theManager.newNow, kind, self._dbgName )
     
     def __format( self, kind, fmtString:str, args, kwds ):
         try:
@@ -44,7 +43,7 @@ class Debuggable( object ):
         print( f"{inst}\n{''.join(traceback.format_exception(inst))}" )
         
     @property
-    def dbgOutEnabled(self) -> bool: return self.__dbgOutEnabled
+    def enableDbgOut(self) -> bool: return self.__dbgOutEnabled
     
-    @dbgOutEnabled.setter
-    def dbgOutEnabled(self,enabled:bool): self.__dbgOutEnabled = enabled
+    @enableDbgOut.setter
+    def enableDbgOut(self,enabled:bool): self.__dbgOutEnabled = enabled

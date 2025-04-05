@@ -1,5 +1,4 @@
 from LumensalisCP.Main.Manager import MainManager
-
 from LumensalisCP.Main.Terms import *
 from LumensalisCP.Main.Expressions import InputSource, OutputTarget, EvaluationContext
 from LumensalisCP.Scenes.Scene import addSceneTask

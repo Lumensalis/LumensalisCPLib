@@ -43,7 +43,7 @@ class KeepAlive(Debuggable):
             ):
         Debuggable.__init__(self)
         self.castle = castle
-        self.dbgOutEnabled = True
+        self.enableDbgOut = True
         self.__pin = keepAlivePin
         self.__output = digitalio.DigitalInOut( self.__pin )
         self.__output.direction = digitalio.Direction.OUTPUT
@@ -103,24 +103,27 @@ class KeepAlive(Debuggable):
 
 class HarlechCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
     OE_DUTY_CYCLE = 65535
-    OE_PWM_FREQUENCY = 50
+    OE_PWM_FREQUENCY = 500
         
     def __init__(self, *args,
                 name=None, 
                 version:str=None,
                 oePin:str=None,
                 brightness = 1.0,
-                refreshRate:float = 50.0,
+                ledRefreshRate:float = 50.0,
+                refreshRate=0.001,
                 addKeepAlive = True,
                 keepAlivePin=None,
                 keepAliveCycle:float=None,
                 keepAlivePulse:float=None,
+                baudrate=1000000,
+                oeBrightness=True, 
                  **kwds ):
         
         
         
         name = name or "Harlech"
-        super().__init__( *args, name=name, **kwds )
+        super().__init__( *args, name=name, refreshRate=refreshRate, **kwds )
         c = self.config
         c.updateDefaultOptions( )
         
@@ -147,16 +150,16 @@ class HarlechCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
             oePin = getattr(self,oePin)
 
 
-        
         self.__latch_pin = digitalio.DigitalInOut(HPC_LATCH.actualPin)
         
         self.__spi = busio.SPI(clock=HPC_CLOCK.actualPin, MOSI=HPC_DATA.actualPin )
         
-        self._device = spi_device.SPIDevice(self.__spi, self.__latch_pin, baudrate=1000000 )
+        self._device = spi_device.SPIDevice(self.__spi, self.__latch_pin, baudrate=baudrate )
         
         self._gpio = bytearray(1)
+        self._shiftWrites = 0
         
-        self.__refreshRate = float(refreshRate)
+        self.__ledRefreshRate = None if ledRefreshRate is None else float(ledRefreshRate)
         
   
         def setOutput( pinProxy, value ):
@@ -164,13 +167,18 @@ class HarlechCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
             output.switch_to_output(value=value)
             output.value = value
         
-        #self._oe =  setOutput( self.D3, True )#pwmio.PWMOut(self.D3.actualPin,frequency=5000,duty_cycle=65535)
-        #self._oe2 = setOutput( self.D7, True ) # pwmio.PWMOut(self.D7.actualPin,frequency=5000,duty_cycle=65535)
-    
+        self.__oeBrightnessEnabled = oeBrightness
+
         def addOePWM( pin ):
             pin = getattr( pin, 'actualPin', pin )
-            #return analogio.AnalogOut(pin)
-            return pwmio.PWMOut(pin=pin, frequency= HarlechCastle.OE_PWM_FREQUENCY,duty_cycle=0 ) # HarlechCastle.OE_DUTY_CYCLE)
+            
+            if self.__oeBrightnessEnabled:
+                #return analogio.AnalogOut(pin)
+                return pwmio.PWMOut(pin=pin, frequency= HarlechCastle.OE_PWM_FREQUENCY,duty_cycle=0 ) # HarlechCastle.OE_DUTY_CYCLE)
+            output =  digitalio.DigitalInOut(pin)
+            output.switch_to_output(value=1)
+            output.value = 1
+            return output
         
         self.__oePWMS:List[pwmio.PWMOut] = []
         if oePin:
@@ -184,10 +192,12 @@ class HarlechCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
         
         #self._keepAlive = setOutput( KEEP_ALIVE, False )
 
-        self.main.addTask(self._update)
+        #self.main.addTask(self._update)
         
         self.brightness = brightness
-        
+
+
+
     @property
     def values(self): return self._values
 
@@ -208,14 +218,22 @@ class HarlechCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
         
         self._oeDutyCycle = duty_cycle
         
-        for oe in self.__oePWMS:
-            oe.duty_cycle = duty_cycle
-            #oe.value = duty_cycle
-    
-    def _update(self):
-        #lc = self.__lastUpdate
-        pwm_position = divmod(self.main.when, 1/self.__refreshRate)[1]*self.__refreshRate
+        if self.__oeBrightnessEnabled:
+            for oe in self.__oePWMS:
+                oe.duty_cycle = duty_cycle
+                #oe.value = duty_cycle
         
+        
+    @property
+    def oePWMS(self): return iter( self.__oePWMS )
+    
+    def doRefresh(self, context):
+        #lc = self.__lastUpdate
+        if self.__ledRefreshRate is not None:
+            pwm_position = divmod(self.main.when, 1/self.__ledRefreshRate)[1]*self.__ledRefreshRate
+        else:
+            pwm_position = 0.1
+                    
         shift_v = 0
         for i in range(8):
             if self._values[i] > pwm_position:
@@ -229,6 +247,7 @@ class HarlechCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
             with self._device as spi:
                 # pylint: disable=no-member
                 spi.write(self._gpio)
+            self._shiftWrites += 1
         except Exception as inst:
             print( f"harlech update exception {inst}, shift_v={shift_v} pwm_position={pwm_position}")
             

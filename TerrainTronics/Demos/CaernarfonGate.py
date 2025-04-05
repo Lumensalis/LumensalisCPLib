@@ -1,35 +1,29 @@
 from TerrainTronics.Demos.DemoBase import *
-
+from LumensalisCP.Lights.Patterns import *
 
 class CaernarfonGateDemo( DemoBase ):
     def setup(self):
-        main = self.main
 
-        # main.timers.dbgOutEnabled = True
-        
-        #############################################################################
+        main = self.main
+        # main.timers.enableDbgOut = True
+
+        #####################################################################
         # Add a CaernarfonCastle
         NEO_PIXEL_COUNT = 40
         self.caernarfon = caernarfon = main.addCaernarfon( neoPixelCount=NEO_PIXEL_COUNT )
 
+        #####################################################################
         # add audio
-        
         #sampleExt, audioKwds = "2232.mp3", dict(useMixer = True, mixer_sample_rate = 22050, mixer_signed = True)
         sampleExt, audioKwds = "22u8.wav", dict(useMixer = True, mixer_sample_rate = 22050, mixer_signed = False, mixer_bits_per_sample=8)
         
-        audio = main.addI2SAudio( bit_clock=board.IO14,word_select= board.IO13, data=board.IO10,
-                            #useMixer = True, mixer_sample_rate = 44100, mixer_signed = True
-                            #useMixer = True, mixer_sample_rate = 22050, mixer_signed = True
-                            **audioKwds
-                        )
-        audio.dbgOutEnabled = True
+        audio = main.addI2SAudio( bit_clock=board.IO14,word_select= board.IO13, data=board.IO10, **audioKwds )
+        audio.enableDbgOut = True
         audio.volume = 0.3
-        
 
-        warningSiren, nukeSiren = audio.readSamples(
+        warningSiren = nukeSiren = audio.readSamples(
                     "/assets/audio/WarningSiren" + sampleExt,
                     #"/assets/audio/NuclearSiren" + sampleExt,
-                    "/assets/audio/WarningSiren" + sampleExt,
             )
         doorCloseSample, engineSample, grindingSample = audio.readSamples(
                     "/assets/audio/HeavyClose" + sampleExt,
@@ -37,17 +31,6 @@ class CaernarfonGateDemo( DemoBase ):
                     "/assets/audio/grinding" + sampleExt,
                 )
 
-        if 0:        
-            grindingSample, boing = audio.readSamples(
-                    "/assets/audio/grinding" + sampleExt,
-                    "/assets/audio/boing_spring.wav",
-                )
-       
-
-        
-        def stopSounds():
-            audio.stop()
-        
         #####################################################################
         # gate movement
         gateClosedPosition = 15
@@ -83,11 +66,10 @@ class CaernarfonGateDemo( DemoBase ):
             doorDrive.moveTo(gateOpenPosition, speed=30)
             engineSample.play(loop=True, level=0.3)
 
-
         #####################################################################
         #  gate guard detection
         magSensor = main.adafruitFactory.addTLV493D(name="MagCheck")
-        #magSensor.dbgOutEnabled = True
+        #magSensor.enableDbgOut = True
 
         onGuardDistance = 550
         leftDutyDistance = 250
@@ -103,7 +85,7 @@ class CaernarfonGateDemo( DemoBase ):
       
 
         ranger = main.i2cFactory.addVL530lx()
-        # ranger.dbgOutEnabled = True
+        # ranger.enableDbgOut = True
 
 
         #####################################################################
@@ -136,6 +118,12 @@ class CaernarfonGateDemo( DemoBase ):
         circle8 = caernarfon.pixels.nextNLights(8)
         strip = caernarfon.pixels.nextNLights(10)
         
+        act1.addPatterns(
+            Blink(circle8, onValue=0x800000,offTime=0.25),
+            Rainbow(strip, name="rb", spread=2)
+        )
+        
+        
         gateFrontRange = ranger.range
         foo = main.addIntermediateVariable("foo", 0)
         
@@ -147,16 +135,20 @@ class CaernarfonGateDemo( DemoBase ):
             ).otherwise(
                 TERM( 50 )
             )
-        
+
         
         @addSceneTask( act1, period = 0.01 )
         def rainbow():
             #A =  (main.seconds + (gateFrontRange.value or 0)) / COLOR_CYCLE
             A =  (main.seconds + foo.value) / COLOR_CYCLE
+            
+            
+            act1.patterns.rb.spread = 1 + (main.when%10.0)/3.0
             # set each pixel
-            for px in range(strip.lightCount):
-                strip[px] = main.wheel1( A + (px * pxStep) )
+            #for px in range(strip.lightCount):
+            #    strip[px] = main.wheel1( A + (px * pxStep) )
                 
+            #blinker.refresh( main.latestContext )
             caernarfon.pixels.refresh()
         
         
@@ -195,14 +187,14 @@ class CaernarfonGateDemo( DemoBase ):
             
 
         capTouch = main.adafruitFactory.addMPR121()
-        capTouch.dbgOutEnabled = True
+        capTouch.enableDbgOut = True
         ct0 = capTouch.addInput( 0, "ct0" )
         ct2 = capTouch.addInput( 2, "ct2" )
         ct10 = capTouch.addInput( 10, "ct10" )
-        ct10.dbgOutEnabled = True
+        ct10.enableDbgOut = True
         
         touched = Trigger("touched")
-        touched.dbgOutEnabled = True
+        touched.enableDbgOut = True
         
         @touched.addActionDef()
         def onTouched(**kwds):

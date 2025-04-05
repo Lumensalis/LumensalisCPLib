@@ -11,10 +11,10 @@ class HarlechSimpleTestDemo( DemoBase ):
         self.harlech = harlech = self.main.addHarlech( )
         scene = self.main.addScene( "simpleBlink" )
 
-        harlech.keepAlive.dbgOutEnabled = True
-        #harlech.keepAlive._keepAliveTimer.dbgOutEnabled = True
+        harlech.keepAlive.enableDbgOut = True
+        #harlech.keepAlive._keepAliveTimer.enableDbgOut = True
         harlech.keepAlive._keepAliveTimer.dbgOut( "Can You Hear Me?" )
-        print( f"or not? {harlech.keepAlive.dbgOutEnabled}")
+        print( f"or not? {harlech.keepAlive.enableDbgOut}")
         
         leds = []
         for ledNumber in range(LED_COUNT):

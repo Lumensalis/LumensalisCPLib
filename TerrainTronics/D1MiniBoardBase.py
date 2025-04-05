@@ -2,6 +2,8 @@
 import busio
 from LumensalisCP.Controllers.ConfigurableBase import ControllerConfigurableChildBase
 from LumensalisCP.Main.Expressions import InputSource, OutputTarget, EvaluationContext
+from LumensalisCP.Main.Updates import Refreshable, UpdateContext
+
 from digitalio import DigitalInOut, Direction
 from analogio import AnalogIn
 import microcontroller
@@ -72,9 +74,11 @@ class D1MiniPinProxy(object):
     def addOutput( self, name:str ) -> DigitalOutputPinProxy:
         return DigitalOutputPinProxy( name=name, pin=self )
     
-class D1MiniBoardBase(ControllerConfigurableChildBase):
-    def __init__(self, **kwds ):
+class D1MiniBoardBase(ControllerConfigurableChildBase,Refreshable):
+    def __init__(self, refreshRate=0.1, **kwds ):
         super().__init__( **kwds )
+        Refreshable.__init__(self,refreshRate=refreshRate)
+        
         print( f"D1MiniBoardBase.__init__( {kwds})")
         assert self.main is not None
         

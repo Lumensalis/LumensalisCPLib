@@ -2,7 +2,11 @@ from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
 from LumensalisCP.Main.Expressions import InputSource, Expression, ExpressionTerm, UpdateContext
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
-import adafruit_itertools
+import rainbowio
+
+def wheel255( val:float ): return rainbowio.colorwheel(val)
+
+def wheel1( val:float ): return rainbowio.colorwheel(val*255.0)
 
 AnyLightValue = Any
 
@@ -29,6 +33,13 @@ class LightValueNeoRGB(object):
             return value
         if isinstance( value, LightValueBase):
             return value.asNeoPixelInt
+        if type(value) is float:
+            b255 = max(0,min(255,int(value * 255)))
+            return b255 + (b255 << 8) + (b255 << 16)
+        if type is True:
+            return 0xFFFFFF
+        if type is False:
+            return 0
         raise NotImplemented
     
     def __init__(self,  value:AnyLightValue ):

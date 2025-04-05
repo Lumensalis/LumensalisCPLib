@@ -11,7 +11,7 @@ class HarlechLogicDemo( DemoBase ):
         
         #############################################################################
         # Add a HarlechCastle
-        self.harlech = harlech = main.addHarlech( refreshRate=420 )
+        self.harlech = harlech = main.addHarlech(  )
 
         act1 = main.addScene( "firstAct" )
 
@@ -117,9 +117,9 @@ class HarlechLogicDemo( DemoBase ):
                 # print( f"{value} for {led['led']}")
 
 
-        @addSceneTask( act1, period = None ) # 0.001 )
-        def hu():
-            harlech._update()
+        #@addSceneTask( act1, period = None ) # 0.001 )
+        #def hu():
+         #   harlech._update()
             
                     
         # @addSceneTask( act1, period = 1 )

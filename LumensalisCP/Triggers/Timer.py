@@ -29,10 +29,10 @@ class PeriodicTimerManager( SubManagerBase ):
                         t._timerExpired( now, context=context )
                     except Exception as inst:
                         t.SHOW_EXCEPTION( inst, "timer expire exception" )
-                    #self.dbgOutEnabled and 
+                    #self.enableDbgOut and 
                     self.dbgOut( f"timer {t.name} expired, nf={t.nextFire} now={now:.3f} pnf={priorNf}" )
                 else:
-                    #self.dbgOutEnabled and 
+                    #self.enableDbgOut and 
                     self.dbgOut( f"timer {t.name} still waiting, nf={t.nextFire:0.3f}" )
                                     
             self.__updating = False

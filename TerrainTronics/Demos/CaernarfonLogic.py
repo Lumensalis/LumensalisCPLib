@@ -18,7 +18,7 @@ class CaernarfonLogicDemo( DemoBase ):
         siren = audio.readSample("/assets/audio/NuclearSiren.mp3")
         boing = audio.readSample("/assets/audio/boing_spring.wav")
        
-        # main.timers.dbgOutEnabled = True
+        # main.timers.enableDbgOut = True
         
         #############################################################################
         # Add a CaernarfonCastle
@@ -53,7 +53,7 @@ class CaernarfonLogicDemo( DemoBase ):
             print( f"uh oh, guardPresent : {magSensor.distance.value}")
             doorDown()
         
-        #guardPresent._onTrueExpression.dbgOutEnabled = True
+        #guardPresent._onTrueExpression.enableDbgOut = True
         
         @fireOnTrue( rising( magSensor.distance < 250, reset = magSensor.distance > 400) )
         def guardLeft():

@@ -90,6 +90,10 @@ class MainManager(ConfigurableBase, Debuggable):
     
     @property
     def timers(self) -> PeriodicTimerManager: return self._timers
+    
+    @property
+    def latestContext(self)->EvaluationContext: return  self.__evContext
+
 
     def callLater( self, task ):
         self.__deferredTasks.append( task )
@@ -221,6 +225,9 @@ class MainManager(ConfigurableBase, Debuggable):
                     target.updateTarget(context)
                 for task in self._tasks:
                     task()
+                for board in self._boards:
+                    board.refresh(context)
+                    
                 if self._printStatCycles and self.__cycle % self._printStatCycles == 0:
                     self.infoOut( f"cycle {self.__cycle} at {self._when} with {len(self._tasks)} tasks, gmf={gc.mem_free()} cd={self.cycleDuration}" )
                 #self._scenes.run( context )

@@ -2,7 +2,7 @@ from ..Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.CPTyping import Any, Callable, Generator, List, Mapping, Tuple
 from LumensalisCP.CPTyping  import override
 from LumensalisCP.common import *
-from .Updates import UpdateContext
+from .Updates import UpdateContext, RefreshCycle
 
 class EvaluationContext(UpdateContext):
     def __init__( self, *args, **kwds ):
@@ -287,7 +287,7 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm, Debuggable):
         if val == self.__latestValue:
             return False
         
-        self.dbgOutEnabled and self.dbgOut( f"value changing on {self.name} from {self.__latestValue} to {val} on update {context.updateIndex}" )
+        self.enableDbgOut and self.dbgOut( f"value changing on {self.name} from {self.__latestValue} to {val} on update {context.updateIndex}" )
         self.__latestValue = val
         self.__latestChangeIndex = context.updateIndex
         context.addChangedSource( self )
