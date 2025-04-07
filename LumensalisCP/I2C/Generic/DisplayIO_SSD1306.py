@@ -22,5 +22,7 @@ class DisplayIO_SSD1306( EZI2cDisplayIoBase, SSD1306_DIO ):
             self.canvas.append(self.bg_sprite)
         
     def _initDisplayInstance(self):
-        # print(f"DisplayIO_SSD1306  _initDisplayInstance...")
-        SSD1306_DIO.__init__( self, self.displayBus, width=self.displayWidth, height=self.displayHeight )
+        kwargs = dict( width=self.displayWidth, height=self.displayHeight )
+        print(f"DisplayIO_SSD1306  _initDisplayInstance... {kwargs}")
+        
+        SSD1306_DIO.__init__( self, self.displayBus, **kwargs )

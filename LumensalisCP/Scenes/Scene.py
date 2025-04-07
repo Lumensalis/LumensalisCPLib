@@ -1,6 +1,6 @@
 from LumensalisCP.CPTyping import *
 from ..Main.Dependents import MainChild
-from ..Main.Expressions import ExpressionTerm, Expression, InputSource, NamedOutputTarget
+from ..Main.Expressions import ExpressionTerm, Expression, InputSource, OutputTarget
 from LumensalisCP.common import *
 from LumensalisCP.util.bags import *
 from ..Main.Expressions import EvaluationContext
@@ -22,7 +22,7 @@ class SceneTask(object):
             except:
                 name = repr(task)
 
-        self.__name = name
+        self.__name = name or task.__name__
         self.__period = period
         self.__nextRun = period
         
@@ -38,10 +38,10 @@ class SceneTask(object):
                 return
             self.__nextRun = scene.main.when + self.__period
         
-        self.task_callback()
+        self.task_callback(context=context)
 
 class SceneRule( Expression ):
-    def __init__( self, target:NamedOutputTarget=None, term:ExpressionTerm=None, name=None ):
+    def __init__( self, target:OutputTarget=None, term:ExpressionTerm=None, name=None ):
         super().__init__(term)
         self.target = target
         self.__name = name or f"set {target.name}"
@@ -77,13 +77,13 @@ class Scene(MainChild):
         self.__patterns.extend(patterns)
         
     
-    def addRule(self, target:NamedOutputTarget=None, term:ExpressionTerm=None, name=None ) ->SceneRule:
+    def addRule(self, target:OutputTarget=None, term:ExpressionTerm=None, name=None ) ->SceneRule:
             assert isinstance( term, ExpressionTerm )
             rule = SceneRule( target=target, term=term, name=name )
             dictAddUnique( self.__rules, target.name, rule )
             return rule
         
-    def findOutput( self, tag:str ) -> NamedOutputTarget:
+    def findOutput( self, tag:str ) -> OutputTarget:
         raise NotImplemented
                     
     def addRules(self, **kwargs:Mapping[str,ExpressionTerm] ):
@@ -104,11 +104,19 @@ class Scene(MainChild):
         return task
     
     
+    def addTaskDef( self, name:str = None, **kwds:SceneTaskKwargs  ) -> SceneTask:
+
+        def addTask( callable ):
+            self.addTask(callable, name = name or callable.__name__, **kwds)
+            return callable
+        
+        return addTask
+    
     def runTasks(self, context:EvaluationContext):
         if 0: print( f"scene {self.name} run tasks ({len(self.__tasks)} tasks, {len(self.__rules)} rules) on update {context.updateIndex}..." )
         for task in self.__tasks:
             try:
-                task.run( self, context )
+                task.run( self, context=context )
             except Exception as inst:
                 self.SHOW_EXCEPTION(  inst, "running task %s", task.name )
         for tag, rule in self.__rules.items():
@@ -127,12 +135,6 @@ class Scene(MainChild):
 
 
 
-"""def addTaskDef( self, name:str = None, **kwds:SceneTaskKwargs  ) -> SceneTask:
-
-        def addTask( callable ):
-            scene.addTask(callable, name = name or callable.__name__, **kwds)
-        return task
-        """
     
 def addSceneTask( scene:Scene, name:str = None, **kwds:SceneTaskKwargs ):
     def addTask( callable ):

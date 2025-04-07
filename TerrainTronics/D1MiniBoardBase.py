@@ -96,7 +96,8 @@ class D1MiniBoardBase(ControllerConfigurableChildBase,Refreshable):
         self.D7= D1MiniPinProxy( 'D7', self )
         self.D8= D1MiniPinProxy( 'D8', self )
         self.A0= D1MiniPinProxy( 'A0', self )
-
+        
+        self.main._boards.append(self)
 
     def asPin(self, pin ):
         if not isinstance( pin, microcontroller.Pin ):

@@ -6,18 +6,16 @@ class TerrainTronicsFactory(FactoryBase):
 
     def addCaernarfon( self, config=None, **kwds ):
         from .Caernarfon import CaernarfonCastle
-        castle = CaernarfonCastle( config=config, main=self.main, **kwds )
-        self.main._boards.append(castle)
-        return castle
+        return CaernarfonCastle( config=config, main=self.main, **kwds )
     
     def addHarlech( self, config=None, **kwds ):
         from .Harlech import HarlechCastle
-        castle = HarlechCastle( config=config, main=self.main, **kwds )
-        self.main._boards.append(castle)
-        return castle
+        return HarlechCastle( config=config, main=self.main, **kwds )
     
     def addCilgerran( self, config=None, **kwds ):
         from .Cilgerran import CilgerranCastle
-        castle = CilgerranCastle( config=config, main=self.main, **kwds )
-        self.main._boards.append(castle)
-        return castle
+        return CilgerranCastle( config=config, main=self.main, **kwds )
+
+    def addCaerphilly( self, config=None, **kwds ):
+        from .Caerphilly import CaerphillyCastle
+        return CaerphillyCastle( config=config, main=self.main, **kwds )
