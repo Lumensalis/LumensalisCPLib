@@ -2,7 +2,7 @@ from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
 import board, busio
 import LumensalisCP.Main.Manager
-from LumensalisCP.Main.Expressions import InputSource, OutputTarget
+from LumensalisCP.Main.Expressions import InputSource, NamedOutputTarget
 from LumensalisCP.Main.Updates import UpdateContext
 #import weakref
 

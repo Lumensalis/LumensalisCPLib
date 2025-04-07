@@ -1,6 +1,6 @@
 import adafruit_motor.servo
 import pwmio
-from LumensalisCP.Main.Expressions import InputSource, OutputTarget, EvaluationContext, UpdateContext
+from LumensalisCP.Main.Expressions import InputSource, NamedOutputTarget, EvaluationContext, UpdateContext
 from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.common import *
 
@@ -10,7 +10,7 @@ import math
 
 class LocalServo( 
                       #adafruit_motor.servo.Servo,
-                      OutputTarget ):
+                      NamedOutputTarget ):
     def __init__(self, pwm:pwmio.PWMOut=None, name:str=None, 
                  movePeriod:TimeInSeconds = 0.05,
                  moveSpeed:DegreesPerSecond = 60.0,
@@ -19,7 +19,7 @@ class LocalServo(
                  main:MainManager = None,
                  **kwds ):
         #adafruit_motor.servo.Servo.__init__(self, pwm, **kwds)
-        OutputTarget.__init__(self, name=name)
+        NamedOutputTarget.__init__(self, name=name)
 
         self.__servo = adafruit_motor.servo.Servo( pwm, **kwds)
         self.__moveTimer = PeriodicTimer( movePeriod, manager=main.timers, name=f"{self.name}_timer" )

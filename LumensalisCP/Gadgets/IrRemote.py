@@ -1,7 +1,7 @@
 
 import pulseio, adafruit_irremote
 
-from LumensalisCP.Main.Expressions import InputSource, OutputTarget, EvaluationContext, UpdateContext
+from LumensalisCP.Main.Expressions import InputSource, NamedOutputTarget, EvaluationContext, UpdateContext
 from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.common import *
 

@@ -4,6 +4,8 @@ TimeInSeconds = float
 DegreesPerSecond = float
 Degrees = float
 ZeroToOne = float
+PlusMinusOne = float
+Volts = float
 
 def dictAddUnique( d:Mapping[str,Any], key:str, value:Any ) -> None:
     if key in d:
@@ -35,3 +37,4 @@ def ensure( condition:bool, fmtStr:str|None = None, *args:Any ):
         if fmtStr is None:
             raise EnsureException( "ensure failed" )
         raise EnsureException( safeFmt( fmtStr, *args ) )
+

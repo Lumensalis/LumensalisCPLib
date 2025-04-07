@@ -1,6 +1,6 @@
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
-from LumensalisCP.Main.Expressions import InputSource, Expression, ExpressionTerm, UpdateContext
+from LumensalisCP.Main.Expressions import OutputTarget, UpdateContext
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 import rainbowio
 
@@ -135,7 +135,7 @@ class LightSourceBase(LightGroupListBase):
 
     def startOfNextN(self, count:int ):
         rv = self.__nextGroupStartIndex 
-        ensure( self.__nextGroupStartIndex + count  < self.lightCount, "not enough lights remaining" )
+        ensure( self.__nextGroupStartIndex + count  <= self.lightCount, "not enough lights remaining" )
         self.__nextGroupStartIndex += count
         return rv
     
@@ -148,9 +148,10 @@ class LightSourceBase(LightGroupListBase):
     
 
 #############################################################################
-class LightBase(object):
+class LightBase(OutputTarget):
     
-    def __init__(self, source:LightSourceBase=None, index:int = 0):
+    def __init__(self, source:LightSourceBase=None, index:int = 0, name:str|None = None):
+        super().__init__(name=name)
         assert source is not None
         self.__source:LightSourceBase = source
         self.__sourceIndex:int = index
@@ -164,6 +165,10 @@ class LightBase(object):
     def setValue(self,value:AnyLightValue, context: UpdateContext = None ):
         raise NotImplemented
 
+
+class SingleColorLightBase(LightBase):
+    """ for regular single color LEDs"""
+    pass
 
 class RGBLightBase(LightBase):
     pass

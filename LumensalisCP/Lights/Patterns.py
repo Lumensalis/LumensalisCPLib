@@ -189,13 +189,13 @@ class CylonPatternStep(PatternGeneratorSharedStep):
         
     
     def startValue( self, index, context:UpdateContext ):
-        return self._startValue if index == self._index else self._endValue
+        return context.valueOf( self._startValue if index == self._index else self._endValue )
     
     def endValue( self, index, context:UpdateContext ):
-        return self._startValue if index == self._index else self._endValue
+        return context.valueOf( self._startValue if index == self._index else self._endValue )
 
     def intermediateValue( self, index, progression:ZeroToOne, context:UpdateContext ):
-        if index == self._index: return self.startValue
+        if index == self._index: return self.startValue(index,context)
         iOffset = self._index - index if self._up else index - self._index
         if iOffset > 0:
             return self._startValue + (self._endValue - self._startValue) * (progression/iOffset)

@@ -64,11 +64,18 @@ class MainManager(ConfigurableBase, Debuggable):
         self._timers = PeriodicTimerManager(main=self)
 
         self._scenes = SceneManager(main=self)
+        self.__TerrainTronics = None
         self.adafruitFactory =  LumensalisCP.I2C.Adafruit.AdafruitI2CFactory.AdafruitFactory(main=self)
         self.i2cFactory =  LumensalisCP.I2C.I2CFactory.I2CFactory(main=self)
         
         print( f"MainManager options = {self.config.options}" )
     
+    @property
+    def TerrainTronics(self):
+        if self.__TerrainTronics is None:
+            from TerrainTronics.Factory import TerrainTronicsFactory
+            self.__TerrainTronics = TerrainTronicsFactory( main = self )
+        return self.__TerrainTronics
     @property
     def when(self) -> TimeInSeconds:
         return self._when 

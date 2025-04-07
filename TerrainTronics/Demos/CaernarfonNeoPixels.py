@@ -11,25 +11,25 @@ class CaernarfonNeoPixelsDemo( DemoBase ):
         #############################################################################
         # Add a CaernarfonCastle
         NEO_PIXEL_COUNT = 40
-        self.caernarfon = caernarfon = main.addCaernarfon( neoPixelCount=NEO_PIXEL_COUNT )
 
-        pixels = caernarfon.pixels
-        pixels2 = caernarfon.initNeoPixOnServo( 2, 23 )
+        self.caernarfon = caernarfon = main.addCaernarfon( neoPixelCount=NEO_PIXEL_COUNT )
+        pixels2 = caernarfon.initNeoPixOnSCaernarfon ervo( 2, 23 )
         
+        pixels = caernarfon.pixels
         
         circle8A =  pixels.nextNLights(8)
-        stickA =  pixels.nextNLights(8)
+        stickA =    pixels.nextNLights(8)
         stripA =    pixels.nextNLights( 5 )
-        stickB =  pixels2.nextNLights(8)
-        stickB2 =  pixels2.nextNLights(8)
-        stripB =  pixels2.nextNLights(6)
-        
-        
+        stickB =    pixels2.nextNLights(8)
+        stickB2 =   pixels2.nextNLights(8)
+        stripB =    pixels2.nextNLights(6)
+
         act1 = main.addScene( "firstAct" )
 
+        cyp = Cylon(stickB, sweepTime=0.7, onValue=0xFF0000)
         act1.addPatterns(
             Blink(circle8A, onValue=0x800000,offTime=0.25),
-            Cylon(stickB, sweepTime=0.7, onValue=0xFF0000),
+            cyp,
             Rainbow(stickA, name="rb2", spread=3, colorCycle=3.2),
             Rainbow(stickB2, colorCycle=0.7),
             Rainbow(stripB, colorCycle=0.7),
@@ -62,7 +62,31 @@ class CaernarfonNeoPixelsDemo( DemoBase ):
             
         #####################################################################
 
-
+        try:
+            ranger = main.i2cFactory.addVL530lx()
+            rangeDump = dict( rMin = 99999, rMax = 0, rMaxB = 1, rMaxBCap=2192, rCount = 0 )
+            @addSceneTask( act1, period = 0.1 )
+            def updateCylonColor():
+                context = main.latestContext
+                range = ranger.range.getValue(context=context) 
+                showDump = ((rangeDump['rCount'] % 10) == 0)
+                rangeDump['rCount'] += 1
+                if range > rangeDump['rMax']: 
+                    rangeDump['rMax'] = range
+                    showDump = True
+                if range > rangeDump['rMaxB'] and range < rangeDump['rMaxBCap']: 
+                    rangeDump['rMaxB'] = range
+                    showDump = True
+                if range < rangeDump['rMin']: 
+                    rangeDump['rMin'] = range
+                    showDump = True
+                    
+                cyp.onValue = wheel1( range / rangeDump['rMaxB'] )
+                if showDump:
+                    print( f"range = {range}, {rangeDump}")
+                
+        except Exception as inst:
+            caernarfon.SHOW_EXCEPTION( inst, "could not setup ranger")
         
         capTouch = main.adafruitFactory.addMPR121()
         touchy = capTouch.addInput( 0, "touchy" )

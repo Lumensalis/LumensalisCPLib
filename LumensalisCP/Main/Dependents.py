@@ -18,6 +18,12 @@ class MainChild( NamedLocalIdentifiable):
     @property
     def main(self): return self.__main
 
+class FactoryBase( object ):
+    def __init__(self, main:"LumensalisCP.Main.Manager.MainManager"):
+        self.__main = main
+        
+    @property 
+    def main(self): return self.__main
 
 class ManagerBase(object):
     

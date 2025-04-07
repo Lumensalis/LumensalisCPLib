@@ -1,5 +1,5 @@
 
-from LumensalisCP.Main.Expressions import InputSource, OutputTarget, EvaluationContext
+from LumensalisCP.Main.Expressions import InputSource, NamedOutputTarget, EvaluationContext
 from LumensalisCP.CPTyping  import *
 
 class ControlVariable(object):
@@ -41,10 +41,10 @@ class ControlVariable(object):
     def move( self, delta ):
         self.set( self._value + delta )
 
-class IntermediateVariable( InputSource, OutputTarget ):
+class IntermediateVariable( InputSource, NamedOutputTarget ):
     def __init__(self, name:str, value:Any = None ):
         InputSource.__init__(self,name=name)
-        OutputTarget.__init__(self,name=name)
+        NamedOutputTarget.__init__(self,name=name)
         self.__varValue = value
         
         

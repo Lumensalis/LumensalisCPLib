@@ -1,7 +1,7 @@
 
 import busio
 from LumensalisCP.Controllers.ConfigurableBase import ControllerConfigurableChildBase
-from LumensalisCP.Main.Expressions import InputSource, OutputTarget, EvaluationContext
+from LumensalisCP.Main.Expressions import InputSource, NamedOutputTarget, EvaluationContext
 from LumensalisCP.Main.Updates import Refreshable, UpdateContext
 
 from digitalio import DigitalInOut, Direction
@@ -40,9 +40,9 @@ class DigitalInputPinProxy( InputSource, DigitalPinHolder ):
     def getDerivedValue(self, context:EvaluationContext) -> Any:
         return self.pin.value
         
-class DigitalOutputPinProxy( OutputTarget, DigitalPinHolder ):
+class DigitalOutputPinProxy( NamedOutputTarget, DigitalPinHolder ):
     def __init__(self, name:str, pin:"D1MiniPinProxy" ):
-        OutputTarget.__init__(self, name=name)
+        NamedOutputTarget.__init__(self, name=name)
         DigitalPinHolder.__init__(self, pin=pin)
         self.pin.direction = Direction.OUTPUT
         

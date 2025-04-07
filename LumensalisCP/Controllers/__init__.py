@@ -127,3 +127,5 @@ configs = {
         
     
 }
+
+configs['WemosS2Mini'] = configs['lolin_s2_mini']

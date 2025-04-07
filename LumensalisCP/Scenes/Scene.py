@@ -1,6 +1,6 @@
 from LumensalisCP.CPTyping import *
 from ..Main.Dependents import MainChild
-from ..Main.Expressions import ExpressionTerm, Expression, InputSource, OutputTarget
+from ..Main.Expressions import ExpressionTerm, Expression, InputSource, NamedOutputTarget
 from LumensalisCP.common import *
 from LumensalisCP.util.bags import *
 from ..Main.Expressions import EvaluationContext
@@ -41,7 +41,7 @@ class SceneTask(object):
         self.task_callback()
 
 class SceneRule( Expression ):
-    def __init__( self, target:OutputTarget=None, term:ExpressionTerm=None, name=None ):
+    def __init__( self, target:NamedOutputTarget=None, term:ExpressionTerm=None, name=None ):
         super().__init__(term)
         self.target = target
         self.__name = name or f"set {target.name}"
@@ -77,13 +77,13 @@ class Scene(MainChild):
         self.__patterns.extend(patterns)
         
     
-    def addRule(self, target:OutputTarget=None, term:ExpressionTerm=None, name=None ) ->SceneRule:
+    def addRule(self, target:NamedOutputTarget=None, term:ExpressionTerm=None, name=None ) ->SceneRule:
             assert isinstance( term, ExpressionTerm )
             rule = SceneRule( target=target, term=term, name=name )
             dictAddUnique( self.__rules, target.name, rule )
             return rule
         
-    def findOutput( self, tag:str ) -> OutputTarget:
+    def findOutput( self, tag:str ) -> NamedOutputTarget:
         raise NotImplemented
                     
     def addRules(self, **kwargs:Mapping[str,ExpressionTerm] ):

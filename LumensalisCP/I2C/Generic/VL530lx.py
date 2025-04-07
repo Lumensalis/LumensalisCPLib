@@ -27,9 +27,8 @@ class VL53L0X(I2CTarget):
     
     def __init__(self, *args, updateInterval=0.1, **kwds ):
         I2CTarget.__init__( self, *args, updateInterval=updateInterval, **kwds )
-        
-        self._sensor = adafruit_vl53l0x.VL53L0X(self.i2c, io_timeout_s=1.0)
         self.__readMode = 'startMeasurement'
+        self._sensor = adafruit_vl53l0x.VL53L0X(self.i2c, io_timeout_s=1.0)
         self.__range = VL53L0XInput(target=self,name="range")
 
     @property

@@ -1,7 +1,7 @@
 
 import pwmio
 import TerrainTronics.D1MiniBoardBase
-from LumensalisCP.Main.Expressions import OutputTarget, EvaluationContext
+from LumensalisCP.Main.Expressions import NamedOutputTarget, EvaluationContext
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
 import digitalio, analogio
@@ -10,10 +10,10 @@ from adafruit_bus_device import spi_device
 import busio, math, digitalio
 from LumensalisCP.Triggers.Timer import PeriodicTimer
 
-class HarlechLED(OutputTarget):
+class HarlechLED(NamedOutputTarget):
 
     def __init__(self, name, index, board=None ):
-        OutputTarget.__init__(self, name=name)
+        NamedOutputTarget.__init__(self, name=name)
         print(f'HarlechLED {name} [{index}]')
         self.__board:"HarlechCastle" = board
         self.__index = index
