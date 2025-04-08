@@ -2,6 +2,8 @@ from .LightBase import *
 
 import LumensalisCP.Main.Manager
 
+from random import random as randomZeroToOne
+
 #############################################################################
 
 class Pattern(Debuggable):
@@ -97,7 +99,7 @@ class Rainbow( Pattern ):
     def refresh( self, context:UpdateContext ):
         when = self.offsetWhen( context )
         self.__latestCycleWhen = when
-        A = (when + self.__colorCycleWhenOffset) / context.valueOf( self.colorCycle)
+        A = (when + self.__colorCycleWhenOffset) / context.valueOf(self.colorCycle)
         
         target = self.target
         spread = context.valueOf(self.spread)
@@ -124,7 +126,7 @@ class PatternGeneratorStep(object):
 class PatternGeneratorSharedStep(PatternGeneratorStep):
     def __init__( self, 
                  duration: TimeInSeconds,
-                 startValue: AnyLightValue, 
+                 startValue: AnyLightValue|None =  None, 
                  endValue: AnyLightValue|None =  None, 
                  intermediateRefresh: TimeInSeconds|None = None,
             ):
@@ -212,7 +214,50 @@ class Blink( PatternGenerator ):
     def regenerate(self, context:UpdateContext):
         yield PatternGeneratorSharedStep( self.onTime, self.onValue )
         yield PatternGeneratorSharedStep( self.offTime, self.offValue )
+
+#############################################################################
+
+class MultiLightPatternStep(PatternGeneratorSharedStep):
+    def __init__(self, duration, starts:List[AnyLightValue], ends:List[AnyLightValue], *args, **kwds ):
+        super().__init__(duration=duration, **kwds)
+        self.__starts = starts
+        self.__ends = ends
+    
+    def startValue( self, index, context:UpdateContext ):
+        return context.valueOf( self.__starts[index] )
+    
+    def endValue( self, index, context:UpdateContext ):
+        return context.valueOf( self.__ends[index] )
+
+    def intermediateValue( self, index, progression:ZeroToOne, context:UpdateContext ):
+        return self.startValue(index) + (self.endValue(index) - self.startValue(index)) * progression
         
+    
+class Random( PatternGenerator ):
+    def __init__(self,
+                 *args,
+                 sweepTime:TimeInSeconds = 1.0,
+                 onValue:AnyLightValue = 1.0,
+                 offValue:AnyLightValue = 0.0,
+                 intermediateRefresh:TimeInSeconds = 0.1,
+                 **kwargs
+            ):
+        self.sweepTime = sweepTime
+        self.onValue = onValue
+        self.offValue = offValue
+        self.__movingUp = True
+        self.intermediateRefresh:TimeInSeconds = intermediateRefresh
+        super().__init__(*args,**kwargs)
+
+        
+    def regenerate(self, context:UpdateContext):
+        values = [(randomZeroToOne() >= 0.5) for x in range(self.target.lightCount)]
+        sweepStepTime = self.sweepTime / self.target.lightCount
+        yield MultiLightPatternStep( starts=values, ends=values, duration=self.sweepTime)
+
+
+#############################################################################
+
 #############################################################################
 
 class CylonPatternStep(PatternGeneratorSharedStep):
