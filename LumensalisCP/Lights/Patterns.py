@@ -1,8 +1,13 @@
 from .LightBase import *
 
+import LumensalisCP.Main.Manager
+
 #############################################################################
 
 class Pattern(Debuggable):
+    
+    _theManager:"LumensalisCP.Main.Manager.MainManager" = None
+    
     def __init__(self,  target:LightGroupBase=None, name:str=None, 
                  whenOffset:TimeInSeconds=0.0, startingSpeed:TimeInSeconds=1.0 ):
         self.__name = name or (getattr( target,'name', '') + "-" + self.__class__.__name__)
@@ -39,7 +44,6 @@ class Pattern(Debuggable):
 
     @running.setter
     def running(self, running:bool): self.setRunning(running)
-    
 
     def setSpeed(self, value:TimeInSeconds, context:UpdateContext|None=None ):
         self.__speed = value
@@ -50,7 +54,13 @@ class Pattern(Debuggable):
     def refresh( self, context:UpdateContext ):
         raise NotImplemented
 
-
+    def main(self):
+        if Pattern._theManager is None:
+            Pattern._theManager = LumensalisCP.Main.Manager.MainManager.theManager
+            assert Pattern._theManager is not None
+            
+        return Pattern._theManager
+    
 #############################################################################
 class Rainbow( Pattern ):
     def __init__(self,
@@ -59,22 +69,46 @@ class Rainbow( Pattern ):
                  spread:float = 1,
                  **kwargs
             ):
-        self.colorCycle = colorCycle
+        self.__colorCycle = colorCycle
+        self.__colorCycleWhenOffset = 0
+        self.__latestCycleWhen = 0
         self.spread = spread
         super().__init__(*args,**kwargs)
+
+    @property
+    def colorCycle(self): return self.__colorCycle
+    
+    @colorCycle.setter
+    def colorCycle( self, newCycle ):
+        priorOffset = self.__colorCycleWhenOffset
+        priorCycle = self.__colorCycle
+        newWhen = priorWhen = self.__latestCycleWhen
+        '''
+        A = ((priorWhen+priorOffset) / priorCycle)
+        B = ((newOffset+newWhen) / newCycle)
         
+        ((newOffset+newWhen) / newCycle) = ((priorWhen+priorOffset) / priorCycle) 
+        newOffset+newWhen = ((priorWhen+priorOffset) / priorCycle) * newCycle
+        newOffset = (((priorWhen+priorOffset) / priorCycle) * newCycle) - newWhen
+        '''
+        self.__colorCycleWhenOffset = (((priorWhen+priorOffset) / priorCycle) * newCycle) - newWhen
+        self.__colorCycle = newCycle
+    
     def refresh( self, context:UpdateContext ):
         when = self.offsetWhen( context )
-        A = when  / context.valueOf( self.colorCycle)
+        self.__latestCycleWhen = when
+        A = (when + self.__colorCycleWhenOffset) / context.valueOf( self.colorCycle)
+        
         target = self.target
-        pxStep = 1 / (target.lightCount * context.valueOf(self.spread) )
+        spread = context.valueOf(self.spread)
+        if spread == 0:
+            pxStep = 0
+        else:
+            pxStep = 1 / (target.lightCount * spread )
+            
         # set each pixel
         for px in range(target.lightCount):
             target[px] = wheel1( A + (px * pxStep) )
-            
-        #blinker.refresh( main.latestContext )
-            
-
 
 #############################################################################
 class PatternGeneratorStep(object):
