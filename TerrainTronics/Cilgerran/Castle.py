@@ -9,19 +9,6 @@ from LumensalisCP.Lights.LightBase import *
 
 import LumensalisCP.Main.Expressions
 
-def toZeroToOne( value:Any ) -> ZeroToOne:
-    if type(value) is float: return value
-    if type(value) is bool:
-        return 1.0 if value else 0.0
-    if type(value) is object:
-        if isinstance(value,LumensalisCP.Main.Expressions.InputSource):
-            return float( value.value )
-
-    try:
-        return float(value)
-    except Exception as inst:
-        print( f"toZeroToOne exception {inst} for {value}/{getattr(value,'__name__',None)}" )
-        raise
 
 
 class CilgerranLED( SingleColorLightBase ):
