@@ -1,7 +1,7 @@
 
-import LumensalisCP.Controllers
-from  LumensalisCP.Controllers import ControllerConfig
-from  LumensalisCP.Identity.Local import NamedLocalIdentifiable
+from LumensalisCP.common import *
+from  .Config import ControllerConfig
+from  .Configs.Core import getConfig
 from  LumensalisCP.Main.Dependents import MainChild
 import os, board
 
@@ -14,7 +14,9 @@ class ConfigurableBase(object):
                 config = board.board_id
             
         if type(config) is str:
-            config = LumensalisCP.Controllers.configs[config].copy()
+            configForName = getConfig(config)
+            ensure( configForName is not None, "no configuration exists for %r", config )
+            config = configForName.copy()
         elif config is None:
             config = ControllerConfig()
         

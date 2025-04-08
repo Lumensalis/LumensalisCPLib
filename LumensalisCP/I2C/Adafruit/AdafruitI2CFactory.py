@@ -4,6 +4,7 @@
 from ..I2CFactory import I2CFactory, I2CFactoryAddArgs
 import LumensalisCP.I2C.Adafruit
 from LumensalisCP.common import *
+
 class AdafruitFactory(I2CFactory):
     
     def addQTRotaryEncoder(self, *args, **kwds:I2CFactoryAddArgs ):

@@ -76,6 +76,7 @@ class MainManager(ConfigurableBase, Debuggable):
             from TerrainTronics.Factory import TerrainTronicsFactory
             self.__TerrainTronics = TerrainTronicsFactory( main = self )
         return self.__TerrainTronics
+    
     @property
     def when(self) -> TimeInSeconds:
         return self._when 
@@ -119,25 +120,19 @@ class MainManager(ConfigurableBase, Debuggable):
         
     def _addI2CDevice(self, target:"LumensalisCP.I2C.I2CDevice.I2CDevice" ):
         self.__i2cDevices.append(target)
-        
-    def wheel255( self, val:float ): return rainbowio.colorwheel(val)
-    
-    def wheel1( self, val:float ): return rainbowio.colorwheel(val*255.0)
-    
+   
     def addControlVariable( self, name, *args, **kwds ) -> ControlVariable:
         variable = ControlVariable( name, *args,**kwds )
         self._controlVariables[name] = variable
         self.infoOut( f"added ControlVariable {name}")
         return variable
 
-    
     def addIntermediateVariable( self, name, *args, **kwds ) -> IntermediateVariable:
         variable = IntermediateVariable( name, *args,**kwds )
         # self._controlVariables[name] = variable
         self.infoOut( f"added Variable {name}")
         variable.updateValue( self.__evContext )
         return variable
-
 
     def addScene( self, name:str, *args, **kwds ) -> Scene:
         scene = self._scenes.addScene( name, *args, **kwds )
@@ -150,8 +145,7 @@ class MainManager(ConfigurableBase, Debuggable):
         for v in self._controlVariables.values():
             server.monitorControlVariable( v )
         return server
-    
-    
+
     def handleWsChanges( self, changes:dict ):
         
         # print( f"handleWsChanges {changes}")
@@ -179,18 +173,7 @@ class MainManager(ConfigurableBase, Debuggable):
         assert self.__audio is None
         self.__audio = Audio( *args, main=self,**kwds )
         return self.__audio
-        
-    def addCaernarfon( self, config=None, **kwds ):
-        from TerrainTronics.Caernarfon import CaernarfonCastle
-        castle = CaernarfonCastle( config=config, main=self, **kwds )
-        self._boards.append(castle)
-        return castle
-    
-    def addHarlech( self, config=None, **kwds ):
-        from TerrainTronics.Harlech import HarlechCastle
-        castle = HarlechCastle( config=config, main=self, **kwds )
-        self._boards.append(castle)
-        return castle
+
     
     def movingValue( self, min=0, max=100, duration:float =1.0 ):
         base = math.floor( self._when / duration ) * duration

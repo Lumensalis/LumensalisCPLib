@@ -1,4 +1,4 @@
-from .DemoCommon import *
+from ..DemoCommon import *
 from LumensalisCP.Lights.Patterns import *
 
 class CaernarfonGateDemo( DemoBase ):
@@ -10,7 +10,7 @@ class CaernarfonGateDemo( DemoBase ):
         #####################################################################
         # Add a CaernarfonCastle
         NEO_PIXEL_COUNT = 40
-        self.caernarfon = caernarfon = main.addCaernarfon( neoPixelCount=NEO_PIXEL_COUNT )
+        self.caernarfon = caernarfon = main.TerrainTronics.addCaernarfon( neoPixelCount=NEO_PIXEL_COUNT )
 
         #####################################################################
         # add audio
@@ -139,17 +139,7 @@ class CaernarfonGateDemo( DemoBase ):
         
         @addSceneTask( act1, period = 0.01 )
         def rainbow():
-            #A =  (main.seconds + (gateFrontRange.value or 0)) / COLOR_CYCLE
-            A =  (main.seconds + foo.value) / COLOR_CYCLE
-            
-            
             act1.patterns.rb.spread = 1 + (main.when%10.0)/3.0
-            # set each pixel
-            #for px in range(strip.lightCount):
-            #    strip[px] = main.wheel1( A + (px * pxStep) )
-                
-            #blinker.refresh( main.latestContext )
-            caernarfon.pixels.refresh()
         
         
         lightLevel = caernarfon.A0.addAnalogInput( "lightLevel" )
