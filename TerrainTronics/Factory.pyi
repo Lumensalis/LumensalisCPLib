@@ -3,9 +3,11 @@ from .Caernarfon import CaernarfonCastle
 from .Harlech import HarlechCastle
 from .Cilgerran import CilgerranCastle
 from .Caerphilly import CaerphillyCastle
+from .HarlechXL import HarlechXLCastle
 
 class TerrainTronicsFactory(FactoryBase):
     def addCaernarfon( self, config=None, **kwds ) -> CaernarfonCastle: pass
     def addHarlech( self, config=None, **kwds ) -> HarlechCastle: pass
     def addCilgerran( self, config=None, **kwds ) -> CilgerranCastle:pass
     def addCaerphilly( self, config=None, **kwds ) -> CaerphillyCastle:pass
+    def addHarlechXL( self, **kwds ) -> HarlechXLCastle: pass

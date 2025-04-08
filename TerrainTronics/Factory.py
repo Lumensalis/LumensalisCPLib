@@ -19,3 +19,7 @@ class TerrainTronicsFactory(FactoryBase):
     def addCaerphilly( self, config=None, **kwds ):
         from .Caerphilly import CaerphillyCastle
         return CaerphillyCastle( config=config, main=self.main, **kwds )
+
+    def addHarlechXL( self, **kwds ):
+        from .HarlechXL import HarlechXLCastle
+        return HarlechXLCastle( main=self.main, **kwds )
