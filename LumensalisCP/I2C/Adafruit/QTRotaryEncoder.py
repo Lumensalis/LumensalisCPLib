@@ -6,9 +6,9 @@ import adafruit_seesaw.rotaryio
 import adafruit_seesaw.digitalio
 import adafruit_seesaw.neopixel
 
-from .I2CTarget import I2CTarget
+from ..I2CDevice import I2CDevice
 
-class QtRotary(I2CTarget):
+class QtRotary(I2CDevice):
     def __init__(self, *args, **kwds ):
         super().__init__( *args, **kwds )
         # self.i2c = i2c # busio.I2C( microcontroller.pin.GPIO35, microcontroller.pin.GPIO33 ) 

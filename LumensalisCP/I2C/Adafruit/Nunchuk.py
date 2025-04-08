@@ -1,13 +1,13 @@
 import adafruit_nunchuk
 
-from ..I2CTarget import I2CTarget
+from ..I2CDevice import I2CDevice
 import simpleio
 
 
-class Nunchuk(I2CTarget,adafruit_nunchuk.Nunchuk):
+class Nunchuk(I2CDevice,adafruit_nunchuk.Nunchuk):
     
     def __init__(self, *args, **kwds ):
-        I2CTarget.__init__( self, *args,**kwds )
+        I2CDevice.__init__( self, *args,**kwds )
         adafruit_nunchuk.Nunchuk.__init__(self, self.i2c)
         
         self.scaleXmin = -1.0

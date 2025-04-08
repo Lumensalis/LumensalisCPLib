@@ -6,13 +6,13 @@ from LumensalisCP.Main.Expressions import InputSource, NamedOutputTarget
 from LumensalisCP.Main.Updates import UpdateContext
 #import weakref
 
-class I2CTargetInitArgs(TypedDict):
+class I2CDeviceInitArgs(TypedDict):
     i2c: busio.I2C
     main: "LumensalisCP.Main.Manager.MainManager"
     address: int
     updateInterval:float|None
 
-class I2CTarget( Debuggable ):
+class I2CDevice( Debuggable ):
     def __init__(self, i2c=None, main:"LumensalisCP.Main.Manager.MainManager"=None,
                  address:int|None = None, updateInterval:float|None = None,
                  name:str=None
@@ -29,7 +29,7 @@ class I2CTarget( Debuggable ):
         self.__address = address
         self.__updateInterval = updateInterval
         self.__nextUpdate:float = updateInterval
-        main._addI2CTarget(self)
+        main._addI2CDevice(self)
     
 
         
@@ -58,7 +58,7 @@ class I2CTarget( Debuggable ):
         
         
 class I2CInputSource( InputSource ):
-    def __init__(self, target:I2CTarget = None, **kwargs ):
+    def __init__(self, target:I2CDevice = None, **kwargs ):
         super().__init__(**kwargs)
         self._wrTarget = target # weakref.ref(target)
 

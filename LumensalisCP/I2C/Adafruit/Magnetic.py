@@ -2,7 +2,7 @@
 
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
-from ..I2CTarget import I2CTarget, I2CInputSource, UpdateContext
+from ..I2CDevice import I2CDevice, I2CInputSource, UpdateContext
 import math
 
 import adafruit_tlv493d
@@ -41,14 +41,14 @@ class I2CSimpleInput(I2CInputSource):
             self.updateValue( context )
             
             
-class TLV493D(I2CTarget,adafruit_tlv493d.TLV493D):
+class TLV493D(I2CDevice,adafruit_tlv493d.TLV493D):
     
     def __init__(self, *args, **kwds ):
         updateKWDefaults( kwds,
             updateInterval = 0.1,
         )
         
-        I2CTarget.__init__( self, *args,**kwds )
+        I2CDevice.__init__( self, *args,**kwds )
         adafruit_tlv493d.TLV493D.__init__(self, self.i2c)
         self.__lastReading:Tuple[int,int,int]  = [0,0,0]
         

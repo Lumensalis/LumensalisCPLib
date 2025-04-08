@@ -1,7 +1,7 @@
 
 # There are several objectives met by these factory classes
 #
-# by moving the I2CTarget creation into dedicated class APIs,
+# by moving the I2CDevice creation into dedicated class APIs,
 # it keeps the Main.Manager class from getting more cluttered
 #
 # it removes the need for the user to import the class themselves
@@ -10,9 +10,9 @@
 # it avoids loading the supporting code until it's actually used
 
 from LumensalisCP.CPTyping import *
-from .I2CTarget import I2CTargetInitArgs
+from .I2CDevice import I2CDeviceInitArgs
 
-class I2CFactoryAddArgs(I2CTargetInitArgs):
+class I2CFactoryAddArgs(I2CDeviceInitArgs):
     pass
 
 class I2CFactory(object):

@@ -1,7 +1,7 @@
 
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
-from ..I2CTarget import I2CTarget, I2CInputSource, UpdateContext
+from ..I2CDevice import I2CDevice, I2CInputSource, UpdateContext
 
 import adafruit_mpr121
 
@@ -23,14 +23,14 @@ class MPR121Input(I2CInputSource):
             self.updateValue( context )
             
 MPR121_PINS = 12
-class MPR121(I2CTarget,adafruit_mpr121.MPR121):
+class MPR121(I2CDevice,adafruit_mpr121.MPR121):
     
     def __init__(self, *args, **kwds ):
         updateKWDefaults( kwds,
             updateInterval = 0.1,
         )
         
-        I2CTarget.__init__( self, *args,**kwds )
+        I2CDevice.__init__( self, *args,**kwds )
         adafruit_mpr121.MPR121.__init__(self, self.i2c)
         self.__lastTouched:int = 0
         self.__inputs:List[MPR121Input|None] = [None] * MPR121_PINS

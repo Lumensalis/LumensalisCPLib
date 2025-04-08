@@ -10,7 +10,7 @@ from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
 
 import LumensalisCP.I2C.I2CFactory
-import LumensalisCP.I2C.I2CTarget
+import LumensalisCP.I2C.I2CDevice
 import LumensalisCP.I2C.Adafruit.AdafruitI2CFactory
 from LumensalisCP.Controllers.ConfigurableBase import ConfigurableBase
 from .ControlVariables import ControlVariable, IntermediateVariable
@@ -55,7 +55,7 @@ class MainManager(ConfigurableBase, Debuggable):
         self._tasks:List[Callable] = []
         self.__shutdownTasks:List[ExitTask] = []
         self._boards = []
-        self.__i2cTargets:List["LumensalisCP.I2C.I2CTarget.I2CTarget"] = []
+        self.__i2cDevices:List["LumensalisCP.I2C.I2CDevice.I2CDevice"] = []
 
         self._controlVariables:Mapping[str,ControlVariable] = {}
         self._monitorTargets = {}
@@ -117,8 +117,8 @@ class MainManager(ConfigurableBase, Debuggable):
         self.__shutdownTasks.append(task)
         
         
-    def _addI2CTarget(self, target:"LumensalisCP.I2C.I2CTarget.I2CTarget" ):
-        self.__i2cTargets.append(target)
+    def _addI2CDevice(self, target:"LumensalisCP.I2C.I2CDevice.I2CDevice" ):
+        self.__i2cDevices.append(target)
         
     def wheel255( self, val:float ): return rainbowio.colorwheel(val)
     
@@ -228,7 +228,7 @@ class MainManager(ConfigurableBase, Debuggable):
                 if len( self.__deferredTasks ):
                     self.__runDeferredTasks()
                 self._scenes.run(context)
-                for target in self.__i2cTargets:
+                for target in self.__i2cDevices:
                     target.updateTarget(context)
                 for task in self._tasks:
                     task()

@@ -1,4 +1,4 @@
-from ..I2C.I2CTarget import I2CTarget
+from ..I2C.I2CDevice import I2CDevice
 
 import displayio, terminalio
 from i2cdisplaybus import I2CDisplayBus
@@ -14,9 +14,9 @@ class EZDisplayElement(object):
     def __init__(self):
         pass
     
-class EZI2cDisplayIoBase(I2CTarget, EZDisplayBase):
+class EZI2cDisplayIoBase(I2CDevice, EZDisplayBase):
     def __init__(self, displayWidth = 128, displayHeight = 64, i2c=None, device_address=0x3c, reset=None, **kwds ):
-        I2CTarget.__init__( self, i2c=i2c, address=device_address, **kwds )
+        I2CDevice.__init__( self, i2c=i2c, address=device_address, **kwds )
         EZDisplayBase.__init__( self, displayWidth = displayWidth, displayHeight = displayHeight, **kwds )
         self.displayBus = I2CDisplayBus(self.i2c, device_address=device_address, reset=reset ) 
         
