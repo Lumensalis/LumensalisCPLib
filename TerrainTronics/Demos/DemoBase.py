@@ -1,11 +1,7 @@
 from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.Main.Terms import *
-from LumensalisCP.Main.Expressions import InputSource, NamedOutputTarget, EvaluationContext
-from LumensalisCP.Scenes.Scene import addSceneTask
-from TerrainTronics.Caernarfon.Castle import onIRCode
 from LumensalisCP.CPTyping  import *
-from LumensalisCP.Triggers import Trigger, fireOnSet, fireOnTrue
-import board, microcontroller
+from LumensalisCP.common import *
 
 class DemoBase(object):
     pass
@@ -24,3 +20,14 @@ class DemoBase(object):
         self.main.addTask( self.singleLoop )
         print( "DemoBase main.run() ..." )
         self.main.run()
+        
+class DemoSubBase(object):
+    pass
+    def __init__(self, demo:DemoBase, *args,**kwds):
+        self.demo = demo
+        self.main = demo.main
+        ensure( self.main.scenes.currentScene is not None, "You must have a scene defined before creating a %s", self.__class__.__name__)
+        
+    def setup(self):
+        pass
+    

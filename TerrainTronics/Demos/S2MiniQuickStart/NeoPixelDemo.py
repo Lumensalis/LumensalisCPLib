@@ -1,5 +1,6 @@
-#from TerrainTronics.Demos.DemoBase import DemoBase
+from ..DemoCommon import *
 from LumensalisCP.Main.Manager import MainManager
+#from .LightBase import *
 
 main = MainManager()
 
@@ -36,7 +37,7 @@ between pixels
     
     # set each pixel
     for px in range(NEO_PIXEL_COUNT):
-        caernarfon.pixels[px] = main.wheel1( A + (px * pxStep) )
+        caernarfon.pixels[px] = wheel1( A + (px * pxStep) )
         
     caernarfon.pixels.show()
 

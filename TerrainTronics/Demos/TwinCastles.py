@@ -1,4 +1,4 @@
-from TerrainTronics.Demos.DemoBase import *
+from .DemoCommon import *
 from LumensalisCP.Lights.Patterns import *
 
 LED_COUNT = 8

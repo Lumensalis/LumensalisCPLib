@@ -1,6 +1,6 @@
-from TerrainTronics.Demos.DemoBase import DemoBase
+from ..DemoCommon import *
 from adafruit_simplemath import constrain
-import displayio, terminalio
+import displayio
 
 import adafruit_display_text.label
 import adafruit_display_shapes.arc

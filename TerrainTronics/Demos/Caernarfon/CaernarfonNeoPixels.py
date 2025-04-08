@@ -1,5 +1,5 @@
 
-from TerrainTronics.Demos.DemoBase import *
+from .DemoCommon import *
 from LumensalisCP.Lights.Patterns import *
 
 class CaernarfonNeoPixelsDemo( DemoBase ):
