@@ -1,11 +1,14 @@
 from LumensalisCP.CPTyping import Any, Callable, Generator, List, Mapping,TypedDict
 from .Debug import Debuggable
+import traceback
+
 TimeInSeconds = float
 DegreesPerSecond = float
 Degrees = float
 ZeroToOne = float
 PlusMinusOne = float
 Volts = float
+
 
 def dictAddUnique( d:Mapping[str,Any], key:str, value:Any ) -> None:
     if key in d:
@@ -38,3 +41,23 @@ def ensure( condition:bool, fmtStr:str|None = None, *args:Any ):
             raise EnsureException( "ensure failed" )
         raise EnsureException( safeFmt( fmtStr, *args ) )
 
+import LumensalisCP.Main.Expressions
+
+def toZeroToOne( value:Any ) -> ZeroToOne:
+    if type(value) is float: return value
+    if type(value) is bool:
+        return 1.0 if value else 0.0
+    if type(value) is object:
+        if isinstance(value,LumensalisCP.Main.Expressions.InputSource):
+            return float( value.value )
+
+    try:
+        return float(value)
+    except Exception as inst:
+        print( f"toZeroToOne exception {inst} for {value}/{getattr(value,'__name__',None)}" )
+        raise
+
+def SHOW_EXCEPTION( inst, fmt:str, **args ):
+    print( f"EXCEPTION {inst} : {safeFmt(fmt,**args)}" )
+    print( "\n".join(traceback.format_exception()) )
+    
