@@ -11,13 +11,16 @@ except ImportError:
     pass # ignore the error
     ForwardRef = None
     Any = None
-    Optional = None
+    
     Callable = None
     Mapping = None
     List = None
     Dict = None
     Generator = None
     Tuple = None
+    Required = None
+    NotRequired = None
+    Optional = None
     
     class __TDM(object):
         def __new__(cls, name, bases, ns, total=True):

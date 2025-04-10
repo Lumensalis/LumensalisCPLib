@@ -1,11 +1,12 @@
 
-import LumensalisCP
-import LumensalisCP.Main
-import LumensalisCP.Main.Manager
-import traceback
-#mm =  LumensalisCP.Main.Manager 
+import traceback, time
 
 class Debuggable( object ):
+    @staticmethod
+    def _getNewNow():
+        ns = time.monotonic_ns()
+        return ns * 0.000000001
+        #return LumensalisCP.Main.Manager.MainManager.theManager.newNow
     
     def __init__(self):
         self.__dbgOutEnabled = False
@@ -15,7 +16,8 @@ class Debuggable( object ):
         return getattr(self,'name',None) or self.__class__.__name__ 
     
     def __header( self, kind:str )->str:
-        return "%.3f %s %s : " % (LumensalisCP.Main.Manager.MainManager.theManager.newNow, kind, self._dbgName )
+        return "%.3f %s %s : " % (Debuggable._getNewNow(), kind, self._dbgName )
+        #return "%.3f %s %s : " % (LumensalisCP.Main.Manager.MainManager.theManager.newNow, kind, self._dbgName )
     
     def __format( self, kind, fmtString:str, args, kwds ):
         try:

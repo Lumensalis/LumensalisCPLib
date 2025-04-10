@@ -1,3 +1,5 @@
+from LumensalisCP.common import *
+from LumensalisCP.CPTyping import *
 from ..Config import ControllerConfig
 
 configs = {
@@ -17,7 +19,7 @@ configs = {
         D8 = "GPIO12",
      ),
     
-     'lolin_s2_mini_b' : ControllerConfig(
+     'lolin_s2_mini_secondary' : ControllerConfig(
         TX = "GPIO40",
         RX = "GPIO38",
         D1 = "GPIO36", #SCL
@@ -32,6 +34,7 @@ configs = {
         D7 = "GPIO10",
         D8 = "GPIO13",
      ),
+     
     'lilygo_ttgo_t-oi-plus' :  ControllerConfig(
         TX = "GPIO21",
         RX = "GPIO20",
@@ -47,11 +50,10 @@ configs = {
         D7 = "GPIO7",
         D8 = "GPIO10",
      )
-        
-    
 }
 
 configs['WemosS2Mini'] = configs['lolin_s2_mini']
 
 def getConfig( name:str ):
+
     return configs.get(name,None)

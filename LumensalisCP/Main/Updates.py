@@ -1,14 +1,13 @@
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
-import LumensalisCP.Main.Expressions
-import LumensalisCP.Main.Manager
+
 from LumensalisCP.Main.Dependents import MainRef
 
 class UpdateContext(object):
     def __init__( self, main:"LumensalisCP.Main.Manager.MainManager"=None ):
         self.__updateIndex = 0
         self.__changedSources : List["LumensalisCP.Main.Expressions.InputSource"] = []
-        self.__mainRef = MainRef( main )
+        self.__mainRef = main.makeRef()
         self.__when = main.when
         
     def reset( self ):
@@ -17,7 +16,7 @@ class UpdateContext(object):
         self.__when = self.main.when
         
     @property
-    def main(self) -> "LumensalisCP.Main.Manager.MainManager": return self.__mainRef()
+    def main(self): return self.__mainRef()
         
     @property
     def when(self) -> TimeInSeconds : return self.__when
@@ -38,6 +37,10 @@ class UpdateContext(object):
             elif isinstance( value, LumensalisCP.Main.Expressions.Expression ):
                 value.updateValue( self )
                 value = value.value
+            elif callable(value):
+                value = value()
+        elif callable(value):
+            value = value()
         return value
 
 class RefreshCycle(object):

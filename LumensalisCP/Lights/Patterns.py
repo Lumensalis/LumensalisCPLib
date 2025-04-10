@@ -1,68 +1,10 @@
 from .LightBase import *
 
-import LumensalisCP.Main.Manager
-
-from random import random as randomZeroToOne
+from .Pattern import *
+from random import random as randomZeroToOne, randint
 
 #############################################################################
 
-class Pattern(Debuggable):
-    
-    _theManager:"LumensalisCP.Main.Manager.MainManager" = None
-    
-    def __init__(self,  target:LightGroupBase=None, name:str=None, 
-                 whenOffset:TimeInSeconds=0.0, startingSpeed:TimeInSeconds=1.0 ):
-        self.__name = name or (getattr( target,'name', '') + "-" + self.__class__.__name__)
-        self.__running = False
-        self.__speed:TimeInSeconds = startingSpeed
-        assert target is not None
-        self.__target = target
-        
-        self.__whenOffset:TimeInSeconds = whenOffset
-
-    @property
-    def whenOffset(self) -> TimeInSeconds : return self.__whenOffset
-    
-    @whenOffset.setter
-    def whenOffset(self,offset:TimeInSeconds): self.__whenOffset = offset
-    
-    def offsetWhen( self, context:UpdateContext ) -> TimeInSeconds:
-        return  context.when + self.__whenOffset
-            
-    @property
-    def name(self) -> str: return self.__name
-
-    @property
-    def target(self) -> LightGroupBase : return  self.__target
-    
-    @property
-    def speed(self) -> TimeInSeconds: return self.__speed
-    
-    @speed.setter
-    def speed(self, value:TimeInSeconds): self.setSpeed(value)
-    
-    @property
-    def running(self) -> bool: return self.__running
-
-    @running.setter
-    def running(self, running:bool): self.setRunning(running)
-
-    def setSpeed(self, value:TimeInSeconds, context:UpdateContext|None=None ):
-        self.__speed = value
-
-    def setRunning(self, value:bool, context:UpdateContext|None=None ):
-        self.__running = value
-
-    def refresh( self, context:UpdateContext ):
-        raise NotImplemented
-
-    def main(self):
-        if Pattern._theManager is None:
-            Pattern._theManager = LumensalisCP.Main.Manager.MainManager.theManager
-            assert Pattern._theManager is not None
-            
-        return Pattern._theManager
-    
 #############################################################################
 class Rainbow( Pattern ):
     def __init__(self,
@@ -113,88 +55,6 @@ class Rainbow( Pattern ):
             target[px] = wheel1( A + (px * pxStep) )
 
 #############################################################################
-class PatternGeneratorStep(object):
-    def __init__( self, duration: TimeInSeconds=1.0 ):
-        self.duration = duration
-    
-    def startValue( self, index, context:UpdateContext ): raise NotImplemented
-    def endValue( self, index, context:UpdateContext ): raise NotImplemented
-    def intermediateValue( self, index, progression:ZeroToOne, context:UpdateContext ): raise NotImplemented
-
-#############################################################################
-
-class PatternGeneratorSharedStep(PatternGeneratorStep):
-    def __init__( self, 
-                 duration: TimeInSeconds,
-                 startValue: AnyLightValue|None =  None, 
-                 endValue: AnyLightValue|None =  None, 
-                 intermediateRefresh: TimeInSeconds|None = None,
-            ):
-        super().__init__(duration=duration)
-        self._startValue = startValue
-        self._endValue = endValue
-        self.duration = duration
-        self.intermediateRefresh = intermediateRefresh
-    
-    def startValue( self, index, context:UpdateContext ):
-        return self._startValue
-    
-    def endValue( self, index, context:UpdateContext ):
-        return self._endValue
-
-    def intermediateValue( self, index, progression:ZeroToOne, context:UpdateContext ):
-        return self._startValue + (self._endValue - self._startValue) * progression
-
-#############################################################################
-
-#############################################################################
-
-class PatternGenerator(Pattern):
-    def __init__(self, *args,  **kwargs ):
-        super().__init__( *args, **kwargs )
-        self.__nextStep = 0.0
-        self.__nextRefresh = 0.0
-        self.__step:PatternGeneratorStep|None = None
-        self.__gen: Generator[PatternGeneratorStep]|None = None
-    
-    def refresh( self, context:UpdateContext ):
-        if self.__nextRefresh < context.when:
-            if self.__nextStep < context.when:
-                self.stepForward( context )
-            else:
-                when = self.offsetWhen( context )
-                progression = (self.__nextStep - when) / self.__step.duration
-                self.__nextRefresh = min(  self.__nextStep,
-                            when + self.__step.intermediateRefresh )
-                for lx, light in enumerate(self.target.lights):
-                    light.setValue( self.__step.intermediateValue(lx,progression,context), context=context )
-
-    def stepForward( self, context:UpdateContext ):
-        if self.__gen is None:
-            self.__gen = self.regenerate( context )
-        try:
-            self.__step = next(self.__gen)
-        except StopIteration:
-            self.__gen = self.regenerate( context )
-            self.__step = next(self.__gen)
-
-        self.__nextStep = context.when + self.__step.duration
-        
-        if self.__step.intermediateRefresh is not None:
-            self.__nextRefresh = context.when + self.__step.intermediateRefresh
-        else:
-            self.__nextRefresh = self.__nextStep
-
-        for lx, light in enumerate(self.target.lights):
-            light.setValue( self.__step.startValue(lx,context), context=context )
-
-    def regenerate(self, context:UpdateContext) -> Generator[PatternGeneratorStep]:
-        raise NotImplemented
-
-    def setRunning(self, value:bool, context:UpdateContext|None=None ):
-        super().setRunning(value, context)
-
-#############################################################################
 
 class Blink( PatternGenerator ):
     def __init__(self,
@@ -217,46 +77,96 @@ class Blink( PatternGenerator ):
 
 #############################################################################
 
-class MultiLightPatternStep(PatternGeneratorSharedStep):
-    def __init__(self, duration, starts:List[AnyLightValue], ends:List[AnyLightValue], *args, **kwds ):
-        super().__init__(duration=duration, **kwds)
-        self.__starts = starts
-        self.__ends = ends
-    
-    def startValue( self, index, context:UpdateContext ):
-        return context.valueOf( self.__starts[index] )
-    
-    def endValue( self, index, context:UpdateContext ):
-        return context.valueOf( self.__ends[index] )
-
-    def intermediateValue( self, index, progression:ZeroToOne, context:UpdateContext ):
-        return self.startValue(index) + (self.endValue(index) - self.startValue(index)) * progression
-        
-    
 class Random( PatternGenerator ):
+    def __init__(self,
+                 *args,
+                 duration:TimeInSeconds = 1.0,
+                 intermediateRefresh:TimeInSeconds = 0.1,
+                 brightness:ZeroToOne = 1,
+                 **kwargs
+            ):
+        self.duration = duration
+        self.intermediateRefresh:TimeInSeconds = intermediateRefresh
+        self.__brightness = brightness
+        super().__init__(*args,**kwargs)
+
+    def _generateRandomValues(self, context:UpdateContext):
+        rChannelBrightness = int( 0xFF * self.__brightness )
+        def rChannel(): return randint(0,rChannelBrightness)
+        def randomRGB(): return rChannel() + (rChannel() << 8) + (rChannel() << 16) 
+        values = []
+        for x in range(self.target.lightCount):
+            lightType = self.target[x].lightType
+            if lightType == LightType.LT_RGB:
+                values.append( randomRGB() )
+            elif lightType == LightType.LT_SINGLE_DIMMABLE:
+                values.append( randomZeroToOne() )
+            else:
+                values.append( randomZeroToOne() >= 0.5 )
+                
+        return values
+    
+    def regenerate1(self, context:UpdateContext):
+        
+        yield PatternGeneratorSharedStep(  self.duration, LightValueNeoRGB.randomRGB(brightness=self.__brightness) )
+        
+    def regenerate(self, context:UpdateContext):
+        startValues = self._generateRandomValues(context)
+        endValues = self._generateRandomValues(context)
+        
+        #print(f"Random {self.duration} : {startValues} / {endValues}")
+        yield MultiLightPatternStep( self.duration, starts=startValues, ends=endValues )
+
+
+#############################################################################
+
+
+class Cylon2( PatternGenerator ):
     def __init__(self,
                  *args,
                  sweepTime:TimeInSeconds = 1.0,
                  onValue:AnyLightValue = 1.0,
                  offValue:AnyLightValue = 0.0,
                  intermediateRefresh:TimeInSeconds = 0.1,
+                 dimRatio:ZeroToOne = 0.7,
                  **kwargs
             ):
         self.sweepTime = sweepTime
         self.onValue = onValue
         self.offValue = offValue
-        self.__movingUp = True
+        self.__dimRatio = dimRatio
         self.intermediateRefresh:TimeInSeconds = intermediateRefresh
         super().__init__(*args,**kwargs)
 
         
     def regenerate(self, context:UpdateContext):
-        values = [(randomZeroToOne() >= 0.5) for x in range(self.target.lightCount)]
-        sweepStepTime = self.sweepTime / self.target.lightCount
-        yield MultiLightPatternStep( starts=values, ends=values, duration=self.sweepTime)
+        sweepStepTime = self.sweepTime / (self.target.lightCount*2-2)
 
+        b = Bag()
+        b.prior = [ context.valueOf(light.value) for light in self.target.lights ]
+        print( f"b.prior = { '|'.join( [('%6.6X'%v) for v in b.prior])}" )
+        offRGB = RGB.fromNeoPixelInt( self.offValue )
+        def dimmed(index):
+            #return self.offValue
+            was = RGB.fromNeoPixelInt(b.prior[index])
+            faded = was.fadeTowards(offRGB, self.__dimRatio )
+            return  faded.toNeoPixelInt()
+            
+        for index in range( self.target.lightCount ):
+            onValue = context.valueOf(self.onValue)
+            startValues = [(onValue if i2 == index else dimmed(i2)) for i2 in range(self.target.lightCount) ]
+            endValues =startValues
+            b.prior = startValues
+            
+            yield MultiLightPatternStep( sweepStepTime, starts=startValues, ends=endValues )
 
-#############################################################################
+        for index in range( max(0, self.target.lightCount-2), 0, -1 ):
+            onValue = context.valueOf(self.onValue)
+            startValues = [(onValue if i2 == index else dimmed(i2)) for i2 in range(self.target.lightCount) ]
+            endValues =startValues
+            b.prior = startValues
+            
+            yield MultiLightPatternStep( sweepStepTime, starts=startValues, ends=endValues )
 
 #############################################################################
 
@@ -280,7 +190,9 @@ class CylonPatternStep(PatternGeneratorSharedStep):
             return self._startValue + (self._endValue - self._startValue) * (progression/iOffset)
         else:
             return self._endValue
-    
+
+#############################################################################
+
 class Cylon( PatternGenerator ):
     def __init__(self,
                  *args,

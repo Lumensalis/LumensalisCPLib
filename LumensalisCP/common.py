@@ -59,5 +59,5 @@ def toZeroToOne( value:Any ) -> ZeroToOne:
 
 def SHOW_EXCEPTION( inst, fmt:str, **args ):
     print( f"EXCEPTION {inst} : {safeFmt(fmt,**args)}" )
-    print( "\n".join(traceback.format_exception()) )
+    print( "\n".join(traceback.format_exception(inst)) )
     

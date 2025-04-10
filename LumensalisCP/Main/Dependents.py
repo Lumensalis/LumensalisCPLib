@@ -1,20 +1,18 @@
 # from .Manager import MainManager
 
 from ..Identity.Local import NamedLocalIdentifiable
-from LumensalisCP.CPTyping import ForwardRef
-import LumensalisCP.Main.Manager
+from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
 
 class MainChild( NamedLocalIdentifiable):
     
-    def __init__( self, name:str, main:"LumensalisCP.Main.Manager.MainManager"):
+    def __init__( self, name:str, main):
         # type: (str, LumensalisCP.Main.Manager.MainManager ) -> None
         NamedLocalIdentifiable.__init__( self, name = name or self.__class__.__name__)
         ensure( main is not None )
         self.__main = main
         print( f"MainChild __init__( name={self.name}, main={main})")
-        
-    
+
     @property
     def main(self): return self.__main
 
@@ -65,11 +63,11 @@ class ManagerRef(object):
         return getattr( self.managerClass, '_theManager', None )
 
 class MainRef(object):
+    _theManager:"LumensalisCP.Main.Manager.MainManager" = None
     
     def __init__( self, main:"LumensalisCP.Main.Manager.MainManager"=None  ):
-        assert main is LumensalisCP.Main.Manager.MainManager.theManager
-        
+        assert main is not None and main is MainRef._theManager
 
     def __call__( self ) -> LumensalisCP.Main.Manager.MainManager:
-        return LumensalisCP.Main.Manager.MainManager.theManager
+        return MainRef._theManager
 

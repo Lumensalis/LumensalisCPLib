@@ -13,7 +13,8 @@ class LocalIdentifiable(object):
     def __init__( self ):
         self.__localId = self.__getNextId(self)
         
-    localId = property( lambda self: self.__localId )
+    @property
+    def localId(self): return self.__localId
     
     
 class NamedLocalIdentifiable(LocalIdentifiable,Debuggable):

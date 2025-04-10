@@ -1,18 +1,14 @@
-
-
 import LumensalisCP.Debug
 
-import time, math, asyncio, traceback, os, gc, rainbowio, wifi, displayio
+import time, math, asyncio, traceback, os, gc, wifi, displayio
 import busio, board
 import collections
 
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
 
-import LumensalisCP.I2C.I2CFactory
-import LumensalisCP.I2C.I2CDevice
-import LumensalisCP.I2C.Adafruit.AdafruitI2CFactory
 from LumensalisCP.Controllers.ConfigurableBase import ConfigurableBase
+from LumensalisCP.Controllers.Identity import ControllerIdentity, ControllerNVM
 from .ControlVariables import ControlVariable, IntermediateVariable
 
 from ..Scenes.Manager import SceneManager, Scene
@@ -21,18 +17,33 @@ from ..Triggers.Timer import PeriodicTimerManager
 from .Expressions import EvaluationContext
 from .Shutdown import ExitTask
 from LumensalisCP.Debug import Debuggable 
-import LumensalisCP.Audio 
+
+import LumensalisCP.Main.Dependents
+import adafruit_24lc32
 
 class MainManager(ConfigurableBase, Debuggable):
     
     theManager : "MainManager"|None = None
     
+    
+    @staticmethod
+    def initOrGetManager():
+        rv = MainManager.theManager
+        if rv is None:
+            rv = MainManager()
+            assert MainManager.theManager is rv
+        return rv
+    
     def __init__(self, config = None, **kwds ):
         assert MainManager.theManager is None
         MainManager.theManager = self
+        
         self.__startNs = time.monotonic_ns()
         self._when:TimeInSeconds = self.newNow
+        self.__defaultI2C:busio.I2C = None
+        self.__i2cChannels:Mapping[Tuple[int,int],busio.I2C] = {}
         
+        Debuggable._getNewNow = self.getNewNow
         mainConfigDefaults = dict(
             TTCP_HOSTNAME = os.getenv("TTCP_HOSTNAME")
         )
@@ -40,22 +51,43 @@ class MainManager(ConfigurableBase, Debuggable):
         super().__init__(config, defaults=mainConfigDefaults, **kwds )
         Debuggable.__init__(self)
         self.name = "MainManager"
+        from LumensalisCP.Main.Dependents import MainRef
+        MainRef._theManager = self
+
+        self.__identityI2C = None
         
+        i2c = self.config.option('i2c')
+        sdaPin = self.config.SDA
+        sclPin = self.config.SCL
+        
+        if i2c is None:
+            if sdaPin is not None and sclPin is not None:
+                self.infoOut( "initializing busio.I2C, scl=%s, sda=%s", sclPin, sdaPin )
+                i2c =  self.addI2C( self.asPin(sdaPin), self.asPin(sclPin) ) 
+        
+                try:
+                    eeprom = adafruit_24lc32.EEPROM_I2C(i2c_bus=i2c, max_size=1024)
+                    self.__identityI2C = ControllerNVM( eeprom )
+                except Exception as inst:
+                    SHOW_EXCEPTION( inst, f"I2C identity exception ")
+
+        self.__identity = ControllerIdentity(self)
         self._when = self.newNow
         
         self._printStatCycles = 1000
         self.__cycle = 0
         self.cyclesPerSecond = 100
         self.cycleDuration = 0.01
-        self.__defaultI2C:busio.I2C = None
+
         self._webServer = None
         self.__deferredTasks = collections.deque( [], 99, True )
         self.__audio = None
-        
+
         self._tasks:List[Callable] = []
         self.__shutdownTasks:List[ExitTask] = []
         self._boards = []
         self.__i2cDevices:List["LumensalisCP.I2C.I2CDevice.I2CDevice"] = []
+        
 
         self._controlVariables:Mapping[str,ControlVariable] = {}
         self._monitorTargets = {}
@@ -65,10 +97,19 @@ class MainManager(ConfigurableBase, Debuggable):
 
         self._scenes = SceneManager(main=self)
         self.__TerrainTronics = None
+        
+        import LumensalisCP.I2C.I2CFactory
+        import LumensalisCP.I2C.Adafruit.AdafruitI2CFactory
         self.adafruitFactory =  LumensalisCP.I2C.Adafruit.AdafruitI2CFactory.AdafruitFactory(main=self)
         self.i2cFactory =  LumensalisCP.I2C.I2CFactory.I2CFactory(main=self)
         
         print( f"MainManager options = {self.config.options}" )
+    
+    def makeRef(self):
+        return LumensalisCP.Main.Dependents.MainRef(self)
+
+    @property
+    def identity(self) -> ControllerIdentity: return self.__identity
     
     @property
     def TerrainTronics(self):
@@ -85,10 +126,13 @@ class MainManager(ConfigurableBase, Debuggable):
     millis = property( lambda self: int( self._when * 1000) )
     seconds:float = property( lambda self: self._when )
     
-    @property
-    def newNow( self ) -> TimeInSeconds:
+    def getNewNow( self ) -> TimeInSeconds:
         ns = time.monotonic_ns()
         return (ns - self.__startNs) * 0.000000001
+
+
+    @property
+    def newNow( self ) -> TimeInSeconds: return self.getNewNow()
 
     @property
     def defaultI2C(self): return self.__defaultI2C or board.I2C()
@@ -185,6 +229,27 @@ class MainManager(ConfigurableBase, Debuggable):
     def _addBoardI2C( self, board, i2c:busio.I2C ):
         if self.__defaultI2C is None:
             self.__defaultI2C = i2c
+
+    @property
+    def identityI2C(self): return self.__identityI2C
+
+    def addI2C(self, sdaPin, sclPin):
+        sdaPin = self.asPin(sdaPin)
+        sclPin = self.asPin(sclPin)
+        sdaPinName = repr(sdaPin)
+        sclPinName = repr(sclPin)
+        self.infoOut( "addI2C( %r, %r ) %r", sdaPin, sclPin, self.__i2cChannels )
+        for pins, channel in self.__i2cChannels.items():
+            if pins[0] != sdaPinName and pins[1] != sclPinName:
+                continue
+            ensure( pins[0] == sdaPinName , "sda mismatch" )
+            ensure( pins[1] == sclPinName , "scl mismatch" )
+            return channel
+        
+        i2c =  busio.I2C( sdaPin, sclPin ) 
+        self.__i2cChannels[ (sdaPinName,sclPinName) ] = i2c
+        self._addBoardI2C( self, i2c )
+        return i2c
 
     def addTask( self, task ):
         
