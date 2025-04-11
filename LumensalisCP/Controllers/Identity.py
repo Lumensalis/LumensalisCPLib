@@ -146,7 +146,7 @@ class ControllerIdentity(object):
             
         self.project = (
                    self.i2cNVMProject or
-                   self.controllerNVM
+                   self.controllerNVM.project
                    or self.CUIDConfig.get('project',None) 
                    or self.envProject 
                    or None

@@ -270,6 +270,9 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm, Debuggable):
         self.__latestChangeIndex:int = None
         self.__onChangedList = []
 
+    def __repr__( self ):
+        return safeFmt( "%s:%s = %r", self.__class__.__name__, self.name, self.value )
+    
     def getDerivedValue(self, context:UpdateContext) -> Any:
         raise NotImplemented
     
@@ -301,6 +304,9 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm, Debuggable):
         
     @property
     def value(self): return self.__latestValue
+    
+    def __bool__(self) -> bool:
+        return bool(self.__latestValue)
     
     @override
     def getValue(self, context:EvaluationContext = None ) -> Any:
