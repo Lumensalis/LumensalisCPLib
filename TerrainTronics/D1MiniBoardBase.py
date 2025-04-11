@@ -99,16 +99,6 @@ class D1MiniBoardBase(ControllerConfigurableChildBase,Refreshable):
         
         self.main._boards.append(self)
 
-    def asPin(self, pin ):
-        if not isinstance( pin, microcontroller.Pin ):
-            if hasattr( pin, 'actualPin' ):
-                pin = pin.actualPin
-            if type(pin) is str:
-                pin = getattr( self.config.pins.lookupPin(pin) )
-            
-        assert isinstance( pin, microcontroller.Pin )
-        return pin
-    
     def initI2C(self): 
         i2c = self.config.option('i2c')
         sdaPin = self.config.SDA
@@ -116,11 +106,11 @@ class D1MiniBoardBase(ControllerConfigurableChildBase,Refreshable):
         
         if i2c is None:
             if sdaPin is None and sclPin is None:
-                i2c = self.main.defaultI2C()
+                i2c = self.main.defaultI2C
             else:
-                self.dbgOut( "initializing busio.I2C, scl=%s, sda=%s", sclPin, sdaPin )
-                i2c =  busio.I2C( sdaPin, sclPin ) 
-                self.main._addBoardI2C( self, i2c )
+                self.infoOut( "initializing busio.I2C, scl=%s, sda=%s", sclPin, sdaPin )
+                i2c =  self.main.addI2C( sdaPin, sclPin ) 
+                
         assert( i2c is not None )
         
         self.i2c = i2c

@@ -8,13 +8,14 @@ from LumensalisCP.Lights.LightBase import *
 from .aw210xx import AW210xx, AW210xxOpenShortDetect
 
 
-class HarlechXL_LED( SingleColorLightBase ):
+class HarlechXL_LED( SingleColorDimmableLightBase ):
     # source : ( CilgerranPixelSource )
 
     PWM_FREQUENCY = 20000
     DUTY_CYCLE_RANGE = 65535
+    
     def __init__(self, name, source:"HarlechXLCastle", index:int, pin=None, **kwargs ):
-        SingleColorLightBase.__init__(self, name=name, source=source,**kwargs )
+        super().__init__( name=name, source=source,**kwargs )
         self.__index = index
         self.__driver = source._ledDriver
         self.__value = 0
@@ -34,8 +35,11 @@ class HarlechXL_LED( SingleColorLightBase ):
     def _brightnessChanged(self):
         self.__driver.br( self.__index, self._driverValue )
 
-    @property
-    def value(self): return self.__value
+    
+    @overload
+    def getValue(self, context: UpdateContext = None ) -> AnyLightValue:
+        return self.__value
+    
     
     def __repr__(self):
         return f"CilgerranLED( {self.name}, {self.__index}, v={self.__value} )"

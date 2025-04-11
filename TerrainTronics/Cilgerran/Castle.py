@@ -9,15 +9,13 @@ from LumensalisCP.Lights.LightBase import *
 
 import LumensalisCP.Main.Expressions
 
-
-
-class CilgerranLED( SingleColorLightBase ):
+class CilgerranLED( SingleColorDimmableLightBase ):
     # source : ( CilgerranPixelSource )
 
     PWM_FREQUENCY = 20000
     DUTY_CYCLE_RANGE = 65535
     def __init__(self, name, board:"CilgerranCastle", index:int, pin=None, **kwargs ):
-        SingleColorLightBase.__init__(self, name=name, **kwargs )
+        super().__init__( name=name, **kwargs )
         #print(f'CilgerranLED {name} [{index}]')
         #self.__board:"CilgerranCastle" = board
         self.__index = index
@@ -33,6 +31,10 @@ class CilgerranLED( SingleColorLightBase ):
     def _brightnessChanged(self):
         self.__output.duty_cycle = int( self.__value * self.source.brightness * CilgerranLED.DUTY_CYCLE_RANGE )
 
+    @overload
+    def getValue(self, context: UpdateContext = None ) -> AnyLightValue:
+        return self.__value
+    
     @property
     def value(self): return self.__value
     

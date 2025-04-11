@@ -17,7 +17,7 @@ class TestLeds(DemoSubBase):
         scene.addPatterns(
                         Blink( bankA, onValue=0.1 ),
                           Cylon(bankB),
-                          Random(bankC,sweepTime=0.2),
+                          Random(bankC,duration=0.2),
                           Blink(bankD),
                           )
         

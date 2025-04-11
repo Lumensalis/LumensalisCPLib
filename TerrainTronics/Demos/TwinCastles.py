@@ -3,29 +3,24 @@ from LumensalisCP.Lights.Patterns import *
 
 LED_COUNT = 8
 NEO_PIXEL_COUNT = 40
+
 class TwinCastles( DemoBase ):
     def setup(self):
 
         main = self.main
         # main.timers.enableDbgOut = True
 
-        harlech = harlech = main.TerrainTronics.addHarlech( )
-        caernarfon = main.TerrainTronics.addCaernarfon( config="lolin_s2_mini_b", neoPixelCount=NEO_PIXEL_COUNT )
-
-
-        self.harlech = harlech
-        self.caernarfon = caernarfon 
-        scene = self.main.addScene( "simpleBlink" )
-
-        harlech.keepAlive.enableDbgOut = True
-        #harlech.keepAlive._keepAliveTimer.enableDbgOut = True
-        harlech.keepAlive._keepAliveTimer.dbgOut( "Can You Hear Me?" )
-        print( f"or not? {harlech.keepAlive.enableDbgOut}")
-        
         #####################################################################
-        # Add a CaernarfonCastle
+        # Add a Harlech Castle on primary D1Mini pinout
+        harlech = main.TerrainTronics.addHarlech( )
+        self.harlech = harlech
 
-
+        #####################################################################
+        # Add a CaernarfonCastle on secondary D1Mini pinout
+        caernarfon = main.TerrainTronics.addCaernarfon( config="secondary", neoPixelCount=NEO_PIXEL_COUNT )
+        self.caernarfon = caernarfon
+         
+        scene = self.main.addScene( "simpleBlink" )
 
         doorDrive = caernarfon.initServo( 1, "doorDrive", )
 

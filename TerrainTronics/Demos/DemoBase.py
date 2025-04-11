@@ -7,7 +7,7 @@ from .DemoMixin import DemoMixin
 class DemoBase(object, DemoMixin):
     pass
     def __init__(self, *args,**kwds):
-        self.main = MainManager()
+        self.main = MainManager.initOrGetManager()
         
     def setup(self):
         pass

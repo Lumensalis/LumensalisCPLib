@@ -27,7 +27,7 @@ class CaerphillySimpleTestDemo( DemoBase ):
         scene.addPatterns(
                         rainbow,
                           Cylon(bankB),
-                          Random(bankC,sweepTime=0.2),
+                          Random(bankC,duration=0.2),
                           Blink(bankD),
                           )
         

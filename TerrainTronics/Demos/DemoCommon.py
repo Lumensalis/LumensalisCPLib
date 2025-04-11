@@ -7,5 +7,5 @@ from LumensalisCP.CPTyping  import *
 from LumensalisCP.Triggers import Trigger, fireOnSet, fireOnTrue
 from .DemoBase import DemoBase, DemoSubBase
 import board, microcontroller
-from LumensalisCP.Lights.LightBase import *
+from LumensalisCP.Lights.Patterns import *
 
