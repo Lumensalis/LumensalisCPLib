@@ -142,13 +142,13 @@ class Cylon2( PatternGenerator ):
     def regenerate(self, context:UpdateContext):
         sweepStepTime = self.sweepTime / (self.target.lightCount*2-2)
 
-        b = Bag()
-        b.prior = [ context.valueOf(light.value) for light in self.target.lights ]
-        print( f"b.prior = { '|'.join( [('%6.6X'%v) for v in b.prior])}" )
+        
+        prior = [ context.valueOf(light.value) for light in self.target.lights ]
+        #print( f"prior = { LightValueNeoRGB.formatNeoRGBValues( prior)}" )
         offRGB = RGB.fromNeoPixelInt( self.offValue )
         def dimmed(index):
             #return self.offValue
-            was = RGB.fromNeoPixelInt(b.prior[index])
+            was = RGB.fromNeoPixelInt(prior[index])
             faded = was.fadeTowards(offRGB, self.__dimRatio )
             return  faded.toNeoPixelInt()
             
@@ -156,7 +156,7 @@ class Cylon2( PatternGenerator ):
             onValue = context.valueOf(self.onValue)
             startValues = [(onValue if i2 == index else dimmed(i2)) for i2 in range(self.target.lightCount) ]
             endValues =startValues
-            b.prior = startValues
+            prior = startValues
             
             yield MultiLightPatternStep( sweepStepTime, starts=startValues, ends=endValues )
 
@@ -164,7 +164,7 @@ class Cylon2( PatternGenerator ):
             onValue = context.valueOf(self.onValue)
             startValues = [(onValue if i2 == index else dimmed(i2)) for i2 in range(self.target.lightCount) ]
             endValues =startValues
-            b.prior = startValues
+            prior = startValues
             
             yield MultiLightPatternStep( sweepStepTime, starts=startValues, ends=endValues )
 

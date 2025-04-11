@@ -67,7 +67,7 @@ class LocalServo(
     def __set( self, angle:Degrees|None, context:EvaluationContext=None ):
         if angle is not None:
             angle = self.rangedAngle( angle )
-        self.__lastSetAngle = angle
+            self.__lastSetAngle = angle
         self.__servo.angle = angle
         
     def moveTo( self, angle:Degrees, speed:DegreesPerSecond|None=None, context:EvaluationContext=None ):
