@@ -74,7 +74,7 @@ class MainManager(ConfigurableBase, Debuggable):
         self.__identity = ControllerIdentity(self)
         self._when = self.newNow
         
-        self._printStatCycles = 1000
+        self._printStatCycles = 5000
         self.__cycle = 0
         self.cyclesPerSecond = 100
         self.cycleDuration = 0.01

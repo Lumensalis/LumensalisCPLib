@@ -27,3 +27,8 @@ class AdafruitFactory(I2CFactory):
         updateKWDefaults( kwds, main=self.main )
         from .Magnetic import TLV493D
         return TLV493D( *args, **kwds )
+    
+    def addAW9523( self, *args, **kwds ):
+        updateKWDefaults( kwds, main=self.main )
+        from .AW9523 import AW9523
+        return AW9523( *args, **kwds )

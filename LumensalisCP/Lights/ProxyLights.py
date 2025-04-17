@@ -2,6 +2,7 @@ from LumensalisCP.Lights.LightBase import *
 
 #############################################################################
 class ProxyRGBLightsSource( LightSourceBase ):
+    
     def __init__( self,source:LightGroupBase, name:str|None = None, **kwds ):
         self.__lights:List[ProxyRGBLight] = []
         super().__init__( 
@@ -18,17 +19,20 @@ class ProxyRGBLightsSource( LightSourceBase ):
     def recalculateForwardValue( self, light:"ProxyRGBLight", context: UpdateContext = None  ):
         raise NotImplemented
 
+
 #############################################################################
         
 class ProxyRGBLight( RGBLightBase ):
 
     def __init__(self, source:"ProxyRGBLightsSource", index:int, light:LightBase ):
         super().__init__(source=source, index=index)
-        self.__value = light.getLightValue().asRGB #RGB(0,0,0)
+        self.__value:RGB = light.getLightValue().asRGB #RGB(0,0,0)
         self.__forwardValue = self.__value
         self.__forwardTarget = light
         
         
+    def getRGB(self):
+        return self.__value
     @property
     def value(self): return self.getValue()
     
@@ -57,8 +61,14 @@ class ProxyRGBLight( RGBLightBase ):
             
             
 
-    
- 
+class ProxyRGBLightsCallbackSource( ProxyRGBLightsSource ):
+    def __init__( self,source:LightGroupBase, cb:Callable = None, **kwargs ):
+        super().__init__(source,**kwargs)
+        self.__cb = cb
+
+    def recalculateForwardValue( self, light:"ProxyRGBLight", context: UpdateContext = None ):
+        return self.__cb(light=light,context=context)
+
 class DimmedLightsSource( ProxyRGBLightsSource ):
     def __init__( self,source:LightGroupBase, brightness=1.0, **kwargs ):
         super().__init__(source,**kwargs)

@@ -6,6 +6,7 @@ from .QTRotaryEncoder import QtRotary
 from .Nunchuk import Nunchuk
 from .MPR121 import MPR121
 from .Magnetic import TLV493D
+from .AW9523 import AW9523
 
 class AdafruitFactory(I2CFactory):
     
@@ -17,4 +18,6 @@ class AdafruitFactory(I2CFactory):
 
     def addTLV493D( self, *args, **kwds:I2CFactoryAddArgs ) -> TLV493D: ...
     
+    def addAW9523( self, *args, **kwds:I2CFactoryAddArgs ) -> AW9523: ...
+
     

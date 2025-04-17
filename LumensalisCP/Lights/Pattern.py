@@ -15,6 +15,7 @@ class Pattern(Debuggable):
     def __init__(self,  target:LightGroupBase=None, name:str=None, 
                  whenOffset:TimeInSeconds=0.0, startingSpeed:TimeInSeconds=1.0 ):
         self.__name = name or (getattr( target,'name', '') + "-" + self.__class__.__name__)
+        super().__init__()
         self.__running = False
         self.__speed:TimeInSeconds = startingSpeed
         assert target is not None
@@ -123,7 +124,7 @@ class MultiLightPatternStep(PatternGeneratorSharedStep):
 #############################################################################
 
 class PatternGenerator(Pattern):
-    def __init__(self, *args,  **kwargs ):
+    def __init__(self, *args, intermediateRefresh:TimeInSeconds|None=None,  **kwargs ):
         super().__init__( *args, **kwargs )
         self.__nextStep = 0.0
         self.__nextRefresh = 0.0
@@ -147,7 +148,8 @@ class PatternGenerator(Pattern):
                 self.stepForward( context )
             else:
                 when = self.offsetWhen( context )
-                progression = (self.__nextStep - when) / self.__step.duration
+                duration = context.valueOf(self.__step.duration)
+                progression = (self.__nextStep - when) / duration
                 self.__nextRefresh = min(  self.__nextStep,
                             when + self.__step.intermediateRefresh )
                 self.__intermediateCount += 1

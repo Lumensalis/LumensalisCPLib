@@ -3,9 +3,12 @@ from .Scene import Scene, SceneTask
 from ..Main.Expressions import EvaluationContext
 
 from LumensalisCP.CPTyping import *
+from LumensalisCP.common import *
 
-class SceneManager(object):
+class SceneManager(Debuggable):
     def __init__(self, main ):
+        super().__init__()
+        self.name = "SceneManager"
         self.main = main
         self._scenes:Mapping[str,Scene] = {}
         self.__currentScene:Scene = None
@@ -19,13 +22,22 @@ class SceneManager(object):
     
     def run(self, context:EvaluationContext):
         if self.__currentScene is None: 
-            print( "no current scene active")
+            self.warnOut( "no current scene active" )
             return
         self.__currentScene.runTasks(context)
         
     @property
     def currentScene(self): return self.__currentScene
         
+    @currentScene.setter
+    def currentScene(self, scene:Scene):  self.setScene(scene)
         
-    def setScene(self, scene:Scene ):
-        self.__currentScene = scene
+    def setScene(self, scene:Scene|str ):
+        if type(scene) is str:
+            actualScene = self._scenes.get(scene,None)
+            ensure( actualScene is not None, "unknown scene %r", scene )
+            scene = actualScene
+        
+        if scene  != self.__currentScene:
+            self.dbgOut( "switching from scene %r to scene %r", self.__currentScene, scene )
+            self.__currentScene = scene

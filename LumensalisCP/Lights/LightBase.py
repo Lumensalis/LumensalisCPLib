@@ -24,17 +24,28 @@ class LightValueBase(object):
     def asNeoPixelInt(self)->int: raise NotImplemented
     
     @property
-    def asRGB(self) -> Mapping: raise NotImplemented
+    def asRGB(self) -> "RGB": raise NotImplemented
 
     def setLight(self, value): raise NotImplemented
 
 
 class RGB(object):
-    
+    __slots__ = '_RGB__r', '_RGB__g', '_RGB__b'
+
     def __init__(self, r:ZeroToOne=0, b:ZeroToOne=0, g:ZeroToOne=0 ):
-        self.r:ZeroToOne = r
-        self.g:ZeroToOne = g
-        self.b:ZeroToOne = b
+        if type(r) is float:
+            self.r:ZeroToOne = r
+            self.g:ZeroToOne = g
+            self.b:ZeroToOne = b
+        else:
+            if type(r) is tuple:
+                r, b, g = r
+            if isinstance(r,RGB):
+                r, b, g = r.r, r.b, r.g
+                
+            self.r:ZeroToOne = r
+            self.g:ZeroToOne = g
+            self.b:ZeroToOne = b
     
     @property 
     def r(self)->ZeroToOne: return self.__r
@@ -54,6 +65,14 @@ class RGB(object):
     def toNeoPixelInt( self ):
         return (int(255*self.__r) << 16) + (int(255*self.__g) << 8) + (int(255*self.__b))
     
+    def _set(self, r:ZeroToOne, g:ZeroToOne,b:ZeroToOne):
+        self.__r = r
+        self.__g = g
+        self.__b = b
+    
+    def _rgbTuple(self) -> Tuple[ZeroToOne,ZeroToOne,ZeroToOne]:
+        return (self.__r,self.__g,self.__b)
+        
     @staticmethod
     def fromNeoPixelInt( npi:int ) ->"RGB":
         npi = int(npi)
@@ -75,7 +94,15 @@ class RGB(object):
     def brightness(self)->float: 
         return (self.r + self.g + self.b) / 3.0
     
+    def __repr__(self):
+        return safeFmt( "(%r,%r,%r)", self.r, self.g, self.b)
+    
 class LightValueRGB(RGB, LightValueBase ):
+    RED = RGB( 1, 0, 0 )
+    BLUE = RGB( 0, 0, 1 )
+    GREEN = RGB( 0, 1, 0 )
+    BLACK = RGB( 0, 0, 0 )
+    WHITE = RGB( 1, 1, 1 )
     
     CONVERTORS = {
         int: lambda v:RGB.fromNeoPixelInt(v),
@@ -86,10 +113,14 @@ class LightValueRGB(RGB, LightValueBase ):
     }
     
     @staticmethod
-    def toRGB( value:AnyLightValue )->int:
+    def toRGB( value:AnyLightValue )->RGB:
+        
         convertor = LightValueRGB.CONVERTORS.get(type(value),None)
         if convertor is not None:
             return convertor(value)
+        
+        if isinstance( value, RGB):
+            return value
 
         if isinstance( value, LightValueBase):
             return value.asRGB
@@ -98,16 +129,24 @@ class LightValueRGB(RGB, LightValueBase ):
         ensure( False, "cannot convert %r (%s) to RGB", value, type(value))
 
     def setLight(self, value):
-        self.__value = LightValueNeoRGB.toRGB( value )
+        v = LightValueRGB.toRGB( value )
+        self._set( *v._rgbTuple() )
+
+    @staticmethod
+    def randomRGB( brightness:ZeroToOne=1) -> RGB:
+        return RGB( randomZeroToOne() * brightness,  randomZeroToOne() * brightness,  randomZeroToOne() * brightness )
 
     @property
-    def asNeoPixelInt(self)->int: return self.__value
+    def asNeoPixelInt(self)->int: 
+        return self.toNeoPixelInt()
     
     @property
     def asRGB(self) -> RGB:
-        return self.__value 
-    
+        return RGB( self._rgbTuple() )
+
 class LightValueNeoRGB(LightValueBase):
+    __slots__ = "_LightValueNeoRGB__brightness", "_LightValueNeoRGB__value"
+
     CONVERTORS = {
         int: lambda v:v & 0xFFFFFF,
         float: lambda v: ( b255 := max(0,min(255,int(v * 255))), b255 + (b255 << 8) + (b255 << 16) )[1],
@@ -279,6 +318,9 @@ class LightBase(OutputTarget):
         raise NotImplemented
     
     def getLightValue(self)-> LightValueBase: raise NotImplemented  
+    
+    def getRGB(self):
+        return self.getLightValue().asRGB
     
     @property
     def lightType(self): raise NotImplemented  

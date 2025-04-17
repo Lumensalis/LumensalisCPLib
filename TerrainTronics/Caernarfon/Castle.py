@@ -97,7 +97,8 @@ class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
         return self.main.addInput( name, pin )
     
     def initServo( self, servoN:int, name:str = None, duty_cycle:int = 2 ** 15, frequency=50, **kwds) -> LocalServo:
-        assert( self.__servos[servoN-1] is None  and self.__neoPixOnServos[servoN-1] is None )
+        ensure( self.__servos[servoN-1] is None, "servo position already in use by %r",  self.__servos[servoN-1] )
+        ensure( self.__neoPixOnServos[servoN-1] is None, "servo position already in use by %r",  self.__neoPixOnServos[servoN-1]  )
         pin = self.config.option('servo{}pin'.format(servoN))
         name = name or f"servo{servoN}"
         pwm = pwmio.PWMOut( pin, duty_cycle=duty_cycle, frequency=frequency)

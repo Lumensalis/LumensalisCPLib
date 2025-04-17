@@ -1,5 +1,5 @@
 from .LightBase import *
-
+from ..Main.Expressions import NamedOutputTarget, EvaluationContext
 from .Pattern import *
 from random import random as randomZeroToOne, randint
 
@@ -55,6 +55,41 @@ class Rainbow( Pattern ):
             target[px] = wheel1( A + (px * pxStep) )
 
 #############################################################################
+class Gauge( Pattern, NamedOutputTarget ):
+    def __init__(self,
+                target:LightGroupBase=None, name:str=None, 
+                onValue:AnyLightValue = 1.0,
+                offValue:AnyLightValue = 0.0,
+                value:ZeroToOne = 0.0,
+                **kwargs
+            ):
+        self.__onValue = onValue
+        self.__offValue = offValue
+        self.__value = value
+        super().__init__( target=target,name=name, **kwargs)
+        NamedOutputTarget.__init__(self, name=name )
+
+    @property
+    def value(self)->ZeroToOne: return self.__value
+    
+    @property
+    def onValue(self): return  self.__onValue
+    @onValue.setter
+    def onValue(self,v):  self.__onValue = v
+    
+    def set( self, value:ZeroToOne, context:EvaluationContext ):
+        self.__value = value
+
+    def refresh( self, context:UpdateContext ):
+        level = withinZeroToOne( context.valueOf(self.__value) )
+        target = self.target
+        maxPx = level * target.lightCount
+        onValue = context.valueOf(self.__onValue)
+        offValue = context.valueOf(self.__offValue)
+        for px in range(target.lightCount):
+            target[px] = onValue if px <= maxPx else offValue
+
+#############################################################################
 
 class Blink( PatternGenerator ):
     def __init__(self,
@@ -63,17 +98,19 @@ class Blink( PatternGenerator ):
                  offTime:TimeInSeconds = 1.0,
                  onValue:AnyLightValue = 1.0,
                  offValue:AnyLightValue = 0.0,
+                 intermediateRefresh:TimeInSeconds|None=None,
                  **kwargs
             ):
         self.onTime = onTime
         self.offTime = offTime
         self.onValue = onValue
         self.offValue = offValue
+        self.intermediateRefresh = intermediateRefresh
         super().__init__(*args,**kwargs)
         
     def regenerate(self, context:UpdateContext):
-        yield PatternGeneratorSharedStep( self.onTime, self.onValue )
-        yield PatternGeneratorSharedStep( self.offTime, self.offValue )
+        yield PatternGeneratorSharedStep( self.onTime, self.onValue, intermediateRefresh=self.intermediateRefresh )
+        yield PatternGeneratorSharedStep( self.offTime, self.offValue, intermediateRefresh=self.intermediateRefresh )
 
 #############################################################################
 
@@ -120,7 +157,6 @@ class Random( PatternGenerator ):
 
 #############################################################################
 
-
 class Cylon2( PatternGenerator ):
     def __init__(self,
                  *args,
@@ -131,16 +167,24 @@ class Cylon2( PatternGenerator ):
                  dimRatio:ZeroToOne = 0.7,
                  **kwargs
             ):
-        self.sweepTime = sweepTime
+        self.__sweepTime = sweepTime
         self.onValue = onValue
         self.offValue = offValue
         self.__dimRatio = dimRatio
         self.intermediateRefresh:TimeInSeconds = intermediateRefresh
         super().__init__(*args,**kwargs)
 
-        
+    @property
+    def sweepTime(self) ->TimeInSeconds: return self.__sweepTime
+    
+    @sweepTime.setter
+    def sweepTime(self,sweep:TimeInSeconds):
+        self.dbgOut( 'sweep changed to %r', sweep )
+        self.__sweepTime = sweep
+    
     def regenerate(self, context:UpdateContext):
-        sweepStepTime = self.sweepTime / (self.target.lightCount*2-2)
+        sweepStepTime = self.__sweepTime / (self.target.lightCount*2-2)
+        lightCount = self.target.lightCount
 
         
         prior = [ context.valueOf(light.value) for light in self.target.lights ]
@@ -148,7 +192,7 @@ class Cylon2( PatternGenerator ):
         offRGB = RGB.fromNeoPixelInt( self.offValue )
         def dimmed(index):
             #return self.offValue
-            was = RGB.fromNeoPixelInt(prior[index])
+            was = LightValueRGB.toRGB(prior[index])
             faded = was.fadeTowards(offRGB, self.__dimRatio )
             return  faded.toNeoPixelInt()
             
@@ -158,7 +202,7 @@ class Cylon2( PatternGenerator ):
             endValues =startValues
             prior = startValues
             
-            yield MultiLightPatternStep( sweepStepTime, starts=startValues, ends=endValues )
+            yield MultiLightPatternStep( self.__sweepTime/lightCount, starts=startValues, ends=endValues )
 
         for index in range( max(0, self.target.lightCount-2), 0, -1 ):
             onValue = context.valueOf(self.onValue)
@@ -166,7 +210,7 @@ class Cylon2( PatternGenerator ):
             endValues =startValues
             prior = startValues
             
-            yield MultiLightPatternStep( sweepStepTime, starts=startValues, ends=endValues )
+            yield MultiLightPatternStep( self.__sweepTime/lightCount, starts=startValues, ends=endValues )
 
 #############################################################################
 
@@ -211,12 +255,13 @@ class Cylon( PatternGenerator ):
 
         
     def regenerate(self, context:UpdateContext):
+        lightCount = self.target.lightCount
         sweepStepTime = self.sweepTime / self.target.lightCount
         if( self.__movingUp ):
             self.__movingUp = False
             for index in range( self.target.lightCount-1 ):
                 yield CylonPatternStep( index, up=True,
-                    duration=sweepStepTime, intermediateRefresh=self.intermediateRefresh, 
+                    duration=self.sweepTime / lightCount, intermediateRefresh=self.intermediateRefresh, 
                     startValue = self.onValue, endValue = self.offValue  )
         else:
             self.__movingUp = True

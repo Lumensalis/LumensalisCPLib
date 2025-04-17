@@ -20,6 +20,7 @@ class I2CDevice( Debuggable ):
         super().__init__()
         
         assert main is not None
+        
         if name is not None:
             self.name = name
             

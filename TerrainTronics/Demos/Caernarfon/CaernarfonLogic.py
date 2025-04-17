@@ -1,4 +1,4 @@
-from .DemoCommon import *
+from ..DemoCommon import *
 from LumensalisCP.Main.Terms import *
 from LumensalisCP.Scenes.Scene import addSceneTask
 from TerrainTronics.Caernarfon.Castle import onIRCode

@@ -124,19 +124,19 @@ class LCP_IRrecv(MainChild):
         
     def check( self, **kwds ):
         pulses = self.decoder.read_pulses(self.pulseIn, blocking=False)
-        if pulses is None: return
+        if pulses is None or len(pulses) == 0: return
         # print("Heard", len(pulses), "Pulses:", pulses)
         try:
             code = self.decoder.decode_bits(pulses)
             
             self.handleRawCode( code )
         except adafruit_irremote.IRNECRepeatException:  # unusual short code!
-            self.warnOut("NEC repeat!")
+            self.dbgOut("NEC repeat!")
         except (
             adafruit_irremote.IRDecodeException,
             adafruit_irremote.FailedToDecode,
         ) as e:  # failed to decode
-            self.warnOut("Failed to decode: %s", e.args)
+            self.dbgOut("Failed to decode: %s", e.args)
 
     
 def onIRCode( ir: LCP_IRrecv, code:int|str ):

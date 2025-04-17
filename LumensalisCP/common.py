@@ -43,7 +43,7 @@ def ensure( condition:bool, fmtStr:str|None = None, *args:Any ):
 
 import LumensalisCP.Main.Expressions
 
-def toZeroToOne( value:Any ) -> ZeroToOne:
+def toZeroToOne( value:Any ) -> float:
     if type(value) is float: return value
     if type(value) is bool:
         return 1.0 if value else 0.0
@@ -56,6 +56,9 @@ def toZeroToOne( value:Any ) -> ZeroToOne:
     except Exception as inst:
         print( f"toZeroToOne exception {inst} for {value}/{getattr(value,'__name__',None)}" )
         raise
+
+def withinZeroToOne( value:Any ) -> ZeroToOne:
+    return max(0.0,min(1.0,toZeroToOne(value)) )
 
 def SHOW_EXCEPTION( inst, fmt:str, **args ):
     print( f"EXCEPTION {inst} : {safeFmt(fmt,**args)}" )

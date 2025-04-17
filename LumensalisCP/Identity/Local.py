@@ -27,5 +27,6 @@ class NamedLocalIdentifiable(LocalIdentifiable,Debuggable):
     @property
     def name(self) -> str: return self.__name
     
+
     def __repr__(self):
         return f"{self.__class__.__name__}({self.__name}:{self.localId})"

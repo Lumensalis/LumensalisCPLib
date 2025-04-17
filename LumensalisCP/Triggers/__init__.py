@@ -32,8 +32,10 @@ def fireOnTrue( expression:Expression|ExpressionTerm, trigger:Trigger=None ):
             result = callable(*args, **kwargs)
 
             return result 
-        setattr(callable, 'trigger', cTrigger )
-        setattr(callable,'expression', expression )        
+        try: setattr(callable, 'trigger', cTrigger )
+        except: pass
+        try: setattr(callable,'expression', expression )
+        except: pass
         setattr(wrapped, 'trigger', cTrigger )
         setattr(wrapped,'expression', expression )
         #setattr( wrapped, '__name__', callable.__name__ )
