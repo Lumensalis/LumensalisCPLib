@@ -92,7 +92,7 @@ class LCP_IRrecv(MainChild):
             except Exception as inst:
                 self.SHOW_EXCEPTION( inst, "unhandledCallback failed for %x from %r", code, rawCode )
         else:
-            self.errOut( f"unhandled remote code: 0x{"%x"%code} from {rawCode}" )
+            self.dbgOut( f"unhandled remote code: 0x{"%x"%code} from {rawCode}" )
 
     def setUnhandledCallback( self, cb:Callable ):
         self.__unhandledCallback = cb
