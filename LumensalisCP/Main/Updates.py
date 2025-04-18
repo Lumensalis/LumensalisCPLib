@@ -2,6 +2,8 @@ from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
 
 from LumensalisCP.Main.Dependents import MainRef
+#import LumensalisCP.Main.Expressions as Expressions
+import LumensalisCP.Main
 
 class UpdateContext(object):
     def __init__( self, main:"LumensalisCP.Main.Manager.MainManager"=None ):
@@ -31,16 +33,26 @@ class UpdateContext(object):
         self.__changedSources.append( changed )
         
     def valueOf( self, value:Any ) -> Any:
+        xm = LumensalisCP.Main.Expressions
+          
         if type(value) is object:
-            if isinstance( value, LumensalisCP.Main.Expressions.ExpressionTerm ):
-                value = value.getValue( self )
-            elif isinstance( value, LumensalisCP.Main.Expressions.Expression ):
+            if isinstance( value, xm.ExpressionTerm ):
+                term = value
+                value = term.getValue( self )
+                print( f"valueOf term {term} = {value}")
+            elif isinstance( value, xm.Expression ):
                 value.updateValue( self )
                 value = value.value
+                print( f"valueOf Expression {term} = {value}")
             elif callable(value):
-                value = value()
+                value = self.valueOf(value())
+        elif isinstance( value, xm.ExpressionTerm ):
+            term = value
+            value = term.getValue( self )
+            #print( f"valueOf term ({type(term)}) {term} = {value}")
+        
         elif callable(value):
-            value = value()
+            value = self.valueOf( value() )
         return value
 
 class RefreshCycle(object):
