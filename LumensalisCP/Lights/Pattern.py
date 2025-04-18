@@ -1,4 +1,4 @@
-from .LightBase import *
+from .Light import *
 
 import LumensalisCP.Main.Manager
 
@@ -12,7 +12,7 @@ class Pattern(Debuggable):
     
     _theManager:"LumensalisCP.Main.Manager.MainManager" = None
     
-    def __init__(self,  target:LightGroupBase=None, name:str=None, 
+    def __init__(self,  target:LightGroup=None, name:str=None, 
                  whenOffset:TimeInSeconds=0.0, startingSpeed:TimeInSeconds=1.0 ):
         self.__name = name or (getattr( target,'name', '') + "-" + self.__class__.__name__)
         super().__init__()
@@ -36,7 +36,7 @@ class Pattern(Debuggable):
     def name(self) -> str: return self.__name
 
     @property
-    def target(self) -> LightGroupBase : return  self.__target
+    def target(self) -> LightGroup : return  self.__target
     
     @property
     def speed(self) -> TimeInSeconds: return self.__speed

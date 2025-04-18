@@ -2,6 +2,18 @@ from ..DemoCommon import *
 from LumensalisCP.Lights.ProxyLights import *
 from LumensalisCP.Triggers.Timer import PeriodicTimer
 
+
+
+class SlotsTest( object ):
+    __slots__ = "a", "b", "c"
+    
+    def __init__(self, **kwds ):
+        for tag,val in kwds.items():
+            setattr(self,tag,val)
+            
+    def __repr__(self):
+        return f"{self.__dict__}"
+    
 class TreasureChest( DemoBase ):
 
     def setupTouch(self):
@@ -56,7 +68,7 @@ class TreasureChest( DemoBase ):
         self.frontLidStrip = pixels.nextNLights(8)
         
         def blendWith( color:RGB, ratio:ZeroToOne ):
-            def blended( light:LightBase, context: UpdateContext ):
+            def blended( light:Light, context: UpdateContext ):
                 return color.fadeTowards( light.getRGB(), ratio )
             return blended
         
@@ -246,6 +258,7 @@ class TreasureChest( DemoBase ):
         sceneOpen.addTask( updateCylonColor, period=0.025 )
         sceneClosed.addTask( updateCylonColor, period=0.025 )
         
+        
         rbcc, rbs = 3.1, 0.6
         patterns = [
             Rainbow(self.leftBlueLights,colorCycle=rbcc, spread=rbs ), #,whenOffset = 2.1 ),
@@ -277,8 +290,11 @@ class TreasureChest( DemoBase ):
         
         dmxRemote = main.addScene("dmxRemote")
         dmxTestRGB = main.dmx.addRGBInput( "color", 1 )
+        dmxRemote.addRule( self.caernarfon.pixels[1], dmxTestRGB )
+
         dmxTestDimmer = main.dmx.addDimmerInput( "dimmer", 4 )
         dmxLid = main.dmx.addDimmerInput( "lid", 6 )
+        dmxEnable = main.dmx.addDimmerInput( "enable", 7 )
 
         dmxRemote.addPatterns(
             Rainbow( self.centerStoneLights, colorCycle=dmxTestDimmer*5.0),
@@ -288,11 +304,23 @@ class TreasureChest( DemoBase ):
         
         dmxRemote.addRule( self.lidDrive, dmxLid * lidSpan + self.lidClosedPosition )
         
+        @fireOnTrue( rising( dmxEnable > 0.9 ) )
+        def enableDMX(**kwargs):
+            print( "enableDMX...")
+            self.main.scenes.currentScene = dmxRemote
+
+        @fireOnTrue( rising( dmxEnable < 0.1 ) )
+        def disableDMX(**kwargs):
+            print( "disableDMX...")
+            self.main.scenes.currentScene = "closing"
+            
+        
         #####################################################################
         
         dmxTestDimmer.enableDbgOut = True
         dmxTestRGB.enableDbgOut = True
         dmxLid.enableDbgOut = True
+        dmxEnable.enableDbgOut = True
         
         def updateStuff( context=None, **kwargs ):
             context = context or self.main.latestContext
@@ -348,6 +376,20 @@ class TreasureChest( DemoBase ):
         self.potField = display.addText( "---", x=35, y=displayMidHeight + 12 )
         
 def demoMain(*args,**kwds):
-    
-    demo = TreasureChest( *args, **kwds )
-    demo.run()
+    if 0:
+        def test( **kwargs ):
+            t = SlotsTest(**kwargs)
+            print( f"{t}")
+            return t
+        
+        def foo( b=None ):
+            pass
+        
+        test(a='aaaaa')
+        test(d='dddd')
+        
+        foo(c=1)
+        
+    else:
+        demo = TreasureChest( *args, **kwds )
+        demo.run()

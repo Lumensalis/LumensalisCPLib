@@ -1,9 +1,9 @@
-from LumensalisCP.Lights.LightBase import *
+from LumensalisCP.Lights.Light import *
 
 #############################################################################
-class ProxyRGBLightsSource( LightSourceBase ):
+class ProxyRGBLightsSource( LightSource ):
     
-    def __init__( self,source:LightGroupBase, name:str|None = None, **kwds ):
+    def __init__( self,source:LightGroup, name:str|None = None, **kwds ):
         self.__lights:List[ProxyRGBLight] = []
         super().__init__( 
                          name = name or f"{self.__class__.__name__}({source.name})",
@@ -13,7 +13,7 @@ class ProxyRGBLightsSource( LightSourceBase ):
         for light in source.lights:
             self.__lights.append( self.makeProxy( len(self.__lights), light ) )
     
-    def makeProxy(self, index:int, light:LightBase ):
+    def makeProxy(self, index:int, light:Light ):
         return ProxyRGBLight( self, index, light )
 
     def recalculateForwardValue( self, light:"ProxyRGBLight", context: UpdateContext = None  ):
@@ -22,9 +22,9 @@ class ProxyRGBLightsSource( LightSourceBase ):
 
 #############################################################################
         
-class ProxyRGBLight( RGBLightBase ):
+class ProxyRGBLight( RGBLight ):
 
-    def __init__(self, source:"ProxyRGBLightsSource", index:int, light:LightBase ):
+    def __init__(self, source:"ProxyRGBLightsSource", index:int, light:Light ):
         super().__init__(source=source, index=index)
         self.__value:RGB = light.getLightValue().asRGB #RGB(0,0,0)
         self.__forwardValue = self.__value
@@ -62,7 +62,7 @@ class ProxyRGBLight( RGBLightBase ):
             
 
 class ProxyRGBLightsCallbackSource( ProxyRGBLightsSource ):
-    def __init__( self,source:LightGroupBase, cb:Callable = None, **kwargs ):
+    def __init__( self,source:LightGroup, cb:Callable = None, **kwargs ):
         super().__init__(source,**kwargs)
         self.__cb = cb
 
@@ -70,7 +70,7 @@ class ProxyRGBLightsCallbackSource( ProxyRGBLightsSource ):
         return self.__cb(light=light,context=context)
 
 class DimmedLightsSource( ProxyRGBLightsSource ):
-    def __init__( self,source:LightGroupBase, brightness=1.0, **kwargs ):
+    def __init__( self,source:LightGroup, brightness=1.0, **kwargs ):
         super().__init__(source,**kwargs)
         self.__brightness = brightness
         self.__black = RGB()

@@ -31,11 +31,85 @@ class LightValueBase(object):
 
 from collections import namedtuple
 
-#Point = namedtuple('Point', ['x', 'y'])
-class RGB(namedtuple('RGBBase', ['r', 'g','b'])):
+class RGB(list):
+    #__slots__ = '_RGB__r', '_RGB__g', '_RGB__b'
+
+    def __init__(self, r:ZeroToOne=0, g:ZeroToOne|None=None, b:ZeroToOne|None=None ):
+        super().__init__()
+        if g is None:
+            ensure( type(b) is float, "b must also be None" )
+            if r is None:
+                r,g,b = 0.0,0.0,0.0
+            elif type(r) is tuple:
+                r, b, g = r
+            elif isinstance(r,RGB):
+                r, b, g = r.r, r.b, r.g
+                
+        r = withinZeroToOne( r ) 
+        g = withinZeroToOne( g ) 
+        b = withinZeroToOne( b ) 
+
+        self.extend( (r,g,b) )
+        ensure( len(self) == 3 )
+    @property 
+    def r(self)->ZeroToOne: return self[0]
+    @r.setter
+    def r(self,v): self[0] = max(0.0, min(1.0,v) )
+    
+    @property 
+    def g(self)->ZeroToOne: return self[1]
+    @g.setter
+    def g(self,v): self[1] = max(0.0, min(1.0,v) )
+    
+    @property 
+    def b(self)->ZeroToOne: return self[2]
+    @b.setter
+    def b(self,v): self[2] = max(0.0, min(1.0,v) )
+    
+    def toNeoPixelInt( self ):
+        return (int(255*self.r) << 16) + (int(255*self.b) << 8) + (int(255*self.g))
+    
+    def _set(self, r:ZeroToOne, g:ZeroToOne,b:ZeroToOne):
+        self.r = r
+        self.g = g
+        self.b = b
+    
+    def _rgbTuple(self) -> Tuple[ZeroToOne,ZeroToOne,ZeroToOne]:
+        return self
+        
+    @staticmethod
+    def fromNeoPixelInt( npi:int ) ->"RGB":
+        npi = int(npi)
+        return RGB(
+            r=((npi&0xFF0000)>>16)/255.0,
+            g=((npi&0xFF00)>>8)/255.0,
+            b=(npi&0xFF00)/255.0
+        )
+    
+    def fadeTowards(self, other:"RGB", ratio:ZeroToOne )->"RGB":
+        r2 = 1.0 - ratio
+        return RGB(
+            r = self.r * r2 + other.r * ratio,
+            g = self.g * r2 + other.g * ratio,
+            b = self.b * r2 + other.b * ratio,
+        )
+
+    @property
+    def brightness(self)->float: 
+        return (self.r + self.g + self.b) / 3.0
+    
+    def __repr__(self):
+        return safeFmt( "(%r,%r,%r)", self.r, self.g, self.b)
+    
+    def __str__(self):
+        return safeFmt( "(%r,%r,%r)", self.r, self.g, self.b)
+    #Point = namedtuple('Point', ['x', 'y'])
+    
+class RGBNT(namedtuple('RGBBase', ['_r', '_g','_b'])):
     #__slots__ = '_RGB__r', '_RGB__g', '_RGB__b'
 
     def __init__(self, r:ZeroToOne=0, b:ZeroToOne=0, g:ZeroToOne=0 ):
+        super().__init__(r,g,b)
         if type(r) is float:
             self.r:ZeroToOne = r
             self.g:ZeroToOne = g
@@ -51,19 +125,19 @@ class RGB(namedtuple('RGBBase', ['r', 'g','b'])):
             self.b:ZeroToOne = b
     
     @property 
-    def r(self)->ZeroToOne: return self[0]
+    def r(self)->ZeroToOne: return self._r
     @r.setter
-    def r(self,v): self[0] = max(0.0, min(1.0,v) )
+    def r(self,v): self._r = max(0.0, min(1.0,v) )
     
     @property 
-    def g(self)->ZeroToOne: return self[1]
+    def g(self)->ZeroToOne: return self._b
     @g.setter
-    def g(self,v): self[1] = max(0.0, min(1.0,v) )
+    def g(self,v): self._g = max(0.0, min(1.0,v) )
     
     @property 
-    def b(self)->ZeroToOne: return self[2]
+    def b(self)->ZeroToOne: return self._g
     @b.setter
-    def b(self,v): self[2] = max(0.0, min(1.0,v) )
+    def b(self,v): self._b = max(0.0, min(1.0,v) )
     
     def toNeoPixelInt( self ):
         return (int(255*self.r) << 16) + (int(255*self.b) << 8) + (int(255*self.g))

@@ -2,13 +2,13 @@
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
 from LumensalisCP.I2C.I2CDevice import I2CDevice, I2CInputSource, UpdateContext
-from LumensalisCP.Lights.LightBase import *
+from LumensalisCP.Lights.Light import *
 
 
 from .aw210xx import AW210xx, AW210xxOpenShortDetect
 
 
-class HarlechXL_LED( SingleColorDimmableLightBase ):
+class HarlechXL_LED( DimmableLight ):
     # source : ( CilgerranPixelSource )
 
     PWM_FREQUENCY = 20000
@@ -45,7 +45,7 @@ class HarlechXL_LED( SingleColorDimmableLightBase ):
         return f"CilgerranLED( {self.name}, {self.__index}, v={self.__value} )"
 
 
-class HarlechXLCastle(I2CDevice, LightSourceBase ):
+class HarlechXLCastle(I2CDevice, LightSource ):
 
     def __init__( self, name:str|None =None, 
                  maxLeds = 32,
@@ -60,7 +60,7 @@ class HarlechXLCastle(I2CDevice, LightSourceBase ):
         self.__ledChanges = 0
 
         super().__init__(address=address, updateInterval=updateInterval, **kwargs)
-        LightSourceBase.__init__(self, name=name, lights= self.__leds ),
+        LightSource.__init__(self, name=name, lights= self.__leds ),
 
 
         self._ledDriver = AW210xx( self.i2c,r_ext=3650, model="AW21036", address=address)
@@ -123,7 +123,7 @@ class HarlechXLCastle(I2CDevice, LightSourceBase ):
         
         return rv
     
-    def lightChanged(self,light:"LightBase"): 
+    def lightChanged(self,light:"Light"): 
         self.__ledChanges += 1
     
     

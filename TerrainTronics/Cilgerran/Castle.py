@@ -5,11 +5,11 @@ from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
 import digitalio, analogio, pwmio
 from LumensalisCP.Triggers.Timer import PeriodicTimer
-from LumensalisCP.Lights.LightBase import *
+from LumensalisCP.Lights.Light import *
 
 import LumensalisCP.Main.Expressions
 
-class CilgerranLED( SingleColorDimmableLightBase ):
+class CilgerranLED( DimmableLight ):
     # source : ( CilgerranPixelSource )
 
     PWM_FREQUENCY = 20000
@@ -42,7 +42,7 @@ class CilgerranLED( SingleColorDimmableLightBase ):
         return f"CilgerranLED( {self.name}, {self.__index}, v={self.__value} )"
 
 
-class CilgerranPixelSource( LightSourceBase, OutputTarget ):
+class CilgerranPixelSource( LightSource, OutputTarget ):
 
     def __init__( self, board:"CilgerranCastle", name:str|None=None, maxLeds = 8, **kwargs ):
         self.__leds:List[CilgerranLED] = [None] * maxLeds
@@ -112,7 +112,7 @@ class CilgerranPixelSource( LightSourceBase, OutputTarget ):
         
         return rv
     
-    def lightChanged(self,light:"LightBase"): pass
+    def lightChanged(self,light:"Light"): pass
         
 class CilgerranBatterMonitor(InputSource):
     VOLT_SCALE = (1.0/65535.0) * 5.0

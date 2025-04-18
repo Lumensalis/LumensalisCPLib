@@ -1,7 +1,7 @@
 from ..Main.Dependents import *
 from ..Main.Manager import MainManager
 from LumensalisCP.common import *
-from LumensalisCP.Lights.LightBase import *
+from LumensalisCP.Lights.Light import *
 from LumensalisCP.Main.Expressions import InputSource
 from LumensalisCP.Main.Updates import UpdateContext
 

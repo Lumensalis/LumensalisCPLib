@@ -1,4 +1,4 @@
-from .LightBase import *
+from .Light import *
 from ..Main.Expressions import NamedOutputTarget, EvaluationContext
 from .Pattern import *
 from random import random as randomZeroToOne, randint
@@ -60,7 +60,7 @@ class Rainbow( Pattern ):
 #############################################################################
 class Gauge( Pattern, NamedOutputTarget ):
     def __init__(self,
-                target:LightGroupBase=None, name:str=None, 
+                target:LightGroup=None, name:str=None, 
                 onValue:AnyLightValue = 1.0,
                 offValue:AnyLightValue = 0.0,
                 value:ZeroToOne = 0.0,

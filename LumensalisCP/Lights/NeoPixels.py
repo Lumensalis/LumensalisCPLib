@@ -1,4 +1,4 @@
-from .LightBase import *
+from .Light import *
 from LumensalisCP.Main.Manager import MainManager
 import neopixel
 
@@ -7,7 +7,7 @@ from LumensalisCP.util.bags import Bag
 #import adafruit_led_animation.animation.blink
 #import adafruit_led_animation.helper
 
-class NeoPixelLight( RGBLightBase ):
+class NeoPixelLight( RGBLight ):
 
     def __init__(self, source:"NeoPixelSource", index:int = 0):
         super().__init__(source=source, index=index)
@@ -29,7 +29,7 @@ class NeoPixelLight( RGBLightBase ):
     def getLightValue( self ):
         return LightValueNeoRGB( self.__npiv )
     
-class NeoPixelSource( LightSourceBase ):
+class NeoPixelSource( LightSource ):
     def __init__(self, pin, pixelCount:int, name:str=None, refreshRate:float|None = 0.1, main:MainManager = None, **kwds):
         self.__npLights:List[NeoPixelLight] = []
         super().__init__( lights = self.__npLights, name=name or f"{self.__class__.__name__}_{pin}" )
@@ -42,7 +42,7 @@ class NeoPixelSource( LightSourceBase ):
         self._latestRefresh = 0
         self._showings = 0
 
-    def lightChanged(self,light:LightBase):
+    def lightChanged(self,light:Light):
         self._changesSinceRefresh += 1
         
     @property
