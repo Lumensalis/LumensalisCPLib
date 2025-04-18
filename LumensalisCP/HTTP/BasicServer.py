@@ -19,7 +19,7 @@ class BasicServer(Server):
         
         assert main is not None
         
-        self.pool = socketpool.SocketPool(wifi.radio)
+        self.pool = main.socketPool
         super().__init__(self.pool, debug=True)
 
 

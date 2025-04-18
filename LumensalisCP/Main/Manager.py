@@ -42,6 +42,9 @@ class MainManager(ConfigurableBase, Debuggable):
         self._when:TimeInSeconds = self.newNow
         self.__defaultI2C:busio.I2C = None
         self.__i2cChannels:Mapping[Tuple[int,int],busio.I2C] = {}
+        self.__asyncTaskCreators = []
+        self.__preFirstRunCallbacks:List[Callable] = []
+        self.__socketPool = None
         
         Debuggable._getNewNow = self.getNewNow
         mainConfigDefaults = dict(
@@ -82,6 +85,7 @@ class MainManager(ConfigurableBase, Debuggable):
         self._webServer = None
         self.__deferredTasks = collections.deque( [], 99, True )
         self.__audio = None
+        self.__dmx : "LumensalisCP.Lights.DMXManager.DMXManager"|None = None
 
         self._tasks:List[Callable] = []
         self.__shutdownTasks:List[ExitTask] = []
@@ -146,7 +150,23 @@ class MainManager(ConfigurableBase, Debuggable):
     @property
     def latestContext(self)->EvaluationContext: return  self.__evContext
 
+    @property
+    def dmx(self):
+        if self.__dmx is None:
+            import LumensalisCP.Lights.DMXManager
+            self.__dmx = LumensalisCP.Lights.DMXManager.DMXManager( self )
+            
+            self.__asyncTaskCreators.append( self.__dmx.createAsyncTasks )
 
+        return self.__dmx
+    
+    @property
+    def socketPool(self):
+        if self.__socketPool is None:
+            import socketpool
+            self.__socketPool = socketpool.SocketPool(wifi.radio)
+        return self.__socketPool
+        
     def callLater( self, task ):
         self.__deferredTasks.append( task )
 
@@ -188,6 +208,13 @@ class MainManager(ConfigurableBase, Debuggable):
         self._webServer = server
         for v in self._controlVariables.values():
             server.monitorControlVariable( v )
+            
+        self.__asyncTaskCreators.append( server.createAsyncTasks )
+        
+        def startWebServer():
+            self._webServer.start(str(wifi.radio.ipv4_address))
+
+        self.__preFirstRunCallbacks.append( startWebServer )
         return server
 
     def handleWsChanges( self, changes:dict ):
@@ -303,14 +330,12 @@ class MainManager(ConfigurableBase, Debuggable):
     
     def run( self ):
         
-        if self._webServer is not None:
-            self._webServer.start(str(wifi.radio.ipv4_address))
         async def main():      
             asyncTasks = [
                 asyncio.create_task( self.taskLoop() )
             ]
-            if self._webServer is not None:
-                asyncTasks.extend(self._webServer.createAsyncTasks())
+            for atc in self.__asyncTaskCreators:
+                asyncTasks.extend(atc())
             await asyncio.gather( *asyncTasks )
             
         asyncio.run( main() )

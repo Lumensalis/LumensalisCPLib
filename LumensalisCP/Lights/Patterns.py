@@ -41,14 +41,17 @@ class Rainbow( Pattern ):
     def refresh( self, context:UpdateContext ):
         when = self.offsetWhen( context )
         self.__latestCycleWhen = when
-        A = (when + self.__colorCycleWhenOffset) / context.valueOf(self.colorCycle)
+        cc = context.valueOf(self.colorCycle)
+        #print( f"cc = {cc} from {self.colorCycle}")
+        A = (when + self.__colorCycleWhenOffset) / max(0.001,context.valueOf(self.colorCycle))
+        ensure( type(A) is float, f"A is {type(A)}, not float" )
         
         target = self.target
         spread = context.valueOf(self.spread)
         if spread == 0:
             pxStep = 0
         else:
-            pxStep = 1 / (target.lightCount * spread )
+            pxStep = 1 / (target.lightCount * context.valueOf(spread) )
             
         # set each pixel
         for px in range(target.lightCount):
@@ -83,11 +86,22 @@ class Gauge( Pattern, NamedOutputTarget ):
     def refresh( self, context:UpdateContext ):
         level = withinZeroToOne( context.valueOf(self.__value) )
         target = self.target
-        maxPx = level * target.lightCount
-        onValue = context.valueOf(self.__onValue)
-        offValue = context.valueOf(self.__offValue)
+        maxPxf = level * target.lightCount
+        maxPx = int(maxPxf)
+        pxR = maxPxf - maxPx
+        
+        onValue = LightValueRGB.toRGB( context.valueOf(self.__onValue) )
+        offValue = LightValueRGB.toRGB( context.valueOf(self.__offValue) )
+        
+        
         for px in range(target.lightCount):
-            target[px] = onValue if px <= maxPx else offValue
+            if px < maxPx:
+                v = onValue 
+            elif px > maxPx:
+                v = offValue 
+            else:
+                v = offValue.fadeTowards(onValue, pxR)
+            target[px] = v
 
 #############################################################################
 

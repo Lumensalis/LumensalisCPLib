@@ -63,7 +63,7 @@ class RGB(object):
     def b(self,v): self.__b = max(0.0, min(1.0,v) )
     
     def toNeoPixelInt( self ):
-        return (int(255*self.__r) << 16) + (int(255*self.__g) << 8) + (int(255*self.__b))
+        return (int(255*self.__r) << 16) + (int(255*self.__b) << 8) + (int(255*self.__g))
     
     def _set(self, r:ZeroToOne, g:ZeroToOne,b:ZeroToOne):
         self.__r = r

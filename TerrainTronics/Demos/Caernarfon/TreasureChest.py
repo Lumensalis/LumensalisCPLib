@@ -23,8 +23,10 @@ class TreasureChest( DemoBase ):
             def onTouched(**kwds):
                 if self.leftStoneTouch or self.bottomTouch:
                     self.openLid()
-                elif self.rightStoneTouch or self.centerRimTouch:
+                elif  self.centerRimTouch:
                     self.closeLid()
+                elif self.rightStoneTouch:
+                    self.main.scenes.currentScene = "dmxRemote"
                 elif self.centerStoneTouch:
                     self.lidDrive.stop()
                     
@@ -110,7 +112,10 @@ class TreasureChest( DemoBase ):
         #self.lidClosedMag.enableDbgOut = True
 
     def  lidArrived(self):
+        
         print( "lid arrived, turning servo off" )
+        if self.main.scenes.currentScene.name == "dmxRemote": return
+        
         if self.lidDrive.lastSetAngle == self.lidClosedPosition:
             self.main.scenes.currentScene = "closed"
         elif self.lidDrive.lastSetAngle == self.lidOpenPosition:
@@ -119,17 +124,19 @@ class TreasureChest( DemoBase ):
         self.lidDrive.set( None )
 
     def closeLid(self):
+        if self.main.scenes.currentScene.name == "dmxRemote": return
         self.main.scenes.setScene("closing")
         self.lidDrive.moveTo(self.lidClosedPosition,self.lidCloseSpeed)
 
     def openLid(self):
+        if self.main.scenes.currentScene.name == "dmxRemote": return
         self.main.scenes.setScene("opening")
         self.lidDrive.moveTo(self.lidOpenPosition,self.lidOpenSpeed)
             
     def jogLid(self, delta):
-            newAngle = self.lidDrive.lastSetAngle + delta
-            print( f"lid to {newAngle}")
-            self.lidDrive.set(newAngle)
+        newAngle = self.lidDrive.lastSetAngle + delta
+        print( f"lid to {newAngle}")
+        self.lidDrive.set(newAngle)
             
     #########################################################################
     def setupRemote(self):
@@ -160,6 +167,11 @@ class TreasureChest( DemoBase ):
         @ir.onCodeDef( "VOL-" )
         def jogLidDown(): self.jogLid(1)
 
+        @ir.onCodeDef( "CH" )
+        def dmxRemote(): 
+            sceneManager.setScene( "dmxRemote" )
+        
+
     def setup(self):
 
         main = self.main
@@ -175,6 +187,7 @@ class TreasureChest( DemoBase ):
         sceneOpening = main.addScene("opening")
         sceneClosed = main.addScene("closed")
         sceneClosing = main.addScene("closing")
+        
 
         self.enableStatsPrint = False
         #self.setupDisplay()
@@ -183,6 +196,8 @@ class TreasureChest( DemoBase ):
         self.setupTouch()
         self.setupRemote()
 
+        self.dmx = main.dmx
+        
         def rChannel(): return randint(0,64)
         def randomRGB(): return (rChannel() << 16) + (rChannel() << 8) +  rChannel()
 
@@ -259,6 +274,26 @@ class TreasureChest( DemoBase ):
         lidSpan = self.lidOpenPosition - self.lidClosedPosition 
 
         #####################################################################
+        
+        dmxRemote = main.addScene("dmxRemote")
+        dmxTestRGB = main.dmx.addRGBInput( "color", 1 )
+        dmxTestDimmer = main.dmx.addDimmerInput( "dimmer", 4 )
+        dmxLid = main.dmx.addDimmerInput( "lid", 6 )
+
+        dmxRemote.addPatterns(
+            Rainbow( self.centerStoneLights, colorCycle=dmxTestDimmer*5.0),
+            Blink( self.leftStoneLights, onValue=dmxTestRGB, offTime=0.2 ),
+            Gauge( self.frontLidStrip, "dimmer", value=dmxTestDimmer, onValue=dmxTestRGB ),
+        )
+        
+        dmxRemote.addRule( self.lidDrive, dmxLid * lidSpan + self.lidClosedPosition )
+        
+        #####################################################################
+        
+        dmxTestDimmer.enableDbgOut = True
+        dmxTestRGB.enableDbgOut = True
+        dmxLid.enableDbgOut = True
+        
         def updateStuff( context=None, **kwargs ):
             context = context or self.main.latestContext
             
@@ -269,7 +304,10 @@ class TreasureChest( DemoBase ):
             anglePattern.set( openRatio, context )
             anglePattern.refresh( context=context )
             
-            sceneColor = sceneColors.get( self.main.scenes.currentScene.name, LightValueRGB.WHITE )
+            if main.scenes.currentScene is not None:
+                sceneColor = sceneColors.get( main.scenes.currentScene.name, LightValueRGB.WHITE )
+            else:
+                sceneColor = LightValueRGB.BLACK
             
             #print( f"openRatio={openRatio} for {self.lidDrive.lastSetAngle}, sceneColor = {sceneColor} for {self.main.scenes.currentScene}" )
             self.sceneIndicatorLights[0] = sceneColor

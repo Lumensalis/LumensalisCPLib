@@ -31,12 +31,16 @@ from LumensalisCP.I2C.Adafruit.AdafruitI2CFactory import AdafruitFactory
 from LumensalisCP.I2C.I2CFactory import I2CFactory
 from LumensalisCP.HTTP.BasicServer import BasicServer
 from LumensalisCP.Audio import Audio
+from LumensalisCP.Lights.DMXManager import DMXManager
+from socketpool import SocketPool
 
 class MainManager(ConfigurableBase, Debuggable):
     
     theManager : MainManager|None
     i2cFactory : I2CFactory
     adafruitFactory : AdafruitFactory
+    dmx : DMXManager
+    socketPool : SocketPool
     
     @staticmethod
     def initOrGetManager()->MainManager:pass
