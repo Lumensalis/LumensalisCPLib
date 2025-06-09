@@ -170,7 +170,18 @@ class Random( PatternGenerator ):
 
 
 #############################################################################
+import LumensalisCP.Main.Expressions as xm
 
+def prepRGBValue( value ):
+    if (
+            isinstance( value, xm.ExpressionTerm ) or
+            isinstance( value, xm.Expression ) or
+            callable(value)
+    ):
+        return value
+    return LightValueRGB.toRGB( value )
+    
+        
 class Cylon2( PatternGenerator ):
     def __init__(self,
                  *args,
@@ -182,8 +193,8 @@ class Cylon2( PatternGenerator ):
                  **kwargs
             ):
         self.__sweepTime = sweepTime
-        self.onValue = onValue
-        self.offValue = offValue
+        self.onValue = prepRGBValue( onValue )
+        self.offValue = prepRGBValue( offValue )
         self.__dimRatio = dimRatio
         self.intermediateRefresh:TimeInSeconds = intermediateRefresh
         super().__init__(*args,**kwargs)
@@ -203,7 +214,7 @@ class Cylon2( PatternGenerator ):
         
         prior = [ context.valueOf(light.value) for light in self.target.lights ]
         #print( f"prior = { LightValueNeoRGB.formatNeoRGBValues( prior)}" )
-        offRGB = RGB.fromNeoPixelInt( self.offValue )
+        offRGB = LightValueRGB.toRGB( context.valueOf( self.offValue ) )
         def dimmed(index):
             #return self.offValue
             was = LightValueRGB.toRGB(prior[index])
@@ -211,7 +222,7 @@ class Cylon2( PatternGenerator ):
             return  faded.toNeoPixelInt()
             
         for index in range( self.target.lightCount ):
-            onValue = context.valueOf(self.onValue)
+            onValue = LightValueRGB.toRGB(context.valueOf(self.onValue))
             startValues = [(onValue if i2 == index else dimmed(i2)) for i2 in range(self.target.lightCount) ]
             endValues =startValues
             prior = startValues

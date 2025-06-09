@@ -3,6 +3,7 @@ from LumensalisCP.common import *
 from LumensalisCP.Main.Expressions import OutputTarget, UpdateContext
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.util.bags import Bag
+import LumensalisCP.Main.Expressions as xm
 
 import rainbowio
 from random import random as randomZeroToOne, randint
@@ -249,12 +250,23 @@ class LightValueRGB(RGB, LightValueBase ):
     BLACK = RGB( 0, 0, 0 )
     WHITE = RGB( 1, 1, 1 )
     
+    @staticmethod
+    def lookupColor( color:str ):
+        rv = getattr(LightValueRGB,color,None )
+        if rv is None:
+            raise KeyError( safeFmt("unknown color %r",color) )
+        
+        return rv
+        
+        
+    
     CONVERTORS = {
         int: lambda v:RGB.fromNeoPixelInt(v),
         float: lambda v: RGB( v, v, v ),
         bool: lambda v: RGB( 1,1,1 ) if v else RGB( 0, 0, 0 ),
         tuple: lambda v: RGB(v[0], v[1], v[2]),
         list: lambda v: RGB(v[0], v[1], v[2]),
+        str: lambda v: LightValueRGB.lookupColor(v),
     }
     
     @staticmethod
@@ -270,9 +282,19 @@ class LightValueRGB(RGB, LightValueBase ):
         if isinstance( value, LightValueBase):
             return value.asRGB
 
-
         ensure( False, "cannot convert %r (%s) to RGB", value, type(value))
 
+    @staticmethod
+    def prepRGBValue( value ):
+        if (
+                isinstance( value, xm.ExpressionTerm ) or
+                isinstance( value, xm.Expression ) or
+                callable(value)
+        ):
+            return value
+        
+        return LightValueRGB.toRGB( value )
+        
     def setLight(self, value):
         v = LightValueRGB.toRGB( value )
         self._set( *v._rgbTuple() )
