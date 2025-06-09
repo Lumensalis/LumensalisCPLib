@@ -12,18 +12,21 @@ import LumensalisCP.Main.Expressions
 class CilgerranLED( DimmableLight ):
     # source : ( CilgerranPixelSource )
 
-    PWM_FREQUENCY = 20000
+    PWM_FREQUENCY = 2000
+    
     DUTY_CYCLE_RANGE = 65535
     def __init__(self, name, board:"CilgerranCastle", index:int, pin=None, **kwargs ):
         super().__init__( name=name, **kwargs )
         #print(f'CilgerranLED {name} [{index}]')
         #self.__board:"CilgerranCastle" = board
+        self.__main = board.main
         self.__index = index
         self.__value = 0
         self.__output = pwmio.PWMOut(pin=board.asPin(pin), frequency= CilgerranLED.PWM_FREQUENCY,duty_cycle=0 ) 
         
 
     def setValue(self,value:AnyLightValue, context: UpdateContext = None ):
+        context = context or self.__main.latestContext
         level = toZeroToOne(context.valueOf( value ) )
         self.__value = value
         self.__output.duty_cycle = int( value * self.source.brightness * CilgerranLED.DUTY_CYCLE_RANGE )
@@ -39,7 +42,7 @@ class CilgerranLED( DimmableLight ):
     def value(self): return self.__value
     
     def __repr__(self):
-        return f"CilgerranLED( {self.name}, {self.__index}, v={self.__value} )"
+        return f"CilgerranLED( {self.name}, {self.__index}, v={self.__value}, dc={self.__output.duty_cycle} )"
 
 
 class CilgerranPixelSource( LightSource, OutputTarget ):
