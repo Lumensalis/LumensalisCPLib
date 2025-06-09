@@ -2,6 +2,8 @@ from LumensalisCP.CPTyping import Any, Callable, Generator, List, Mapping,TypedD
 from .Debug import Debuggable
 import traceback
 
+import LumensalisCP.util.weakrefish as weakref
+
 TimeInSeconds = float
 DegreesPerSecond = float
 Degrees = float

@@ -10,18 +10,15 @@ class MainChild( NamedLocalIdentifiable):
         # type: (str, LumensalisCP.Main.Manager.MainManager ) -> None
         NamedLocalIdentifiable.__init__( self, name = name or self.__class__.__name__)
         ensure( main is not None )
-        self.__main = main
+        self.__main = weakref.ref(main)
         print( f"MainChild __init__( name={self.name}, main={main})")
 
     @property
-    def main(self): return self.__main
+    def main(self): return self.__main()
 
-class FactoryBase( object ):
+class FactoryBase( MainChild ):
     def __init__(self, main:"LumensalisCP.Main.Manager.MainManager"):
-        self.__main = main
-        
-    @property 
-    def main(self): return self.__main
+        super().__init__( self.__class__.__name__, main )
 
 class ManagerBase(object):
     
