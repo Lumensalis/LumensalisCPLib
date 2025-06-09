@@ -1,6 +1,6 @@
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
-from LumensalisCP.Main.Expressions import InputSource
+from LumensalisCP.Main.Expressions import InputSource, OutputTarget
 from LumensalisCP.Main.Updates import UpdateContext
 
 import busio
@@ -65,3 +65,12 @@ class I2CInputSource( InputSource ):
 
     @property
     def parentTarget(self): return self._wrTarget
+    
+    
+class I2COutputTarget( OutputTarget ):
+    def __init__(self, target:I2CDevice = None, **kwargs ):
+        super().__init__(**kwargs)
+        self._wrTarget = target # weakref.ref(target)
+
+    @property
+    def parentTarget(self): return self._wrTarget    
