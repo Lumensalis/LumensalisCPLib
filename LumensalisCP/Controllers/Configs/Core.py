@@ -49,7 +49,24 @@ configs = {
         D6 = "GPIO6",
         D7 = "GPIO7",
         D8 = "GPIO10",
-     )
+     ),
+    
+    'lolin_s3_mini' : ControllerConfig(
+        TX = "GPIO43",
+        RX = "GPIO44",
+        D1 = "GPIO36", #SCL
+        D2 = "GPIO35", #SDA
+        D3 = "GPIO18",
+        D4 = "GPIO16",
+        
+        A0 = "GPIO2",
+        D0 = "GPIO4",
+        D5 = "GPIO12",
+        D6 = "GPIO13",
+        D7 = "GPIO11",
+        D8 = "GPIO10",
+     ),
+    
 }
 
 configs['WemosS2Mini'] = configs['lolin_s2_mini']
