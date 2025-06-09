@@ -5,6 +5,7 @@ from LumensalisCP.common import *
 from LumensalisCP.util.bags import *
 from ..Main.Expressions import EvaluationContext
 from ..Lights.Patterns import Pattern
+from LumensalisCP.util.kwCallback import KWCallback
 
 class Setter(object):
     pass
@@ -15,7 +16,7 @@ class SceneTaskKwargs(TypedDict):
 
 class SceneTask(object):
     def __init__(self, task:Callable = None, period:float|None = 0.02, name = None ):
-        self.task_callback = task
+        self.task_callback = KWCallback.make( task )
         if name is None:
             try:
                 name = task.__name__
@@ -64,7 +65,7 @@ class Scene(MainChild):
         self.__tasks:List[SceneTask] = []
         self.__patterns:List[Pattern] = NamedList()
         
-        self.__patternRefreshPeriod = 0.1
+        self.__patternRefreshPeriod = 0.02
         self.__nextPatternsRefresh = 0
 
     @property
@@ -132,10 +133,6 @@ class Scene(MainChild):
                 except Exception as inst:
                     pattern.SHOW_EXCEPTION( inst, "pattern refresh failed in %r", self )
 
-
-
-
-    
 def addSceneTask( scene:Scene, name:str = None, **kwds:SceneTaskKwargs ):
     def addTask( callable ):
         scene.addTask(callable, name = name, **kwds)

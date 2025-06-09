@@ -6,6 +6,7 @@ import collections
 
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
+from LumensalisCP.util.kwCallback import KWCallback
 
 from LumensalisCP.Controllers.ConfigurableBase import ConfigurableBase
 from LumensalisCP.Controllers.Identity import ControllerIdentity, ControllerNVM
@@ -24,7 +25,7 @@ import adafruit_24lc32
 class MainManager(ConfigurableBase, Debuggable):
     
     theManager : "MainManager"|None = None
-    
+    ENABLE_EEPROM_IDENTITY = False
     
     @staticmethod
     def initOrGetManager():
@@ -66,11 +67,12 @@ class MainManager(ConfigurableBase, Debuggable):
         if i2c is None:
             if sdaPin is not None and sclPin is not None:
                 self.infoOut( "initializing busio.I2C, scl=%s, sda=%s", sclPin, sdaPin )
-                i2c =  self.addI2C( self.asPin(sdaPin), self.asPin(sclPin) ) 
-        
                 try:
-                    eeprom = adafruit_24lc32.EEPROM_I2C(i2c_bus=i2c, max_size=1024)
-                    self.__identityI2C = ControllerNVM( eeprom )
+                    i2c =  self.addI2C( self.asPin(sdaPin), self.asPin(sclPin) ) 
+        
+                    if ENABLE_EEPROM_IDENTITY:
+                        eeprom = adafruit_24lc32.EEPROM_I2C(i2c_bus=i2c, max_size=1024)
+                        self.__identityI2C = ControllerNVM( eeprom )
                 except Exception as inst:
                     SHOW_EXCEPTION( inst, f"I2C identity exception ")
 
@@ -168,7 +170,7 @@ class MainManager(ConfigurableBase, Debuggable):
         return self.__socketPool
         
     def callLater( self, task ):
-        self.__deferredTasks.append( task )
+        self.__deferredTasks.append( KWCallback.make( task ) )
 
     def __runExitTasks(self):
         print( "running Main exit tasks" )
@@ -280,7 +282,7 @@ class MainManager(ConfigurableBase, Debuggable):
 
     def addTask( self, task ):
         
-        self._tasks.append( task )
+        self._tasks.append( KWCallback.make( task ) )
         
     def __runDeferredTasks(self):
         while len( self.__deferredTasks ):
@@ -290,23 +292,57 @@ class MainManager(ConfigurableBase, Debuggable):
                 task()
             except Exception as inst:
                 print( f"exception on deferred task {task} : {inst}")
-            
+
+    def dumpLoopTimings( self, count ):
+        rv = []
+        i = self.__evContext.updateIndex
+        while count:
+            count -= 1
+            rv.append(self.__taskLoopTimings[i])
+            i -= 1
+        return rv
+
     async def taskLoop( self ):
 
         self.infoOut( "starting manager main run" )
         try:
+            context = self.__evContext
+            self.__taskLoopTimings = [collections.OrderedDict() for _ in range(100) ]
+            
+            currentTiming = None 
+            self._when = self.newNow
+            loopStartNs = time.monotonic_ns()
+    
+            def snapTime( tag, **kwds ):
+                when = (time.monotonic_ns() - loopStartNs)* 0.000000001
+                currentTiming[tag] = dict(lw=when, **kwds )
+                
             while True:
                 self.__evContext.reset()
-                context = self.__evContext
+                loopStartNs = time.monotonic_ns()
                 self._when = self.newNow
+                context = self.__evContext
+                currentTiming = self.__taskLoopTimings[context.updateIndex % len(self.__taskLoopTimings)]
+                snapTime( 'start', updateIndex = context.updateIndex, when=self._when, cycle=self.__cycle )
+                
                 self._timers.update( context )
+                
+                snapTime( 'deferred' )
                 if len( self.__deferredTasks ):
                     self.__runDeferredTasks()
+                    
+                snapTime( 'scenes' )
                 self._scenes.run(context)
+                
+                snapTime( 'i2c' )
                 for target in self.__i2cDevices:
                     target.updateTarget(context)
+                    
+                snapTime( 'tasks' )
                 for task in self._tasks:
                     task()
+                    
+                snapTime( 'boards' )
                 for board in self._boards:
                     board.refresh(context)
                     
@@ -314,6 +350,8 @@ class MainManager(ConfigurableBase, Debuggable):
                     self.infoOut( f"cycle {self.__cycle} at {self._when} with {len(self._tasks)} tasks, gmf={gc.mem_free()} cd={self.cycleDuration}" )
                 #self._scenes.run( context )
                 self.cycleDuration = 1.0 / (self.cyclesPerSecond *1.0)
+                
+                snapTime( 'sleep' )
                 await asyncio.sleep( 0 ) # self.cycleDuration )
                 self.__cycle += 1
 

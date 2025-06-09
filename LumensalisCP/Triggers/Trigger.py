@@ -2,6 +2,8 @@ from LumensalisCP.CPTyping import *
 from LumensalisCP.common import Debuggable
 from LumensalisCP.Main.Expressions import InputSource, Expression, ExpressionTerm, UpdateContext
 
+from LumensalisCP.util.kwCallback import KWCallback
+
 #############################################################################
 
 class Trigger(Debuggable):
@@ -26,7 +28,7 @@ class Trigger(Debuggable):
     
     def addAction( self, action:Callable ):
         self.dbgOut( "addAction( %r )", action )
-        self.__actions.append( action )
+        self.__actions.append( KWCallback.make( action ) )
 
 
     def fire(self, **kwds ):
@@ -36,7 +38,6 @@ class Trigger(Debuggable):
                 action( **kwds )
             except Exception as inst:
                 self.SHOW_EXCEPTION( inst, "firing action %s( %s )", action, kwds )
-
 
     def fireOnTrue( self, expression: Expression|ExpressionTerm ):
         if isinstance(expression,ExpressionTerm):
@@ -49,7 +50,7 @@ class Trigger(Debuggable):
             shouldFire = expression.value
             self.dbgOut( "fireOnTrue shouldFire=%s", shouldFire)
             if shouldFire:
-                self.fire()
+                self.fire(source=source, context=context, **kwargs)
             
         for source in expression.sources().values():
             source.onChange( test )
@@ -67,7 +68,7 @@ class Trigger(Debuggable):
             
             if source.getValue(context):
                 self.dbgOut( "firing on set of %s", source.name )
-                self.fire()
+                self.fire(source=source, context=context, **kwargs)
             else:
                 self.dbgOut( "no fire on %s", source.name )
                 
