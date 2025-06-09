@@ -108,7 +108,7 @@ class TreasureChest( DemoBase ):
         
         
         @fireOnTrue( rising( self.lidOpenMag == True ) )
-        def lidIsOpened(**kwargs):
+        def lidIsOpened():
             print( f"lidOpen!!!")
             #lidDrive.stop()
             #sceneManager.currentScene = "open"
@@ -116,7 +116,7 @@ class TreasureChest( DemoBase ):
             
         @fireOnTrue( rising( self.lidClosedMag == True ) )
         def lidIsClosed(**kwargs):
-            print( f"lidClosed!!!")
+            print( f"lidClosed!!! {kwargs}")
             #lidDrive.stop()
             #sceneManager.currentScene = "closed"
 
@@ -195,9 +195,10 @@ class TreasureChest( DemoBase ):
 
         self.main.scenes.enableDbgOut = True
         
+        sceneClosed = main.addScene("closed")
         sceneOpen = main.addScene("open")
         sceneOpening = main.addScene("opening")
-        sceneClosed = main.addScene("closed")
+        
         sceneClosing = main.addScene("closing")
         
 
@@ -255,8 +256,8 @@ class TreasureChest( DemoBase ):
             if showDump and False:
                 print( f"range = {range}, {rangeDump}")
             
-        sceneOpen.addTask( updateCylonColor, period=0.025 )
-        sceneClosed.addTask( updateCylonColor, period=0.025 )
+        sceneOpen.addTask( updateCylonColor, period=0.35 )
+        sceneClosed.addTask( updateCylonColor, period=0.35 )
         
         
         rbcc, rbs = 3.1, 0.6
@@ -272,12 +273,12 @@ class TreasureChest( DemoBase ):
                   offTime=lambda:randomZeroToOne() *0.3 ,
                   intermediateRefresh = 0.1
                   ),
-            frontLidStripPattern,
+            
             anglePattern
         ]
         
-        sceneOpen.addPatterns( *patterns )
-        sceneClosed.addPatterns( *patterns )
+        sceneOpen.addPatterns( frontLidStripPattern, *patterns )
+        sceneClosed.addPatterns( Cylon2( self.frontLidStrip, sweepTime=0.15,onValue="RED"), *patterns )
         sceneColors = dict(
                 open=LightValueRGB.BLUE,
                 closed=LightValueRGB.GREEN,
@@ -360,6 +361,18 @@ class TreasureChest( DemoBase ):
         pt.addAction( updateStuff )
         pt.start()
         #main.addTask( updateStuff )
+        
+        def dump():
+            import json
+            timings = main.dumpLoopTimings(10)
+            print( json.dumps( timings ) )
+            
+        dt = PeriodicTimer( 3.1, manager=main.timers, name="dump" )
+        dt.addAction( dump )
+        dt.start()
+        
+        
+        
 
         main.scenes.enableDbgOut = True
       

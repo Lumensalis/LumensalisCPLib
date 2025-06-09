@@ -1,4 +1,4 @@
-from .DemoCommon import *
+from ..DemoCommon import *
 from LumensalisCP.Main.Terms import *
 from LumensalisCP.Scenes.Scene import addSceneTask
 import math
@@ -8,7 +8,7 @@ LED_COUNT = 8
 class HarlechSimpleTestDemo( DemoBase ):
     def setup(self):
 
-        self.harlech = harlech = self.main.addHarlech( )
+        self.harlech = harlech = self.main.TerrainTronics.addHarlech( )
         scene = self.main.addScene( "simpleBlink" )
 
         harlech.keepAlive.enableDbgOut = True

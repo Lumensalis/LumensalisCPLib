@@ -19,11 +19,13 @@ class CilgerranSimpleTestDemo( DemoBase ):
         
         scene.addPatterns(
             #Cylon(firstFour, sweepTime=0.7),
-            Blink(lastFour,offTime=0.25),
+            Blink(lastFour,onTime=15.0, offTime=1.5),
         )
+        leds.brightness = 1
+        
 
         BRIGHTNESS_SWEEP_SECONDS = 10.0
-        @addSceneTask( scene, period = 0.1 )
+        # @addSceneTask( scene, period = 0.1 )
         def brighten():
             brightness = (
                 divmod( self.main.when, BRIGHTNESS_SWEEP_SECONDS )[1]
@@ -32,9 +34,13 @@ class CilgerranSimpleTestDemo( DemoBase ):
             print( f"brightness = {brightness}")
             leds.brightness = brightness
 
-        @addSceneTask( scene, period = 10 )
-        def showBatter():
-            print( f"battery = {cilgerran.batteryMonitor.value}")
+        @addSceneTask( scene, period = 5 )
+        def showBattery():
+            b = leds.brightness
+            print( f"battery = {cilgerran.batteryMonitor.value}, brightness={b}")
+            #print( f' leds={",".join( [repr(led) for led in leds])}')
+            #leds.brightness = b
+            
 
 
 def demoMain(*args,**kwds):
