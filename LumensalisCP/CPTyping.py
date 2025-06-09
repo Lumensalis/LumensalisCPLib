@@ -37,6 +37,6 @@ except ImportError:
         pass
     
     
-        
+    def overload( f ): return f
     def override( f ): return f
     def final( f ): return f
