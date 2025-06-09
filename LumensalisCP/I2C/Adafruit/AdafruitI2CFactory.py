@@ -32,3 +32,8 @@ class AdafruitFactory(I2CFactory):
         updateKWDefaults( kwds, main=self.main )
         from .AW9523 import AW9523
         return AW9523( *args, **kwds )
+    
+    def addPCA9685( self, *args, **kwds ):
+        updateKWDefaults( kwds, main=self.main )
+        from .PCA9685 import PCA9685
+        return PCA9685( *args, **kwds )    
