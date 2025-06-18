@@ -288,9 +288,10 @@ class TreasureChest( DemoBase ):
         lidSpan = self.lidOpenPosition - self.lidClosedPosition 
 
         #####################################################################
+
+        dmxTestRGB = main.dmx.addRGBInput( "color", 1 )
         
         dmxRemote = main.addScene("dmxRemote")
-        dmxTestRGB = main.dmx.addRGBInput( "color", 1 )
         dmxRemote.addRule( self.caernarfon.pixels[1], dmxTestRGB )
 
         dmxTestDimmer = main.dmx.addDimmerInput( "dimmer", 4 )
