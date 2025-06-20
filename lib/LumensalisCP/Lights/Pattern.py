@@ -175,7 +175,7 @@ class PatternGenerator(Pattern):
             self.__nextRefresh = self.__nextStep
 
         for lx, light in enumerate(self.target.lights):
-            self.target[lx] = self.__step.startValue(lx,context) 
+            self.target[lx].set( self.__step.startValue(lx,context) , context )
             #light.setValue( self.__step.startValue(lx,context), context=context )
 
     def regenerate(self, context:UpdateContext) -> Generator[PatternGeneratorSharedStep]:
