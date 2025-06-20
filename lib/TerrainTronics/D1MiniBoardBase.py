@@ -4,80 +4,22 @@ from LumensalisCP.Controllers.ConfigurableBase import ControllerConfigurableChil
 from LumensalisCP.Main.Expressions import InputSource, NamedOutputTarget, EvaluationContext
 from LumensalisCP.Main.Updates import Refreshable, UpdateContext
 
-from digitalio import DigitalInOut, Direction
-from analogio import AnalogIn
-import microcontroller
+from LumensalisCP.Shields.Pins import PinHolder, PinProxy
+from LumensalisCP.Shields.Base import ShieldBase, ShieldI2CBase
+#from digitalio import DigitalInOut, Direction
+#from analogio import AnalogIn
+#import microcontroller
 
 from LumensalisCP.CPTyping import Any, Callable, Generator, List, Mapping, Tuple
 
-class PinHolder( object ):
-    def __init__(self, pin:"D1MiniPinProxy" ):
-        self.pinProxy = pin
-        self.actualPinId = getattr( pin.board.config.pins, pin.name )
 
-class DigitalPinHolder( PinHolder ):
-    def __init__(self, pin:"D1MiniPinProxy" ):
-        super().__init__( pin = pin )
-        self.pin = DigitalInOut( self.actualPinId )
-
-class AnalogInputPinProxy( InputSource, PinHolder ):
-    def __init__(self, name:str, pin:"D1MiniPinProxy" ):
-        InputSource.__init__(self,name=name)
-        
-        PinHolder.__init__(self, pin=pin)
-        self.pin = AnalogIn( self.actualPinId )
-
-        
-    def getDerivedValue(self, context:EvaluationContext) -> Any:
-        return self.pin.value        
-
-class DigitalInputPinProxy( InputSource, DigitalPinHolder ):
-    def __init__(self, name:str, pin:"D1MiniPinProxy" ):
-        InputSource.__init__(self,name=name)
-        DigitalPinHolder.__init__(self, pin=pin)
-        self.pin.direction = Direction.INPUT
-        
-    def getDerivedValue(self, context:EvaluationContext) -> Any:
-        return self.pin.value
-        
-class DigitalOutputPinProxy( NamedOutputTarget, DigitalPinHolder ):
-    def __init__(self, name:str, pin:"D1MiniPinProxy" ):
-        NamedOutputTarget.__init__(self, name=name)
-        DigitalPinHolder.__init__(self, pin=pin)
-        self.pin.direction = Direction.OUTPUT
-        
-    def set( self, value:Any, context:EvaluationContext ): 
-        self.pin.value = value
-
-
-class D1MiniPinProxy(object):
-    def __init__( self, name:str, board:"D1MiniBoardBase" ):
-        self._name = name
-        self._board = board
-
-    @property 
-    def actualPin(self) -> microcontroller.Pin:
-        return getattr( self._board.config.pins, self._name )
+class D1MiniPinProxy(PinProxy):
+    pass
+  
     
-    @property
-    def name(self) -> str: return self._name
-    
-    @property
-    def board(self) -> "D1MiniBoardBase": return self._board
-    
-    def addAnalogInput( self, name:str ) -> AnalogInputPinProxy:
-        return AnalogInputPinProxy( name=name, pin=self )
-
-    def addInput( self, name:str ) -> DigitalInputPinProxy:
-        return DigitalInputPinProxy( name=name, pin=self )
-
-    def addOutput( self, name:str ) -> DigitalOutputPinProxy:
-        return DigitalOutputPinProxy( name=name, pin=self )
-    
-class D1MiniBoardBase(ControllerConfigurableChildBase,Refreshable):
-    def __init__(self, refreshRate=0.1, **kwds ):
+class D1MiniBoardBase(ShieldI2CBase):
+    def __init__(self, **kwds ):
         super().__init__( **kwds )
-        Refreshable.__init__(self,refreshRate=refreshRate)
         
         print( f"D1MiniBoardBase.__init__( {kwds})")
         assert self.main is not None
@@ -98,41 +40,3 @@ class D1MiniBoardBase(ControllerConfigurableChildBase,Refreshable):
         self.A0= D1MiniPinProxy( 'A0', self )
         
         self.main._boards.append(self)
-
-    def initI2C(self): 
-        i2c = self.config.option('i2c')
-        sdaPin = self.config.SDA
-        sclPin = self.config.SCL
-        
-        if i2c is None:
-            if sdaPin is None and sclPin is None:
-                i2c = self.main.defaultI2C
-            else:
-                self.infoOut( "initializing busio.I2C, scl=%s, sda=%s", sclPin, sdaPin )
-                i2c =  self.main.addI2C( sdaPin, sclPin ) 
-                
-        assert( i2c is not None )
-        
-        self.i2c = i2c
-        self.sdaPin = sdaPin
-        self.sclPin = sclPin
-        
-    def scanI2C(self):
-        print( "scanning i2c\n")
-                
-        while not self.i2c.try_lock():
-            pass
-
-        try:
-            #while True:
-            print(
-                "I2C addresses found:",
-                [hex(device_address) for device_address in self.i2c.scan()],
-                )
-            #   time.sleep(2)
-
-        finally:  # unlock the i2c bus when ctrl-c'ing out of the loop
-            self.i2c.unlock()
-
-        print( "i2c scan complete\n")
-
