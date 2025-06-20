@@ -18,11 +18,13 @@ from ..Triggers.Timer import PeriodicTimerManager
 from .Expressions import EvaluationContext
 from .Shutdown import ExitTask
 from LumensalisCP.Debug import Debuggable 
+from .I2CProvider import I2CProvider
 
 import LumensalisCP.Main.Dependents
 import adafruit_24lc32
 
-class MainManager(ConfigurableBase, Debuggable):
+
+class MainManager(ConfigurableBase, I2CProvider, Debuggable):
     
     theManager : "MainManager"|None = None
     ENABLE_EEPROM_IDENTITY = False
@@ -41,8 +43,7 @@ class MainManager(ConfigurableBase, Debuggable):
         
         self.__startNs = time.monotonic_ns()
         self._when:TimeInSeconds = self.newNow
-        self.__defaultI2C:busio.I2C = None
-        self.__i2cChannels:Mapping[Tuple[int,int],busio.I2C] = {}
+
         self.__asyncTaskCreators = []
         self.__preFirstRunCallbacks:List[Callable] = []
         self.__socketPool = None
@@ -58,24 +59,8 @@ class MainManager(ConfigurableBase, Debuggable):
         from LumensalisCP.Main.Dependents import MainRef
         MainRef._theManager = self
 
-        self.__identityI2C = None
-        
-        i2c = self.config.option('i2c')
-        sdaPin = self.config.SDA
-        sclPin = self.config.SCL
-        
-        if i2c is None:
-            if sdaPin is not None and sclPin is not None:
-                self.infoOut( "initializing busio.I2C, scl=%s, sda=%s", sclPin, sdaPin )
-                try:
-                    i2c =  self.addI2C( self.asPin(sdaPin), self.asPin(sclPin) ) 
-        
-                    if ENABLE_EEPROM_IDENTITY:
-                        eeprom = adafruit_24lc32.EEPROM_I2C(i2c_bus=i2c, max_size=1024)
-                        self.__identityI2C = ControllerNVM( eeprom )
-                except Exception as inst:
-                    SHOW_EXCEPTION( inst, f"I2C identity exception ")
-
+        I2CProvider.__init__( self, config=self.config, main=self )
+  
         self.__identity = ControllerIdentity(self)
         self._when = self.newNow
         
@@ -92,7 +77,6 @@ class MainManager(ConfigurableBase, Debuggable):
         self._tasks:List[Callable] = []
         self.__shutdownTasks:List[ExitTask] = []
         self._boards = []
-        self.__i2cDevices:List["LumensalisCP.I2C.I2CDevice.I2CDevice"] = []
         
 
         self._controlVariables:Mapping[str,ControlVariable] = {}
@@ -103,12 +87,7 @@ class MainManager(ConfigurableBase, Debuggable):
 
         self._scenes = SceneManager(main=self)
         self.__TerrainTronics = None
-        
-        import LumensalisCP.I2C.I2CFactory
-        import LumensalisCP.I2C.Adafruit.AdafruitI2CFactory
-        self.adafruitFactory =  LumensalisCP.I2C.Adafruit.AdafruitI2CFactory.AdafruitFactory(main=self)
-        self.i2cFactory =  LumensalisCP.I2C.I2CFactory.I2CFactory(main=self)
-        
+
         print( f"MainManager options = {self.config.options}" )
     
     def makeRef(self):
@@ -140,9 +119,6 @@ class MainManager(ConfigurableBase, Debuggable):
     @property
     def newNow( self ) -> TimeInSeconds: return self.getNewNow()
 
-    @property
-    def defaultI2C(self): return self.__defaultI2C or board.I2C()
-    
     @property
     def scenes(self) -> SceneManager: return self._scenes
     
@@ -182,11 +158,7 @@ class MainManager(ConfigurableBase, Debuggable):
             task = ExitTask( main=self,task=task)
             
         self.__shutdownTasks.append(task)
-        
-        
-    def _addI2CDevice(self, target:"LumensalisCP.I2C.I2CDevice.I2CDevice" ):
-        self.__i2cDevices.append(target)
-   
+
     def addControlVariable( self, name, *args, **kwds ) -> ControlVariable:
         variable = ControlVariable( name, *args,**kwds )
         self._controlVariables[name] = variable
@@ -255,31 +227,7 @@ class MainManager(ConfigurableBase, Debuggable):
         value = ((max - min)*spanRatio) + min
         return value
 
-    def _addBoardI2C( self, board, i2c:busio.I2C ):
-        if self.__defaultI2C is None:
-            self.__defaultI2C = i2c
-
-    @property
-    def identityI2C(self): return self.__identityI2C
-
-    def addI2C(self, sdaPin, sclPin):
-        sdaPin = self.asPin(sdaPin)
-        sclPin = self.asPin(sclPin)
-        sdaPinName = repr(sdaPin)
-        sclPinName = repr(sclPin)
-        self.infoOut( "addI2C( %r, %r ) %r", sdaPin, sclPin, self.__i2cChannels )
-        for pins, channel in self.__i2cChannels.items():
-            if pins[0] != sdaPinName and pins[1] != sclPinName:
-                continue
-            ensure( pins[0] == sdaPinName , "sda mismatch" )
-            ensure( pins[1] == sclPinName , "scl mismatch" )
-            return channel
         
-        i2c =  busio.I2C( sdaPin, sclPin ) 
-        self.__i2cChannels[ (sdaPinName,sclPinName) ] = i2c
-        self._addBoardI2C( self, i2c )
-        return i2c
-
     def addTask( self, task ):
         
         self._tasks.append( KWCallback.make( task ) )
