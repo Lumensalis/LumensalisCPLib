@@ -4,7 +4,13 @@ import traceback
 
 import LumensalisCP.util.weakrefish as weakref
 
+TimeInNS = int
+TimeSpanInNS = int
+TimeInMS = int
+TimeSpanInMS = int
 TimeInSeconds = float
+TimeSpanInSeconds = float
+
 DegreesPerSecond = float
 Degrees = float
 ZeroToOne = float
