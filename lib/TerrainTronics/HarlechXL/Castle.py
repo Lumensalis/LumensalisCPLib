@@ -25,6 +25,7 @@ class HarlechXL_LED( DimmableLight ):
         raw = self.__value * self.source.brightness*255
         v255 =  int(max(0,min(raw,255)))
         return v255
+    
     def setValue(self,value:AnyLightValue, context: UpdateContext = None ):
         level = toZeroToOne(context.valueOf( value ) )
         self.__value = value
@@ -99,7 +100,9 @@ class HarlechXLCastle(I2CDevice, LightSource ):
             rv.append( self.addLed(name=name))
         return rv
     
+    
     def addLed(self, ledNumber:int|None = None, name:str = None ) -> HarlechXL_LED:
+        #self.infoOut("addLed %r %r", ledNumber,  None )
         if ledNumber is None:
             for i, led in enumerate( self.__leds ):
                 if led is None:
@@ -108,8 +111,8 @@ class HarlechXLCastle(I2CDevice, LightSource ):
             ensure( ledNumber is not None, "no remaining LEDs" )
             
         ensure( ledNumber >= 0 and ledNumber < self.__maxLeds, "invalid LED index" )
-        zIndex = ledNumber 
-        ensure( self.__leds[zIndex] is None, "LED %r already added", ledNumber )
+        # zIndex = ledNumber 
+        ensure( self.__leds[ledNumber] is None, "LED %r already added", ledNumber )
         rv = HarlechXL_LED( name=name, index = ledNumber, source=self )
         self.__leds[ledNumber] = rv
         return rv

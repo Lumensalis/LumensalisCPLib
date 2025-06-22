@@ -6,6 +6,8 @@ from .DemoMixin import DemoMixin
 
 class DemoBase(object, DemoMixin):
     pass
+    main: MainManager
+    
     def __init__(self, *args,**kwds):
         self.main = MainManager.initOrGetManager()
         

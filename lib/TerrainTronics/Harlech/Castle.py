@@ -111,7 +111,7 @@ class HarlechCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
                 oePin:str=None,
                 brightness = 1.0,
                 ledRefreshRate:float = 50.0,
-                refreshRate=0.001,
+                refreshRate=0.05,
                 addKeepAlive = True,
                 keepAlivePin=None,
                 keepAliveCycle:float=None,
