@@ -7,6 +7,7 @@ import collections
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
 from LumensalisCP.util.kwCallback import KWCallback
+from LumensalisCP.util.bags import Bag
 
 from LumensalisCP.Controllers.ConfigurableBase import ConfigurableBase
 from LumensalisCP.Controllers.Identity import ControllerIdentity, ControllerNVM
@@ -21,13 +22,16 @@ from LumensalisCP.Debug import Debuggable
 from .I2CProvider import I2CProvider
 
 import LumensalisCP.Main.Dependents
-import adafruit_24lc32
 
+from LumensalisCP.Main.Profiler import Profiler
+
+import adafruit_24lc32
 
 class MainManager(ConfigurableBase, I2CProvider, Debuggable):
     
     theManager : "MainManager"|None = None
     ENABLE_EEPROM_IDENTITY = False
+    profiler: Profiler
     
     @staticmethod
     def initOrGetManager():
@@ -43,7 +47,8 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         
         self.__startNs = time.monotonic_ns()
         self._when:TimeInSeconds = self.newNow
-
+        self.profiler = Profiler()
+        
         self.__asyncTaskCreators = []
         self.__preFirstRunCallbacks:List[Callable] = []
         self.__socketPool = None
@@ -58,6 +63,7 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         self.name = "MainManager"
         from LumensalisCP.Main.Dependents import MainRef
         MainRef._theManager = self
+        
 
         I2CProvider.__init__( self, config=self.config, main=self )
   
@@ -241,12 +247,21 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
             except Exception as inst:
                 print( f"exception on deferred task {task} : {inst}")
 
-    def dumpLoopTimings( self, count ):
+    def dumpLoopTimings( self, count, minE=None, minF=None, **kwds ):
         rv = []
         i = self.__evContext.updateIndex
-        while count:
+        #count = min(count, len(self.__taskLoopTimings))
+        # count = min(count,self.profiler.timingsLength)
+
+        
+        while count and i >= 0:
             count -= 1
-            rv.append(self.__taskLoopTimings[i])
+            frame = self.profiler.timingForUpdate( i )
+            
+            if frame is not None:
+                frameData =  frame.jsonData(minE = minE, minF = minF, **kwds )
+                if frameData is not None:
+                    rv.append( frameData )
             i -= 1
         return rv
 
@@ -255,22 +270,32 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         self.infoOut( "starting manager main run" )
         try:
             context = self.__evContext
-            self.__taskLoopTimings = [collections.OrderedDict() for _ in range(100) ]
+            #self.__taskLoopTimingsLength = 100
+            #self.__taskLoopTimings = [collections.OrderedDict() for _ in range(self.__taskLoopTimingsLength) ]
             
-            currentTiming = None 
+            # currentTiming = None 
             self._when = self.newNow
-            loopStartNs = time.monotonic_ns()
-    
-            def snapTime( tag, **kwds ):
-                when = (time.monotonic_ns() - loopStartNs)* 0.000000001
-                currentTiming[tag] = dict(lw=when, **kwds )
+
+                    
+            
+            #def snapTime( tag, **kwds ):
+            #    scd.next()
+            #    when = (time.monotonic_ns() - loopStartNS)* 0.000000001
+            #    currentTiming[tag] = dict(lw=when, **kwds )
                 
+            
             while True:
                 self.__evContext.reset()
-                loopStartNs = time.monotonic_ns()
-                self._when = self.newNow
                 context = self.__evContext
-                currentTiming = self.__taskLoopTimings[context.updateIndex % len(self.__taskLoopTimings)]
+
+                 # snapClosureData.loopStartNS = time.monotonic_ns()
+                pFrame = self.profiler.reset(context.updateIndex)
+                context.pFrame = pFrame                                
+                
+                snapTime = pFrame.snap
+                self._when = self.newNow
+                
+                #currentTiming = self.__taskLoopTimings[context.updateIndex % self.__taskLoopTimingsLength]
                 snapTime( 'start', updateIndex = context.updateIndex, when=self._when, cycle=self.__cycle )
                 
                 self._timers.update( context )

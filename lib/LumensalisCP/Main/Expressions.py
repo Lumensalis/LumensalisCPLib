@@ -3,8 +3,10 @@ from LumensalisCP.CPTyping import Any, Callable, Generator, List, Mapping, Tuple
 from LumensalisCP.CPTyping  import override
 from LumensalisCP.common import *
 from .Updates import UpdateContext, RefreshCycle
+from LumensalisCP.Main.Profiler import Profiler, ProfileFrame
 
 class EvaluationContext(UpdateContext):
+    
     def __init__( self, *args, **kwds ):
         super().__init__( *args, **kwds )
         self.__updateIndex = 0
@@ -15,15 +17,41 @@ class EvaluationContext(UpdateContext):
     def reset( self ):
         super().reset()
         self.__changedTerms = []
-
-    @property
-    def updateIndex(self): return self.__updateIndex
     
     @property
-    def changedTerms(self): return self.__changedTerms
+    def updateIndex(self) -> int: 
+        return self.__updateIndex
+    
+    @property
+    def changedTerms(self) -> List["ExpressionTerm"]:
+        return self.__changedTerms
     
     def addChangedTerm( self, changed:"ExpressionTerm"):
         self.__changedTerms.append( changed )
+        
+    def valueOf( self, value:Any ) -> Any:
+        #xm : 'LumensalisCP.Main.Expressions'
+        #xm = Expressions #LumensalisCP.Main.Expressions
+          
+        if type(value) is object:
+            if isinstance( value, ExpressionTerm ):
+                term = value
+                value = term.getValue( self )
+                print( f"valueOf term {term} = {value}")
+            elif isinstance( value, Expression ):
+                value.updateValue( self )
+                value = value.value
+                print( f"valueOf Expression {term} = {value}")
+            elif callable(value):
+                value = self.valueOf(value())
+        elif isinstance( value, ExpressionTerm ):
+            term = value
+            value = term.getValue( self )
+            #print( f"valueOf term ({type(term)}) {term} = {value}")
+        
+        elif callable(value):
+            value = self.valueOf( value() )
+        return value        
 
 #############################################################################
 

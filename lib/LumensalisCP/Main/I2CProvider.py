@@ -4,6 +4,7 @@ from LumensalisCP.CPTyping import *
 
 import busio
 import board
+from LumensalisCP.I2C.I2CDevice import I2CDevice
 
 class I2CProvider(object):
     def __init__(self,config = None, main=None):

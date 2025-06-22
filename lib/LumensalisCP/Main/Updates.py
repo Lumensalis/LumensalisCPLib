@@ -4,18 +4,23 @@ from LumensalisCP.common import *
 from LumensalisCP.Main.Dependents import MainRef
 #import LumensalisCP.Main.Expressions as Expressions
 import LumensalisCP.Main
+from LumensalisCP.Main.Profiler import ProfileFrame, ProfileSubFrame
 
 class UpdateContext(object):
+    pFrame: ProfileFrame
+    
     def __init__( self, main:"LumensalisCP.Main.Manager.MainManager"=None ):
         self.__updateIndex = 0
         self.__changedSources : List["LumensalisCP.Main.Expressions.InputSource"] = []
         self.__mainRef = main.makeRef()
         self.__when = main.when
+        self.pFrame = None
         
     def reset( self ):
         self.__updateIndex += 1
         self.__changedSources = []
         self.__when = self.main.when
+        self.pFrame = None
         
     @property
     def main(self): return self.__mainRef()
@@ -28,32 +33,18 @@ class UpdateContext(object):
 
     @property
     def changedSources(self): return self.__changedSources
+    
+    def subFrame(self, name:str|None=None) -> ProfileSubFrame:
+        rv = self.pFrame.activeFrame().subFrame(self, name)
+        assert rv
+        return rv
 
     def addChangedSource( self, changed:"LumensalisCP.Main.Expressions.InputSource"):
         self.__changedSources.append( changed )
         
     def valueOf( self, value:Any ) -> Any:
-        xm = LumensalisCP.Main.Expressions
-          
-        if type(value) is object:
-            if isinstance( value, xm.ExpressionTerm ):
-                term = value
-                value = term.getValue( self )
-                print( f"valueOf term {term} = {value}")
-            elif isinstance( value, xm.Expression ):
-                value.updateValue( self )
-                value = value.value
-                print( f"valueOf Expression {term} = {value}")
-            elif callable(value):
-                value = self.valueOf(value())
-        elif isinstance( value, xm.ExpressionTerm ):
-            term = value
-            value = term.getValue( self )
-            #print( f"valueOf term ({type(term)}) {term} = {value}")
-        
-        elif callable(value):
-            value = self.valueOf( value() )
-        return value
+        raise NotImplemented
+
 
 class RefreshCycle(object):
     def __init__(self, refreshRate:TimeInSeconds = 0.1):

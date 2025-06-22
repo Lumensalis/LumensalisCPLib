@@ -109,7 +109,9 @@ class MainManager(ConfigurableBase, Debuggable):
     def _addBoardI2C( self, board, i2c:busio.I2C ): pass
 
     def addTask( self, task ): pass
-        
+
+    def dumpLoopTimings( self, count:int, minE:TimeSpanInSeconds=None, minF:TimeSpanInSeconds=None, **kwds ): pass
+    
     async def taskLoop( self ): pass
 
     def run( self ): pass

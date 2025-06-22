@@ -6,6 +6,7 @@ from LumensalisCP.util.bags import *
 from ..Main.Expressions import EvaluationContext
 from ..Lights.Patterns import Pattern
 from LumensalisCP.util.kwCallback import KWCallback
+from LumensalisCP.Main.Profiler import ProfileFrameBase
 
 class Setter(object):
     pass
@@ -33,12 +34,12 @@ class SceneTask(object):
     @property
     def name(self): return self.__name
     
-    def run( self, scene:"Scene", context: EvaluationContext ):
+    def run( self, scene:"Scene", context: EvaluationContext, frame:ProfileFrameBase ):
         if self.__nextRun is not None:
             if scene.main.when < self.__nextRun:
                 return
             self.__nextRun = scene.main.when + self.__period
-        
+        frame.snap( f"runSceneTask-{self.__name}" )
         self.task_callback(context=context)
 
 class SceneRule( Expression ):
@@ -50,10 +51,11 @@ class SceneRule( Expression ):
     @property
     def name(self): return self.__name
     
-    def run( self, context:EvaluationContext):
+    def run( self, context:EvaluationContext, frame:ProfileFrameBase):
         if 0: print( f"running rule {self.name}")
         if self.updateValue( context ): # or len(context.changedTerms):
             if 0: print( f"setting target {self.target.name} to {self.value} in rule {self.name}")
+            frame.snap(f"ruleSet{self.target.name}" )
             self.target.set(self.value,context=context)
 
     
@@ -115,23 +117,26 @@ class Scene(MainChild):
     
     def runTasks(self, context:EvaluationContext):
         if 0: print( f"scene {self.name} run tasks ({len(self.__tasks)} tasks, {len(self.__rules)} rules) on update {context.updateIndex}..." )
-        for task in self.__tasks:
-            try:
-                task.run( self, context=context )
-            except Exception as inst:
-                self.SHOW_EXCEPTION(  inst, "running task %s", task.name )
-        for tag, rule in self.__rules.items():
-            try:
-                rule.run( context )
-            except Exception as inst:
-                self.SHOW_EXCEPTION( inst, "running rule %s", rule.name  )
-        if self.__nextPatternsRefresh <= context.when:
-            self.__nextPatternsRefresh = context.when +  self.__patternRefreshPeriod
-            for pattern in self.__patterns:
+        with context.subFrame('runScene') as pFrame:
+            for task in self.__tasks:
                 try:
-                    pattern.refresh(context)
+                    task.run( self, context=context, frame=pFrame )
                 except Exception as inst:
-                    pattern.SHOW_EXCEPTION( inst, "pattern refresh failed in %r", self )
+                    self.SHOW_EXCEPTION(  inst, "running task %s", task.name )
+            pFrame.snap("rules")
+            for tag, rule in self.__rules.items():
+                try:
+                    rule.run( context, frame=pFrame )
+                except Exception as inst:
+                    self.SHOW_EXCEPTION( inst, "running rule %s", rule.name  )
+            pFrame.snap("patterns")
+            if self.__nextPatternsRefresh <= context.when:
+                self.__nextPatternsRefresh = context.when +  self.__patternRefreshPeriod
+                for pattern in self.__patterns:
+                    try:
+                        pattern.refresh(context)
+                    except Exception as inst:
+                        pattern.SHOW_EXCEPTION( inst, "pattern refresh failed in %r", self )
 
 def addSceneTask( scene:Scene, name:str = None, **kwds:SceneTaskKwargs ):
     def addTask( callable ):

@@ -4,6 +4,7 @@ from ..Main.Expressions import EvaluationContext
 
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
+from LumensalisCP.Main.Profiler import Profiler
 
 class SceneManager(Debuggable):
     def __init__(self, main ):
@@ -24,6 +25,7 @@ class SceneManager(Debuggable):
         if self.__currentScene is None: 
             self.warnOut( "no current scene active" )
             return
+        
         self.__currentScene.runTasks(context)
         
     @property
