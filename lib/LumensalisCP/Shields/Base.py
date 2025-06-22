@@ -1,11 +1,14 @@
-import busio
-from LumensalisCP.Controllers.ConfigurableBase import ControllerConfigurableChildBase
-from LumensalisCP.Main.Expressions import InputSource, NamedOutputTarget, EvaluationContext
-from LumensalisCP.Main.Updates import Refreshable, UpdateContext
 
-from LumensalisCP.Shields.Pins import PinHolder, PinProxy
+thisModuleIsIShieldsBase = True
+#import busio
+from LumensalisCP.Controllers.ConfigurableBase import ControllerConfigurableChildBase
+#from LumensalisCP.Main.Expressions import InputSource, NamedOutputTarget, EvaluationContext
+from LumensalisCP.Main.Updates import Refreshable
+
+#from LumensalisCP.Shields.Pins import PinHolder, PinProxy
 #from digitalio import DigitalInOut, Direction
 from LumensalisCP.Main.I2CProvider import I2CProvider
+
 
 class ShieldBase(ControllerConfigurableChildBase,Refreshable):
     def __init__(self, refreshRate=0.1, **kwds ):

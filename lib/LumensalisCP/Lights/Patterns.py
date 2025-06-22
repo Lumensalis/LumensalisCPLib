@@ -208,34 +208,35 @@ class Cylon2( PatternGenerator ):
         self.__sweepTime = sweep
     
     def regenerate(self, context:UpdateContext):
-        sweepStepTime = self.__sweepTime / (self.target.lightCount*2-2)
-        lightCount = self.target.lightCount
+        with context.subFrame(f'regenerate-{self.name}') as frame:
+            sweepStepTime = self.__sweepTime / (self.target.lightCount*2-2)
+            lightCount = self.target.lightCount
 
-        
-        prior = [ context.valueOf(light.value) for light in self.target.lights ]
-        #print( f"prior = { LightValueNeoRGB.formatNeoRGBValues( prior)}" )
-        offRGB = LightValueRGB.toRGB( context.valueOf( self.offValue ) )
-        def dimmed(index):
-            #return self.offValue
-            was = LightValueRGB.toRGB(prior[index])
-            faded = was.fadeTowards(offRGB, self.__dimRatio )
-            return  faded.toNeoPixelInt()
             
-        for index in range( self.target.lightCount ):
-            onValue = LightValueRGB.toRGB(context.valueOf(self.onValue))
-            startValues = [(onValue if i2 == index else dimmed(i2)) for i2 in range(self.target.lightCount) ]
-            endValues =startValues
-            prior = startValues
-            
-            yield MultiLightPatternStep( self.__sweepTime/lightCount, starts=startValues, ends=endValues )
+            prior = [ context.valueOf(light.value) for light in self.target.lights ]
+            #print( f"prior = { LightValueNeoRGB.formatNeoRGBValues( prior)}" )
+            offRGB = LightValueRGB.toRGB( context.valueOf( self.offValue ) )
+            def dimmed(index):
+                #return self.offValue
+                was = LightValueRGB.toRGB(prior[index])
+                faded = was.fadeTowards(offRGB, self.__dimRatio )
+                return  faded.toNeoPixelInt()
+                
+            for index in range( self.target.lightCount ):
+                onValue = LightValueRGB.toRGB(context.valueOf(self.onValue))
+                startValues = [(onValue if i2 == index else dimmed(i2)) for i2 in range(self.target.lightCount) ]
+                endValues =startValues
+                prior = startValues
+                
+                yield MultiLightPatternStep( self.__sweepTime/lightCount, starts=startValues, ends=endValues )
 
-        for index in range( max(0, self.target.lightCount-2), 0, -1 ):
-            onValue = context.valueOf(self.onValue)
-            startValues = [(onValue if i2 == index else dimmed(i2)) for i2 in range(self.target.lightCount) ]
-            endValues =startValues
-            prior = startValues
-            
-            yield MultiLightPatternStep( self.__sweepTime/lightCount, starts=startValues, ends=endValues )
+            for index in range( max(0, self.target.lightCount-2), 0, -1 ):
+                onValue = context.valueOf(self.onValue)
+                startValues = [(onValue if i2 == index else dimmed(i2)) for i2 in range(self.target.lightCount) ]
+                endValues =startValues
+                prior = startValues
+                
+                yield MultiLightPatternStep( self.__sweepTime/lightCount, starts=startValues, ends=endValues )
 
 #############################################################################
 
