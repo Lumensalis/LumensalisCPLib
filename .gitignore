@@ -1,3 +1,5 @@
 adafruit_*
 async*
 *.mpy
+*.pyc
+__pycache__

@@ -4,8 +4,9 @@ import time, math, asyncio, traceback, os, gc, wifi, displayio
 import busio, board
 import collections
 
-from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
+from LumensalisCP.common import *
+
 from LumensalisCP.util.kwCallback import KWCallback
 from LumensalisCP.util.bags import Bag
 

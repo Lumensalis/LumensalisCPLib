@@ -79,7 +79,7 @@ class LCP_IRrecv(MainChild):
             
         cb = self.__callbacksByCode.get(code,None) # self.__unhandledCallback)
         if cb is not None:
-            if 1: self.dbgOut( f"calling callback for code {"%x"%code}, cb={cb}")
+            if 1: self.dbgOut( f"calling callback for code {'x'%code}, cb={cb}" )
             cb()
         else:
             self._unhandled(code, rawCode)
@@ -92,7 +92,7 @@ class LCP_IRrecv(MainChild):
             except Exception as inst:
                 self.SHOW_EXCEPTION( inst, "unhandledCallback failed for %x from %r", code, rawCode )
         else:
-            self.dbgOut( f"unhandled remote code: 0x{"%x"%code} from {rawCode}" )
+            self.dbgOut( f"unhandled remote code: 0x{'%x'%code} from {rawCode}" )
 
     def setUnhandledCallback( self, cb:Callable ):
         self.__unhandledCallback = cb
