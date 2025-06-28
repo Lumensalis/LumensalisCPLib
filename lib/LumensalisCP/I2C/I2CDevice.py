@@ -1,7 +1,6 @@
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
-from LumensalisCP.Main.Expressions import InputSource, OutputTarget
-from LumensalisCP.Main.Updates import UpdateContext
+from LumensalisCP.IOContext import InputSource, OutputTarget, UpdateContext
 
 import busio
 #import weakref

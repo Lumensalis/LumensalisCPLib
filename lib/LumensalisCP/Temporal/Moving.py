@@ -1,56 +1,49 @@
-import adafruit_motor.servo
-import pwmio
 from LumensalisCP.IOContext import *
-#from LumensalisCP.Main.Expressions import NamedOutputTarget, EvaluationContext, UpdateContext
-#from LumensalisCP.Inputs import InputSource
 from LumensalisCP.Main.Manager import MainManager
-#from LumensalisCP.common import *
-
 from LumensalisCP.Triggers.Timer import PeriodicTimer
-#from LumensalisCP.CPTyping import *
 import math
 
-class LocalServo( 
-                      #adafruit_motor.servo.Servo,
-                      NamedOutputTarget ):
-    def __init__(self, pwm:pwmio.PWMOut=None, name:str=None, 
-                 movePeriod:TimeInSeconds = 0.05,
-                 moveSpeed:DegreesPerSecond = 60.0,
-                 angleMin:Degrees = 10,
-                 angleMax:Degrees = 135,
+class Moving( NamedOutputTarget, Refreshable ):
+    """_summary_
+        Provides an output which can move over
+        time between zero and one
+    Args:
+        NamedOutputTarget (_type_): _description_
+        Refreshable (_type_): _description_
+    """
+    
+    speed:TimeInSeconds # time required for full range move
+    target:ZeroToOne # destination value
+    moving:bool # true if still moving towards destination
+    
+    
+    def __init__(self, name:str=None, 
+                 speed:TimeInSeconds = 1.0,
+                 target:ZeroToOne = 0.0,
                  main:MainManager = None,
                  **kwds ):
         #adafruit_motor.servo.Servo.__init__(self, pwm, **kwds)
         NamedOutputTarget.__init__(self, name=name)
 
-        self.__servo = adafruit_motor.servo.Servo( pwm, **kwds)
-        self.__moveTimer = PeriodicTimer( movePeriod, manager=main.timers, name=f"{self.name}_timer" )
-        self.__moveTimer.addAction( self._updateMove )
-        self.__moveSpeed:DegreesPerSecond = moveSpeed
-        self.__moveTarget:Degrees|None = None
+        self.speed:TimeInSeconds = moveSpeed
+        self.__moveTarget:ZeroToOne|None = None
+        
+        
         self.__moveTimeAtStart:TimeInSeconds|None = None
         self.__moveAngleStart:Degrees|None = None
-        self.__moveSpan:Degrees|None = None
+        ## self.__moveSpan:Degrees|None = None
         self.__moveCompleteCB:Callable|None = None
         self.__onStopCB:Callable|None = None
         self.__moving = False
         self.__angleMin = angleMin
         self.__angleMax = angleMax
-        self.__lastSetAngle = self.rangedAngle( self.__servo.angle or 90.0 )
+        self.__latestValue = 0.0
 
-    @property
-    def _moveTimer(self) -> PeriodicTimer: return self.__moveTimer
     
     @property
-    def lastSetAngle(self): return self.__lastSetAngle
+    def latestValue(self) -> ZeroToOne: return self.__latestValue
     
-    def rangedAngle( self, angle:Degrees ):
-        if angle < self.__angleMin: return self.__angleMin
-        if angle > self.__angleMax: return self.__angleMax
-        return angle
-        
-        
-    def stop(self, turnOff = True ):
+    def stop(self  ):
         if self.__moving:
             self.__moveTarget = None
             self.__moveSpan = None
@@ -58,22 +51,20 @@ class LocalServo(
             self.__moveAngleStart = None
             self.__moveTimer.stop()
         if turnOff:
-            self.__servo.angle = None
     
-    
-    def set( self, angle:Degrees|None, context:EvaluationContext=None ):
+    def set( self, value:ZeroToOne|None, context:EvaluationContext=None ):
         if self.__moving:
-            self.stop(turnOff=False)
-        self.__set( angle, context )
+            self.stop()
+        self.__set( value, context )
 
-    def __set( self, angle:Degrees|None, context:EvaluationContext=None ):
+    def __set( self, value:ZeroToOne|None, context:EvaluationContext=None ):
         if angle is not None:
             angle = self.rangedAngle( angle )
             self.__lastSetAngle = angle
         self.__servo.angle = angle
         
-    def moveTo( self, angle:Degrees, speed:DegreesPerSecond|None=None, context:EvaluationContext=None ):
-        assert angle is not None
+    def moveTo( self, value:ZeroToOne, speed:TimeInSeconds|None=None, context:EvaluationContext=None ):
+        assert value is not None
         span =  angle - self.__lastSetAngle
         if span == 0:
             self.stop()

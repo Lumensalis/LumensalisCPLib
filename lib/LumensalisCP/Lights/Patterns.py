@@ -1,5 +1,6 @@
 from .Light import *
-from ..Main.Expressions import NamedOutputTarget, EvaluationContext
+from LumensalisCP.IOContext import *
+#from ..Main.Expressions import NamedOutputTarget, EvaluationContext
 from .Pattern import *
 from random import random as randomZeroToOne, randint
 
@@ -208,6 +209,8 @@ class Cylon2( PatternGenerator ):
         self.__sweepTime = sweep
     
     def regenerate(self, context:UpdateContext):
+        rv = []
+        # with context for subframe doesn't play well with generators
         with context.subFrame(f'regenerate-{self.name}') as frame:
             sweepStepTime = self.__sweepTime / (self.target.lightCount*2-2)
             lightCount = self.target.lightCount
@@ -221,22 +224,26 @@ class Cylon2( PatternGenerator ):
                 was = LightValueRGB.toRGB(prior[index])
                 faded = was.fadeTowards(offRGB, self.__dimRatio )
                 return  faded.toNeoPixelInt()
-                
+            
+            frame.snap("back")
             for index in range( self.target.lightCount ):
                 onValue = LightValueRGB.toRGB(context.valueOf(self.onValue))
                 startValues = [(onValue if i2 == index else dimmed(i2)) for i2 in range(self.target.lightCount) ]
                 endValues =startValues
                 prior = startValues
-                
-                yield MultiLightPatternStep( self.__sweepTime/lightCount, starts=startValues, ends=endValues )
-
+                step = MultiLightPatternStep( self.__sweepTime/lightCount, starts=startValues, ends=endValues ) 
+                rv.append( step )
+                #yield step
+            frame.snap("forth")
             for index in range( max(0, self.target.lightCount-2), 0, -1 ):
                 onValue = context.valueOf(self.onValue)
                 startValues = [(onValue if i2 == index else dimmed(i2)) for i2 in range(self.target.lightCount) ]
                 endValues =startValues
                 prior = startValues
-                
-                yield MultiLightPatternStep( self.__sweepTime/lightCount, starts=startValues, ends=endValues )
+                step = MultiLightPatternStep( self.__sweepTime/lightCount, starts=startValues, ends=endValues )
+                rv.append( step )
+                #yield step
+        return iter( rv )
 
 #############################################################################
 
@@ -262,7 +269,63 @@ class CylonPatternStep(PatternGeneratorSharedStep):
             return self._endValue
 
 #############################################################################
+class Cylon( Pattern ):
+    def __init__(self,
+                 *args,
+                 sweepTime:TimeInSeconds = 1.0,
+                 onValue:AnyLightValue = 1.0,
+                 offValue:AnyLightValue = 0.0,
+                 intermediateRefresh:TimeInSeconds = 0.1,
+                 **kwargs
+            ):
+        self.sweepTime = sweepTime
+        self.onValue = onValue
+        self.offValue = offValue
+        self.__movingUp = True
+        self.intermediateRefresh:TimeInSeconds = intermediateRefresh
+        super().__init__(*args,**kwargs)
 
+        
+    def refresh( self, context:UpdateContext ):
+        when = self.offsetWhen( context )
+        self.__latestCycleWhen = when
+        cc = context.valueOf(self.colorCycle)
+        #print( f"cc = {cc} from {self.colorCycle}")
+        A = (when + self.__colorCycleWhenOffset) / max(0.001,context.valueOf(self.colorCycle))
+        ensure( type(A) is float, f"A is {type(A)}, not float" )
+        
+        target = self.target
+        spread = context.valueOf(self.spread)
+        if spread == 0:
+            pxStep = 0
+        else:
+            pxStep = 1 / (target.lightCount * context.valueOf(spread) )
+            
+        # set each pixel
+        for px in range(target.lightCount):
+            target[px] = wheel1( A + (px * pxStep) )
+
+    def regenerate(self, context:UpdateContext):
+        lightCount = self.target.lightCount
+        sweepStepTime = self.sweepTime / self.target.lightCount
+        if( self.__movingUp ):
+            self.__movingUp = False
+            for index in range( self.target.lightCount-1 ):
+                yield CylonPatternStep( index, up=True,
+                    duration=self.sweepTime / lightCount, intermediateRefresh=self.intermediateRefresh, 
+                    startValue = self.onValue, endValue = self.offValue  )
+        else:
+            self.__movingUp = True
+            index = self.target.lightCount-1
+            while index > 0:
+                yield CylonPatternStep( index, up=False,
+                    duration=sweepStepTime, intermediateRefresh=self.intermediateRefresh, 
+                    startValue = self.onValue, endValue = self.offValue  )
+
+
+                index -= 1
+                
+#############################################################################
 class Cylon( PatternGenerator ):
     def __init__(self,
                  *args,

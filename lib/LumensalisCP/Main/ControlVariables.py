@@ -1,5 +1,8 @@
 
-from LumensalisCP.Main.Expressions import InputSource, NamedOutputTarget, EvaluationContext
+from LumensalisCP.Inputs import InputSource
+from LumensalisCP.Main.Expressions import  EvaluationContext
+ 
+from LumensalisCP.Outputs import OutputTarget, NamedOutputTarget
 from LumensalisCP.CPTyping  import *
 
 class ControlVariable(object):

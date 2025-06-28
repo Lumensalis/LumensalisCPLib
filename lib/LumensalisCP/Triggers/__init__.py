@@ -1,6 +1,9 @@
-from LumensalisCP.CPTyping import *
-from LumensalisCP.common import Debuggable
-from LumensalisCP.Main.Expressions import InputSource, UpdateContext, Expression, ExpressionTerm
+#from LumensalisCP.CPTyping import *
+#from LumensalisCP.common import Debuggable
+#from LumensalisCP.Inputs import InputSource
+
+from LumensalisCP.IOContext  import *
+from LumensalisCP.Main.Expressions import Expression, ExpressionTerm
 from .Trigger import Trigger
 #import functools
 

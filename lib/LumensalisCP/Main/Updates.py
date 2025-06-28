@@ -7,20 +7,22 @@ import LumensalisCP.Main
 from LumensalisCP.Main.Profiler import ProfileFrame, ProfileSubFrame
 
 class UpdateContext(object):
-    pFrame: ProfileFrame
+    activeFrame: ProfileFrame
     
     def __init__( self, main:"LumensalisCP.Main.Manager.MainManager"=None ):
         self.__updateIndex = 0
-        self.__changedSources : List["LumensalisCP.Main.Expressions.InputSource"] = []
+        self.__changedSources : List["LumensalisCP.Inputs.InputSource"] = []
         self.__mainRef = main.makeRef()
         self.__when = main.when
-        self.pFrame = None
+        self.activeFrame = None
+        self.baseFrame = None
         
     def reset( self ):
         self.__updateIndex += 1
         self.__changedSources = []
         self.__when = self.main.when
-        self.pFrame = None
+        self.activeFrame = None
+        self.baseFrame = None
         
     @property
     def main(self): return self.__mainRef()
@@ -35,11 +37,11 @@ class UpdateContext(object):
     def changedSources(self): return self.__changedSources
     
     def subFrame(self, name:str|None=None) -> ProfileSubFrame:
-        rv = self.pFrame.activeFrame().subFrame(self, name)
+        rv = self.activeFrame.activeFrame().subFrame(self, name)
         assert rv
         return rv
 
-    def addChangedSource( self, changed:"LumensalisCP.Main.Expressions.InputSource"):
+    def addChangedSource( self, changed:"LumensalisCP.Inputs.InputSource"):
         self.__changedSources.append( changed )
         
     def valueOf( self, value:Any ) -> Any:

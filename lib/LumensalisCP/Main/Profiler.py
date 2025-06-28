@@ -51,10 +51,15 @@ class ProfileFrameBase(object):
     priorStartNS: int
     latestStartNS: int
     currentSnap: ProfileFrameEntry
+    index: int
+    depth: int = 0
+    
+    nextFrameIndex = 1
 
     def __init__(self):
         #super().__init__(*args, **kwds)
         self.entries = []
+        self._name = '--'
         self.reset()
         
         
@@ -69,7 +74,7 @@ class ProfileFrameBase(object):
 
     def activeFrame(self) -> "ProfileFrameBase":
         entry = self.currentSnap 
-        if entry is not None and entry.nest is not None:
+        if entry is not None and entry.nest is not None and entry.nest is not self:
             return entry.nest.activeFrame()
         return self    
     
@@ -81,7 +86,9 @@ class ProfileFrameBase(object):
     
     def reset(self ):
         nowNS = time.monotonic_ns()
-
+        self.index = ProfileFrameBase.nextFrameIndex
+        ProfileFrameBase.nextFrameIndex += 1
+        
         self.entries.clear()
         self.e = 0
         self.start = 0
@@ -124,9 +131,13 @@ class ProfileFrameBase(object):
         return dict(
             e= self.e,
             entries=rvEntries,
-            skipped=skipped
+            skipped=skipped,
+            i=self.index
         )
-
+    
+    def __str__(self):
+        return f"PSF{('-'+self._name) if self._name is not None else ''}[{self.depth}:{self.index}]@{id(self):X}"
+    
 class ProfileSubFrame(ProfileFrameBase): 
     pass
     __context : 'LumensalisCP.Main.Updates.UpdateContext'
@@ -136,26 +147,39 @@ class ProfileSubFrame(ProfileFrameBase):
         self.__context = context
         self._name = name
         
-    def __str__(self):
-        return f"PSF{('-'+self._name) if self._name is not None else ''}@{id(self):X}"
+
         
     def __enter__(self):
-        context = self.__context
-        ensure( context is not None and context.pFrame is not None )
-        self.__priorFrame = context.pFrame
-        context.pFrame = self
-        # print( f"PSF ENTER {self} from {self.__priorFrame}" )
-        
-        self.snap('start')
+        try:
+            context = self.__context
+            ensure( context is not None and context.activeFrame is not None )
+            self.__priorFrame = context.activeFrame
+            self.depth = self.__priorFrame.depth + 1
+            context.activeFrame = self
+            # print( f"PSF ENTER {self} from {self.__priorFrame}" )
+            
+            self.snap('start')
+        except Exception as inst:
+            self.__context.main.dbgOut( "exception %r entering %r", inst, self )
         return self
     
     def __exit__(self,exc_type, exc_value, exc_tb):
-        self.snap('end')
-        if self.__context.pFrame is not self:
-            print( f"PSF EXIT MISMATCH {self.__context.pFrame} != {self} {exc_type} {exc_value} {exc_tb} {self.__context}" )
-        #else:
-            #print( f"PSF EXIT  {self}  to  {self.__priorFrame}" )
-        self.__context.pFrame = self.__priorFrame
+        if exc_type is not None:
+            print( f"PSF EXIT EXCEPTION {self} {exc_type} {exc_value} {exc_tb}" )
+        try:
+            self.snap('end')
+            if self.__context.activeFrame is not self:
+                print( f"PSF EXIT MISMATCH {self.__context.activeFrame} != {self} {exc_type} {exc_value} {exc_tb} {self.__context}" )
+                print( f"  prior {self.__priorFrame} != {self} {exc_type} {exc_value} {exc_tb} {self.__context}" )
+                frame = self.__context.baseFrame
+                while frame is not None:
+                    print( f"  - {frame}" )
+                    frame = frame.nest()
+            #else: print( f"PSF EXIT  {self}  to  {self.__priorFrame}" )
+            self.__context.activeFrame = self.__priorFrame
+        except Exception as inst:
+            self.__context.main.dbgOut( "exception %r exiting %r", inst, self )
+            
         return False
 
 class ProfileFrame(ProfileFrameBase): 

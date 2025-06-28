@@ -1,14 +1,16 @@
+from __future__ import annotations
+
 try:
 	# imports used only for typing
-    from typing import Tuple # <- this line causes the error
-    import overrides
+    #import overrides
     from typing import *
     # any imports below this won't happen if the error gets raised
-    #from circuitpython_typing import ReadableBuffer
-    # from busio import I2C
+    TYPING_IMPORTED = True
 except ImportError:
     
     pass # ignore the error
+    #TYPE_CHECKING - False
+    TYPING_IMPORTED = False
     ForwardRef = None
     Any = None
     
@@ -40,3 +42,9 @@ except ImportError:
     def overload( f ): return f
     def override( f ): return f
     def final( f ): return f
+
+
+if TYPING_IMPORTED:
+    # this is _not_ within the initial try/except because we do
+    # _not_ want to silently ignore errors
+    import abc

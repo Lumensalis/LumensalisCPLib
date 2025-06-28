@@ -1,9 +1,11 @@
-from LumensalisCP.CPTyping import *
+#from LumensalisCP.CPTyping import *
 from ..Main.Dependents import MainChild
-from ..Main.Expressions import ExpressionTerm, Expression, InputSource, OutputTarget
-from LumensalisCP.common import *
+from ..Main.Expressions import ExpressionTerm, Expression
+from  LumensalisCP.IOContext import *# InputSource, OutputTarget
+#from LumensalisCP.common import *
+
 from LumensalisCP.util.bags import *
-from ..Main.Expressions import EvaluationContext
+#from ..Main.Expressions import EvaluationContext
 from ..Lights.Patterns import Pattern
 from LumensalisCP.util.kwCallback import KWCallback
 from LumensalisCP.Main.Profiler import ProfileFrameBase
@@ -117,19 +119,19 @@ class Scene(MainChild):
     
     def runTasks(self, context:EvaluationContext):
         if 0: print( f"scene {self.name} run tasks ({len(self.__tasks)} tasks, {len(self.__rules)} rules) on update {context.updateIndex}..." )
-        with context.subFrame('runScene') as pFrame:
+        with context.subFrame('runScene') as activeFrame:
             for task in self.__tasks:
                 try:
-                    task.run( self, context=context, frame=pFrame )
+                    task.run( self, context=context, frame=activeFrame )
                 except Exception as inst:
                     self.SHOW_EXCEPTION(  inst, "running task %s", task.name )
-            pFrame.snap("rules")
+            activeFrame.snap("rules")
             for tag, rule in self.__rules.items():
                 try:
-                    rule.run( context, frame=pFrame )
+                    rule.run( context, frame=activeFrame )
                 except Exception as inst:
                     self.SHOW_EXCEPTION( inst, "running rule %s", rule.name  )
-            pFrame.snap("patterns")
+            activeFrame.snap("patterns")
             if self.__nextPatternsRefresh <= context.when:
                 self.__nextPatternsRefresh = context.when +  self.__patternRefreshPeriod
                 for pattern in self.__patterns:

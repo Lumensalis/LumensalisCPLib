@@ -2,7 +2,7 @@ from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
 from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.Main.Dependents import MainRef
-from LumensalisCP.Main.Expressions import InputSource
+from LumensalisCP.Inputs import InputSource
 from LumensalisCP.Main.Profiler import ProfileFrame, ProfileSubFrame
 
 class UpdateContext(object):
@@ -12,7 +12,8 @@ class UpdateContext(object):
     when: TimeInSeconds 
     updateIndex: int
     changedSources: List[InputSource]
-    pFrame: ProfileFrame
+    activeFrame: ProfileFrame
+    baseFrame: ProfileFrame
 
     def addChangedSource( self, changed:InputSource):pass
         

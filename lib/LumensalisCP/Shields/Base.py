@@ -2,8 +2,8 @@
 thisModuleIsIShieldsBase = True
 #import busio
 from LumensalisCP.Controllers.ConfigurableBase import ControllerConfigurableChildBase
-#from LumensalisCP.Main.Expressions import InputSource, NamedOutputTarget, EvaluationContext
-from LumensalisCP.Main.Updates import Refreshable
+#from LumensalisCP.Inputs import InputSource
+from LumensalisCP.IOContext import NamedOutputTarget, EvaluationContext, Refreshable
 
 #from LumensalisCP.Shields.Pins import PinHolder, PinProxy
 #from digitalio import DigitalInOut, Direction

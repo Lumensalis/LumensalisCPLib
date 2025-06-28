@@ -1,9 +1,12 @@
+#import LumensalisCP.Inputs
+import LumensalisCP.Main
 from ..Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.CPTyping import Any, Callable, Generator, List, Mapping, Tuple
 from LumensalisCP.CPTyping  import override
 from LumensalisCP.common import *
 from .Updates import UpdateContext, RefreshCycle
 from LumensalisCP.Main.Profiler import Profiler, ProfileFrame
+
 
 class EvaluationContext(UpdateContext):
     
@@ -53,6 +56,15 @@ class EvaluationContext(UpdateContext):
             value = self.valueOf( value() )
         return value        
 
+
+#############################################################################
+class Evaluatable(object):
+    
+    def getValue(self, context:EvaluationContext):
+        # type: (EvaluationContext) -> Any
+        """ current value of term"""
+        raise NotImplemented
+    
 #############################################################################
 
 def makeExpressionConstant(value:Any=None) -> "ExpressionTerm" : 
@@ -72,7 +84,7 @@ def ensureIsTerm( term:"ExpressionTerm" ) -> "ExpressionTerm" :
 
 #############################################################################
 
-class ExpressionTerm(object):
+class ExpressionTerm(Evaluatable):
     def __init__(self):
         pass
     
@@ -286,89 +298,7 @@ def falling( term:ExpressionTerm=None, **kwds )  -> EdgeTerm:
 
 #############################################################################
 
-class InputSource(NamedLocalIdentifiable, ExpressionTerm, Debuggable):
 
-    def __init__(self, name:str = None):
-        NamedLocalIdentifiable.__init__(self,name=name)
-        ExpressionTerm.__init__(self)
-        Debuggable.__init__(self)
-
-        self.__latestValue = None
-        self.__latestUpdateIndex:int = None
-        self.__latestChangeIndex:int = None
-        self.__onChangedList = []
-
-    def __repr__( self ):
-        return safeFmt( "%s:%s = %r", self.__class__.__name__, self.name, self.value )
-    
-    def getDerivedValue(self, context:UpdateContext) -> Any:
-        raise NotImplemented
-    
-    def onChange(self, cb:Callable):
-        self.__onChangedList.append(cb)
-
-    def updateValue(self, context:UpdateContext) -> bool:
-        assert isinstance( context, UpdateContext )
-        if self.__latestChangeIndex == context.updateIndex:
-            context.addChangedSource( self )
-            return self.__latestValue
-        
-        val = self.getDerivedValue( context )
-        self.__latestUpdateIndex = context.updateIndex
-        if val == self.__latestValue:
-            return False
-        
-        self.enableDbgOut and self.dbgOut( f"value changing on {self.name} from {self.__latestValue} to {val} on update {context.updateIndex}" )
-        self.__latestValue = val
-        self.__latestChangeIndex = context.updateIndex
-        context.addChangedSource( self )
-        for cb in self.__onChangedList:
-            try:
-                cb( source=self, context=context )
-            except Exception as inst:
-                self.SHOW_EXCEPTION( inst, "onChanged callback %r failed", cb )
-
-        return True
-        
-    @property
-    def value(self): return self.__latestValue
-    
-    def __bool__(self) -> bool:
-        return bool(self.__latestValue)
-    
-    @override
-    def getValue(self, context:EvaluationContext = None ) -> Any:
-        if context is not None and self.__latestUpdateIndex != context.updateIndex:
-            self.updateValue( context )
-        return self.__latestValue
-    
-    def path( self ): return None
-
-#############################################################################
-
-class OutputTarget(object):
-
-    def __init__(self, name:str = None):
-        if name is not None:
-            self.__name = name = name
-        
-    def set( self, value:Any, context:EvaluationContext ):
-        raise NotImplemented
-    
-    @property
-    def name(self): return getattr( self, '__OutputTarget__name', None ) or f"{self.__class__.__name__}_{id(self)}"
-    
-class NamedOutputTarget(NamedLocalIdentifiable,OutputTarget):
-
-    def __init__(self, name:str = None):
-        super().__init__(name=name)
-        OutputTarget.__init__(self)
-
-    def set( self, value:Any, context:EvaluationContext ):
-        raise NotImplemented
-
-    def path( self ): return None
-    
     
 class CallbackSource( ExpressionTerm ):
     def __init__( self, name, callback  ):
@@ -386,7 +316,7 @@ class CallbackSource( ExpressionTerm ):
 
 #############################################################################
 
-class Expression( object ):
+class Expression( Evaluatable ):
     def __init__( self, term:ExpressionTerm ):
         self.__root = ensureIsTerm(term)
         self.__when:ExpressionTerm|None = None
@@ -425,13 +355,17 @@ class Expression( object ):
         self.__otherwise = condition
         return self
     
-    def sources( self ) -> Mapping[str,InputSource]:
+    def sources( self ) -> Mapping[str,"LumensalisCP.Inputs.InputSource"]:
         rv = {}
         for term in self.terms():
-            if isinstance(term,InputSource):
+            if isinstance(term,LumensalisCP.Inputs.InputSource):
                 dictAddUnique( rv, term.name, term )
 
         return rv
+    
+    def getValue(self, context:EvaluationContext ):
+        self.updateValue(context)
+        return self.__latestValue
     
     def updateValue(self, context:EvaluationContext ):
         term = self.term

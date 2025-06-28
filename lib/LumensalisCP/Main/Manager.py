@@ -290,10 +290,10 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
                 context = self.__evContext
 
                  # snapClosureData.loopStartNS = time.monotonic_ns()
-                pFrame = self.profiler.reset(context.updateIndex)
-                context.pFrame = pFrame                                
+                activeFrame = self.profiler.reset(context.updateIndex)
+                context.baseFrame  = context.activeFrame = activeFrame
                 
-                snapTime = pFrame.snap
+                snapTime = activeFrame.snap
                 self._when = self.newNow
                 
                 #currentTiming = self.__taskLoopTimings[context.updateIndex % self.__taskLoopTimingsLength]
