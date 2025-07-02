@@ -19,6 +19,7 @@ class LocalIdentifiable(object):
     
 class NamedLocalIdentifiable(LocalIdentifiable,Debuggable):
     def __init__( self, name:str=None ):
+        name = name or f"{self.__class__.__name__}:{id(self):X}"
         assert name is not None
         self.__name = name
         LocalIdentifiable.__init__(self)
