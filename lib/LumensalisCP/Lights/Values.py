@@ -1,10 +1,4 @@
-#from LumensalisCP.CPTyping import *
-#from LumensalisCP.common import *
 from LumensalisCP.IOContext import *
-#from LumensalisCP.Inputs import InputSource
-#from LumensalisCP.Identity.Local import NamedLocalIdentifiable
-from LumensalisCP.util.bags import Bag
-import LumensalisCP.Main.Expressions as xm
 
 import rainbowio
 from random import random as randomZeroToOne, randint
@@ -13,22 +7,6 @@ def wheel255( val:float ): return rainbowio.colorwheel(val)
 
 def wheel1( val:float ): return rainbowio.colorwheel(val*255.0)
 
-AnyLightValue = Any
-
-class LightValueBase(object):
-    def __init__(self, *args, **kwds):
-        pass
-
-    @property
-    def brightness(self)->float: raise NotImplemented
-
-    @property
-    def asNeoPixelInt(self)->int: raise NotImplemented
-    
-    @property
-    def asRGB(self) -> "RGB": raise NotImplemented
-
-    def setLight(self, value): raise NotImplemented
 
 
 from collections import namedtuple
@@ -126,146 +104,32 @@ class RGB(object):
 RGB.CONVERTORS[RGB.__class__.__name__] = lambda v:v
 RGB.CONVERTORS['RGB'] = lambda v:v
 
-if 0:
-     """
-    class RGBNT(namedtuple('RGBBase', ['_r', '_g','_b'])):
-        #__slots__ = '_RGB__r', '_RGB__g', '_RGB__b'
+if LCPF_TYPING_IMPORTED:
+    
 
-        def __init__(self, r:ZeroToOne=0, b:ZeroToOne=0, g:ZeroToOne=0 ):
-            super().__init__(r,g,b)
-            if type(r) is float:
-                self.r:ZeroToOne = r
-                self.g:ZeroToOne = g
-                self.b:ZeroToOne = b
-            else:
-                if type(r) is tuple:
-                    r, b, g = r
-                if isinstance(r,RGB):
-                    r, b, g = r.r, r.b, r.g
-                    
-                self.r:ZeroToOne = r
-                self.g:ZeroToOne = g
-                self.b:ZeroToOne = b
-        
-        @property 
-        def r(self)->ZeroToOne: return self._r
-        @r.setter
-        def r(self,v): self._r = max(0.0, min(1.0,v) )
-        
-        @property 
-        def g(self)->ZeroToOne: return self._b
-        @g.setter
-        def g(self,v): self._g = max(0.0, min(1.0,v) )
-        
-        @property 
-        def b(self)->ZeroToOne: return self._g
-        @b.setter
-        def b(self,v): self._b = max(0.0, min(1.0,v) )
-        
-        def toNeoPixelInt( self ):
-            return (int(255*self.r) << 16) + (int(255*self.b) << 8) + (int(255*self.g))
-        
-        def _set(self, r:ZeroToOne, g:ZeroToOne,b:ZeroToOne):
-            self.r = r
-            self.g = g
-            self.b = b
-        
-        def _rgbTuple(self) -> Tuple[ZeroToOne,ZeroToOne,ZeroToOne]:
-            return self
-            
-        @staticmethod
-        def fromNeoPixelInt( npi:int ) ->"RGB":
-            npi = int(npi)
-            return RGB(
-                r=((npi&0xFF0000)>>16)/255.0,
-                g=((npi&0xFF00)>>8)/255.0,
-                b=(npi&0xFF00)/255.0
-            )
-        
-        def fadeTowards(self, other:"RGB", ratio:ZeroToOne )->"RGB":
-            r2 = 1.0 - ratio
-            return RGB(
-                r = self.r * r2 + other.r * ratio,
-                g = self.g * r2 + other.g * ratio,
-                b = self.b * r2 + other.b * ratio,
-            )
+    AnyLightValue = Union[
+         int, float, bool,
+         Tuple[float,float,float],
+         List [float],
+        str
+     ] 
+else:
+    AnyLightValue = None
 
-        @property
-        def brightness(self)->float: 
-            return (self.r + self.g + self.b) / 3.0
-        
-        def __repr__(self):
-            return safeFmt( "(%r,%r,%r)", self.r, self.g, self.b)
-        
-    class RGBD(object):
-        __slots__ = '_RGB__r', '_RGB__g', '_RGB__b'
+class LightValueBase(object):
+    def __init__(self, *args, **kwds):
+        pass
 
-        def __init__(self, r:ZeroToOne=0, b:ZeroToOne=0, g:ZeroToOne=0 ):
-            if type(r) is float:
-                self.r:ZeroToOne = r
-                self.g:ZeroToOne = g
-                self.b:ZeroToOne = b
-            else:
-                if type(r) is tuple:
-                    r, b, g = r
-                if isinstance(r,RGB):
-                    r, b, g = r.r, r.b, r.g
-                    
-                self.r:ZeroToOne = r
-                self.g:ZeroToOne = g
-                self.b:ZeroToOne = b
-        
-        @property 
-        def r(self)->ZeroToOne: return self.__r
-        @r.setter
-        def r(self,v): self.__r = max(0.0, min(1.0,v) )
-        
-        @property 
-        def g(self)->ZeroToOne: return self.__g
-        @g.setter
-        def g(self,v): self.__g = max(0.0, min(1.0,v) )
-        
-        @property 
-        def b(self)->ZeroToOne: return self.__b
-        @b.setter
-        def b(self,v): self.__b = max(0.0, min(1.0,v) )
-        
-        def toNeoPixelInt( self ):
-            return (int(255*self.__r) << 16) + (int(255*self.__b) << 8) + (int(255*self.__g))
-        
-        def _set(self, r:ZeroToOne, g:ZeroToOne,b:ZeroToOne):
-            self.__r = r
-            self.__g = g
-            self.__b = b
-        
-        def _rgbTuple(self) -> Tuple[ZeroToOne,ZeroToOne,ZeroToOne]:
-            return (self.__r,self.__g,self.__b)
-            
-        @staticmethod
-        def fromNeoPixelInt( npi:int ) ->"RGB":
-            npi = int(npi)
-            return RGB(
-                r=((npi&0xFF0000)>>16)/255.0,
-                g=((npi&0xFF00)>>8)/255.0,
-                b=(npi&0xFF00)/255.0
-            )
-        
-        def fadeTowards(self, other:"RGB", ratio:ZeroToOne )->"RGB":
-            r2 = 1.0 - ratio
-            return RGB(
-                r = self.r * r2 + other.r * ratio,
-                g = self.g * r2 + other.g * ratio,
-                b = self.b * r2 + other.b * ratio,
-            )
+    @property
+    def brightness(self)->float: raise NotImplemented
 
-        @property
-        def brightness(self)->float: 
-            return (self.r + self.g + self.b) / 3.0
-        
-        def __repr__(self):
-            return safeFmt( "(%r,%r,%r)", self.r, self.g, self.b)
-        
-"""   
+    @property
+    def asNeoPixelInt(self)->int: raise NotImplemented
+    
+    @property
+    def asRGB(self) -> RGB: raise NotImplemented
+
+    def setLight(self, value): raise NotImplemented
 
 def registerToRGB( cf = lambda v:v):
     def r( cls ):
@@ -308,8 +172,7 @@ class LightValueRGB(RGB, LightValueBase ):
     @staticmethod
     def prepRGBValue( value ):
         if (
-                isinstance( value, xm.ExpressionTerm ) or
-                isinstance( value, xm.Expression ) or
+                isinstance( value, Evaluatable ) or
                 callable(value)
         ):
             return value

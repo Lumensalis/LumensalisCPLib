@@ -37,7 +37,6 @@ class Actor(Debuggable):
             return
         
         self.dbgOut("Setting current behavior to %s", behavior.name)
-        self.currentBehavior = behavior
         if self.__currentBehavior is not None:
             self.__currentBehavior.exit(self.main.context)
         self.__currentBehavior = behavior

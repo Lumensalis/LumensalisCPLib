@@ -12,11 +12,13 @@ class Moving( NamedOutputTarget, Refreshable ):
         Refreshable (_type_): _description_
     """
     
-    speed:TimeInSeconds # time required for full range move
-    target:ZeroToOne # destination value
+    speed:TimeInSeconds|Evaluatable # time required for full range move
+    target:ZeroToOne|Evaluatable # destination value
     moving:bool # true if still moving towards destination
     
-    
+    @property
+    def speed(self):
+        
     def __init__(self, name:str=None, 
                  speed:TimeInSeconds = 1.0,
                  target:ZeroToOne = 0.0,
@@ -50,7 +52,7 @@ class Moving( NamedOutputTarget, Refreshable ):
             self.__moveTimeAtStart = None
             self.__moveAngleStart = None
             self.__moveTimer.stop()
-        if turnOff:
+        
     
     def set( self, value:ZeroToOne|None, context:EvaluationContext=None ):
         if self.__moving:

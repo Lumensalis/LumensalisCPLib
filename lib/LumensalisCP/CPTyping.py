@@ -4,13 +4,14 @@ try:
 	# imports used only for typing
     #import overrides
     from typing import *
+    from typing import IO
     # any imports below this won't happen if the error gets raised
-    TYPING_IMPORTED = True
+    LCPF_TYPING_IMPORTED = False
 except ImportError:
     
     pass # ignore the error
     #TYPE_CHECKING - False
-    TYPING_IMPORTED = False
+    LCPF_TYPING_IMPORTED = False
     ForwardRef = None
     Any = None
     
@@ -44,7 +45,9 @@ except ImportError:
     def final( f ): return f
 
 
-if TYPING_IMPORTED:
+if LCPF_TYPING_IMPORTED:
     # this is _not_ within the initial try/except because we do
     # _not_ want to silently ignore errors
+    raise NotImplemented
     import abc
+    

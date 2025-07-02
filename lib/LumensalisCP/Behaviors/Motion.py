@@ -59,7 +59,7 @@ class ServoMovement(Motion):
 
     def activate( self, target:Degrees|None=None, speed:DegreesPerSecond|None = None, context:EvaluationContext|None=None ) -> "ServoMovement":
         self.reset( target=target,speed=speed)
-        self.actor.currentBehavior = self
+        #self.actor.currentBehavior = self
         return self
 
         

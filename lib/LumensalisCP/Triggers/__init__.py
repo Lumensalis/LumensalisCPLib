@@ -48,3 +48,7 @@ def fireOnTrue( expression:Expression|ExpressionTerm, trigger:Trigger=None ):
         print( f"wrapped for {callable.__name__} = {wrapped}, class={wrapped.__class__}")
         return cTrigger
     return on2
+
+
+def fireOnClick( expression:Expression|ExpressionTerm, trigger:Trigger=None ):
+    return  fireOnTrue( expression=expression, trigger=trigger )
