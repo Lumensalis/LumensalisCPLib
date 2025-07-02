@@ -33,6 +33,7 @@ from LumensalisCP.HTTP.BasicServer import BasicServer
 from LumensalisCP.Audio import Audio
 from LumensalisCP.Lights.DMXManager import DMXManager
 from socketpool import SocketPool
+from LumensalisCP.Main.Profiler import Profiler
 
 class MainManager(ConfigurableBase, Debuggable):
     
@@ -41,6 +42,7 @@ class MainManager(ConfigurableBase, Debuggable):
     adafruitFactory : AdafruitFactory
     dmx : DMXManager
     socketPool : SocketPool
+    profiler: Profiler
     
     @staticmethod
     def initOrGetManager()->MainManager:pass
@@ -74,8 +76,9 @@ class MainManager(ConfigurableBase, Debuggable):
     @property
     def timers(self) -> PeriodicTimerManager: pass
     
-    @property
-    def latestContext(self)->EvaluationContext: pass
+    latestContext:EvaluationContext
+     
+    def getContext(self)->EvaluationContext: pass
 
     def callLater( self, task ): pass
 

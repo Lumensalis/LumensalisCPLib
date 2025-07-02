@@ -84,24 +84,28 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
         self.__onUnusedCB = cb
                     
     def derivedUpdateTarget(self, context:UpdateContext):
-        allTouched = self.touched()
-        self.__updates += 1
-        if self.__lastTouched != allTouched:
-            self.__lastTouched = allTouched
-            self.__changes += 1
-            unused = allTouched & self.__unusedPinsMask
-            self.dbgOut( "MPR121 = %X, unused=%X, upm=%X",  allTouched, unused, self.__unusedPinsMask )
-            
-            if unused != self.__latestUnused:
-                self.__latestUnused = unused
-                if self.__onUnusedCB is not None:
-                    self.dbgOut( "calling unusedCB( %r, %r)", unused, context )
-                    self.__onUnusedCB( unused = unused, context = context )
-            
-        for input in self.__inputs:
-            if input is not None:
-                input._setTouched( allTouched, context )
-    
+        with context.subFrame(f'updateTarget-{self.name}-{self.__updates}') as frame:
+            frame.snap( "getTouched")
+            allTouched = self.touched()
+            frame.snap( "updateInternal")
+            self.__updates += 1
+            if self.__lastTouched != allTouched:
+                self.__lastTouched = allTouched
+                self.__changes += 1
+                unused = allTouched & self.__unusedPinsMask
+                self.dbgOut( "MPR121 = %X, unused=%X, upm=%X",  allTouched, unused, self.__unusedPinsMask )
+                
+                if unused != self.__latestUnused:
+                    self.__latestUnused = unused
+                    if self.__onUnusedCB is not None:
+                        self.dbgOut( "calling unusedCB( %r, %r)", unused, context )
+                        self.__onUnusedCB( unused = unused, context = context )
+                
+            frame.snap( "updateInputs")
+            for input in self.__inputs:
+                if input is not None:
+                    input._setTouched( allTouched, context )
+        
 
             
     def __updateUnusedPinMask(self):

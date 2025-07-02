@@ -23,10 +23,11 @@ from LumensalisCP.Debug import Debuggable
 from .I2CProvider import I2CProvider
 
 import LumensalisCP.Main.Dependents
+import LumensalisCP.Main.Updates
 
 from LumensalisCP.Main.Profiler import Profiler
 
-import adafruit_24lc32
+from . import _mconfig
 
 class MainManager(ConfigurableBase, I2CProvider, Debuggable):
     
@@ -45,6 +46,7 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
     def __init__(self, config = None, **kwds ):
         assert MainManager.theManager is None
         MainManager.theManager = self
+        LumensalisCP.Main.Updates._getCurrentUpdateContext = self.getContext
         
         self.__startNs = time.monotonic_ns()
         self._when:TimeInSeconds = self.newNow
@@ -134,6 +136,9 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
     
     @property
     def latestContext(self)->EvaluationContext: return  self.__evContext
+
+    def getContext(self)->EvaluationContext: 
+        return  self.__evContext
 
     @property
     def dmx(self):
@@ -267,68 +272,70 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         return rv
 
     async def taskLoop( self ):
-
+        self.__priorSleepWhen = self.getNewNow()
         self.infoOut( "starting manager main run" )
+        
+        def dummySnapTime(*args,**kwds): return None
         try:
             context = self.__evContext
-            #self.__taskLoopTimingsLength = 100
-            #self.__taskLoopTimings = [collections.OrderedDict() for _ in range(self.__taskLoopTimingsLength) ]
-            
-            # currentTiming = None 
-            self._when = self.newNow
 
-                    
-            
-            #def snapTime( tag, **kwds ):
-            #    scd.next()
-            #    when = (time.monotonic_ns() - loopStartNS)* 0.000000001
-            #    currentTiming[tag] = dict(lw=when, **kwds )
-                
-            
+            self._when = self.newNow
+            mlc = _mconfig._mlc
             while True:
+                priorWhen = self._when
                 self.__evContext.reset()
                 context = self.__evContext
-
-                 # snapClosureData.loopStartNS = time.monotonic_ns()
-                activeFrame = self.profiler.reset(context.updateIndex)
-                context.baseFrame  = context.activeFrame = activeFrame
+                self._when = self.getNewNow()
                 
-                snapTime = activeFrame.snap
-                self._when = self.newNow
+                if mlc.ENABLE_PROFILE:
+                    activeFrame = self.profiler.reset(context.updateIndex, eSleep = self._when - self.__priorSleepWhen)
+                    context.baseFrame  = context.activeFrame = activeFrame
+                    
+                    snapTime = activeFrame.snap
+                    memBefore = gc.mem_alloc()
+                    snapTime( 'start', updateIndex = context.updateIndex, when=self._when, cycle=self.__cycle, memBefore=memBefore
+                            )
+                else:
+                    snapTime = dummySnapTime
                 
-                #currentTiming = self.__taskLoopTimings[context.updateIndex % self.__taskLoopTimingsLength]
-                snapTime( 'start', updateIndex = context.updateIndex, when=self._when, cycle=self.__cycle )
                 
                 self._timers.update( context )
-                
-                snapTime( 'deferred' )
-                if len( self.__deferredTasks ):
-                    self.__runDeferredTasks()
-                    
-                snapTime( 'scenes' )
-                self._scenes.run(context)
-                
-                snapTime( 'i2c' )
-                for target in self.__i2cDevices:
-                    target.updateTarget(context)
-                    
-                snapTime( 'tasks' )
-                for task in self._tasks:
-                    task()
-                    
-                snapTime( 'boards' )
-                for board in self._boards:
-                    board.refresh(context)
-                    
-                if self._printStatCycles and self.__cycle % self._printStatCycles == 0:
-                    self.infoOut( f"cycle {self.__cycle} at {self._when} with {len(self._tasks)} tasks, gmf={gc.mem_free()} cd={self.cycleDuration}" )
-                #self._scenes.run( context )
-                self.cycleDuration = 1.0 / (self.cyclesPerSecond *1.0)
-                
-                snapTime( 'sleep' )
-                await asyncio.sleep( 0 ) # self.cycleDuration )
-                self.__cycle += 1
+                if not mlc.MINIMUM_LOOP:
 
+                    snapTime( 'deferred' )
+                    if len( self.__deferredTasks ):
+                        self.__runDeferredTasks()
+                
+                    snapTime( 'scenes' )
+                    self._scenes.run(context)
+                    
+                    snapTime( 'i2c' )
+                    for target in self.__i2cDevices:
+                        target.updateTarget(context)
+                        
+                    snapTime( 'tasks' )
+                    for task in self._tasks:
+                        task()
+                        
+                    snapTime( 'boards' )
+                    for board in self._boards:
+                        board.refresh(context)
+                        
+                    if self._printStatCycles and self.__cycle % self._printStatCycles == 0:
+                        self.infoOut( f"cycle {self.__cycle} at {self._when} with {len(self._tasks)} tasks, gmf={gc.mem_free()} cd={self.cycleDuration}" )
+                    #self._scenes.run( context )
+                    self.cycleDuration = 1.0 / (self.cyclesPerSecond *1.0)
+                    
+                    snapTime( 'sleep' )
+                    
+                self.__priorSleepWhen = self.getNewNow()
+                await asyncio.sleep( 0.01 ) # self.cycleDuration )
+                self.__cycle += 1
+                
+                if mlc.ENABLE_PROFILE:
+                    memAfter = gc.mem_alloc()
+                    snapTime( 'end', memAfter=memAfter )
+                    
         except Exception as inst:
             self.errOut( "EXCEPTION in task loop : {}".format(inst) )
             print(''.join(traceback.format_exception(inst)))

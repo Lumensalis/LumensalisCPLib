@@ -23,7 +23,7 @@ class SceneManager(Debuggable):
     
     def run(self, context:EvaluationContext):
         if self.__currentScene is None: 
-            self.warnOut( "no current scene active" )
+            #self.warnOut( "no current scene active" )
             return
         
         self.__currentScene.runTasks(context)

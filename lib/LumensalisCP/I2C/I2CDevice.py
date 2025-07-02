@@ -1,6 +1,6 @@
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
-from LumensalisCP.IOContext import InputSource, OutputTarget, UpdateContext
+from LumensalisCP.IOContext import InputSource, OutputTarget, UpdateContext, NamedLocalIdentifiable
 
 import busio
 #import weakref
@@ -11,22 +11,20 @@ class I2CDeviceInitArgs(TypedDict):
     address: int
     updateInterval:float|None
 
-class I2CDevice( Debuggable ):
+class I2CDevice( NamedLocalIdentifiable ):
     def __init__(self, i2c=None, main:"LumensalisCP.Main.Manager.MainManager"=None,
                  address:int|None = None, updateInterval:float|None = None,
                  name:str=None
         ):
-        super().__init__()
+        super().__init__(name=name or self.__class__.__name__)
         
         assert main is not None
-        
-        if name is not None:
-            self.name = name
-            
+
         self.__i2c = i2c or main.defaultI2C
         self.__main = main
         self.__latestUpdateIndex:int = -1
         self.__address = address
+        self.__updates = 0
         self.__updateInterval = updateInterval
         self.__nextUpdate:float = updateInterval
         main._addI2CDevice(self)
@@ -50,11 +48,12 @@ class I2CDevice( Debuggable ):
         
         if self.__latestUpdateIndex == context.updateIndex:
             return False
-        
-        self.__latestUpdateIndex = context.updateIndex
-        self.__nextUpdate = now + self.__updateInterval
-        self.derivedUpdateTarget( context )
-        return True
+        with context.subFrame(f'updateTarget-{self.name}-{self.__updates}') as frame:
+            self.__updates += 1
+            self.__latestUpdateIndex = context.updateIndex
+            self.__nextUpdate = now + self.__updateInterval
+            self.derivedUpdateTarget( context )
+            return True
         
         
 class I2CInputSource( InputSource ):

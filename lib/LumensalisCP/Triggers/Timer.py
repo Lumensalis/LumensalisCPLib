@@ -14,15 +14,20 @@ class PeriodicTimerManager( SubManagerBase ):
         self.__timers:List["PeriodicTimer"] = []
         self.__timerChanges = 0
         self.__updating = False
-    
+        self.__timerSorts = 0
+        
     def update(self, context: UpdateContext ):
         if len(self.__timers):
+            #if self.main.cycle % 10 != 0: return
             self.__updating = True
             now = self.main.when
+            self.__latestUpdateWhen = now
             timers = self.__timers
             self.dbgOut( "update now=%.3f", now )
             for t in timers:
                 now = self.main.newNow
+                if t.nextFire is None:
+                    pass
                 if t.nextFire <= now:
                     priorNf = t.nextFire
                     try:
@@ -33,25 +38,30 @@ class PeriodicTimerManager( SubManagerBase ):
                     self.dbgOut( f"timer {t.name} expired, nf={t.nextFire} now={now:.3f} pnf={priorNf}" )
                 else:
                     #self.enableDbgOut and 
-                    self.dbgOut( f"timer {t.name} still waiting, nf={t.nextFire:0.3f}" )
+                    self.dbgOut( "timer %s still waiting, nf=%0.3f", t.name, t.nextFire )
                                     
             self.__updating = False
             if self.__timerChanges:
                 self.dbgOut( "%d changes, shuffling", self.__timerChanges )
                 self.__shuffleTimers()
 
+    @property
+    def timers(self): return self.__timers
+    
     def __shuffleTimers( self ):
         if self.__updating:
             self.__timerChanges += 1
         else:
             self.__timerChanges = 0
-            self.__timers = sorted( filter( lambda t: t.nextFire is not None, self.__timers ), key=lambda t: t.nextFire )
+            #self.__timers = sorted( filter( lambda t: t.nextFire is not None, self.__timers ), key=lambda t: t.nextFire )
+            self.__timers.sort( key=lambda t: t.nextFire or self.__latestUpdateWhen + 9999  )
+            
+            self.__timerSorts += 1
 
     def _addTimer( self, timer:"PeriodicTimer" ):
         assert timer not in self.__timers
         self.__timers.append( timer )
         self.__shuffleTimers()
-            
 
     def _updateTimer( self, timer:"PeriodicTimer" ):
         assert timer in self.__timers
@@ -138,4 +148,13 @@ class PeriodicTimer( Trigger ):
             if self.__nextFire is not None:
                 self.restart(when=when)
 
+def addPeriodicTaskDef( name:str|None=None, period:TimeInSeconds=1.1,main:LumensalisCP.Main.Manager.MainManager|None = None):
+    def wrapper( callable:Callable  ):
+        
+        cb = KWCallback(callable,name=name)
+        timer = PeriodicTimer( period, manager=main.timers, name=name,)
+        timer.addAction( cb )
+        timer.start()
+        return cb
 
+    return wrapper

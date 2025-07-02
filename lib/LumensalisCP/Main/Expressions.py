@@ -4,7 +4,7 @@ from ..Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.CPTyping import Any, Callable, Generator, List, Mapping, Tuple
 from LumensalisCP.CPTyping  import override
 from LumensalisCP.common import *
-from .Updates import UpdateContext, RefreshCycle
+from .Updates import UpdateContext, RefreshCycle, Evaluatable
 from LumensalisCP.Main.Profiler import Profiler, ProfileFrame
 
 
@@ -12,18 +12,12 @@ class EvaluationContext(UpdateContext):
     
     def __init__( self, *args, **kwds ):
         super().__init__( *args, **kwds )
-        self.__updateIndex = 0
-        
         
         self.__changedTerms : List["ExpressionTerm"] = []
         
     def reset( self ):
         super().reset()
-        self.__changedTerms = []
-    
-    @property
-    def updateIndex(self) -> int: 
-        return self.__updateIndex
+        self.__changedTerms.clear()
     
     @property
     def changedTerms(self) -> List["ExpressionTerm"]:
@@ -57,13 +51,7 @@ class EvaluationContext(UpdateContext):
         return value        
 
 
-#############################################################################
-class Evaluatable(object):
-    
-    def getValue(self, context:EvaluationContext):
-        # type: (EvaluationContext) -> Any
-        """ current value of term"""
-        raise NotImplemented
+
     
 #############################################################################
 
@@ -311,8 +299,6 @@ class CallbackSource( ExpressionTerm ):
     def getValue(self, context:EvaluationContext) -> Any:
         return self.__callback()
     
-
-
 
 #############################################################################
 

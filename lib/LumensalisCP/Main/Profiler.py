@@ -8,6 +8,7 @@ from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
 from LumensalisCP.util.kwCallback import KWCallback
 from LumensalisCP.util.bags import Bag
+from . import ProfilerRL
 
 class ProfileFrameEntry(object): 
     tag:str
@@ -34,14 +35,17 @@ class ProfileFrameEntry(object):
         assert self.nest is None
         self._nest = ProfileSubFrame(context,name)
         return self._nest
+
+    def writeOn(self,target,indent='',**kwds):
+        return ProfilerRL.ProfileFrameEntry_writeOn(self,target,indent,**kwds)
     
     def jsonData(self,**kwds):
-        rv = collections.OrderedDict(lw=self.lw, e=self.e,  **self.etc)
+        rv = collections.OrderedDict(lw=self.lw, e=self.e, id=id(self), **self.etc)
         subFrame = self.nest
         if subFrame is not None:
+            assert subFrame is not self
             rv['nest'] = subFrame.jsonData() # **kwds)
         return rv
-
 
 class ProfileFrameBase(object): 
     entries:List[ProfileFrameEntry]
@@ -114,10 +118,13 @@ class ProfileFrameBase(object):
         self.add( entry )
         return entry
         
-    def jsonData(self,minF=None, minE = None, **kwds):
+    def writeOn(self,target,indent='',**kwds):
+        return ProfilerRL.ProfileFrameBase_writeOn(self,target,indent,**kwds)
+        
+    def jsonData(self,minF=None, minE = None, withSkipped=False, forceInclude = False, **kwds):
         minE = minE  if minE is not None else -1
         minF = minF or minE
-        if self.e < minF: return None
+        if self.e < minF and not forceInclude: return None
         
         skipped = []
         rvEntries=collections.OrderedDict()
@@ -128,12 +135,15 @@ class ProfileFrameBase(object):
             rvEntries[snap.tag] =  snap.jsonData(**kwds)
             #rvEntries.append( [snap.tag, snap.jsonData(**kwds)] )
             
-        return dict(
+        rv = dict(
             e= self.e,
             entries=rvEntries,
-            skipped=skipped,
-            i=self.index
+            i=self.index,
+            id=id(self)
         )
+        if withSkipped:
+            rv['skipped'] = skipped
+        return rv
     
     def __str__(self):
         return f"PSF{('-'+self._name) if self._name is not None else ''}[{self.depth}:{self.index}]@{id(self):X}"
@@ -185,24 +195,86 @@ class ProfileSubFrame(ProfileFrameBase):
 class ProfileFrame(ProfileFrameBase): 
     updateIndex: int
     start: TimeInSeconds
-
+    eSleep: TimeInSeconds
 
     def __init__(self):
         super().__init__()
 
-    def reset(self, updateIndex =0):
+    def reset(self, updateIndex =0, eSleep=0.0):
         nowNS = time.monotonic_ns()
 
         self.updateIndex = updateIndex
         self.currentUpdateIndex = updateIndex
+        self.eSleep = eSleep
         super().reset()
-
-    def jsonData(self,minF=None, minE = None, **kwds):
-        baseData =super().jsonData(minF=minF, minE = minE, **kwds )
+        
+    def frameData(self,minF=None, minE = None, **kwds):
+        minE = minE  if minE is not None else -1
+        minF = minF or minE
+        forceInclude = self.eSleep > min(minE,minF)
+        
+        baseData =super().jsonData(minF=minF, minE = minE, forceInclude=forceInclude, **kwds )
         if baseData is None: 
             return None
-        return dict( i=self.updateIndex, **baseData )
+        return dict( i=self.updateIndex, eSleep=self.eSleep, **baseData )        
 
+    def jsonData(self,minF=None, minE = None, **kwds):
+        minE = minE  if minE is not None else -1
+        minF = minF or minE
+        forceInclude = self.eSleep > min(minE,minF)
+        baseData =super().jsonData(minF=minF, minE = minE, forceInclude=forceInclude, **kwds )
+        if baseData is None: 
+            return None
+        return dict( i=self.updateIndex, eSleep=self.eSleep, **baseData )
+
+    def writeOn(self,target,indent='',**kwds):
+        return ProfilerRL.ProfileFrame_writeOn(self,target,indent,**kwds)
+    
+
+class ProfileStubFrameEntry(ProfileFrameEntry): 
+    def __init__(self,frame,**kwds):
+        super().__init__(tag="stub",scd=frame,**kwds)
+
+        self.__frame = frame
+    def subFrame(self, context, name:str|None=None) -> 'ProfileFrameBase':
+        return self.__frame 
+
+    def writeOn(self,target,indent='',**kwds):
+        pass
+    
+    def jsonData(self,**kwds):
+        rv = collections.OrderedDict(lw=self.lw, e=self.e, id=id(self), **self.etc)
+        subFrame = self.nest
+        return rv    
+    
+class ProfileStubFrame(ProfileFrame): 
+
+    def __init__(self):
+        super().__init__()
+        self.when = 0
+        
+        self.__stubEntry = ProfileStubFrameEntry(self)
+        
+    def activeFrame(self) -> "ProfileFrameBase":
+        return self
+
+    def subFrame(self, context, name:str|None=None) -> 'ProfileSubFrame':
+        return self
+
+    def snap(self, tag, **kwds ) -> ProfileFrameEntry:
+        return self.__stubEntry
+        
+    
+    def reset(self, updateIndex =0, eSleep=0.0):
+        pass
+        
+    def __enter__(self):
+        return self
+    
+    def __exit__(self,exc_type, exc_value, exc_tb):
+        pass
+        return False
+            
 class Profiler(object):
     currentUpdateIndex: int
     when: TimeInSeconds
@@ -211,17 +283,19 @@ class Profiler(object):
     timings: List[ProfileFrame]
     currentTiming: ProfileFrame
     
-    def __init__(self, timings=100):
+    def __init__(self, timings=None, stub=True ):
+        timings = timings or (4 if stub else 100)
         self.timingsLength = timings
-        self.timings = [ProfileFrame() for _ in range(timings) ]
+        frameType = ProfileStubFrame if stub else ProfileFrame
+        self.timings = [ frameType() for _ in range(timings) ]
         #print( f"timings {id(self.timings[0])} through {id(self.timings[-1])}")
         
         self.reset(0)
         
-    def reset(self, updateIndex) -> ProfileFrame: 
+    def reset(self, updateIndex, **kwds ) -> ProfileFrame: 
         timingIndex = updateIndex % self.timingsLength 
         self.currentTiming = self.timings[timingIndex]
-        self.currentTiming.reset( updateIndex )
+        self.currentTiming.reset( updateIndex, **kwds )
         return self.currentTiming
         
         #print( f"reset {updateIndex} {timingIndex} {self.currentTiming.updateIndex} {id(self.currentTiming)} ")

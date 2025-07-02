@@ -5,6 +5,10 @@ from LumensalisCP.Main.Dependents import MainRef
 from LumensalisCP.Inputs import InputSource
 from LumensalisCP.Main.Profiler import ProfileFrame, ProfileSubFrame
 
+from LumensalisCP.Lights.Values import RGB
+
+DirectValue = int|bool|float|RGB
+
 class UpdateContext(object):
     def __init__( self, main:MainManager ): pass
     
@@ -20,7 +24,20 @@ class UpdateContext(object):
     def valueOf( self, value:Any ) -> Any: pass
     
     def subFrame(self) -> ProfileSubFrame: pass
-        
+
+
+#############################################################################
+
+#Type 
+
+class Evaluatable(object):
+    
+    def getValue(self, context:UpdateContext) -> DirectValue: pass
+
+def evaluate( value:Evaluatable|DirectValue, context:UpdateContext|None = None ) -> DirectValue: pass
+
+#############################################################################
+            
 class RefreshCycle(object):
     def __init__(self, refreshRate:TimeInSeconds = 0.1): pass
 

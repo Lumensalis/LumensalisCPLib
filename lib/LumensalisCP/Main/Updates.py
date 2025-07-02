@@ -19,7 +19,7 @@ class UpdateContext(object):
         
     def reset( self ):
         self.__updateIndex += 1
-        self.__changedSources = []
+        self.__changedSources.clear()
         self.__when = self.main.when
         self.activeFrame = None
         self.baseFrame = None
@@ -31,7 +31,7 @@ class UpdateContext(object):
     def when(self) -> TimeInSeconds : return self.__when
     
     @property
-    def updateIndex(self): return self.__updateIndex
+    def updateIndex(self) -> int: return self.__updateIndex
 
     @property
     def changedSources(self): return self.__changedSources
@@ -48,6 +48,9 @@ class UpdateContext(object):
         raise NotImplemented
 
 
+    def valueOf( self, value:Any ) -> Any:
+        raise NotImplemented
+        
 class RefreshCycle(object):
     def __init__(self, refreshRate:TimeInSeconds = 0.1):
         self.refreshRate = refreshRate
@@ -69,3 +72,23 @@ class Refreshable( object ):
             self.doRefresh(context)
 
 #############################################################################
+
+#############################################################################
+class Evaluatable(object):
+    
+    def getValue(self, context:UpdateContext):
+        # type: (EvaluationContext) -> Any
+        """ current value of term"""
+        raise NotImplemented
+
+
+_getCurrentUpdateContext = None
+    
+
+def evaluate( value:Evaluatable|DirectValue, context:UpdateContext|None = None ):
+    if isinstance( value, Evaluatable ):
+        if context is None: context = _getCurrentUpdateContext()
+        return value.getValue(context)
+    
+    return value
+     
