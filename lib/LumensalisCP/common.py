@@ -86,7 +86,7 @@ def ensure( condition:bool, fmtStr:str|None = None, *args:Any ):
             raise EnsureException( "ensure failed" )
         raise EnsureException( safeFmt( fmtStr, *args ) )
 
-import LumensalisCP.Main.Expressions
+
 
 def toZeroToOne( value:Any ) -> float:
     """ Convert a value to a float. If the value is already a float, it is returned as is.
@@ -111,7 +111,9 @@ def withinZeroToOne( value:Any ) -> ZeroToOne:
     """
     return max(0.0,min(1.0,toZeroToOne(value)) )
 
-def SHOW_EXCEPTION( inst, fmt:str, **args ):
-    print( f"EXCEPTION {inst} : {safeFmt(fmt,**args)}" )
+def SHOW_EXCEPTION( inst, fmt:str, *args ):
+    print( f"EXCEPTION {inst} : {safeFmt(fmt,*args)}" )
     print( "\n".join(traceback.format_exception(inst)) )
     
+    
+import LumensalisCP.Main.Expressions
