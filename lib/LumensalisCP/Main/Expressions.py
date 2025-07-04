@@ -15,8 +15,8 @@ class EvaluationContext(UpdateContext):
         
         self.__changedTerms : List["ExpressionTerm"] = []
         
-    def reset( self ):
-        super().reset()
+    def reset( self, when:TimeInMS|None = None ):
+        super().reset(when)
         self.__changedTerms.clear()
     
     @property

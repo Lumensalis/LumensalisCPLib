@@ -48,12 +48,13 @@ class I2CDevice( NamedLocalIdentifiable ):
         
         if self.__latestUpdateIndex == context.updateIndex:
             return False
-        with context.subFrame(f'updateTarget-{self.name}-{self.__updates}') as frame:
+        with context.subFrame('updateTarget',self.name) as frame:
             self.__updates += 1
             self.__latestUpdateIndex = context.updateIndex
             self.__nextUpdate = now + self.__updateInterval
+            frame.snap("callDerived")
             self.derivedUpdateTarget( context )
-            return True
+        return True
         
         
 class I2CInputSource( InputSource ):

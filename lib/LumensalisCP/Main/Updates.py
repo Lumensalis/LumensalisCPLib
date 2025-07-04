@@ -4,10 +4,12 @@ from LumensalisCP.common import *
 from LumensalisCP.Main.Dependents import MainRef
 #import LumensalisCP.Main.Expressions as Expressions
 import LumensalisCP.Main
-from LumensalisCP.Main.Profiler import ProfileFrame, ProfileSubFrame
+from LumensalisCP.Main.Profiler import ProfileFrame, ProfileSubFrame, ProfileStubFrame
 
 class UpdateContext(object):
     activeFrame: ProfileFrame
+    
+    _stubFrame = ProfileStubFrame( )
     
     def __init__( self, main:"LumensalisCP.Main.Manager.MainManager"=None ):
         self.__updateIndex = 0
@@ -17,10 +19,11 @@ class UpdateContext(object):
         self.activeFrame = None
         self.baseFrame = None
         
-    def reset( self ):
+        
+    def reset( self, when:TimeInMS|None = None ):
         self.__updateIndex += 1
         self.__changedSources.clear()
-        self.__when = self.main.when
+        self.__when = when or self.main.when
         self.activeFrame = None
         self.baseFrame = None
         
@@ -36,10 +39,15 @@ class UpdateContext(object):
     @property
     def changedSources(self): return self.__changedSources
     
-    def subFrame(self, name:str|None=None) -> ProfileSubFrame:
-        rv = self.activeFrame.activeFrame().subFrame(self, name)
+    def subFrame(self, name:str|None=None, name2:str|None=None) -> ProfileSubFrame:
+        rv = self.activeFrame.activeFrame().subFrame(self, name, name2)
         assert rv
         return rv
+    
+    def stubFrame(self, name:str|None=None, name2:str|None=None) -> ProfileStubFrame:
+        return UpdateContext._stubFrame
+        
+    
 
     def addChangedSource( self, changed:"LumensalisCP.Inputs.InputSource"):
         self.__changedSources.append( changed )

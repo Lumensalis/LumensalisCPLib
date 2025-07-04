@@ -3,7 +3,7 @@ from LumensalisCP.common import *
 from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.Main.Dependents import MainRef
 from LumensalisCP.Inputs import InputSource
-from LumensalisCP.Main.Profiler import ProfileFrame, ProfileSubFrame
+from LumensalisCP.Main.Profiler import ProfileFrame, ProfileSubFrame, ProfileStubFrame
 
 from LumensalisCP.Lights.Values import RGB
 
@@ -23,7 +23,8 @@ class UpdateContext(object):
         
     def valueOf( self, value:Any ) -> Any: pass
     
-    def subFrame(self) -> ProfileSubFrame: pass
+    def subFrame(self, name:str|None=None, name2:str|None=None) -> ProfileSubFrame: pass
+    def stubFrame(self, name:str|None=None, name2:str|None=None) -> ProfileStubFrame: pass
 
 
 #############################################################################

@@ -211,7 +211,7 @@ class Cylon2( PatternGenerator ):
     def regenerate(self, context:UpdateContext):
         rv = []
         # with context for subframe doesn't play well with generators
-        with context.subFrame(f'regenerate-{self.name}') as frame:
+        with context.subFrame( 'regenerate', self.name) as frame:
             sweepStepTime = self.__sweepTime / (self.target.lightCount*2-2)
             lightCount = self.target.lightCount
 

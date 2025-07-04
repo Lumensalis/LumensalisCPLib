@@ -119,12 +119,14 @@ class Scene(MainChild):
     
     def runTasks(self, context:EvaluationContext):
         if 0: print( f"scene {self.name} run tasks ({len(self.__tasks)} tasks, {len(self.__rules)} rules) on update {context.updateIndex}..." )
-        with context.subFrame('runScene') as activeFrame:
+        with context.subFrame('runScene', self.name ) as activeFrame:
             for task in self.__tasks:
                 try:
                     task.run( self, context=context, frame=activeFrame )
                 except Exception as inst:
                     self.SHOW_EXCEPTION(  inst, "running task %s", task.name )
+            activeFrame.snap("a")
+            activeFrame.snap("b")
             activeFrame.snap("rules")
             for tag, rule in self.__rules.items():
                 try:

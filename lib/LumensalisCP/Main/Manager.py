@@ -46,6 +46,8 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
     def __init__(self, config = None, **kwds ):
         assert MainManager.theManager is None
         MainManager.theManager = self
+        _mconfig.gcm.main = self
+
         LumensalisCP.Main.Updates._getCurrentUpdateContext = self.getContext
         
         self.__startNs = time.monotonic_ns()
@@ -251,7 +253,7 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
             try:
                 task()
             except Exception as inst:
-                print( f"exception on deferred task {task} : {inst}")
+                SHOW_EXCEPTION( inst, "exception on deferred task %r", task )
 
     def dumpLoopTimings( self, count, minE=None, minF=None, **kwds ):
         rv = []
@@ -275,28 +277,39 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         self.__priorSleepWhen = self.getNewNow()
         self.infoOut( "starting manager main run" )
         
-        def dummySnapTime(*args,**kwds): return None
+        mlc = _mconfig._mlc
+        activeFrame = None
+        if mlc.ENABLE_PROFILE:
+            def snapTime(m,**kwds):
+                return activeFrame.snap(m,**kwds)
+        else:
+            def snapTime(*args,**kwds): return None
+
         try:
             context = self.__evContext
 
             self._when = self.newNow
-            mlc = _mconfig._mlc
+            
             while True:
-                priorWhen = self._when
-                self.__evContext.reset()
+                self._when = now = self.getNewNow()
+                #priorWhen = self._when
+                self.__evContext.reset(now)
                 context = self.__evContext
-                self._when = self.getNewNow()
                 
                 if mlc.ENABLE_PROFILE:
-                    activeFrame = self.profiler.reset(context.updateIndex, eSleep = self._when - self.__priorSleepWhen)
+                    activeFrame = self.profiler.nextNewFrame(context.updateIndex, eSleep = now  - self.__priorSleepWhen)
                     context.baseFrame  = context.activeFrame = activeFrame
                     
-                    snapTime = activeFrame.snap
-                    memBefore = gc.mem_alloc()
-                    snapTime( 'start', updateIndex = context.updateIndex, when=self._when, cycle=self.__cycle, memBefore=memBefore
+                    #memBefore = gc.mem_alloc()
+                    snap = snapTime( 'start' )
+                    snap.augment( updateIndex = context.updateIndex, when=now, cycle=self.__cycle
+                             #, memBefore=memBefore
                             )
                 else:
-                    snapTime = dummySnapTime
+                    activeFrame = self.profiler.timings[0]
+                    context.baseFrame  = context.activeFrame = activeFrame
+                    
+                
                 
                 
                 self._timers.update( context )
@@ -322,19 +335,23 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
                         board.refresh(context)
                         
                     if self._printStatCycles and self.__cycle % self._printStatCycles == 0:
-                        self.infoOut( f"cycle {self.__cycle} at {self._when} with {len(self._tasks)} tasks, gmf={gc.mem_free()} cd={self.cycleDuration}" )
+                        self.infoOut( f"cycle {self.__cycle} at {now} with {len(self._tasks)} tasks, gmf={gc.mem_free()} cd={self.cycleDuration}" )
                     #self._scenes.run( context )
                     self.cycleDuration = 1.0 / (self.cyclesPerSecond *1.0)
                     
-                    snapTime( 'sleep' )
+                    #snapTime( 'sleep' )
                     
+
+                if mlc.ENABLE_PROFILE:
+                    #memAfter = gc.mem_alloc()
+                    #snapTime( 'end', memAfter=memAfter )
+                    activeFrame.finish() 
+
                 self.__priorSleepWhen = self.getNewNow()
-                await asyncio.sleep( 0.01 ) # self.cycleDuration )
+
+                await asyncio.sleep( 0.001 ) # self.cycleDuration )
                 self.__cycle += 1
                 
-                if mlc.ENABLE_PROFILE:
-                    memAfter = gc.mem_alloc()
-                    snapTime( 'end', memAfter=memAfter )
                     
         except Exception as inst:
             self.errOut( "EXCEPTION in task loop : {}".format(inst) )

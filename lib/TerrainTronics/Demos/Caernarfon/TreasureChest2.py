@@ -1,3 +1,14 @@
+from LumensalisCP.Main._mconfig import _mlc,gcm,printElapsed
+import gc
+mlc = _mlc
+mlc.ENABLE_PROFILE = True
+printElapsed( "importing" )
+gcm.PROFILE_MEMORY = True
+gcm.PROFILE_MEMORY_NESTED = True
+gcm.PROFILE_MEMORY_ENTRIES = True
+
+
+
 from ..DemoCommon import *
 from LumensalisCP.Lights.ProxyLights import *
 from LumensalisCP.Triggers.Timer import PeriodicTimer, addPeriodicTaskDef
@@ -10,9 +21,7 @@ import TerrainTronics.Demos.Caernarfon.TreasureChest2RL
 from . import TreasureChest2RL
 
 
-import gc
-
-if False:
+printElapsed( "getting manager" )
 main = MainManager.initOrGetManager()
 
 def reloadTreasureChest():
@@ -24,7 +33,9 @@ def reloadTreasureChest():
     main.callLater( lambda: TerrainTronics.Demos.Caernarfon.TreasureChest2RL.printDump( main ) )
 
 
+printElapsed( "setting up hardware" )
 
+ENABLE_IR_REMOTE = False
 scenes = main.scenes
 capTouch = main.adafruitFactory.addMPR121()
 magInputs =main.adafruitFactory.addAW9523()
@@ -33,7 +44,8 @@ pixels = caernarfon.pixels
 pixels2 = caernarfon.initNeoPixOnServo(3,neoPixelCount=35)
 
 lidDrive = caernarfon.initServo( 1, "lidDrive", movePeriod=0.05 )        
-ir = caernarfon.addIrRemote()            
+if ENABLE_IR_REMOTE:
+    ir = caernarfon.addIrRemote()            
 ranger = main.i2cFactory.addVL530lx(updateInterval=0.25)
 
 ## setup Touch inputs
@@ -82,6 +94,7 @@ lid = ServoDoor(lidDrive,
         defaultSpeed= 12,
 )
 
+printElapsed( "parsing demo class" )
         
 class TreasureChest( DemoBase ):
 
@@ -251,7 +264,8 @@ class TreasureChest( DemoBase ):
         self.setupLights()
         self.setupLid()
         self.setupTouch()
-        self.setupRemote()
+        if ENABLE_IR_REMOTE:
+            self.setupRemote()
 
         self.dmx = main.dmx
         
@@ -328,7 +342,7 @@ class TreasureChest( DemoBase ):
             #anglePattern
         ]
         
-        if 0:
+        if 1:
             sceneOpen.addPatterns( frontLidStripPattern, *patterns )
             #sceneClosed.addPatterns( Cylon2( frontLidStrip, sweepTime=0.15,onValue="RED"), *patterns )
             sceneClosed.addPatterns( *patterns )
@@ -411,9 +425,9 @@ class TreasureChest( DemoBase ):
         #main.addTask( updateStuff )
         
         def dump():
-            print( f"DUMPING at {main.newNow}" )
+            #print( f"DUMPING at {main.newNow}" )
             TerrainTronics.Demos.Caernarfon.TreasureChest2RL.printDump(main)
-            print( f"DUMPED at {main.newNow}" )
+            #print( f"DUMPED at {main.newNow}" )
             #gc.collect()
             
 
@@ -426,34 +440,16 @@ class TreasureChest( DemoBase ):
       
 
     def setup(self):
-        #self.setupChest()
+        self.setupChest()
         
         @addPeriodicTaskDef( "gc-collect", period=0.5, main=main )
         def runCollection(context=None, when=None):
-            memBefore = gc.mem_alloc()
-            start = main.newNow
-            gc.collect()
-            end = main.newNow
-            memAfter = gc.mem_alloc()
-            print( f"GC collection took {end-start:0.3f} freeing {memBefore-memAfter} leaving {memAfter}" )
+            gcm.runCollection(context,when)
+
         gc.disable()
     
 def demoMain(*args,**kwds):
-    if 0:
-        def test( **kwargs ):
-            t = SlotsTest(**kwargs)
-            print( f"{t}")
-            return t
-        
-        def foo( b=None ):
-            pass
-        
-        test(a='aaaaa')
-        test(d='dddd')
-        
-        foo(c=1)
-        
-    else:
-        demo = TreasureChest( *args, **kwds )
-
-        demo.run()
+    printElapsed( "initializing demo" )
+    demo = TreasureChest( *args, **kwds )
+    printElapsed( "running  demo" )
+    demo.run()

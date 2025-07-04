@@ -84,7 +84,7 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
         self.__onUnusedCB = cb
                     
     def derivedUpdateTarget(self, context:UpdateContext):
-        with context.subFrame(f'updateTarget-{self.name}-{self.__updates}') as frame:
+        with context.subFrame('dUpdateTarget', self.name) as frame:
             frame.snap( "getTouched")
             allTouched = self.touched()
             frame.snap( "updateInternal")
