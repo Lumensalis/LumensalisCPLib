@@ -12,6 +12,8 @@ class _MainLoopControl(object):
     
     def getMsSinceStart(self):
         now = supervisor.ticks_ms()
+        if now < self.__started:
+            self.__started = now
         return now - self.__started
     
 _mlc = _MainLoopControl()

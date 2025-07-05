@@ -15,9 +15,9 @@ from LumensalisCP.Main._mconfig import gcm, _mlc
 
 if getattr(  LumensalisCP.Main, 'Profiler', None ) is not None:
     LumensalisCP.Main.Profiler.ProfileFrameEntry.gcFixedOverhead = 112
-    LumensalisCP.Main.Profiler.ProfileFrameBase.gcFixedOverhead = 112
+    LumensalisCP.Main.Profiler.ProfileFrameBase.gcFixedOverhead = 0
     LumensalisCP.Main.Profiler.ProfileSubFrame.gcFixedOverhead = 0
-    LumensalisCP.Main.Profiler.ProfileFrame.gcFixedOverhead = 112
+    LumensalisCP.Main.Profiler.ProfileFrame.gcFixedOverhead = 0
 
 def notEnoughMemUsed( self, config:"LumensalisCP.Main.Profiler.ProfileWriteConfig" ):
     return self.usedGC < config.minB if self.usedGC else not gcm.SHOW_ZERO_ALLOC_ENTRIES
@@ -34,7 +34,7 @@ def ProfileFrameEntry_writeOn(self:LumensalisCP.Main.Profiler.ProfileFrameEntry,
     config.target.write( f"   {_heading(self)}{indent}:{self.lw:0.3f} {self.name:32s} {self.name2 or "":32s} @{id(self):X}\r\n" )
 
     if self.nest is not None:
-        self.nest.writeOn( config, indent=indent+'# ')
+        self.nest.writeOnScope( config, indent=indent+'# ')
 
 
 def ProfileFrameBase_writeOn(self:LumensalisCP.Main.Profiler.ProfileFrameBase,config:"LumensalisCP.Main.Profiler.ProfileWriteConfig",indent=''):
@@ -44,7 +44,7 @@ def ProfileFrameBase_writeOn(self:LumensalisCP.Main.Profiler.ProfileFrameBase,co
     
     
     for x in range(self.entries):
-        self.entry(x).writeOn(config,indent=indent)
+        self.entry(x).writeOnScope(config,indent=indent)
 
 def ProfileFrame_writeOn(self:LumensalisCP.Main.Profiler.ProfileFrame,config:"LumensalisCP.Main.Profiler.ProfileWriteConfig",indent=''):
     
@@ -72,4 +72,4 @@ def ProfileFrame_writeOn(self:LumensalisCP.Main.Profiler.ProfileFrame,config:"Lu
         
         #config.target.write( f" --- [{x}]\r\n");
         #ProfileFrameEntry_writeOn( entry, config, indent )
-        entry.writeOn(config,indent=indent)
+        entry.writeOnScope(config,indent=indent)

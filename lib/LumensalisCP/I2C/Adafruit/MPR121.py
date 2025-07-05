@@ -40,6 +40,7 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
         self.__inputs:List[MPR121Input|None] = [None] * MPR121.MPR121_PINS
         
         self.__unusedPinsMask = 0
+        self.__usedPinsMask = 0
         self.__updateUnusedPinMask()
 
         self.__onUnusedCB = None
@@ -90,28 +91,39 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
             frame.snap( "updateInternal")
             self.__updates += 1
             if self.__lastTouched != allTouched:
+                used =  allTouched & self.__usedPinsMask
+                priorUsed = self.__lastTouched & self.__usedPinsMask
+                
                 self.__lastTouched = allTouched
                 self.__changes += 1
+                
+                if used != priorUsed:
+                    frame.snap( "updateInputs")
+                    for input in self.__inputs:
+                        if input is not None:
+                            input._setTouched( allTouched, context )                    
+                    
                 unused = allTouched & self.__unusedPinsMask
-                self.dbgOut( "MPR121 = %X, unused=%X, upm=%X",  allTouched, unused, self.__unusedPinsMask )
+                #self.dbgOut( "MPR121 = %X, unused=%X, upm=%X",  allTouched, unused, self.__unusedPinsMask )
                 
                 if unused != self.__latestUnused:
                     self.__latestUnused = unused
                     if self.__onUnusedCB is not None:
-                        self.dbgOut( "calling unusedCB( %r, %r)", unused, context )
+                        #self.dbgOut( "calling unusedCB( %r, %r)", unused, context )
                         self.__onUnusedCB( unused = unused, context = context )
                 
-            frame.snap( "updateInputs")
-            for input in self.__inputs:
-                if input is not None:
-                    input._setTouched( allTouched, context )
+
         
 
             
     def __updateUnusedPinMask(self):
             unusedPinsMask = 0
+            usedPinsMask = 0
             for pin in range(MPR121.MPR121_PINS):
                 if self.__inputs[pin] is None:
                     unusedPinsMask |= ( 1 << pin )
+                else:
+                    usedPinsMask |= ( 1 << pin )
             self.__unusedPinsMask = unusedPinsMask
+            self.__usedPinsMask = usedPinsMask
             

@@ -1,13 +1,11 @@
 from LumensalisCP.Main._mconfig import _mlc,gcm,printElapsed
 import gc
 mlc = _mlc
-mlc.ENABLE_PROFILE = True
+mlc.ENABLE_PROFILE = False
 printElapsed( "importing" )
-gcm.PROFILE_MEMORY = True
-gcm.PROFILE_MEMORY_NESTED = True
-gcm.PROFILE_MEMORY_ENTRIES = True
-
-
+gcm.PROFILE_MEMORY = False
+gcm.PROFILE_MEMORY_NESTED = False
+gcm.PROFILE_MEMORY_ENTRIES = False
 
 from ..DemoCommon import *
 from LumensalisCP.Lights.ProxyLights import *
@@ -352,6 +350,8 @@ class TreasureChest( DemoBase ):
                     opening = RGB( 1, 1, 0 ),
                     closing = RGB( 0, 1, 1 ),
                 )
+            sceneOpening.addPatterns( *patterns )
+            sceneClosing.addPatterns( *patterns )
         #lidSpan = self.lidOpenPosition - self.lidClosedPosition 
         
 

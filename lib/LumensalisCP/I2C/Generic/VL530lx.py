@@ -42,5 +42,5 @@ class VL53L0X(I2CDevice):
             if self._sensor.data_ready:
                 range = self._sensor.range
                 self.__readMode = "startMeasurement"
-                self.dbgOut( "ranger range = %s", range )
+                #self.dbgOut( "ranger range = %s", range )
                 self.__range._setRange(range, context=context)

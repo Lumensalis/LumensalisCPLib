@@ -18,6 +18,7 @@ class Moving( NamedOutputTarget, Refreshable ):
     
     @property
     def speed(self):
+        raise NotImplemented
         
     def __init__(self, name:str=None, 
                  speed:TimeInSeconds = 1.0,

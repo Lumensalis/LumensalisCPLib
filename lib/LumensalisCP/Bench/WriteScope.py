@@ -1,0 +1,224 @@
+"""
+Support for "structured output" based lists, and dicts
+
+Allows classes to implement a writeOnScope method which can be used for 
+a variety of output options including indented printing, json, ...
+"""
+
+import supervisor, gc, time, sys
+from __future__ import annotations
+try:
+    from typing import List, Callable, TextIO, Any, Tuple 
+except:
+    
+    Callable = None
+    TextIO = None
+    Any = None
+    Tuple = None
+    #List = None
+    
+#############################################################################
+
+class WriteConfig(object):
+    """_summary_
+
+    :param object: _description_
+    :type object: _type_
+    """
+    def __init__(self):
+        pass
+        self.showScopes = False
+        self.detailed = True
+
+    
+    def write( self, scope:WriteScope, value ):
+            
+        if hasattr( value, 'writeOnScope' ):
+            value.writeOnScope( scope )
+            return
+        scope.target.write( repr(value) )
+
+class WriteScope(object):
+    """combines config and target, and provides base for writing containers
+    """
+    target:TextIO
+    config:WriteConfig
+    
+    showScopes=property( lambda self: self.config.showScopes )
+    
+    wrappers= {
+        dict: ('{','}'),
+        list: ('[',']'),
+        tuple: ('(',')'),
+        None: ('',''),
+    }
+    
+    
+    def __init__(self, ts:WriteScope|None, mode=None,indentItems:bool|None=None
+                 ):
+        """_summary_
+
+        Args:
+            ts (WriteScope | None): _description_
+            mode (_type_, optional): _description_. Defaults to None.
+            indentItems (bool | None, optional): _description_. Defaults to None.
+        """
+        if ts is not None:
+            self.config:WriteConfig = ts.config 
+            self.target:TextIO = ts.target
+            self.indent = ts.indent + "   "
+        else:
+            assert self.target is not None and self.config is not None
+            self.indent = "\r\n"
+        self.indentItems = indentItems
+        self.mode=mode
+        self.added = 0
+        self._writingTagged = False
+        
+    
+    def startDict(self,tag:str|None=None,indentItems:bool|None=None) -> DictWriteScope:
+        """start scope for writing tag/value dict
+
+        Args:
+            tag (str | None, optional): tag if adding as dictionary
+            indentItems (bool | None, optional): _description_. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """
+        self._addTagBeforeItem(tag)
+        return DictWriteScope( self,indentItems=indentItems)
+    
+    def addDict(self, items:dict, tag:str|None=None,indentItems:bool|None=None) -> DictWriteScope:
+        """write dict"""
+        with self.startDict( tag,indentItems=indentItems ) as nested:
+            nested.addTaggedEntries( items.items() )
+    
+    def startList(self,tag:str|None=None,indentItems:bool|None=None) -> ListWriteScope:
+        """open a ListWriteScope for writing a sequence of items
+
+        Args:
+            tag (str | None, optional): _description_. Defaults to None.
+            indentItems (bool | None, optional): _description_. Defaults to None.
+
+        Returns:
+            ListWriteScope: _description_
+        """
+        self._addTagBeforeItem(tag)
+        return ListWriteScope( self, indentItems=indentItems )
+
+    def addList(self,items:list, tag:str|None=None,indentItems:bool|None=None):
+        assert self.mode is list
+        with self.startList( tag,indentItems=indentItems ) as nested:
+            for item in items:
+                nested.addListItem( item )
+
+    def _addTagBeforeItem(self, tag:str|None):
+        if tag is None: 
+            if self.mode is dict:
+                assert self._writingTagged
+            return
+        assert self.mode is dict
+        self._addComma()
+        self.target.write( f"\"{tag}\":" )
+        
+    def _addComma(self):
+        if self.added:
+            self.target.write( ", " )
+            if self.indentItems is True:
+                self.target.write(self.indent)
+        self.added += 1
+        
+    def write( self, item ):
+        if self.mode is not None:
+            self._addComma()
+        self.config.write(self, item)    
+
+    def __enter__(self):
+        self.target.write(self.wrappers[self.mode][0])
+        if self.indentItems is not False: self.target.write( self.indent )
+        return self
+    
+    def __exit__(self,eT,eV,tb):
+        if self.indentItems is not False: self.target.write( self.indent )
+        self.target.write(self.wrappers[self.mode][1])
+        pass
+
+class ListWriteScope(WriteScope):
+    def __init__(self, ts:WriteScope|None, indentItems:bool|None=None
+                 ):
+        super().__init__(ts=ts,mode=list,indentItems=indentItems)
+    
+    def addListItem( self, item:Any ):
+        """write an item in this list scope
+
+        Args:
+            item (Any): _description_
+        """
+        self._addComma()
+        self.config.write(self, item)
+        
+class DictWriteScope(WriteScope):
+    def __init__(self, ts:WriteScope|None, indentItems:bool|None=None
+                 ):
+        super().__init__(ts=ts,mode=dict,indentItems=indentItems)
+    
+    def addTaggedItem( self, tag:str, item:Any ):
+        """write a tag/value pair in this dictionary
+
+        Args:
+            tag (str): _description_
+            item (Any): _description_
+        """
+        
+        self._addTagBeforeItem(tag)
+        self._writingTagged = True
+        self.config.write(self, item)
+        self._writingTagged = False
+        
+    def addTaggedItems(self, **kwds ):
+        """ add tag/value pairs
+        """
+        for tag,val in kwds.items():
+            self.addTaggedItem(tag,val)
+
+    def addTaggedEntries(self, entries:List[Tuple[str,Any]]):
+        """  add tag/value pairs
+
+        order of entries will be maintained in output (unlike addTaggedItems)
+        Args:
+            entries (List[Tuple[str,Any]]): _description_
+        """
+        assert self.mode is dict
+        for tag,val in entries:
+            self.addTaggedItem(tag,val)
+
+                    
+class TargettedWriteScope(WriteScope):
+    """outermost scope for using WriteScope formatting
+    """
+
+    def __init__(self, target:TextIO=sys.stdout, config:WriteConfig|None = None):
+        """_summary_
+
+        Args:
+            target (TextIO, optional): _description_. Defaults to sys.stdout.
+            config (WriteConfig | None, optional): _description_. Defaults to None.
+        """
+        self.config:WriteConfig = config or WriteConfig()
+        self.target = target        
+        super().__init__(None)
+
+    @classmethod 
+    def makeScope(cls, arg ):
+        if arg is None:
+            return TargettedWriteScope()
+        if isinstance(arg,WriteScope):
+            return arg
+        if arg is sys.stdout:
+            return TargettedWriteScope(arg)
+        
+        assert False
+
+#############################################################################
+    

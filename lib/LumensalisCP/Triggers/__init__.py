@@ -45,7 +45,7 @@ def fireOnTrue( expression:Expression|ExpressionTerm, trigger:Trigger=None ):
         
         cTrigger.addAction( wrapped )
         cTrigger.fireOnTrue( expression )
-        print( f"wrapped for {callable.__name__} = {wrapped}, class={wrapped.__class__}")
+        #print( f"wrapped for {callable.__name__} = {wrapped}, class={wrapped.__class__}")
         return cTrigger
     return on2
 

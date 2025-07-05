@@ -5,9 +5,9 @@ from LumensalisCP.Main.Profiler import *
 import sys
 
 dumpConfig = ProfileWriteConfig(target=sys.stdout,
-        minE = 0.0001,
+        minE = 0.002,
         minF=0.15,
-        minSubF = 0.0001,
+        minSubF = 0.15,
         minB = 0,
     )
 
@@ -50,7 +50,7 @@ def printDump( main:MainManager ):
             frame = main.profiler.timingForUpdate( i )
             
             if frame is not None:
-                frame.writeOn( dumpConfig )
+                frame.writeOnScope( dumpConfig )
             i -= 1
             
         #print( f"entry {ProfileFrameEntry._allocs}/{ProfileFrameEntry._resets}  | base {ProfileFrameBase._allocs}/{ProfileFrameBase._resets}  ")

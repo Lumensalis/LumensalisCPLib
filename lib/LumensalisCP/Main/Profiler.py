@@ -166,7 +166,7 @@ class ProfileFrameEntry(Releasable):
         self._nesting = True
         return self._nest
 
-    def writeOn(self,config:ProfileWriteConfig,indent=''):
+    def writeOnScope(self,config:ProfileWriteConfig,indent=''):
         return ProfilerRL.ProfileFrameEntry_writeOn(self,config,indent)
     
     def jsonData(self,**kwds):
@@ -301,7 +301,7 @@ class ProfileFrameBase(Releasable):
 
         return entry
         
-    def writeOn(self,config:ProfileWriteConfig,indent=''):
+    def writeOnScope(self,config:ProfileWriteConfig,indent=''):
         return ProfilerRL.ProfileFrameBase_writeOn(self,config,indent)
         
     def jsonData(self,minF=None, minE = None, withSkipped=False, forceInclude = False, **kwds):
@@ -432,7 +432,7 @@ class ProfileFrame(ProfileFrameBase):
             return None
         return dict( i=self.updateIndex, eSleep=self.eSleep, **baseData )
 
-    def writeOn(self,config:ProfileWriteConfig,indent=''):
+    def writeOnScope(self,config:ProfileWriteConfig,indent=''):
         return ProfilerRL.ProfileFrame_writeOn(self,config,indent)
     
 
@@ -444,7 +444,7 @@ class ProfileStubFrameEntry(ProfileFrameEntry):
     def subFrame(self, context, name:str|None=None, name2:str|None=None) -> 'ProfileFrameBase':
         return self.__frame 
 
-    def writeOn(self,target,indent='',**kwds):
+    def writeOnScope(self,target,indent='',**kwds):
         pass
     
     def jsonData(self,**kwds):

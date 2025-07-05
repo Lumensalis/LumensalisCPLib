@@ -55,6 +55,9 @@ class KWCallback(object):
     __positionalArgs = re.compile( '^function takes (\d+) positional arguments but (\d+) were given$' )
     __missingArg = re.compile( '^function missing required positional argument #(\d+)$' )
     
+    @property
+    def name(self): return self.__name
+    
     def __repr__(self):
         return f"{self.__name}[:{self.__maxPositionals}]!{self.__skippedKwds}"
     

@@ -285,10 +285,12 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         else:
             def snapTime(*args,**kwds): return None
 
+        nextWait = self.getNewNow()
+        nextWaitPeriod = 0.01
         try:
             context = self.__evContext
 
-            self._when = self.newNow
+            self._when = self.getNewNow()
             
             while True:
                 self._when = now = self.getNewNow()
@@ -339,20 +341,15 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
                     #self._scenes.run( context )
                     self.cycleDuration = 1.0 / (self.cyclesPerSecond *1.0)
                     
-                    #snapTime( 'sleep' )
-                    
-
                 if mlc.ENABLE_PROFILE:
-                    #memAfter = gc.mem_alloc()
-                    #snapTime( 'end', memAfter=memAfter )
                     activeFrame.finish() 
 
                 self.__priorSleepWhen = self.getNewNow()
-
-                await asyncio.sleep( 0.001 ) # self.cycleDuration )
+                nextWait += nextWaitPeriod
+        
+                await asyncio.sleep( max(0.001,nextWait-self.__priorSleepWhen) ) # self.cycleDuration )
                 self.__cycle += 1
-                
-                    
+
         except Exception as inst:
             self.errOut( "EXCEPTION in task loop : {}".format(inst) )
             print(''.join(traceback.format_exception(inst)))
