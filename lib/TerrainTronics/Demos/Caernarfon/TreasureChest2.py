@@ -11,7 +11,6 @@ mlc.nextWaitPeriod = 0.0025
 #mlc.ENABLE_PROFILE = True
 #gcm.minimumThreshold = 925000
 
-
 #gcm.minimumThreshold = 425000
 
 gcm.setMinimumThreshold( 325000 )

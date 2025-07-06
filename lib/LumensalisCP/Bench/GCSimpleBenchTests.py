@@ -156,6 +156,90 @@ def kwdsTest():
             run( 18, 4 )
             run( "hello world, la la la la la la la", 4 )
          
+#############################################################################
+
+def kwdsSetTest():
+    
+    s = GCTestSet()
+
+    ktc = KtClass()    
+    s.addTester( "kwds",
+            baseline = kwdsBaseline,
+            signature = [GCTArg("a",int),GCTArg("b",int)],
+            tests=[
+                ktFoo,
+                ktBar,
+                ktBarABC,
+                ktBaz,
+                ktBazA,
+                ktBazK,
+                ktBarNone,
+                wktBarNone,
+                wktFooBarNoneA,
+                wktBarABC,
+            ]
+        ).addArgs( "singleInt", 1
+        ).addArgs( "singleFloat",3.5
+        ).addArgs( "tripleInt", 2, 3, 4 
+        ).addArgs( "a c=", 13, c=99 
+        ).addArgs( "a b= c=", 17, b=5, c=99 
+        ).addArgs(  "b = ", b = 5 
+        ).addArgs( "no args"
+        )
+
+    s.run()
+
+#############################################################################
+from random import random
+
+def setTest():
+    
+    s = GCTestSet()
+
+    def csBaseline( l ): return l
+    
+    def copyAndSort( l ):
+        l = list(l)
+        l.sort()
+        return l
+
+    def justSorted( l ): return sorted( l )
+    def copyAndSorted( l ): return sorted( list(l) )
+    def copyIterated( l ): return list( iter(l) )
+    def filteredIterated( l ): return filter( None, iter(l) ) 
+    def copyFilteredIterated( l ): return list(filter( None, iter(l) ) )
+    def iterated( l ): return iter(l)
+    def iteratedD( l=None, m=2, n=3 ): return iter(l)
+    def iteratedA( *args ): return iter(args[0])
+    def iteratedAK( *args, **kwds ): return iter(args[0])
+    def iteratedlAK( l, *args, **kwds ): return iter(l)
+    def listComprehension( l ): return [i for i in l]
+    
+    s.addTester( "sorting",
+            signature = [GCTArg("l",list)],
+            baseline = csBaseline,
+            tests=[
+                copyAndSort,
+                copyAndSorted,
+                copyIterated,
+                copyFilteredIterated,
+                filteredIterated,
+                justSorted,
+                iterated,
+                iteratedA,
+                iteratedAK,
+                iteratedlAK,
+                iteratedD,
+                listComprehension,
+            ]
+        #).addArgs( "singleInt", [ 1 ]
+        #).addArgs( "singleFloat", [ 3.5 ]
+        ).addArgs( "tripleInt", [ int(random()*100) for _ in range(10) ]
+        )
+
+    s.run()
+
+#############################################################################
 
 def waitForReload():
     print( "\r\nwaiting to reload" )

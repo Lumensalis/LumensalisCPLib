@@ -68,7 +68,31 @@ class GCTestAllocScopeSample(object):
         return rv    
 
 #############################################################################
+class GCTesterTestParameters(object):
+    def __init__( self, name, args, kwds ):
+        self.args = args
+        optimizeArgs = None if kwds is None else kwds.pop('optimizeArgs',None)
+        self.kwds = kwds
+        self.name = name
+        self.optimizeArgs = optimizeArgs
+    
+    @staticmethod
+    def make( name:str, *args, **kwds ):
+        
+        if len(args) == 1 and len(kwds) == 0 and isinstance(args[0],GCTesterTestParameters):
+            return args[0]
+        if len(args) == 0: args = None
+        if len(kwds) == 0: kwds = None
+        
+        return GCTesterTestParameters( name, args, kwds )
 
+    def writeOnScope(self, writeScope:WriteScope|None = None):
+        with writeScope.startDict(indentItems=False) as nested:
+            nested.addTaggedItems( name=self.name, args=self.args, kwds=self.kwds )
+            
+#############################################################################
+        
+        
 class GCTestAllocScopeData(object):
     before: GCTestAllocScopeSample
     after: GCTestAllocScopeSample
@@ -125,18 +149,18 @@ class GCTestTarget(object):
 #############################################################################
         
 class GCTestRunConfig(object):
-    args:list | None
-    kwds:dict | None
+    #args:list | None
+    #kwds:dict | None
     
     def __init__( self, 
                  cycles:int|None=None, innerCycles:int|None=None, 
-                 args=None, kwds=None,
+                 #args=None, kwds=None,
                  optimizeArgs:bool = False
                  ):
-        self.cycles:int = cycles or 10
+        self.cycles:int = cycles or 5
         self.innerCycles:int = innerCycles or 1
-        self.args = args
-        self.kwds = kwds
+        #self.args = args
+        #self.kwds = kwds
         self.optimizeArgs = optimizeArgs
     
     @property
@@ -144,10 +168,10 @@ class GCTestRunConfig(object):
 
     def writeOnScope(self, writeScope:WriteScope|None = None):
         with writeScope.startDict(indentItems=False) as nested:
-            nested.addTaggedEntries([
-                    ('args',self.args),
-                    ('kwds',self.kwds),
-                ])
+            #nested.addTaggedEntries([
+            #        ('args',self.args),
+            #        ('kwds',self.kwds),
+            #    ])
                 
             nested.addTaggedItems(
                 c=self.cycles,
@@ -158,27 +182,31 @@ class GCTestRunConfig(object):
     def __repr__(self):
         return f"(args={self.args} kwds={self.kwds} c={self.cycles} ic={self.innerCycles} optimizeArgs={self.optimizeArgs} )"
     
-    def invoke(self, target:GCTestTarget ):
-        if self.args is None:
-            if self.kwds is None:
+    def invoke(self, target:GCTestTarget, testArgs:GCTesterTestParameters ):
+        args = testArgs.args
+        kwds = testArgs.kwds
+        optimizeArgs = self.optimizeArgs if testArgs.optimizeArgs is None else testArgs.optimizeArgs 
+        callable = target.target
+        if args is None:
+            if kwds is None:
                 return target.invoke()
             else:
-                return target.invokeWithArgs( **self.kwds )
+                return target.invokeWithArgs( **kwds )
         else:
-            if self.kwds is None:
-                if self.optimizeArgs: 
-                    argCount = len(self.args)
+            if kwds is None:
+                if optimizeArgs: 
+                    argCount = len(args)
                     if argCount == 1: 
-                        return target.target( self.args[0] )
+                        return callable( args[0] )
                     elif argCount == 2: 
-                        return target.target( self.args[0], self.args[1] )
+                        return callable( args[0], args[1] )
                     elif argCount == 3: 
-                        return target.target( self.args[0], self.args[1], self.args[2] )
-                    return target.target( *self.args )
+                        return callable( args[0], args[1], args[2] )
+                    return callable( *args )
                     
-                return target.invokeWithArgs( *self.args)
+                return target.invokeWithArgs( *args)
             else:
-                return target.invokeWithArgs( *self.args, **self.kwds )
+                return target.invokeWithArgs( *args, **kwds )
 
 
 class GCTestRunResultScope(object):
@@ -188,17 +216,17 @@ class GCTestRunResultScope(object):
         self.postCollectScope = GCTestAllocScope()
         self.config = config
 
-    def run(self, config:GCTestRunConfig ):
+    def run(self, config:GCTestRunConfig, args:GCTesterTestParameters ):
         assert self.config is config
         with self.preCollectScope:
             gc.collect()
         with self.outerScope:
-            rv = self.runInternal(config)
+            rv = self.runInternal(config, args)
         with self.postCollectScope:
             gc.collect()            
         return rv
             
-    def runInternal(self, config:GCTestRunConfig ):
+    def runInternal(self, config:GCTestRunConfig, args:GCTesterTestParameters ):
         raise NotImplemented
 
 class GCTestRunResult(GCTestRunResultScope):
@@ -215,16 +243,16 @@ class GCTestRunResult(GCTestRunResultScope):
         
     name = property( lambda self: self.target.name )
     
-    def runInternal(self, config:GCTestRunConfig ):
+    def runInternal(self, config:GCTestRunConfig, args:GCTesterTestParameters ):
         if config.innerCycles == 1:
             for scope in self.scopes:
                 with scope:
-                    config.invoke(self.target)
+                    config.invoke(self.target, args)
         else:
             for scope in self.scopes:
                 with scope:
                     for x in range( config.innerCycles ):
-                        config.invoke(self.target)
+                        config.invoke(self.target, args)
 
     def writeOnScope(self, writeScope:WriteScope ):
         total = GCTestAllocScopeSample()
@@ -236,7 +264,7 @@ class GCTestRunResult(GCTestRunResultScope):
                 total = total + scope.elapsed
                 
             selfWriteScope.addTaggedItem('per',total/self.config.totalCycles)
-            selfWriteScope.addTaggedItem('totalCycles', self.config.totalCycles)
+            selfWriteScope.addOrSkipDefaultTaggedItem('totalCycles', self.config.totalCycles)
             if writeScope.config.detailed:
                 selfWriteScope.addTaggedEntries([
                     ('outer',self.outerScope.elapsed),
@@ -252,34 +280,46 @@ class GCTestRunResult(GCTestRunResultScope):
 
 class GCTestRunResults(GCTestRunResultScope):
     results:List[GCTestRunResult]
+    parameters:GCTesterTestParameters 
         
-    def __init__(self, targets, config:GCTestRunConfig ):
+    def __init__(self, test:"GCTester", config:GCTestRunConfig, parameters:GCTesterTestParameters ):
         super().__init__(config)
         self.results = []
-        for target in targets:
+        self.signature = test.signature
+        self.parameters = parameters
+        for target in test.targets:
             self.results.append( GCTestRunResult(target, config) )
 
-    def runInternal(self, config:GCTestRunConfig ):
+    def runInternal(self, config:GCTestRunConfig, args:GCTesterTestParameters ):
+        assert args is self.parameters
         for result in self.results:
             try:
-                result.run(config)
+                result.run(config, args)
             except (Exception,TypeError) as inst:
                 result.exc = inst
+                #raise
 
     def writeOnScope(self, writeScope:WriteScope|None = None):
-        writeScope = TargettedWriteScope.makeScope(writeScope)
+        #writeScope = TargettedWriteScope.makeScope(writeScope)
 
-        with writeScope.startDict(indentItems=True) as resultsScope:
-            resultsScope.addTaggedItem( "config", self.config )
+        with writeScope.startDict(indentItems=True) as selfScope:
+            selfScope.addOrSkipDefaultTaggedItem( "config", self.config )
+            selfScope.addOrSkipDefaultTaggedItem( "signature", self.signature )
+            selfScope.addOrSkipDefaultTaggedItem( "parameters", self.parameters )
+            #selfScope.addTaggedItem( "rc", len(self.results)  )
+            if len(self.results):
+                selfScope.addOrSkipDefaultTaggedItem( "totalCycles", self.config.totalCycles )
             total = GCTestAllocScopeSample()
-            with resultsScope.startDict("results",indentItems=True) as resultScope:
+            with selfScope.startDict("results",indentItems=True) as resultScope:
                 for result in self.results:
                     if result.exc is None:
+                    #if True:
                         resultScope.addTaggedItem( result.name, result )
                         total = total + result.outerScope.elapsed
+                        
                     
-            if resultsScope.config.detailed:
-                resultsScope.addTaggedItems( outer=self.outerScope.elapsed,
+            if selfScope.config.detailed:
+                selfScope.addTaggedItems( outer=self.outerScope.elapsed,
                                         total=total,
                                         preGC=self.preCollectScope.elapsed,
                                         postGC=self.postCollectScope.elapsed
@@ -305,13 +345,60 @@ def _getName( f ):
 
     fcn = getattr( fcls, '__name__', None )
     print( f"f is a {type(f)} : {f}  df={dir(f)} fcn={fcn} fn={fn}" )
+    raise Exception( f"unnamed type {type(f)} : {f}")
     return fr
 
-class GCTester(object):
-    targets:list[GCTestTarget] 
+
+GCTArg_NO_DEFAULT = "NO_DEFAULT"
+class GCTestSignatureArg(object):
+    def __init__(self, name:str, kind:Any, default=GCTArg_NO_DEFAULT, **kwds ):
+        self.name = name
+        self.required = default is GCTArg_NO_DEFAULT
+        
+        self.kind = makeTypingExpression(kind)
+        if default is not GCTArg_NO_DEFAULT:
+            self.default = default
+
     
-    def __init__(self, baseline:Callable|None = None):
+    def writeOnScope(self, writeScope:WriteScope ):
+        with writeScope.startDict(indentItems=False) as selfWriteScope:
+            selfWriteScope.addTaggedItems( name=self.name )
+            selfWriteScope.addTaggedItems( id=id(self) )
+            if self.required:
+                selfWriteScope.addTaggedItems( required=True )
+            if hasattr( self, 'default' ):
+                selfWriteScope.addTaggedItems( default=self.default )
+                        
+GCTArg = GCTestSignatureArg        
+        
+class GCTestSignature(object):
+    def __init__(self, name:str, arguments:List[GCTestSignatureArg] ):
+        self.name = name
+        self.arguments = arguments
+    
+    def writeOnScope(self, writeScope:WriteScope ):
+        with writeScope.startDict(indentItems=False) as selfWriteScope:
+            for arg in self.arguments:
+                selfWriteScope.addTaggedItem( arg.name, arg )
+
+class GCTester(object):
+    """ manage gc tests for a common signature
+
+    """
+    targets:list[GCTestTarget] 
+    signature:GCTestSignature
+    
+    def __init__(self,
+                 signature:GCTestSignature|list,
+                 baseline:Callable|None = None, 
+                 ):
         self.targets = [GCTestTarget("baseline", baseline or (lambda *args,**kwds:None) )]
+        if not isinstance(signature,GCTestSignature):
+            sigArgs = signature
+            signature = GCTestSignature( signature, sigArgs )
+            
+        assert isinstance(signature,GCTestSignature)
+        self.signature = signature
     
     def addTests( self, *args, **kwds ):
         for test in args:
@@ -319,20 +406,103 @@ class GCTester(object):
         for tag,val in kwds.items():
             self.targets.append( GCTestTarget(tag,val) )
             
-    def run( self, cycles:int|GCTestRunConfig|None = None, innerCycles:int|None = None, config:GCTestRunConfig|None = None ):
-        
-        if isinstance(cycles,GCTestRunConfig):
-            assert( config is None )
-            config = cycles
-            cycles = None
-            
-        if config is None:
-            config = GCTestRunConfig( cycles=cycles, innerCycles=innerCycles )
-        else:
-            assert cycles is None
-            assert innerCycles is None
-        results = GCTestRunResults( self.targets, config )
-        results.run(config)
+    def run( self, config:GCTestRunConfig, args:GCTesterTestParameters, 
+            #cycles:int|GCTestRunConfig|None = None, innerCycles:int|None = None,
+            #config:GCTestRunConfig|None = None,  
+             ) -> GCTestRunResults:
+        if False:
+            if isinstance(cycles,GCTestRunConfig):
+                assert( config is None )
+                config = cycles
+                cycles = None
+                
+            if config is None:
+                config = GCTestRunConfig( cycles=cycles, innerCycles=innerCycles )
+            else:
+                assert cycles is None
+                assert innerCycles is None
+        results = GCTestRunResults( self, config, args )
+        results.run(config, args)
         return results
 
+
+
+class GCTesterAndArgs(object):
+    def __init__(self, name:str, tester:GCTester ):
+        self.name = name
+        self.tester = tester
+        self.argsList:List[GCTesterTestParameters] = []
+        self.signature = tester.signature
+        
+    def addArgs(self, name:str, *args, **kwds ):
+        self.argsList.append( GCTesterTestParameters.make(name,*args,*kwds) )
+        return self
+    
+    def run( self, config:GCTestRunConfig ):
+        results = GCTesterAndArgsResults(self, config)
+
+        for al in self.argsList:
+            result = self.tester.run(config=config, args=al)
+            results.entries.append(result)
+            #results.entries.append(GCTesterAndParametersResult( result=result, config=config, parameters=al) )   
+        return results
+
+class GCTesterAndParametersResult(mutableObject):
+    result:GCTestRunResults    
+    config:GCTestRunConfig
+    parameters:GCTesterTestParameters 
+
+    name = property(lambda self: self.parameters.name )
+
+    def writeOnScope( self, writeScope:DictWriteScope ):
+        with writeScope.startNamedType(self, indentItems=True) as selfScope:
+            selfScope.addOrSkipDefaultTaggedItem('config', self.config)
+            selfScope.addOrSkipDefaultTaggedItem('parameters', self.parameters)
+            selfScope.addTaggedItem('resultCount', len(self.result.results))
+            selfScope.addTaggedItem('result', self.result)
+
+                    
+class GCTesterAndArgsResults(object):
+    def __init__(self, root:GCTesterAndArgs, config:GCTestRunConfig ):
+        self.entries:List [GCTesterAndParametersResult] = []
+        self.name = root.name
+        self.config = config
+        self.signature = root.signature
+    def writeOnScope( self, writeScope:DictWriteScope ):
+        with writeScope.startNamedType(self, indentItems=True) as selfScope:
+            selfScope.addOrSkipDefaultTaggedItem('config', self.config)
+            selfScope.addOrSkipDefaultTaggedItem('signature', self.signature)
+            #selfScope.addTaggedItem('resultCount',len(self.entries))
+            selfScope.addTaggedItem('results',self.entries)
+
+
+
+class GCTestSet(object):
+    testers: Mapping[str,GCTesterAndArgs]
+    
+    def __init__( self ):
+        pass
+        self.testers = {}
+        
+    def addTester(self, name:str, signature:GCTestSignature|list, tests:List[Callable]|None = None, baseline:[Callable]|None=None ):
+        tester = GCTester( signature=signature,baseline=baseline)
+        
+        tester.addTests(*tests)
+        
+        rv = GCTesterAndArgs( name, tester )
+        self.testers[name] = rv
+        return rv
+    
+    def run( self ):
+        outerWriteScope = TargettedWriteScope( sys.stdout )
+        outerWriteScope.config.detailed = False
+        config = GCTestRunConfig(cycles=5, innerCycles=1,optimizeArgs=True)
+        for tag,val in self.testers.items():
+            with outerWriteScope.startDict(indentItems=True) as testsScope:
+                result = val.run(config)
+                testsScope.addItem(result)
+
+        
+
 #############################################################################
+

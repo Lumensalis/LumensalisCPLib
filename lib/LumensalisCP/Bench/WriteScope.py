@@ -21,11 +21,24 @@ class WriteConfig(object):
         self.detailed = True
 
     
-    def write( self, scope:WriteScope, value ):
+    def write( self, scope:"WriteScope", value:Any ):
             
         if hasattr( value, 'writeOnScope' ):
             value.writeOnScope( scope )
             return
+        
+        if isinstance( value, (list,tuple)):
+            assert type(value) is not str
+            with scope.startList( indentItems=scope.indentItems ) as nested:
+                for item in value:
+                    nested.addListItem( item )
+            return
+        if isinstance( value, dict):
+            with scope.startDict( indentItems=scope.indentItems ) as nested:
+                for tag,val in value.items():
+                    nested.addTaggedItem(tag,val)
+            return
+        
         scope.target.write( repr(value) )
 
 class WriteScope(object):
@@ -33,6 +46,7 @@ class WriteScope(object):
     """
     target:TextIO
     config:WriteConfig
+    parent: weakref [ "WriteScope" ] | None
     
     showScopes=property( lambda self: self.config.showScopes )
     
@@ -44,7 +58,7 @@ class WriteScope(object):
     }
     
     
-    def __init__(self, ts:WriteScope|None, mode=None,indentItems:bool|None=None
+    def __init__(self, ts:"WriteScope"|None, mode=None,indentItems:bool|None=None
                  ):
         """_summary_
 
@@ -57,16 +71,25 @@ class WriteScope(object):
             self.config:WriteConfig = ts.config 
             self.target:TextIO = ts.target
             self.indent = ts.indent + "   "
+            self.parent = weakref.ref(ts)
         else:
             assert self.target is not None and self.config is not None
             self.indent = "\r\n"
+            self.parent = None
         self.indentItems = indentItems
         self.mode=mode
         self.added = 0
         self._writingTagged = False
         
+
+    def getScopedDefault( self, tag:str ) -> Any:
+        if self.parent is None: return None
+        return self.parent().getScopedDefault(tag)
+        
+    def nestedTag( self, tag:str ) -> str|None:
+        return None
     
-    def startDict(self,tag:str|None=None,indentItems:bool|None=None) -> DictWriteScope:
+    def startDict(self,tag:str|None=None,indentItems:bool|None=None) -> "DictWriteScope":
         """start scope for writing tag/value dict
 
         Args:
@@ -79,12 +102,27 @@ class WriteScope(object):
         self._addTagBeforeItem(tag)
         return DictWriteScope( self,indentItems=indentItems)
     
-    def addDict(self, items:dict, tag:str|None=None,indentItems:bool|None=None) -> DictWriteScope:
+    def addDict(self, items:dict, tag:str|None=None,indentItems:bool|None=None) -> "DictWriteScope":
         """write dict"""
         with self.startDict( tag,indentItems=indentItems ) as nested:
             nested.addTaggedEntries( items.items() )
+
     
-    def startList(self,tag:str|None=None,indentItems:bool|None=None) -> ListWriteScope:
+    def startNamedType(self,instance,tag:str|None=None,indentItems:bool|None=None) -> "NamedTypeWriteScope":
+        """start scope for writing tag/value dict
+
+        Args:
+            tag (str | None, optional): tag if adding as dictionary
+            indentItems (bool | None, optional): _description_. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """
+        self._addTagBeforeItem(self.nestedTag( tag or instance.name) )
+        return NamedTypeWriteScope( self, instance=instance, indentItems=indentItems)
+
+    
+    def startList(self,tag:str|None=None,indentItems:bool|None=None) -> "ListWriteScope":
         """open a ListWriteScope for writing a sequence of items
 
         Args:
@@ -98,7 +136,7 @@ class WriteScope(object):
         return ListWriteScope( self, indentItems=indentItems )
 
     def addList(self,items:list, tag:str|None=None,indentItems:bool|None=None):
-        assert self.mode is list
+        #assert self.mode is list
         with self.startList( tag,indentItems=indentItems ) as nested:
             for item in items:
                 nested.addListItem( item )
@@ -119,6 +157,9 @@ class WriteScope(object):
                 self.target.write(self.indent)
         self.added += 1
         
+    def addItem( self, item:Any ):
+        raise NotImplemented
+    
     def write( self, item ):
         if self.mode is not None:
             self._addComma()
@@ -147,12 +188,40 @@ class ListWriteScope(WriteScope):
         """
         self._addComma()
         self.config.write(self, item)
-        
+    
+    def addItem( self, item:Any ):
+        return self.addListItem(item)
+    
 class DictWriteScope(WriteScope):
     def __init__(self, ts:WriteScope|None, indentItems:bool|None=None
                  ):
         super().__init__(ts=ts,mode=dict,indentItems=indentItems)
+        self.__defaults = {}
+        
+    def nestedTag( self, tag:str ) -> str|None:
+        return tag
     
+    def getScopedDefault( self, tag:str ) -> Any:
+        if tag in self.__defaults:
+            return self.__defaults[tag]
+        return super().getScopedDefault(tag)
+    
+    def _isSame(self, a, b ):
+        if a is b: return True
+        if type(a) is type(b):
+            if type(a) in (int,bool,str,float): return a == b
+
+        return False
+
+    def addOrSkipDefaultTaggedItem( self, tag:str, item:Any ):
+        d = self.getScopedDefault(tag)
+        if d is item:
+            return
+        self.__defaults[tag] = item
+        self.addTaggedItem(tag,item)
+        
+
+
     def addTaggedItem( self, tag:str, item:Any ):
         """write a tag/value pair in this dictionary
 
@@ -165,6 +234,9 @@ class DictWriteScope(WriteScope):
         self._writingTagged = True
         self.config.write(self, item)
         self._writingTagged = False
+
+    def addItem( self, item:Any ):
+        self.addTaggedItem( item.name, item )
         
     def addTaggedItems(self, **kwds ):
         """ add tag/value pairs
@@ -183,7 +255,19 @@ class DictWriteScope(WriteScope):
         for tag,val in entries:
             self.addTaggedItem(tag,val)
 
-                    
+class NamedTypeWriteScope(DictWriteScope):
+    def __init__(self, ts:WriteScope, instance:Any, indentItems:bool|None=None
+                 ):
+        super().__init__(ts=ts,indentItems=indentItems)
+        self.instance = instance
+
+    def __enter__(self):
+        rv = super().__enter__()
+        self.addTaggedItem( 'name', self.instance.name )
+        self.addTaggedItem( 'type', type(self.instance).__name__ )
+        return rv
+    
+    
 class TargettedWriteScope(WriteScope):
     """outermost scope for using WriteScope formatting
     """
