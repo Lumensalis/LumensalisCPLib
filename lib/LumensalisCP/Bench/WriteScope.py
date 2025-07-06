@@ -5,17 +5,7 @@ Allows classes to implement a writeOnScope method which can be used for
 a variety of output options including indented printing, json, ...
 """
 
-import supervisor, gc, time, sys
-from __future__ import annotations
-try:
-    from typing import List, Callable, TextIO, Any, Tuple 
-except:
-    
-    Callable = None
-    TextIO = None
-    Any = None
-    Tuple = None
-    #List = None
+from .simpleCommon import *
     
 #############################################################################
 

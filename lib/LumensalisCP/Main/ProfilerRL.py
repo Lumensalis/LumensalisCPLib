@@ -24,7 +24,8 @@ def notEnoughMemUsed( self, config:"LumensalisCP.Main.Profiler.ProfileWriteConfi
 
 def _heading( self ):
     if self.allocGc:
-         return f"   {self.e:0.3f} {self.usedGC:6d}/{self.rawUsedGC:6d}/{self.allocGc:7d}b"
+         #return f"   {self.e:0.3f} {self.usedGC:6d}/{self.rawUsedGC:6d}/{self.allocGc:7d}b"
+         return f"   {self.e:0.3f} {self.usedGC:6d}b"
     else:
          return f"   {self.e:0.3f}"
          
@@ -34,7 +35,7 @@ def ProfileFrameEntry_writeOn(self:LumensalisCP.Main.Profiler.ProfileFrameEntry,
     config.target.write( f"   {_heading(self)}{indent}:{self.lw:0.3f} {self.name:32s} {self.name2 or "":32s} @{id(self):X}\r\n" )
 
     if self.nest is not None:
-        self.nest.writeOnScope( config, indent=indent+'# ')
+        self.nest.writeOn( config, indent=indent+'# ')
 
 
 def ProfileFrameBase_writeOn(self:LumensalisCP.Main.Profiler.ProfileFrameBase,config:"LumensalisCP.Main.Profiler.ProfileWriteConfig",indent=''):
@@ -44,7 +45,7 @@ def ProfileFrameBase_writeOn(self:LumensalisCP.Main.Profiler.ProfileFrameBase,co
     
     
     for x in range(self.entries):
-        self.entry(x).writeOnScope(config,indent=indent)
+        self.entry(x).writeOn(config,indent=indent)
 
 def ProfileFrame_writeOn(self:LumensalisCP.Main.Profiler.ProfileFrame,config:"LumensalisCP.Main.Profiler.ProfileWriteConfig",indent=''):
     
@@ -72,4 +73,4 @@ def ProfileFrame_writeOn(self:LumensalisCP.Main.Profiler.ProfileFrame,config:"Lu
         
         #config.target.write( f" --- [{x}]\r\n");
         #ProfileFrameEntry_writeOn( entry, config, indent )
-        entry.writeOnScope(config,indent=indent)
+        entry.writeOn(config,indent=indent)

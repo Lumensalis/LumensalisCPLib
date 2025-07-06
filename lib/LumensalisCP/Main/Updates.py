@@ -12,6 +12,7 @@ class UpdateContext(object):
     _stubFrame = ProfileStubFrame( )
     
     def __init__( self, main:"LumensalisCP.Main.Manager.MainManager"=None ):
+        print( f"NEW UpdateContext @{id(self):X}")
         self.__updateIndex = 0
         self.__changedSources : List["LumensalisCP.Inputs.InputSource"] = []
         self.__mainRef = main.makeRef()
@@ -21,11 +22,15 @@ class UpdateContext(object):
         
         
     def reset( self, when:TimeInMS|None = None ):
-        self.__updateIndex += 1
-        self.__changedSources.clear()
-        self.__when = when or self.main.when
-        self.activeFrame = None
-        self.baseFrame = None
+        try:
+            self.__updateIndex += 1
+            self.__changedSources.clear()
+            self.__when = when or self.main.when
+            self.activeFrame = None
+            self.baseFrame = None
+        except Exception as inst:
+            print( f"UpdateContext.refresh @{id(self):X} failed : {inst}")
+            raise
         
     @property
     def main(self): return self.__mainRef()
@@ -56,18 +61,15 @@ class UpdateContext(object):
         raise NotImplemented
 
 
-    def valueOf( self, value:Any ) -> Any:
-        raise NotImplemented
-        
 class RefreshCycle(object):
-    def __init__(self, refreshRate:TimeInSeconds = 0.1):
-        self.refreshRate = refreshRate
-        self.nextRefresh = 0
+    def __init__(self, refreshRate:TimeInSeconds = 0.1): 
+        self.__refreshRate = refreshRate
+        self.__nextRefresh = 0
         
-    def ready( self, context:UpdateContext ):
-        if self.nextRefresh >= context.when: return False
+    def ready( self, context:UpdateContext ) -> bool:
+        if self.__nextRefresh >= context.when: return False
         
-        self.nextRefresh = context.when + self.refreshRate
+        self.__nextRefresh = context.when + self.__refreshRate
         return True
 
 class Refreshable( object ):

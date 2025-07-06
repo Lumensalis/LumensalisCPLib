@@ -4,15 +4,19 @@ from ..Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.CPTyping import Any, Callable, Generator, List, Mapping, Tuple
 from LumensalisCP.CPTyping  import override
 from LumensalisCP.common import *
-from .Updates import UpdateContext, RefreshCycle, Evaluatable
+
+import LumensalisCP.Main.Updates
+from .Updates import UpdateContext, Evaluatable
 from LumensalisCP.Main.Profiler import Profiler, ProfileFrame
 
+_simpleValueTypes = set([int,bool,float])
 
-class EvaluationContext(UpdateContext):
+class EvaluationContext(LumensalisCP.Main.Updates.UpdateContext):
     
     def __init__( self, *args, **kwds ):
-        super().__init__( *args, **kwds )
-        
+        #super().__init__( *args, **kwds)
+        LumensalisCP.Main.Updates.UpdateContext.__init__(self,*args, **kwds)
+        print( f"NEW EvaluationContext @{id(self):X}")
         self.__changedTerms : List["ExpressionTerm"] = []
         
     def reset( self, when:TimeInMS|None = None ):
@@ -29,7 +33,8 @@ class EvaluationContext(UpdateContext):
     def valueOf( self, value:Any ) -> Any:
         #xm : 'LumensalisCP.Main.Expressions'
         #xm = Expressions #LumensalisCP.Main.Expressions
-          
+        if type(value)  in _simpleValueTypes:
+            return value
         if type(value) is object:
             if isinstance( value, ExpressionTerm ):
                 term = value
@@ -72,7 +77,7 @@ def ensureIsTerm( term:"ExpressionTerm" ) -> "ExpressionTerm" :
 
 #############################################################################
 
-class ExpressionTerm(Evaluatable):
+class ExpressionTerm(LumensalisCP.Main.Updates.Evaluatable):
     def __init__(self):
         pass
     
@@ -302,7 +307,7 @@ class CallbackSource( ExpressionTerm ):
 
 #############################################################################
 
-class Expression( Evaluatable ):
+class Expression( LumensalisCP.Main.Updates.Evaluatable ):
     def __init__( self, term:ExpressionTerm ):
         self.__root = ensureIsTerm(term)
         self.__when:ExpressionTerm|None = None

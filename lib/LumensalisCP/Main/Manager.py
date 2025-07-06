@@ -29,6 +29,10 @@ from LumensalisCP.Main.Profiler import Profiler
 
 from . import _mconfig
 
+
+def _early_collect(tag:str):
+    _mconfig.gcm.runCollection(force=True)
+        
 class MainManager(ConfigurableBase, I2CProvider, Debuggable):
     
     theManager : "MainManager"|None = None
@@ -47,7 +51,8 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         assert MainManager.theManager is None
         MainManager.theManager = self
         _mconfig.gcm.main = self
-
+        self.__cycle = 0
+        
         LumensalisCP.Main.Updates._getCurrentUpdateContext = self.getContext
         
         self.__startNs = time.monotonic_ns()
@@ -69,6 +74,7 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         from LumensalisCP.Main.Dependents import MainRef
         MainRef._theManager = self
         
+        _early_collect("mid manager init")
 
         I2CProvider.__init__( self, config=self.config, main=self )
   
@@ -76,7 +82,7 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         self._when = self.newNow
         
         self._printStatCycles = 5000
-        self.__cycle = 0
+
         self.cyclesPerSecond = 100
         self.cycleDuration = 0.01
 
@@ -100,6 +106,7 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         self.__TerrainTronics = None
 
         print( f"MainManager options = {self.config.options}" )
+        _early_collect("end manager init")
     
     def makeRef(self):
         return LumensalisCP.Main.Dependents.MainRef(self)
@@ -276,6 +283,8 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
     async def taskLoop( self ):
         self.__priorSleepWhen = self.getNewNow()
         self.infoOut( "starting manager main run" )
+        _early_collect("end manager init")
+        self.__priorSleepWhen = self.getNewNow()
         
         mlc = _mconfig._mlc
         activeFrame = None
@@ -286,7 +295,7 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
             def snapTime(*args,**kwds): return None
 
         nextWait = self.getNewNow()
-        nextWaitPeriod = 0.01
+        
         try:
             context = self.__evContext
 
@@ -345,7 +354,7 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
                     activeFrame.finish() 
 
                 self.__priorSleepWhen = self.getNewNow()
-                nextWait += nextWaitPeriod
+                nextWait += mlc.nextWaitPeriod
         
                 await asyncio.sleep( max(0.001,nextWait-self.__priorSleepWhen) ) # self.cycleDuration )
                 self.__cycle += 1

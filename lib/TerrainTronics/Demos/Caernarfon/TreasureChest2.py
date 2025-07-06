@@ -1,7 +1,21 @@
-from LumensalisCP.Main._mconfig import _mlc,gcm,printElapsed
 import gc
+print( f"dir(gc)={dir(gc)}" )
+#gc.threshold( 16384 )
+from LumensalisCP.Main._mconfig import _mlc,gcm,printElapsed
+
 mlc = _mlc
 mlc.ENABLE_PROFILE = False
+mlc.nextWaitPeriod = 0.0025
+#gcm.setMinimumThreshold( 925000 )
+
+#mlc.ENABLE_PROFILE = True
+#gcm.minimumThreshold = 925000
+
+
+#gcm.minimumThreshold = 425000
+
+gcm.setMinimumThreshold( 325000 )
+
 printElapsed( "importing" )
 gcm.PROFILE_MEMORY = False
 gcm.PROFILE_MEMORY_NESTED = False
@@ -312,11 +326,12 @@ class TreasureChest( DemoBase ):
             if showDump and False:
                 print( f"range = {range}, {rangeDump}")
             
-        sceneOpen.addTask( updateCylonColor, period=0.35 )
+        #sceneOpen.addTask( updateCylonColor, period=0.35 )
         #sceneClosed.addTask( updateCylonColor, period=0.35 )
         
-        def sawTooth():
-            return divmod(main.getContext().when, 5.0)[1]/7.0
+        def sawTooth(context=None,when=None):
+            return divmod((context or main.getContext()).when, 2.5)[1]/7.0
+            #return divmod(main.getContext().when, 2.5.0)[1]/7.0
         
         rbcc, rbs = 3.1, 0.6
         patterns = [
@@ -424,6 +439,7 @@ class TreasureChest( DemoBase ):
         #pt.start()
         #main.addTask( updateStuff )
         
+        @addPeriodicTaskDef( period=10, main=main )
         def dump():
             #print( f"DUMPING at {main.newNow}" )
             TerrainTronics.Demos.Caernarfon.TreasureChest2RL.printDump(main)
@@ -431,10 +447,14 @@ class TreasureChest( DemoBase ):
             #gc.collect()
             
 
-        dt = PeriodicTimer( 13.1, manager=main.timers, name="dump" )
-        dt.addAction( dump )
-        dt.start()
-        
+        #dt = PeriodicTimer( 30.1, manager=main.timers, name="dump" )
+        #dt.addAction( dump )
+        #dt.start()
+
+        #@addPeriodicTaskDef( "gc-collect", period=3.5, main=main )
+        def gc_check(context=None, when=None):
+            printElapsed( "gc_check" )
+                    
         main.scenes.enableDbgOut = True
         print(f"sources = {sceneClosed.sources()}" )
       
@@ -442,9 +462,13 @@ class TreasureChest( DemoBase ):
     def setup(self):
         self.setupChest()
         
-        @addPeriodicTaskDef( "gc-collect", period=0.5, main=main )
+        @addPeriodicTaskDef( "gc-collect", period=1.51, main=main )
         def runCollection(context=None, when=None):
-            gcm.runCollection(context,when)
+            gcm.runCollection(context,when, show=True)
+
+        def firstGC():
+            gcm.runCollection(main.getContext(),main.when, force=True)
+        main.callLater(firstGC)
 
         gc.disable()
     

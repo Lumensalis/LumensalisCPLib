@@ -50,7 +50,7 @@ def printDump( main:MainManager ):
             frame = main.profiler.timingForUpdate( i )
             
             if frame is not None:
-                frame.writeOnScope( dumpConfig )
+                frame.writeOn( dumpConfig )
             i -= 1
             
         #print( f"entry {ProfileFrameEntry._allocs}/{ProfileFrameEntry._resets}  | base {ProfileFrameBase._allocs}/{ProfileFrameBase._resets}  ")
