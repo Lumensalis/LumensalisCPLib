@@ -79,14 +79,14 @@ class KeepAlive(Debuggable):
     def _timerHit(self,when:float=None, **kwds):
         
         if self.__nextPulse <= when:
-            self.dbgOut( "start pulse" )
+            self.enableDbgOut and self.dbgOut( "start pulse" )
             #print( "start pulse" )
             self._setKeepAlive( True )
             self.__nextPulse = when + self.__keepAliveCycle
             self.__nextPulseEnd = when + self.__keepAlivePulse
         else:
             if self.__state:
-                self.dbgOut( "end pulse" )
+                self.enableDbgOut and self.dbgOut( "end pulse" )
                 #print( "end pulse" )
                 if self.__nextPulseEnd <= when:
                     self._setKeepAlive( False )

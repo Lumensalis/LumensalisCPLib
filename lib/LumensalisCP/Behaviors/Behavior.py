@@ -33,10 +33,10 @@ class Actor(Debuggable):
     def setCurrentBehavior(self, behavior:"Behavior", reset:bool=False ) -> None:
         """Set the current behavior of the actor."""
         if self.__currentBehavior is behavior and reset is False:   
-            self.dbgOut("Behavior %s is already current, not changing", behavior.name)
+            self.enableDbgOut and self.dbgOut("Behavior %s is already current, not changing", behavior.name)
             return
         
-        self.dbgOut("Setting current behavior to %s", behavior.name)
+        self.enableDbgOut and self.dbgOut("Setting current behavior to %s", behavior.name)
         if self.__currentBehavior is not None:
             self.__currentBehavior.exit(self.main.context)
         self.__currentBehavior = behavior
@@ -54,11 +54,11 @@ class Behavior(Debuggable):
     
     def enter(self, context:EvaluationContext) -> None:
         """Enter the behavior. This is called when the behavior is activated."""
-        self.dbgOut("Entering behavior %s", self.name)
+        self.enableDbgOut and self.dbgOut("Entering behavior %s", self.name)
     
     def exit(self, context:EvaluationContext) -> None:
         """Exit the behavior. This is called when the behavior is deactivated."""
-        self.dbgOut("Exiting behavior %s", self.name)    
+        self.enableDbgOut and self.dbgOut("Exiting behavior %s", self.name)    
         
     @property
     def actor(self) -> Actor:

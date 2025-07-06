@@ -90,7 +90,7 @@ class LocalServo(
         self.__moveSpan = angle - self.__lastSetAngle
         self.__moveTimeAtStart = context.when if context is not None else self.__moveTimer.manager.main.when
             
-        self.dbgOut( f"moveTo {self.__moveTarget}d from {self.__moveAngleStart}d / {self.__moveTimeAtStart :0.3f}s at {self.__moveSpeed}dPs, span {self.__moveSpan}" )
+        self.enableDbgOut and self.dbgOut( f"moveTo {self.__moveTarget}d from {self.__moveAngleStart}d / {self.__moveTimeAtStart :0.3f}s at {self.__moveSpeed}dPs, span {self.__moveSpan}" )
         self.__moveTimer.start()
 
     def onStop( self, callable:Callable ):
@@ -111,7 +111,7 @@ class LocalServo(
         driveTime =  math.fabs( self.__moveSpan ) / self.__moveSpeed
         moveRatio = elapsed / driveTime
         angleOffset = moveRatio * self.__moveSpan
-        self.dbgOut( f"angleOffset={angleOffset:0.1f}d after {elapsed:0.3f}s, dt={driveTime} mr = {moveRatio}   )  "  )
+        self.enableDbgOut and self.dbgOut( f"angleOffset={angleOffset:0.1f}d after {elapsed:0.3f}s, dt={driveTime} mr = {moveRatio}   )  "  )
         
         newTarget = self.__moveAngleStart + angleOffset
 
@@ -121,13 +121,13 @@ class LocalServo(
             finished = newTarget < self.__moveTarget
                 
         if finished:
-            self.dbgOut( f"servo {self.name} move to {self.__moveTarget} complete, elapsed={elapsed} newTarget={newTarget} distance={angleOffset}" )
+            self.enableDbgOut and self.dbgOut( f"servo {self.name} move to {self.__moveTarget} complete, elapsed={elapsed} newTarget={newTarget} distance={angleOffset}" )
             newTarget = self.__moveTarget
             self.set( newTarget, context=context )
             if self.__moveCompleteCB is not None:
                 self.__moveCompleteCB()
         else:
-            self.dbgOut( f"_updateMove( {when:0.3f} ) elapsed={elapsed:0.3f} from {self.__lastSetAngle:0.1f}d + {angleOffset:.1f}d to {newTarget:0.1f}d at {self.__moveSpeed:0.1f}dPs, {angleOffset:0.1f}d from {self.__moveAngleStart:0.1f}d towards {self.__moveTarget:0.1f}d" )
+            self.enableDbgOut and elf.dbgOut( f"_updateMove( {when:0.3f} ) elapsed={elapsed:0.3f} from {self.__lastSetAngle:0.1f}d + {angleOffset:.1f}d to {newTarget:0.1f}d at {self.__moveSpeed:0.1f}dPs, {angleOffset:0.1f}d from {self.__moveAngleStart:0.1f}d towards {self.__moveTarget:0.1f}d" )
             self.__set( newTarget )
 
     @property

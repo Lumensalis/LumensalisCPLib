@@ -21,14 +21,15 @@ class EvaluationContext(LumensalisCP.Main.Updates.UpdateContext):
         
     def reset( self, when:TimeInMS|None = None ):
         super().reset(when)
-        self.__changedTerms.clear()
+        #self.__changedTerms.clear()
     
-    @property
-    def changedTerms(self) -> List["ExpressionTerm"]:
-        return self.__changedTerms
+    # @property
+    #def changedTerms(self) -> List["ExpressionTerm"]:
+    #    return self.__changedTerms
     
     def addChangedTerm( self, changed:"ExpressionTerm"):
-        self.__changedTerms.append( changed )
+        pass
+        # self.__changedTerms.append( changed )
         
     def valueOf( self, value:Any ) -> Any:
         #xm : 'LumensalisCP.Main.Expressions'
@@ -257,7 +258,7 @@ class EdgeTerm(ExpressionOperation,Debuggable):
                 self.__value = False
                 resetValue = self.__resetTerm.getValue( context )
                 if resetValue:
-                    self.dbgOut( "reset succeeded, value=%s at %s", self.__value, self.__latestUpdateIndex  )
+                    self.enableDbgOut and self.dbgOut( "reset succeeded, value=%s at %s", self.__value, self.__latestUpdateIndex  )
                     self.__awaitingReset = False
                     
                 return False
@@ -276,10 +277,10 @@ class EdgeTerm(ExpressionOperation,Debuggable):
                 if self.__resetTerm is not None:
                     self.__awaitingReset = True
                     
-                self.dbgOut( "edge from %s to %s, value=%s at %s", prior, termValue, self.__value, self.__latestUpdateIndex  )
+                self.enableDbgOut and self.dbgOut( "edge from %s to %s, value=%s at %s", prior, termValue, self.__value, self.__latestUpdateIndex  )
             else:
                 if self.__value != False:
-                    self.dbgOut( "no edge term=%s at %s", termValue, self.__latestUpdateIndex  )
+                    self.enableDbgOut and self.dbgOut( "no edge term=%s at %s", termValue, self.__latestUpdateIndex  )
                 self.__value = False
         return self.__value
 

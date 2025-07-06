@@ -23,7 +23,7 @@ class PeriodicTimerManager( SubManagerBase ):
             now = self.main.when
             self.__latestUpdateWhen = now
             timers = self.__timers
-            self.dbgOut( "update now=%.3f", now )
+            if self.enableDbgOut: self.dbgOut( "update now=%.3f", now )
             for t in timers:
                 now = self.main.newNow
                 if t.nextFire is None:
@@ -35,14 +35,14 @@ class PeriodicTimerManager( SubManagerBase ):
                     except Exception as inst:
                         t.SHOW_EXCEPTION( inst, "timer expire exception" )
                     #self.enableDbgOut and 
-                    self.dbgOut( f"timer {t.name} expired, nf={t.nextFire} now={now:.3f} pnf={priorNf}" )
+                    if self.enableDbgOut: self.dbgOut( f"timer {t.name} expired, nf={t.nextFire} now={now:.3f} pnf={priorNf}" )
                 else:
                     #self.enableDbgOut and 
-                    self.dbgOut( "timer %s still waiting, nf=%0.3f", t.name, t.nextFire )
+                    if self.enableDbgOut: self.dbgOut( "timer %s still waiting, nf=%0.3f", t.name, t.nextFire )
                                     
             self.__updating = False
             if self.__timerChanges:
-                self.dbgOut( "%d changes, shuffling", self.__timerChanges )
+                if self.enableDbgOut: self.dbgOut( "%d changes, shuffling", self.__timerChanges )
                 self.__shuffleTimers()
 
     @property
@@ -132,7 +132,7 @@ class PeriodicTimer( Trigger ):
         if interval is not None:
             self.__interval = interval
         self.__nextFire = when + self.__interval
-        self.dbgOut and self.dbgOut( "restart at %.3fs i=%.3fs nf=%.3fs", when, self.__interval, self.__nextFire)
+        if self.enableDbgOut: self.dbgOut and self.dbgOut( "restart at %.3fs i=%.3fs nf=%.3fs", when, self.__interval, self.__nextFire)
         #self._nextFire = min( when, self._nextFire + self.__interval )
         self.manager._updateTimer(self)
 

@@ -129,7 +129,7 @@ class CilgerranBatterMonitor(InputSource):
     
     def check(self, context:EvaluationContext ):
         v = self.getValue(context)
-        self.dbgOut( "battery = %.1fV", v )
+        self.enableDbgOut and self.dbgOut( "battery = %.1fV", v )
 
     
 class CilgerranCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):

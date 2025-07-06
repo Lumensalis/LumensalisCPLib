@@ -94,10 +94,12 @@ dmxEnable = main.dmx.addDimmerInput( "enable", 7 )
 sceneClosed = main.addScene("closed")
 sceneOpen = main.addScene("open")
 sceneOpening = main.addScene("opening")
-sceneClosing = main.addScene("closing")             
+sceneClosing = main.addScene("closing")
 
-
-
+sceneA = main.addScene("A")
+sceneB = main.addScene("B")
+sceneC = main.addScene("C")
+sceneD = main.addScene("D")
 
 lid = ServoDoor(lidDrive, 
         closedPosition = 126,
@@ -142,9 +144,16 @@ class TreasureChest( DemoBase ):
             @fireOnTrue( rightStoneTouch )
             def _(): self.closeLid()
 
+            #@fireOnTrue( leftStoneTouch )
+            #def _(): self.openLid()
+
             @fireOnTrue( leftStoneTouch )
-            def _(): self.openLid()
-             
+            def _():
+                sName = scenes.currentScene.name
+                nextScene = dict(A="B",B="C",C="D",D="A").get(sName,"B")
+                print( f"switch from scene {sName} to {nextScene}" )
+                scenes.currentScene = nextScene 
+                
 
             print( f"capTouch.inputs = {capTouch.inputs}")
             #touched.fireOnSourcesSet(*capTouch.inputs )
@@ -368,7 +377,8 @@ class TreasureChest( DemoBase ):
             sceneClosing.addPatterns( *patterns )
         #lidSpan = self.lidOpenPosition - self.lidClosedPosition 
         
-
+        sceneA.addPatterns( patterns[0] )
+        sceneB.addPatterns( *patterns )
         #####################################################################
         dmxRemote = main.addScene("dmxRemote")
         dmxRemote.addRule( pixels[1], dmxTestRGB )

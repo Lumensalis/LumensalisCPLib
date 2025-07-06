@@ -25,7 +25,7 @@ class Debuggable( object ):
             return msg
         except Exception as inst:
             return f"error formatting {kind} {fmtString} : {inst}"
-        
+    
     def dbgOut( self, fmtString:str, *args, **kwds ):
         if self.__dbgOutEnabled:
             print( self.__format("", fmtString, args, kwds ) )

@@ -41,5 +41,5 @@ class SceneManager(Debuggable):
             scene = actualScene
         
         if scene  != self.__currentScene:
-            self.dbgOut( "switching from scene %r to scene %r", self.__currentScene, scene )
+            self.enableDbgOut and self.dbgOut( "switching from scene %r to scene %r", self.__currentScene, scene )
             self.__currentScene = scene

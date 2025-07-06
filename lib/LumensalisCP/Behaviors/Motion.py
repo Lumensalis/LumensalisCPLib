@@ -141,4 +141,4 @@ class ServoDoor(Door):
         Returns:
             _type_: _description_
         """
-        self.dbgOut("ServoDoor move completed")
+        self.enableDbgOut and self.dbgOut("ServoDoor move completed")

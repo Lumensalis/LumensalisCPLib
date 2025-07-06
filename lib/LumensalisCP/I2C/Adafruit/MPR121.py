@@ -22,7 +22,7 @@ class MPR121Input(I2CInputSource):
         touched = (allTouched & self.__mask) != 0
         if self._touched != touched:
             self._touched = touched
-            self.dbgOut( "MPR121Input = %s", touched )
+            self.enableDbgOut and self.dbgOut( "MPR121Input = %s", touched )
             self.updateValue( context )
             
 
