@@ -10,6 +10,7 @@ class _MainLoopControl(object):
         self.MINIMUM_LOOP = False
         self.ENABLE_PROFILE = False
         self.nextWaitPeriod = 0.01
+        self.profileTimings = 10
         
     def getMsSinceStart(self):
         now = supervisor.ticks_ms()
@@ -88,8 +89,6 @@ class GCManager(object):
         timeBeforeCollect = self.main.newNow
         gc.collect()
         timeAfterCollect = self.main.newNow
-        
-        
         
         currentMs = _mlc.getMsSinceStart()
         mem_alloc_after = gc.mem_alloc()
