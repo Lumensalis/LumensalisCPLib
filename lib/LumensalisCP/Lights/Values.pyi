@@ -104,30 +104,33 @@ class RGB(object):
 RGB.CONVERTORS[RGB.__class__.__name__] = lambda v:v
 RGB.CONVERTORS['RGB'] = lambda v:v
 
+if LCPF_TYPING_IMPORTED:
+    
 
+    type AnyLightValue = Union[
+         int, float, bool,
+         Tuple[float,float,float],
+         List [float],
+        str
+     ] 
+else:
+    AnyLightValue = None
 
 class LightValueBase(object):
-    def __init__(self, *args, **kwds):
-        pass
+    def __init__(self, *args, **kwds): pass
 
     @property
-    def brightness(self)->float: raise NotImplemented
+    def brightness(self)->float: pass
 
     @property
-    def asNeoPixelInt(self)->int: raise NotImplemented
+    def asNeoPixelInt(self)->int: pass
     
     @property
-    def asRGB(self) -> RGB: raise NotImplemented
+    def asRGB(self) -> RGB: pass
 
-    def setLight(self, value): raise NotImplemented
+    def setLight(self, value): pass
 
-def registerToRGB( cf = lambda v:v):
-    def r( cls ):
-        print( f"registerToRGB {cls.__name__}")
-        RGB.CONVERTORS[cls.__name__] = cf
-        #RGB.CONVERTORS[cls.__name__] 
-        return cls
-    return r
+def registerToRGB( cf = lambda v:v) -> Callable: pass
 
 @registerToRGB( lambda v: v )
 class LightValueRGB(RGB, LightValueBase ):
@@ -138,105 +141,67 @@ class LightValueRGB(RGB, LightValueBase ):
     WHITE = RGB( 1, 1, 1 )
     
     @staticmethod
-    def lookupColor( color:str ):
-        rv = getattr(LightValueRGB,color,None )
-        if rv is None:
-            raise KeyError( safeFmt("unknown color %r",color) )
-        
-        return rv
+    def lookupColor( color:str ) ->RGB: pass
 
     @staticmethod
-    def toRGB( value:AnyLightValue )->RGB:
-        
-        convertor = RGB.CONVERTORS.get(type(value).__name__,None)
-        if convertor is not None:
-            return convertor(value)
-        
-        #if isinstance( value, RGB):
-        #    return value
-
-        # if isinstance( value, LightValueBase): return value.asRGB
-
-        ensure( False, "cannot convert %r (%s) to RGB", value, type(value))
+    def toRGB( value:AnyLightValue )->RGB:pass
 
     @staticmethod
-    def prepRGBValue( value ):
-        if (
-                isinstance( value, Evaluatable ) or
-                callable(value)
-        ):
-            return value
+    def prepRGBValue( value:AnyLightValue ) ->RGB: pass
         
-        return LightValueRGB.toRGB( value )
-        
-    def setLight(self, value):
-        v = LightValueRGB.toRGB( value )
-        self._set( *v._rgbTuple() )
+    def setLight(self, value:AnyLightValue): pass
 
     @staticmethod
-    def randomRGB( brightness:ZeroToOne=1) -> RGB:
-        return RGB( randomZeroToOne() * brightness,  randomZeroToOne() * brightness,  randomZeroToOne() * brightness )
+    def randomRGB( brightness:ZeroToOne=1) -> RGB: pass
 
     @property
-    def asNeoPixelInt(self)->int: 
-        return self.toNeoPixelInt()
+    def asNeoPixelInt(self)->int: pass
     
     @property
-    def asRGB(self) -> RGB:
-        return RGB( self._rgbTuple() )
-
+    def asRGB(self) -> RGB: pass
+    
 @registerToRGB( lambda v: v )
 class LightValueNeoRGB(LightValueBase):
     __slots__ = "_LightValueNeoRGB__brightness", "_LightValueNeoRGB__value"
 
-    NP_INT_CONVERTORS = dict(
-        int= lambda v:v & 0xFFFFFF,
-        float= lambda v: ( b255 := max(0,min(255,int(v * 255))), b255 + (b255 << 8) + (b255 << 16) )[1],
-        bool= lambda v: 0xFFFFFF if v else 0,
-        tuple= lambda v: (max(0,min(255,int(v[0]))) << 16) + (max(0,min(255,int(v[1]))) << 8) + (max(0,min(255,int(v[2])))),
-        list= lambda v: (max(0,min(255,int(v[0]))) << 16) + (max(0,min(255,int(v[1]))) << 8) + (max(0,min(255,int(v[2])))),
-        
-    )
-    @staticmethod
-    def toNeoPixelInt( value:AnyLightValue )->int:
-        convertor = LightValueNeoRGB.NP_INT_CONVERTORS.get(type(value).__name__,None)
-        if convertor is not None:
-            return convertor(value)
-
-        if isinstance( value, LightValueBase):
-            return value.asNeoPixelInt
-        elif isinstance( value, RGB ):
-            return value.toNeoPixelInt()
-        
-        ensure( False, "cannot convert %r (%s) to NeoRGB", value, type(value))
-    
     
     @staticmethod
-    def formatNeoRGBValues( values ):
-        return '|'.join( [('%6.6X'%LightValueNeoRGB.toNeoPixelInt(v)) for v in values])
+    def toNeoPixelInt( value:AnyLightValue )->int: pass
     
-    def __init__(self,  value:AnyLightValue ):
-        self.__value = LightValueNeoRGB.toNeoPixelInt( value )
-        self.__brightness = 1.0
+    @staticmethod
+    def formatNeoRGBValues( values ) ->str: pass
+    
+    def __init__(self,  value:AnyLightValue ): pass
 
     @staticmethod
-    def randomRGB( brightness:ZeroToOne=1):
-        def rChannel(): return randint(0,int(255*brightness))
-        return (rChannel() << 16) + (rChannel() << 8) +  rChannel()
+    def randomRGB( brightness:ZeroToOne=1) ->int: pass
 
     @property
-    def brightness(self)->float: return self.__brightness
+    def brightness(self)->float: pass
     
-    def setLight(self, value):
-        self.__value = LightValueNeoRGB.toNeoPixelInt( value )
+    def setLight(self, value|AnyLightValue): pass
 
     @property
-    def asNeoPixelInt(self)->int: return self.__value
+    def asNeoPixelInt(self)->int: pass
     
     @property
-    def asRGB(self) -> RGB:
-        return RGB.fromNeoPixelInt( self.__value )
-
+    def asRGB(self) -> RGB: pass
 
 
 #############################################################################
+"""
+another possible hack - not sure this would work and it's moderately ugly but....   
+before your **_make_board_completion** you could add
+```
+source <LOCATION_OF_BASH_COMPLITION_BUILTINS>/make
+```
+which should pull in the "default" implementation as **_comp_cmd_make**, 
+and then insert 
+```
+        else 
+            _comp_cmd_make
+```
+at the end of **_make_board_completion**  (before `fi`) - that might make it
+fall through to the original behavior when yours doesn't match?
+
+"""
