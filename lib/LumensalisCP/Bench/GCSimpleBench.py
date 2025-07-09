@@ -14,7 +14,7 @@ class GCTestAllocScopeSample(object):
     mem_free: int
     when: float
     
-    def __init__(self, copy:GCTestAllocScopeSample|None = None ):
+    def __init__(self, copy:"GCTestAllocScopeSample"|None = None ):
         if copy is None:
             self.clear()
         else:
@@ -25,7 +25,7 @@ class GCTestAllocScopeSample(object):
     def __repr__(self):
         if self.mem_alloc == -self.mem_free:
             return f"({self.mem_alloc},{self.when:0.3f})"
-        return f"\{a={self.mem_alloc}, f={self.mem_free}, t={self.when:0.3f}}"
+        return f"(a={self.mem_alloc}, f={self.mem_free}, t={self.when:0.3f})"
 
 
     def writeOnScope(self, writeScope:WriteScope ):
@@ -44,7 +44,7 @@ class GCTestAllocScopeSample(object):
         self.mem_free = gc.mem_free()
         self.when = time.monotonic()
         
-    def __sub__(self, rhs:GCTestAllocScopeSample ):
+    def __sub__(self, rhs:"GCTestAllocScopeSample" ):
         rv = GCTestAllocScopeSample()
         rv.mem_alloc = self.mem_alloc - rhs.mem_alloc
         rv.mem_free = self.mem_free - rhs.mem_free
@@ -52,7 +52,7 @@ class GCTestAllocScopeSample(object):
         #print( f"__sub__ {self} - {rhs} = {rv}" )
         return rv
     
-    def __add__(self, rhs:GCTestAllocScopeSample ):
+    def __add__(self, rhs:"GCTestAllocScopeSample" ):
         rv = GCTestAllocScopeSample()
         rv.mem_alloc = self.mem_alloc + rhs.mem_alloc
         rv.mem_free = self.mem_free + rhs.mem_free
@@ -100,7 +100,7 @@ class GCTestAllocScopeData(object):
     def __repr__(self):
         return f"e:{self.elapsed}"
     
-    def __init__(self, copy:GCTestAllocScopeData|None = None ):
+    def __init__(self, copy:"GCTestAllocScopeData"|None = None ):
         if copy is None:
             self.before = GCTestAllocScopeSample()
             self.after = GCTestAllocScopeSample()
@@ -300,7 +300,7 @@ class GCTestRunResults(GCTestRunResultScope):
                 #raise
 
     def writeOnScope(self, writeScope:WriteScope|None = None):
-        #writeScope = TargettedWriteScope.makeScope(writeScope)
+        #writeScope = TargetedWriteScope.makeScope(writeScope)
 
         with writeScope.startDict(indentItems=True) as selfScope:
             selfScope.addOrSkipDefaultTaggedItem( "config", self.config )
@@ -484,7 +484,7 @@ class GCTestSet(object):
         pass
         self.testers = {}
         
-    def addTester(self, name:str, signature:GCTestSignature|list, tests:List[Callable]|None = None, baseline:[Callable]|None=None ):
+    def addTester(self, name:str, signature:GCTestSignature|list, tests:List[Callable]|None = None, baseline:Callable|None=None ):
         tester = GCTester( signature=signature,baseline=baseline)
         
         tester.addTests(*tests)
@@ -494,7 +494,7 @@ class GCTestSet(object):
         return rv
     
     def run( self ):
-        outerWriteScope = TargettedWriteScope( sys.stdout )
+        outerWriteScope = TargetedWriteScope( sys.stdout )
         outerWriteScope.config.detailed = False
         config = GCTestRunConfig(cycles=5, innerCycles=1,optimizeArgs=True)
         for tag,val in self.testers.items():

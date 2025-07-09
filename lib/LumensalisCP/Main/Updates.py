@@ -24,7 +24,7 @@ class UpdateContext(object):
     def reset( self, when:TimeInMS|None = None ):
         try:
             self.__updateIndex += 1
-            self.__changedSources.clear()
+            #self.__changedSources.clear()
             self.__when = when or self.main.when
             self.activeFrame = None
             self.baseFrame = None
@@ -42,20 +42,21 @@ class UpdateContext(object):
     def updateIndex(self) -> int: return self.__updateIndex
 
     @property
-    def changedSources(self): return self.__changedSources
+    def changedSources(self): 
+        raise NotImplemented
+        return self.__changedSources
     
     def subFrame(self, name:str|None=None, name2:str|None=None) -> ProfileSubFrame:
-        rv = self.activeFrame.activeFrame().subFrame(self, name, name2)
-        assert rv
+        #rv = self.activeFrame.activeFrame().subFrame(self, name, name2)
+        rv = self.activeFrame.subFrame(self, name, name2)
         return rv
     
     def stubFrame(self, name:str|None=None, name2:str|None=None) -> ProfileStubFrame:
         return UpdateContext._stubFrame
         
-    
-
     def addChangedSource( self, changed:"LumensalisCP.Inputs.InputSource"):
-        self.__changedSources.append( changed )
+        #self.__changedSources.append( changed )
+        pass
         
     def valueOf( self, value:Any ) -> Any:
         raise NotImplemented
@@ -87,7 +88,6 @@ class Refreshable( object ):
 class Evaluatable(object):
     
     def getValue(self, context:UpdateContext):
-        # type: (EvaluationContext) -> Any
         """ current value of term"""
         raise NotImplemented
 

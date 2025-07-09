@@ -6,7 +6,7 @@ try:
     from typing import *
     from typing import IO
     # any imports below this won't happen if the error gets raised
-    LCPF_TYPING_IMPORTED = False
+    LCPF_TYPING_IMPORTED = True
 except ImportError:
     
     pass # ignore the error

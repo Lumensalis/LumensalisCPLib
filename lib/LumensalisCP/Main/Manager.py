@@ -25,13 +25,15 @@ from .I2CProvider import I2CProvider
 import LumensalisCP.Main.Dependents
 import LumensalisCP.Main.Updates
 
-from LumensalisCP.Main.Profiler import Profiler
+from LumensalisCP.Main.Profiler import Profiler, ProfileFrameBase, ProfileSnapEntry
 
-from . import _mconfig
+from . import _preMainConfig
 
+import LumensalisCP.Main.ProfilerRL
+LumensalisCP.Main.ProfilerRL._rl_setFixedOverheads()
 
 def _early_collect(tag:str):
-    _mconfig.gcm.runCollection(force=True)
+    _preMainConfig.gcm.runCollection(force=True)
         
 class MainManager(ConfigurableBase, I2CProvider, Debuggable):
     
@@ -50,14 +52,20 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
     def __init__(self, config = None, **kwds ):
         assert MainManager.theManager is None
         MainManager.theManager = self
-        _mconfig.gcm.main = self
+        _preMainConfig.gcm.main = self
         self.__cycle = 0
         
         LumensalisCP.Main.Updates._getCurrentUpdateContext = self.getContext
         
         self.__startNs = time.monotonic_ns()
         self._when:TimeInSeconds = self.newNow
-        self.profiler = Profiler()
+
+        from LumensalisCP.Main.Dependents import MainRef
+        MainRef._theManager = self
+        
+        self.__evContext = EvaluationContext(self)
+
+        self.profiler = Profiler(self.__evContext )
         
         self.__asyncTaskCreators = []
         self.__preFirstRunCallbacks:List[Callable] = []
@@ -71,8 +79,6 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         super().__init__(config, defaults=mainConfigDefaults, **kwds )
         Debuggable.__init__(self)
         self.name = "MainManager"
-        from LumensalisCP.Main.Dependents import MainRef
-        MainRef._theManager = self
         
         _early_collect("mid manager init")
 
@@ -99,7 +105,6 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         self._controlVariables:Mapping[str,ControlVariable] = {}
         self._monitorTargets = {}
 
-        self.__evContext = EvaluationContext(self)
         self._timers = PeriodicTimerManager(main=self)
 
         self._scenes = SceneManager(main=self)
@@ -286,13 +291,13 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         _early_collect("end manager init")
         self.__priorSleepWhen = self.getNewNow()
         
-        mlc = _mconfig._mlc
-        activeFrame = None
-        if mlc.ENABLE_PROFILE:
-            def snapTime(m,**kwds):
-                return activeFrame.snap(m,**kwds)
-        else:
-            def snapTime(*args,**kwds): return None
+        mlc = _preMainConfig._mlc
+        #activeFrame = None
+        #if mlc.ENABLE_PROFILE:
+        #    def snapTime(tag):
+        #        return activeFrame.snap(tag)
+        #else:
+        #    def snapTime( tag): return None
 
         nextWait = self.getNewNow()
         
@@ -301,61 +306,83 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
 
             self._when = self.getNewNow()
             
-            while True:
-                self._when = now = self.getNewNow()
+            activeFrame = None
+            def getNextFrame( ) -> ProfileFrameBase:
+                now = self.getNewNow()
+                self._when = now
                 #priorWhen = self._when
                 self.__evContext.reset(now)
                 context = self.__evContext
                 
                 if mlc.ENABLE_PROFILE:
-                    activeFrame = self.profiler.nextNewFrame(context.updateIndex, eSleep = now  - self.__priorSleepWhen)
-                    context.baseFrame  = context.activeFrame = activeFrame
+                    newFrame = self.profiler.nextNewFrame(context, eSleep = now  - self.__priorSleepWhen)
+                    
                     
                     #memBefore = gc.mem_alloc()
-                    snap = snapTime( 'start' )
-                    snap.augment( updateIndex = context.updateIndex, when=now, cycle=self.__cycle
-                             #, memBefore=memBefore
-                            )
+                    #snap = newFrame.snap( 'start' )
+                    #snap.augment( 'updateIndex', context.updateIndex )
+                    #snap.augment( 'when', now )
+                    #snap.augment( 'cycle', self.__cycle )
                 else:
-                    activeFrame = self.profiler.timings[0]
-                    context.baseFrame  = context.activeFrame = activeFrame
+                    newFrame = self.profiler.timings[0]
+                assert isinstance( newFrame, ProfileFrameBase )
+                context.baseFrame  = context.activeFrame = newFrame
+                return newFrame
+                
+            while True:
+                with getNextFrame() as activeFrame:
+                    context = self.__evContext
+                    #if mlc.ENABLE_PROFILE: 
+                    #    snap = activeFrame.currentSnap
+                        #snap.augment( 'when', self._when )
+                        #snap.augment( 'cycle', self.__cycle )
                     
-                
-                
-                
-                self._timers.update( context )
-                if not mlc.MINIMUM_LOOP:
-
-                    snapTime( 'deferred' )
-                    if len( self.__deferredTasks ):
-                        self.__runDeferredTasks()
-                
-                    snapTime( 'scenes' )
-                    self._scenes.run(context)
+                    activeFrame.snap( 'preTimers' )
+                    #a = gc.mem_alloc()
+                    entry = ProfileSnapEntry.makeEntry( "foo", self.when, "bar" )
+                    entry.release()
                     
-                    snapTime( 'i2c' )
-                    for target in self.__i2cDevices:
-                        target.updateTarget(context)
-                        
-                    snapTime( 'tasks' )
-                    for task in self._tasks:
-                        task()
-                        
-                    snapTime( 'boards' )
-                    for board in self._boards:
-                        board.refresh(context)
-                        
-                    if self._printStatCycles and self.__cycle % self._printStatCycles == 0:
-                        self.infoOut( f"cycle {self.__cycle} at {now} with {len(self._tasks)} tasks, gmf={gc.mem_free()} cd={self.cycleDuration}" )
-                    #self._scenes.run( context )
-                    self.cycleDuration = 1.0 / (self.cyclesPerSecond *1.0)
-                    
-                if mlc.ENABLE_PROFILE:
-                    activeFrame.finish() 
-
-                self.__priorSleepWhen = self.getNewNow()
-                nextWait += mlc.nextWaitPeriod
+                    #snapNowTest = ( time.monotonic_ns() - activeFrame.loopStartNS )# * 0.000000001
+                    #snapNowTest = ( 99 - activeFrame.loopStartNS )# * 0.000000001
         
+                    snapNowTest = time.monotonic_ns()
+                    snapNowTest2 = snapNowTest # time.monotonic_ns()
+                    snapNowTest3 = snapNowTest2 # time.monotonic_ns()
+                    
+                    activeFrame.snap( 'timers' )
+                    self._timers.update( context )
+                    if not mlc.MINIMUM_LOOP:
+
+                        activeFrame.snap( 'deferred' )
+                        if len( self.__deferredTasks ):
+                            self.__runDeferredTasks()
+                    
+                        activeFrame.snap( 'scenes' )
+                        self._scenes.run(context)
+                        
+                        activeFrame.snap( 'i2c' )
+                        for target in self.__i2cDevices:
+                            target.updateTarget(context)
+                            
+                        activeFrame.snap( 'tasks' )
+                        for task in self._tasks:
+                            task()
+                            
+                        activeFrame.snap( 'boards' )
+                        for board in self._boards:
+                            board.refresh(context)
+                            
+                        if self._printStatCycles and self.__cycle % self._printStatCycles == 0:
+                            self.infoOut( f"cycle {self.__cycle} at {self._when} with {len(self._tasks)} tasks, gmf={gc.mem_free()} cd={self.cycleDuration}" )
+                        #self._scenes.run( context )
+                        self.cycleDuration = 1.0 / (self.cyclesPerSecond *1.0)
+                        
+                    #if mlc.ENABLE_PROFILE:
+                    #    activeFrame.finish() 
+
+                    self.__priorSleepWhen = self.getNewNow()
+                    nextWait += mlc.nextWaitPeriod
+    
                 await asyncio.sleep( max(0.001,nextWait-self.__priorSleepWhen) ) # self.cycleDuration )
                 self.__cycle += 1
 

@@ -11,11 +11,12 @@ from LumensalisCP.Main.Profiler import Profiler, ProfileFrame
 
 _simpleValueTypes = set([int,bool,float])
 
-class EvaluationContext(LumensalisCP.Main.Updates.UpdateContext):
+#class EvaluationContext(LumensalisCP.Main.Updates.UpdateContext):
+class EvaluationContext(UpdateContext):    
     
     def __init__( self, *args, **kwds ):
-        #super().__init__( *args, **kwds)
-        LumensalisCP.Main.Updates.UpdateContext.__init__(self,*args, **kwds)
+        super().__init__( *args, **kwds)
+        #LumensalisCP.Main.Updates.UpdateContext.__init__(self,*args, **kwds)
         print( f"NEW EvaluationContext @{id(self):X}")
         self.__changedTerms : List["ExpressionTerm"] = []
         

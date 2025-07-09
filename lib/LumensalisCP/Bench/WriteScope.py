@@ -268,7 +268,7 @@ class NamedTypeWriteScope(DictWriteScope):
         return rv
     
     
-class TargettedWriteScope(WriteScope):
+class TargetedWriteScope(WriteScope):
     """outermost scope for using WriteScope formatting
     """
 
@@ -286,11 +286,11 @@ class TargettedWriteScope(WriteScope):
     @classmethod 
     def makeScope(cls, arg ):
         if arg is None:
-            return TargettedWriteScope()
+            return TargetedWriteScope()
         if isinstance(arg,WriteScope):
             return arg
         if arg is sys.stdout:
-            return TargettedWriteScope(arg)
+            return TargetedWriteScope(arg)
         
         assert False
 

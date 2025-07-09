@@ -7,7 +7,7 @@ from LumensalisCP.Main.Profiler import ProfileFrame, ProfileSubFrame, ProfileStu
 
 from LumensalisCP.Lights.Values import RGB
 
-DirectValue = int|bool|float|RGB
+type DirectValue = int|bool|float|RGB
 
 class UpdateContext(object):
     def __init__( self, main:MainManager ): pass

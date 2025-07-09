@@ -1,20 +1,13 @@
-import LumensalisCP.Main._mconfig, gc
+#import LumensalisCP.Main._preMainConfig, gc
+from LumensalisCP.Main._preMainConfig import _mlc,gcm,printElapsed
 
-mlc = LumensalisCP.Main._mconfig._mlc
-mlc.MINIMUM_LOOP = True
-#mlc.MINIMUM_LOOP = False
-mlc.ENABLE_PROFILE = False
+printElapsed( "starting imports" )
+from . import GC_TestRL
+import gc
+#from LumensalisCP.Main._preMainConfig import _mlc,gcm,printElapsed
+#mlc = _mlc
 
-def printElapsed(desc):
-    gcUsed = gc.mem_alloc()
-    gcFree = gc.mem_free()
-    print( "%s : mlc.getMsSinceStart()=%r | %r used, %r free" % 
-          (desc,mlc.getMsSinceStart(), 
-           gcUsed, gcFree
-           ) )
-
-printElapsed("starting imports")
-
+GC_TestRL.setupMlcAndGcm()
 
 from ..DemoBase import DemoBase
 from LumensalisCP.Triggers.Timer import PeriodicTimer, addPeriodicTaskDef
@@ -28,29 +21,28 @@ class GC_Test( DemoBase ):
 
     def setup(self):
         main = self.main
-        rcData = Bag(
-            priorCycle = main.cycle,
-            priorMs = mlc.getMsSinceStart(),
-        )
-        @addPeriodicTaskDef( "gc-collect", period=0.5, main=main )
-        def runCollection(context=None, when=None):
-            memBefore = gc.mem_alloc()
-            start = main.newNow
-            gc.collect()
-            end = main.newNow
-            memAfter = gc.mem_alloc()
-            cycle = main.cycle
-            cycles = max( 1, cycle - rcData.priorCycle )
-            rcData.priorCycle = cycle
-            freed = memBefore-memAfter
-            currentMs = mlc.getMsSinceStart()
-            elapsedMs = currentMs - rcData.priorMs
-            rcData.priorMs = currentMs
-            #print( f"cycle {cycle}, {len(main.timers.timers)}")
-            print( f"GC collection took {end-start:.3f} of {elapsedMs/1000.0:.3f} for {cycles} cycles freeing {freed} ( {freed/cycles:.1f} per cycle) leaving {memAfter}" )
+
+        dt = PeriodicTimer( interval=lambda : GC_TestRL.printDumpInterval, manager=main.timers, name="dump" )
+        
+        @dt.addTaskDef( "printDumpPeriod" )
+        def dump():
+            GC_TestRL.printDump(main)
             
+        @addPeriodicTaskDef( "gc-collect", period=lambda: GC_TestRL.collectionCheckInterval, main=main )
+        def runCollection(context=None, when=None):
+            GC_TestRL.runCollection( context, when, show=True)
+            
+        @addPeriodicTaskDef( period=lambda: GC_TestRL.usbCheckInterval, main=main )
+        def usbCheck(context=None, when=None):
+            GC_TestRL.usbCheck( context)
+            
+                        
+        def firstGC():
+            GC_TestRL.runCollection( main.getContext(), main.when, force=True)
+        main.callLater(firstGC)
+                    
         gc.disable()
-    
+
 def demoMain(*args,**kwds):
     printElapsed("instantiating GC_Test")
     demo = GC_Test( *args, **kwds )

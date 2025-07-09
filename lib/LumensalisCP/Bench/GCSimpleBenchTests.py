@@ -132,7 +132,7 @@ def kwdsTest():
         )
 
     print( "\n\nrunning kwdsTest..." )
-    outerWriteScope = TargettedWriteScope( sys.stdout )
+    outerWriteScope = TargetedWriteScope( sys.stdout )
     outerWriteScope.config.detailed = False
     
     with outerWriteScope.startList(indentItems=True) as writeScope:
@@ -192,6 +192,13 @@ def kwdsSetTest():
 #############################################################################
 from random import random
 
+class ContextTest(object):
+    
+    def __enter__(self): return self
+    
+    def __exit__(self, eT, eV, tB):
+        pass
+    
 def setTest():
     
     s = GCTestSet()
@@ -215,6 +222,13 @@ def setTest():
     def iteratedlAK( l, *args, **kwds ): return iter(l)
     def listComprehension( l ): return [i for i in l]
     
+    ct = ContextTest()
+    
+    def justSortedWithContext(l ):
+        with ct: 
+            return sorted( l )
+    
+    
     s.addTester( "sorting",
             signature = [GCTArg("l",list)],
             baseline = csBaseline,
@@ -231,6 +245,7 @@ def setTest():
                 iteratedlAK,
                 iteratedD,
                 listComprehension,
+                justSortedWithContext,
             ]
         #).addArgs( "singleInt", [ 1 ]
         #).addArgs( "singleFloat", [ 3.5 ]
@@ -239,6 +254,35 @@ def setTest():
 
     s.run()
 
+#############################################################################
+import time
+def timerTest():
+    
+    
+    s = GCTestSet()
+
+    def baseline( l ): return l
+    
+    def monotonic( l ):
+        return time.monotonic()
+    
+    def monotonic_ns( l ):
+        return time.monotonic_ns()
+
+  
+    
+    s.addTester( "timing",
+            signature = [GCTArg("l",list)],
+            baseline = baseline,
+            tests=[
+                    monotonic,
+                    monotonic_ns
+            ]
+        ).addArgs( "simple", [ 1 ]
+        )
+
+    s.run()
+    
 #############################################################################
 
 def waitForReload():
