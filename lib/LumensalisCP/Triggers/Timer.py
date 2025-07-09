@@ -75,9 +75,9 @@ class PeriodicTimerManager( SubManagerBase ):
         
 class PeriodicTimer( Trigger ):
     
-    def __init__(self, interval:TimeInSeconds=1.0, name:str = None, oneShot:bool = False, manager:PeriodicTimerManager = None ):
+    def __init__(self, interval:TimeSpanInSeconds=1.0, name:str = None, oneShot:bool = False, manager:PeriodicTimerManager = None ):
         super().__init__(name=name)
-        self.__interval:TimeInSeconds = interval
+        self.__interval:TimeSpanInSeconds|Callable = interval
         self.__lastFire:TimeInSeconds = 0.0
         self.__nextFire:TimeInSeconds|None = None
         self.__oneShot:bool = oneShot
@@ -95,20 +95,32 @@ class PeriodicTimer( Trigger ):
     @property
     def nextFire(self) -> TimeInSeconds: return self.__nextFire
     
+    def getInterval(self) -> TimeSpanInSeconds:
+        i = self.__interval
+        if type(i) is float: return i
+        if type(i) is int:  return float(i)
+        
+        i = i()
+        if type(i) is float: return i
+        if type(i) is int:  return float(i)
+
+        ensure( type(i) is float )
+        return i
+        
     @property
-    def interval(self) -> TimeInSeconds: return self.__interval
+    def interval(self) -> TimeSpanInSeconds: return self.getInterval()
 
     
     @interval.setter
-    def interval(self,interval:TimeInSeconds):
+    def interval(self,interval:TimeSpanInSeconds|Callable):
         self.__interval = interval
         if self.running:
             self.start()
     
     @final
-    def start(self, interval:float|None =None ):
+    def start(self, interval:TimeSpanInSeconds|None =None ):
         """start or restart the time"""
-        interval = interval or self.__interval    
+        interval = interval or self.getInterval()
         print( f"start {self.name} when = {self.manager.main.when} interval={interval} _nextFire={self.__nextFire}" )
         next = self.manager.main.when + interval 
         if self.__nextFire is None:
@@ -125,17 +137,27 @@ class PeriodicTimer( Trigger ):
             self.manager._removeTimer( self )
     
     @final
-    def restart(self, interval:float|None =None, when:TimeInSeconds|None = None ):
+    def restart(self, interval:TimeSpanInSeconds|Callable|None =None, when:TimeInSeconds|None = None ):
         """restart the timer"""
         assert self.__nextFire is not None
         when = when or self.manager.main.when
         if interval is not None:
             self.__interval = interval
-        self.__nextFire = when + self.__interval
-        if self.enableDbgOut: self.dbgOut and self.dbgOut( "restart at %.3fs i=%.3fs nf=%.3fs", when, self.__interval, self.__nextFire)
+        interval = self.getInterval()
+        self.__nextFire = when + interval
+        if self.enableDbgOut: self.dbgOut and self.dbgOut( "restart at %.3fs i=%.3fs nf=%.3fs", when, interval, self.__nextFire)
         #self._nextFire = min( when, self._nextFire + self.__interval )
         self.manager._updateTimer(self)
 
+    def addTaskDef( self, name:str|None=None, autoStart=True):
+        def wrapper( callable:Callable  ):
+            cb = KWCallback.make(callable,name=name)
+            self.addAction( cb )
+            if autoStart:
+                self.start()
+            return cb
+
+        return wrapper
     #########################################################################
     # ONLY FOR USE BY PeriodicTimerManager
     def _timerExpired(self, when:float, context: UpdateContext = None):
@@ -148,7 +170,7 @@ class PeriodicTimer( Trigger ):
             if self.__nextFire is not None:
                 self.restart(when=when)
 
-def addPeriodicTaskDef( name:str|None=None, period:TimeInSeconds=1.1,main:LumensalisCP.Main.Manager.MainManager|None = None):
+def addPeriodicTaskDef( name:str|None=None, period:TimeSpanInSeconds=1.1,main:LumensalisCP.Main.Manager.MainManager|None = None):
     def wrapper( callable:Callable  ):
         
         cb = KWCallback(callable,name=name)
