@@ -34,7 +34,7 @@ except ImportError:
                 return cached
             atype = type(arg)
             if atype is type(object):
-                print( f"adding class {arg} to cache" )
+                #print( f"adding class {arg} to cache" )
                 wrapper = PseudoTypingClass(arg)
                 PseudoTypingExpression._typeCache[arg] = wrapper
                 return wrapper

@@ -1,4 +1,4 @@
-from LumensalisCP.CPTyping import Any, Callable, Generator, List, Mapping,TypedDict
+from LumensalisCP.CPTyping import *
 from .Debug import Debuggable
 import traceback
 
@@ -7,18 +7,19 @@ import LumensalisCP.util.weakrefish as weakref
 # Common types used throughout the library
 
 # 
-TimeInNS = int # Time in nanoseconds
-TimeSpanInNS = int # Time span in nanoseconds
-TimeInMS = int # Time in milliseconds
-TimeSpanInMS = int # Time span in milliseconds
-TimeInSeconds = float # Time in seconds
-TimeSpanInSeconds = float #
+TimeInNS:TypeAlias =  int # Time in nanoseconds
+TimeSpanInNS:TypeAlias  = int # Time span in nanoseconds
+TimeInMS:TypeAlias  = int # Time in milliseconds
+TimeSpanInMS:TypeAlias  = int # Time span in milliseconds
+TimeInSeconds:TypeAlias  = float # Time in seconds
+TimeSpanInSeconds:TypeAlias  = float #
 
-DegreesPerSecond = float # rotation speed  in degrees per second
-Degrees = float # angle in degrees
-ZeroToOne = float # a value between 0.0 and 1.0 inclusive
-PlusMinusOne = float # a value between -1.0 and 1.0 inclusive
-Volts = float   # voltage in volts
+DegreesPerSecond:TypeAlias  = float # rotation speed  in degrees per second
+Degrees:TypeAlias  = float # angle in degrees
+ZeroToOne:TypeAlias  = float # a value between 0.0 and 1.0 inclusive
+PlusMinusOne:TypeAlias  = float # a value between -1.0 and 1.0 inclusive
+Volts:TypeAlias  = float   # voltage in volts
+Hertz:TypeAlias  = float   # frequency in cycles per second
 
 
 def dictAddUnique( d:Mapping[str,Any], key:str, value:Any ) -> None:
