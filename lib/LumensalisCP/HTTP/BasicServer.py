@@ -1,35 +1,34 @@
 # SPDX-FileCopyrightText: 2023 Michał Pokusa
 #
 # SPDX-License-Identifier: Unlicense
+from LumensalisCP.common import *
 
 from asyncio import create_task, gather, run, sleep as async_sleep
+from LumensalisCP.Inputs import InputSource
 import socketpool
-import wifi
-import json
-import mdns
+import wifi, json, mdns, io
 
 import adafruit_httpserver
 from adafruit_httpserver import Server, Request, Response, Websocket, GET
 
 from .ControlVars import ControlValueTemplateHelper
 
-class BasicServer(Server):
+class BasicServer(Server,Debuggable):
     
     def __init__( self, *args, main=None, **kwds ):
         
         assert main is not None
         
         self.pool = main.socketPool
-        super().__init__(self.pool, debug=True)
+        Server.__init__(self, self.pool, debug=True)
+        Debuggable.__init__(self)
 
-
-        #pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)
-
+        # TODO: make actual client instance for multiple connections...???
         self.websocket: Websocket = None
         self.cvHelper = ControlValueTemplateHelper( main=main )
 
         self.main = main
-        self.monitoredVariables = []
+        self.monitoredVariables:List[InputSource] = []
         self.priorMonitoredValue = {}
         self._setupRoutes()
         
@@ -37,12 +36,14 @@ class BasicServer(Server):
         print(f"BasicServer TTCP_HOSTNAME = {TTCP_HOSTNAME}")
         #if (TTCP_HOSTNAME := main.config.options.get('TTCP_HOSTNAME',None)) is not None:
         if TTCP_HOSTNAME is not None:
-            print(f"setting HOSTNAME to {TTCP_HOSTNAME}")
+            self.infoOut(f"setting HOSTNAME to {TTCP_HOSTNAME}")
             self.mdns_server = mdns.Server(wifi.radio)
-            self.mdns_server.hostname = TTCP_HOSTNAME
+            #self.mdns_server.hostname = TTCP_HOSTNAME
+            self.mdns_server.instance_name = TTCP_HOSTNAME
             self.mdns_server.advertise_service(service_type="_http", protocol="_tcp", port=5000)
         
-    def monitorControlVariable( self, v ):
+    def monitorControlVariable( self, v:InputSource ):
+        # TODO: handle additions after server startup better
         self.monitoredVariables.append(v)
 
 
@@ -112,10 +113,12 @@ class BasicServer(Server):
             #global websocket  # pylint: disable=global-statement
 
             if self.websocket is not None:
+                
                 self.websocket.close()  # Close any existing connection
+                
 
             self.websocket = Websocket(request)
-
+            self.priorMonitoredValue = {}
             return self.websocket
         
         
@@ -148,6 +151,7 @@ class BasicServer(Server):
     async def handle_websocket_requests(self):
         try:
             print( 'handle_websocket_requests starting' )
+
             while True:
                 if self.websocket is not None:
                     if (data := self.websocket.receive(fail_silently=True)) is not None:
@@ -170,21 +174,28 @@ class BasicServer(Server):
     async def send_websocket_messages(self):
         
         try:
+            useStringIO = False
+            jsonBuffer = io.StringIO(8192) if useStringIO else None
             while True:
                 if self.websocket is not None:
                     payload = {}
                     for v in self.monitoredVariables:
-                        if v.value != self.priorMonitoredValue.get(v.name,None):
-                            payload[v.name] = v.value
-                            self.priorMonitoredValue[v.name] = v.value
+                        currentValue = v.getValue()
+                        assert currentValue is not None
+                        if currentValue != self.priorMonitoredValue.get(v.name,None):
+                            payload[v.name] = currentValue
+                            self.priorMonitoredValue[v.name] = currentValue
                     if len(payload):
-                        message = json.dumps( payload )
-                        print( "writing WS update : " + message )
+                        if useStringIO:
+                            jsonBuffer.seek(0)
+                            jsonBuffer.truncate()
+                            json.dump( payload, jsonBuffer )
+                        message = jsonBuffer.getvalue() if useStringIO else json.dumps(payload)
                         self.websocket.send_message(message, fail_silently=True)
+                        self.enableDbgOut and self.dbgOut( "wrote WS update : %r", message )
                 await async_sleep(0.5)
         except Exception  as error:
-            print( f'send_websocket_messages error {error}' )
-
+            SHOW_EXCEPTION( error, 'send_websocket_messages error' )
 
     def createAsyncTasks( self ):
         print( "createAsyncTasks... " )

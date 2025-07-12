@@ -15,6 +15,15 @@ class ControlValueInstanceHelper(object):
     def wsReceivedBlock(self):
         return f'console.log( "..." );'
     
+class BasicControlValueInstanceHelper(ControlValueInstanceHelper):
+    
+    def htmlBlock(self): 
+        description = getattr(self.cv,'description',None ) or f"{self.cv.name} ({type(self.cv).__name__})"
+        return f'<p>{description}: <div id="{self.cv.name}">-</div></p>'
+    
+    def wsReceivedBlock(self):
+        return f'{self.cv.name}Selector.textContent = value;'
+
 
 class IntControlValueInstanceHelper(ControlValueInstanceHelper):
     
@@ -56,14 +65,16 @@ class ControlValueTemplateHelper(object):
                     const receivedMessage = JSON.parse(event.data);
                 
 ''' )
-        for v in self.main.controlVariables.values():
+        for v in self.main._controlVariables.values():
             
             instanceHelper = None
-            if v.kind == "int":
+            kind = getattr(v,'kind',None)
+            if kind == "int":
                 instanceHelper = IntControlValueInstanceHelper( v )
-            elif v.kind == "RGB":
+            elif kind == "RGB":
                 instanceHelper = RGBControlValueInstanceHelper( v )
-                    
+            else:
+                instanceHelper = BasicControlValueInstanceHelper( v )
             
             htmlParts.append( instanceHelper.htmlBlock() )
             jsSelectors.append( instanceHelper.jsSelectBlock() )
