@@ -4,12 +4,10 @@ import traceback, time
 class Debuggable( object ):
     @staticmethod
     def _getNewNow():
-        ns = time.monotonic_ns()
-        return ns * 0.000000001
-        #return LumensalisCP.Main.Manager.MainManager.theManager.newNow
+        return time.monotonic()
     
-    def __init__(self):
-        self.__dbgOutEnabled = False
+    def __init__(self, enableDbgOut:bool = False):
+        self.__dbgOutEnabled = enableDbgOut
         
     @property
     def _dbgName(self):
@@ -38,12 +36,19 @@ class Debuggable( object ):
 
     def warnOut( self, fmtString:str, *args, **kwds ):
         print( self.__format("WARNING", fmtString, args, kwds ) )
-            
-            
+
     def SHOW_EXCEPTION( self,  inst:Exception, fmtString:str, *args, **kwds):
         print( self.__format("EXCEPTION", fmtString, args, kwds ) )
         print( f"{inst}\n{''.join(traceback.format_exception(inst))}" )
         
+        
+    def setEnableDebugWithChildren( self, setting:bool, *args, **kwds ):
+        self.enableDbgOut = setting
+        self._derivedSetEnableDebugWithChildren( setting, *args, **kwds )
+        
+    def _derivedSetEnableDebugWithChildren( self, setting:bool, *args, **kwds ):
+        pass
+            
     @property
     def enableDbgOut(self) -> bool: return self.__dbgOutEnabled
     

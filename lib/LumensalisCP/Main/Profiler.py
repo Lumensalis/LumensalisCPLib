@@ -15,6 +15,12 @@ from ._preMainConfig import gcm, _mlc
 import gc
 import asyncio.lock
 
+
+TimePT = TimeInSeconds
+
+getProfilerNow = time.monotonic
+def ptToSeconds(v): return v
+
 class ProfileWriteConfig(object):
     
     def __init__(self,target,minE=None,minEB=None,minF=None,minSubF=None,minB=None, **kwds):
@@ -175,9 +181,9 @@ class ProfileFrameBase(Releasable):
     #__usedEntries:int
     e:TimeSpanInSeconds
     when : TimeSpanInSeconds
-    loopStartNS : int
-    priorStartNS: int
-    latestStartNS: int
+    loopStartPT : TimePT
+    priorStartPT: TimePT
+    latestStartPT: TimePT
     firstSnap: ProfileSnapEntry
     currentSnap: ProfileSnapEntry
     currentSnapIndex: int
@@ -209,7 +215,8 @@ class ProfileFrameBase(Releasable):
         
         
     def reset(self, context:'LumensalisCP.Main.Updates.UpdateContext' ):
-        nowNS = time.monotonic_ns()
+        #nowPT = time.monotonic_ns()
+        nowPT = getProfilerNow()
         assert isinstance(context,LumensalisCP.Main.Updates.UpdateContext)
         self.__context = context
         self.allocGc = gc.mem_alloc() if self.shouldProfileMemory() else 0
@@ -225,7 +232,7 @@ class ProfileFrameBase(Releasable):
         self.e = 0
         self.start = 0
         self.when = 0
-        self.latestStartNS = self.priorStartNS = self.loopStartNS = nowNS
+        self.latestStartPT = self.priorStartPT = self.loopStartPT = nowPT
         self.currentSnap = None
         self.currentSnapIndex = 0
 
@@ -373,9 +380,9 @@ class ProfileFrameBase(Releasable):
         setattr(self,snapTag,None)
             
     def snap(self, name:str, name2:str|None = None, cls=ProfileSnapEntry ) -> ProfileSnapEntry:
-        self.priorStartNS = self.latestStartNS
-        self.latestStartNS = time.monotonic_ns()
-        self.when = ( self.latestStartNS - self.loopStartNS ) * 0.000000001
+        self.priorStartPT = self.latestStartPT
+        self.latestStartPT = getProfilerNow()
+        self.when = ptToSeconds ( self.latestStartPT - self.loopStartPT ) 
         priorEntry = self.currentSnap
         
         entry = cls.makeEntry( name, self.when, name2 )
@@ -497,7 +504,7 @@ class ProfileFrame(ProfileFrameBase):
         return cls._makeFinish( rp, entry )
     
     def reset(self, context:'LumensalisCP.Main.Updates.UpdateContext'=None,  eSleep=0.0):
-        # nowNS = time.monotonic_ns()
+        # nowPT = time.monotonic_ns()
 
         #self.currentUpdateIndex = 
         self.updateIndex = context.updateIndex
