@@ -11,7 +11,7 @@ class MainChild( NamedLocalIdentifiable):
         NamedLocalIdentifiable.__init__( self, name = name or self.__class__.__name__)
         ensure( main is not None )
         self.__main = weakref.ref(main)
-        print( f"MainChild __init__( name={self.name}, main={main})")
+        # print( f"MainChild __init__( name={self.name}, main={main})")
 
     @property
     def main(self): return self.__main()

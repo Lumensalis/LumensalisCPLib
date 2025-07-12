@@ -1,10 +1,10 @@
 import gc
 print( f"dir(gc)={dir(gc)}" )
 #gc.threshold( 16384 )
-from LumensalisCP.Main._mconfig import _mlc,gcm,printElapsed
+from LumensalisCP.Main._preMainConfig import _mlc,gcm,printElapsed
 
 mlc = _mlc
-mlc.ENABLE_PROFILE = False
+
 mlc.nextWaitPeriod = 0.0025
 #gcm.setMinimumThreshold( 925000 )
 
@@ -16,10 +16,13 @@ mlc.nextWaitPeriod = 0.0025
 gcm.setMinimumThreshold( 325000 )
 
 printElapsed( "importing" )
-gcm.PROFILE_MEMORY = False
-gcm.PROFILE_MEMORY_NESTED = False
-gcm.PROFILE_MEMORY_ENTRIES = False
 
+if 1:
+    mlc.ENABLE_PROFILE = True
+    gcm.PROFILE_MEMORY = False
+    gcm.PROFILE_MEMORY_NESTED = False
+    gcm.PROFILE_MEMORY_ENTRIES = False
+    
 from ..DemoCommon import *
 from LumensalisCP.Lights.ProxyLights import *
 from LumensalisCP.Triggers.Timer import PeriodicTimer, addPeriodicTaskDef
@@ -448,15 +451,15 @@ class TreasureChest( DemoBase ):
         #pt.start()
         #main.addTask( updateStuff )
         
-        @addPeriodicTaskDef( period=10, main=main )
+        dt = PeriodicTimer( interval=lambda : TreasureChest2RL.printDumpInterval, manager=main.timers, name="dump" )
+        
+        @dt.addTaskDef( "printDumpPeriod" )
         def dump():
             #print( f"DUMPING at {main.newNow}" )
+            #dt.restart( interval=TreasureChest2RL.printDumpInterval )
             TerrainTronics.Demos.Caernarfon.TreasureChest2RL.printDump(main)
             #print( f"DUMPED at {main.newNow}" )
             #gc.collect()
-            
-
-        #dt = PeriodicTimer( 30.1, manager=main.timers, name="dump" )
         #dt.addAction( dump )
         #dt.start()
 
@@ -471,7 +474,9 @@ class TreasureChest( DemoBase ):
     def setup(self):
         self.setupChest()
         
-        @addPeriodicTaskDef( "gc-collect", period=1.51, main=main )
+        #gct = PeriodicTimer( interval=TreasureChest2RL.collectionCheckInterval, manager=main.timers, name="collection" )
+ 
+        @addPeriodicTaskDef( "gc-collect", period=lambda: TreasureChest2RL.collectionCheckInterval, main=main )
         def runCollection(context=None, when=None):
             gcm.runCollection(context,when, show=True)
 

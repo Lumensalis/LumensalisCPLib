@@ -13,11 +13,11 @@ class Actor(Debuggable):
     
     __currentBehavior:"Behavior"|None = None
     
-    def __init__(self, name:str|None = None, main:MainManager|None = None ):
+    def __init__(self, name:str|None = None, main:MainManager|None = None, **kwds ):
         
-        super().__init__()
+        super().__init__(**kwds)
         self.name = name if name else self.__class__.__name__
-        self.main = main
+        self.main = main or MainManager.theManager
         self.__currentBehavior = None
         
     @property
@@ -38,10 +38,10 @@ class Actor(Debuggable):
         
         self.enableDbgOut and self.dbgOut("Setting current behavior to %s", behavior.name)
         if self.__currentBehavior is not None:
-            self.__currentBehavior.exit(self.main.context)
+            self.__currentBehavior.exit(self.main.getContext())
         self.__currentBehavior = behavior
         if self.__currentBehavior is not None:
-            self.__currentBehavior.enter(self.main.context)
+            self.__currentBehavior.enter(self.main.getContext())
         
 class Behavior(Debuggable):
     __name: str|None 
@@ -65,10 +65,10 @@ class Behavior(Debuggable):
         return self.__actor()   
         
     def __init__(self, actor:Actor, name:str|None = None ):
+        super().__init__()
         self.__name = name if name else self.__class__.__name__
         self.__actor = weakref.ref(actor)
         
-    
     def __bool__(self):
         """Return True if the behavior is active."""
         return self.actor.currentBehavior is self

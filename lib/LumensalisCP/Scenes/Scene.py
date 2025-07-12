@@ -44,9 +44,11 @@ class SceneTask(object):
         frame.snap( f"runSceneTask-{self.__name}" )
         self.task_callback(context=context)
 
-class SceneRule( Expression ):
+class SceneRule( Expression, Debuggable ):
     def __init__( self, target:OutputTarget=None, term:ExpressionTerm=None, name=None ):
-        super().__init__(term)
+        #super().__init__(term)
+        Expression.__init__(self,term)
+        Debuggable.__init__(self)
         self.target = target
         self.__name = name or f"set {target.name}"
         
@@ -54,10 +56,10 @@ class SceneRule( Expression ):
     def name(self): return self.__name
     
     def run( self, context:EvaluationContext, frame:ProfileFrameBase):
-        if 0: print( f"running rule {self.name}")
+        #self.enableDbgOut and self.dbgOut( "running rule" )
         if self.updateValue( context ): # or len(context.changedTerms):
-            if 0: print( f"setting target {self.target.name} to {self.value} in rule {self.name}")
-            frame.snap(f"ruleSet{self.target.name}" )
+            self.enableDbgOut and self.dbgOut( f"setting target {self.target.name} to {self.value} in rule {self.name}")
+            frame.snap( "ruleSet", self.target.name )
             self.target.set(self.value,context=context)
 
     
@@ -118,15 +120,13 @@ class Scene(MainChild):
         return addTask
     
     def runTasks(self, context:EvaluationContext):
-        if 0: print( f"scene {self.name} run tasks ({len(self.__tasks)} tasks, {len(self.__rules)} rules) on update {context.updateIndex}..." )
+        self.enableDbgOut and self.dbgOut( f"scene {self.name} run tasks ({len(self.__tasks)} tasks, {len(self.__rules)} rules) on update {context.updateIndex}..."  )
         with context.subFrame('runScene', self.name ) as activeFrame:
             for task in self.__tasks:
                 try:
                     task.run( self, context=context, frame=activeFrame )
                 except Exception as inst:
                     self.SHOW_EXCEPTION(  inst, "running task %s", task.name )
-            activeFrame.snap("a")
-            activeFrame.snap("b")
             activeFrame.snap("rules")
             for tag, rule in self.__rules.items():
                 try:

@@ -5,19 +5,20 @@ from LumensalisCP.Main.Expressions import  EvaluationContext
 from LumensalisCP.Outputs import OutputTarget, NamedOutputTarget
 from LumensalisCP.CPTyping  import *
 
-class ControlVariable(object):
+class ControlVariable(InputSource):
+    
     def __init__(self, name:str, description:str="", kind:str=None, startingValue=None,
                  min = None, max = None ):
-        self.name = name
+        super().__init__(name)
         self.description = description or name
         self.kind = kind
         
         self._min = min
         self._max = max
         
-        self._value = startingValue or min or max
+        self._controlValue = startingValue or min or max
 
-    value = property( lambda self: self._value )
+    controlValue = property( lambda self: self._controlValue )
     
     def setFromWs( self, value ):
         if self.kind == 'RGB':
@@ -32,19 +33,30 @@ class ControlVariable(object):
         self.set( value )
         
     def set( self, value ):
-        if value != self._value:
+        if value != self._controlValue:
             if self._min is not None and value < self._min:
                 value = self._min
             elif self._max is not None and value > self._max:
                 value = self._max
             
-            if value != self._value:
-                self._value = value
+            if value != self._controlValue:
+                self._controlValue = value
     
+    def getDerivedValue(self, context:EvaluationContext) -> bool:
+        return self._controlValue
+        
     def move( self, delta ):
-        self.set( self._value + delta )
+        self.set( self._controlValue + delta )
 
 class IntermediateVariable( InputSource, NamedOutputTarget ):
+    """ combination of OutputTarget and InputSource
+
+    changes to the OutputTarget (i.e. set)
+    :param InputSource: _description_
+    :type InputSource: _type_
+    :param NamedOutputTarget: _description_
+    :type NamedOutputTarget: _type_
+    """
     def __init__(self, name:str, value:Any = None ):
         InputSource.__init__(self,name=name)
         NamedOutputTarget.__init__(self,name=name)
@@ -54,6 +66,7 @@ class IntermediateVariable( InputSource, NamedOutputTarget ):
     def getDerivedValue(self, context:EvaluationContext) -> Any:
         return self.__varValue
     
-    def set( self, value:Any, context:EvaluationContext ):
+    def set( self, value:Any, context:Optional[EvaluationContext]=None ):
         self.__varValue = value
+        self.updateValue(context)
     

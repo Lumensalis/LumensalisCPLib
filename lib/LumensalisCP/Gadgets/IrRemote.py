@@ -26,7 +26,13 @@ class LCP_IRrecv(MainChild):
     
     def __init__(self, pin, codenames:Mapping = {}, main:MainManager = None, name:str|None = None, updateInterval = 0.1 ):
         super().__init__(name=name or LCP_IRrecv.__name__, main=main )
-        self.pulseIn = pulseio.PulseIn(pin, maxlen=120, idle_state=True)
+        maxLen = 29
+        try:
+            self.pulseIn = pulseio.PulseIn(pin, maxlen=maxLen, idle_state=True)
+        except Exception as inst:
+            SHOW_EXCEPTION( inst, f"failed initializing pulseio.PulseIn({pin}, maxlen={maxLen}, idle_state=True)")
+            raise
+        
         self.decoder = adafruit_irremote.GenericDecode()
         self.__callbacksByCode:Mapping[int,Callable] = {}
         self.__unhandledCallback = None

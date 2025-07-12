@@ -46,7 +46,11 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm, Debuggable):
                 self.SHOW_EXCEPTION( inst, "onChanged callback %r failed", cb )
 
         return True
-        
+
+    
+    def cyclesSinceChange(self,context:UpdateContext) -> int:
+        return UpdateContext.fetchCurrentContext(context)
+                
     @property
     def value(self): return self.__latestValue
     

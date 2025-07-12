@@ -28,4 +28,4 @@ class NamedOutputTarget(NamedLocalIdentifiable,OutputTarget):
     
     
     
-__all__ = [ InputSource, ]
+__all__ = [ OutputTarget, NamedOutputTarget ]

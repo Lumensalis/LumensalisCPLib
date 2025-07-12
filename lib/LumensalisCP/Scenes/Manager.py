@@ -43,3 +43,21 @@ class SceneManager(Debuggable):
         if scene  != self.__currentScene:
             self.enableDbgOut and self.dbgOut( "switching from scene %r to scene %r", self.__currentScene, scene )
             self.__currentScene = scene
+            
+    def switchToNextIn( self, sceneList ):
+        matched = False
+        newSceneName = None
+        currentSceneName = self.currentScene.name
+        for sceneName in sceneList:
+            if newSceneName is None: 
+                # default to first in list
+                newSceneName = sceneName
+            if matched:
+                newSceneName = sceneName
+                break
+            if currentSceneName == sceneName:
+                matched = True
+        
+        print( f"switch from scene {currentSceneName} to {newSceneName}" )
+        self.setScene( newSceneName )
+        

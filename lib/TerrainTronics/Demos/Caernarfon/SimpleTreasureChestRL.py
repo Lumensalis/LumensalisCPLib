@@ -1,11 +1,19 @@
 from ..DemoCommon import *
 
-from LumensalisCP.Main._preMainConfig import gcm
+from LumensalisCP.Main._preMainConfig import gcm, _mlc
 from LumensalisCP.Main.Profiler import *
 import sys
+import LumensalisCP.util.importing
+
+from LumensalisCP.Triggers.Timer import PeriodicTimer, addPeriodicTaskDef
+
+from . import SimpleTreasureChest
+import wifi
 
 printDumpInterval = 21
-collectionCheckInterval = 3.51
+collectionCheckInterval = 23.51
+_mlc.ENABLE_PROFILE = False
+gcm.setMinimumThreshold(1217424)
 
 dumpConfig = ProfileWriteConfig(target=sys.stdout,
         minE = 0.000,
@@ -14,6 +22,10 @@ dumpConfig = ProfileWriteConfig(target=sys.stdout,
         minB = 0,
     )
 
+def reloadSimpleTreasureChestRL():
+    from . import SimpleTreasureChestRL
+    LumensalisCP.util.importing.reload( SimpleTreasureChestRL )
+    
 def printEntry( name, entry, indent='' ):
     data = dict(**entry)
     lw = data.pop('lw')
@@ -41,9 +53,11 @@ def printFrame( frame, indent='' ):
 def fmtPool( cls ):
     pool = cls.getReleasablePool()
     return f"[{cls.__name__} a:{pool._allocs} r:{pool._releases}]"
+
+
 def printDump( main:MainManager ):
     
-    if True:
+    if _mlc.ENABLE_PROFILE :
         context = main.getContext()
         i = context.updateIndex
         
@@ -58,13 +72,25 @@ def printDump( main:MainManager ):
             
         #print( f"entry {ProfileSnapEntry._allocs}/{ProfileSnapEntry._resets}  | base {ProfileFrameBase._allocs}/{ProfileFrameBase._resets}  ")
         print( f"{fmtPool(ProfileSnapEntry)} {fmtPool(ProfileFrame)} {fmtPool(ProfileSubFrame)} {fmtPool(ProfileFrameBase)}" )
-        print( f"   gc.mem_alloc={gc.mem_alloc()} gc.mem_free={gc.mem_free()}" )
+    print( f"   {main.cycle} {main.scenes.currentScene.name} gc.mem_free={gc.mem_free()}  ip={wifi.radio.addresses}" )
         #gcm.runCollection(context, force=True )
-    else:
-        timings = main.dumpLoopTimings(50, minE = 0.01, minF=0.035)
-        print( "----" )
-        for frame in timings:
-            printFrame(frame)
-        print( "----" )
-        #print( f"{timings}" )
-        #print( json.dumps( timings ) )
+        
+def TreasureChest_finishSetup(self:SimpleTreasureChest.TreasureChest):
+    main = self.main
+    from . import SimpleTreasureChestRL
+    @addPeriodicTaskDef( "gc-collect", period=lambda: SimpleTreasureChestRL.collectionCheckInterval, main=main )
+    def runCollection(context=None, when=None):
+        gcm.runCollection(context,when, show=True)
+
+    def firstGC():
+        gcm.runCollection(main.getContext(),main.when, force=True)
+    main.callLater(firstGC)
+    main.scenes.enableDbgOut = True
+
+    dt = PeriodicTimer( interval=lambda : SimpleTreasureChestRL.printDumpInterval, manager=main.timers, name="dump" )
+    @dt.addTaskDef( )
+    def  printDump():
+        SimpleTreasureChestRL.printDump(main)
+
+                
+    gc.disable()
