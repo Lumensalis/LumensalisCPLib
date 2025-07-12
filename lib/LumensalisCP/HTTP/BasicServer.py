@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2023 Michał Pokusa
 #
 # SPDX-License-Identifier: Unlicense
+import LumensalisCP.Main.Manager
 from LumensalisCP.common import *
 
 from asyncio import create_task, gather, run, sleep as async_sleep
@@ -15,7 +16,7 @@ from .ControlVars import ControlValueTemplateHelper
 
 class BasicServer(Server,Debuggable):
     
-    def __init__( self, *args, main=None, **kwds ):
+    def __init__( self, *args, main:"LumensalisCP.Main.Manager.MainManager"=None, **kwds ):
         
         assert main is not None
         
@@ -46,6 +47,9 @@ class BasicServer(Server,Debuggable):
         # TODO: handle additions after server startup better
         self.monitoredVariables.append(v)
 
+    def monitorInput( self, v:InputSource ):
+        # TODO: handle additions after server startup better
+        self.monitoredVariables.append(v)
 
 
 
@@ -92,7 +96,8 @@ class BasicServer(Server,Debuggable):
         @self.route("/client", GET)
         def client(request: Request):
             
-            vb = self.cvHelper.varBlocks()
+            print( f"get /client with {[v.name for v in self.monitoredVariables]}")
+            vb = self.cvHelper.varBlocks(self.monitoredVariables)
             parts = [
                 self.HTML_TEMPLATE_A,
                 vb['htmlParts'],

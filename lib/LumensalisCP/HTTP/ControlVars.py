@@ -1,3 +1,4 @@
+from LumensalisCP.CPTyping import *
 
 class ControlValueInstanceHelper(object):
     
@@ -54,7 +55,7 @@ class ControlValueTemplateHelper(object):
         self.main = main
     
     
-    def varBlocks(self):
+    def varBlocks(self, vars:List[InputSource]):
         htmlParts = []
         jsSelectors = []
         wsReceiveds = []
@@ -65,7 +66,7 @@ class ControlValueTemplateHelper(object):
                     const receivedMessage = JSON.parse(event.data);
                 
 ''' )
-        for v in self.main._controlVariables.values():
+        for v in vars: #self.main._controlVariables.values():
             
             instanceHelper = None
             kind = getattr(v,'kind',None)

@@ -136,6 +136,7 @@ def registerToRGB( cf = lambda v:v) -> Callable: pass
 class LightValueRGB(RGB, LightValueBase ):
     RED = RGB( 1, 0, 0 )
     BLUE = RGB( 0, 0, 1 )
+    YELLOW = RGB( 0, 1, 1 )
     GREEN = RGB( 0, 1, 0 )
     BLACK = RGB( 0, 0, 0 )
     WHITE = RGB( 1, 1, 1 )

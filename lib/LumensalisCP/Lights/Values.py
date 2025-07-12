@@ -62,7 +62,7 @@ class RGB(object):
     def b(self,v): self._b = max(0.0, min(1.0,v) )
     
     def toNeoPixelInt( self ):
-        return (int(255*self._r) << 16) + (int(255*self._b) << 8) + (int(255*self._g))
+        return (int(255*self._r) << 16) + (int(255*self._g) << 8) + (int(255*self._b))
     
     def _set(self, r:ZeroToOne, g:ZeroToOne,b:ZeroToOne):
         self.r = r
@@ -123,7 +123,7 @@ class LightValueBase(object):
 
 def registerToRGB( cf = lambda v:v):
     def r( cls ):
-        print( f"registerToRGB {cls.__name__}")
+        # print( f"registerToRGB {cls.__name__}")
         RGB.CONVERTORS[cls.__name__] = cf
         #RGB.CONVERTORS[cls.__name__] 
         return cls
@@ -132,6 +132,7 @@ def registerToRGB( cf = lambda v:v):
 @registerToRGB( lambda v: v )
 class LightValueRGB(RGB, LightValueBase ):
     RED = RGB( 1, 0, 0 )
+    YELLOW = RGB( 1, 1, 0 )
     BLUE = RGB( 0, 0, 1 )
     GREEN = RGB( 0, 1, 0 )
     BLACK = RGB( 0, 0, 0 )
