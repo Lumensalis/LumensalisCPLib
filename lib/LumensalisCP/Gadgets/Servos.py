@@ -111,7 +111,7 @@ class LocalServo(
         driveTime =  math.fabs( self.__moveSpan ) / self.__moveSpeed
         moveRatio = elapsed / driveTime
         angleOffset = moveRatio * self.__moveSpan
-        self.enableDbgOut and self.dbgOut( f"angleOffset={angleOffset:0.1f}d after {elapsed:0.3f}s, dt={driveTime} mr = {moveRatio}   )  "  )
+        #self.enableDbgOut and self.dbgOut( f"angleOffset={angleOffset:0.1f}d after {elapsed:0.3f}s, dt={driveTime} mr = {moveRatio}   )  "  )
         
         newTarget = self.__moveAngleStart + angleOffset
 
@@ -127,7 +127,7 @@ class LocalServo(
             if self.__moveCompleteCB is not None:
                 self.__moveCompleteCB()
         else:
-            self.enableDbgOut and self.dbgOut( f"_updateMove( {when:0.3f} ) elapsed={elapsed:0.3f} from {self.__lastSetAngle:0.1f}d + {angleOffset:.1f}d to {newTarget:0.1f}d at {self.__moveSpeed:0.1f}dPs, {angleOffset:0.1f}d from {self.__moveAngleStart:0.1f}d towards {self.__moveTarget:0.1f}d" )
+            #self.enableDbgOut and self.dbgOut( f"_updateMove( {when:0.3f} ) elapsed={elapsed:0.3f} from {self.__lastSetAngle:0.1f}d + {angleOffset:.1f}d to {newTarget:0.1f}d at {self.__moveSpeed:0.1f}dPs, {angleOffset:0.1f}d from {self.__moveAngleStart:0.1f}d towards {self.__moveTarget:0.1f}d" )
             self.__set( newTarget )
 
     @property

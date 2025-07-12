@@ -17,7 +17,7 @@ class EvaluationContext(UpdateContext):
     def __init__( self, *args, **kwds ):
         super().__init__( *args, **kwds)
         #LumensalisCP.Main.Updates.UpdateContext.__init__(self,*args, **kwds)
-        print( f"NEW EvaluationContext @{id(self):X}")
+        #print( f"NEW EvaluationContext @{id(self):X}")
         self.__changedTerms : List["ExpressionTerm"] = []
         
     def reset( self, when:TimeInMS|None = None ):
@@ -206,6 +206,13 @@ def TERM( value:Any ) -> ExpressionTerm :
 def NOT( value:Any ):
     return  makeUnaryOperation( TERM( value ), lambda c, a: not a ) 
 
+
+
+def MAX( a:Any, b:Any ):
+    return  makeBinaryOperation( TERM( a ), TERM( b ), lambda c, a, b: max(a,b) ) 
+
+def MIN( a:Any, b:Any ):
+    return  makeBinaryOperation( TERM( a ), TERM( b ), lambda c, a, b: min(a,b) ) 
 
 #############################################################################
 
