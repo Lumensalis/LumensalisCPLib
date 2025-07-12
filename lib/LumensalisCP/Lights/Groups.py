@@ -1,6 +1,8 @@
 from .Values import *
 
 #import LumensalisCP.Lights.LightBase as LightBase
+
+from . import Light
 #
 #############################################################################
 
@@ -17,9 +19,9 @@ class LightGroup(NamedLocalIdentifiable):
     def lightCount(self) -> int: raise NotImplemented
         
     @property
-    def lights(self) -> Iterable["LightBase.Light"] : raise NotImplemented
+    def lights(self) -> Iterable["Light.Light"] : raise NotImplemented
     
-    def __getitem__(self, index:int) -> "LightBase.Light": raise NotImplemented
+    def __getitem__(self, index:int) -> "Light.Light": raise NotImplemented
 
     def __setitem__(self, index:int, value:AnyLightValue ): 
         self[index].setValue(value)
@@ -30,7 +32,7 @@ class LightGroup(NamedLocalIdentifiable):
 #############################################################################
 
 class LightGroupList(LightGroup):
-    def __init__(self, lights:List["LightBase.Light"] = [], name:str|None=None,**kwargs):
+    def __init__(self, lights:List["Light.Light"] = [], name:str|None=None,**kwargs):
         super().__init__(name=name,**kwargs)
         self.__lights:List["LightBase.Light"] = lights
 
@@ -38,10 +40,10 @@ class LightGroupList(LightGroup):
     def lightCount(self) -> int: return len(self.__lights)
     
     @property
-    def lights(self) -> Iterable["LightBase.Light"] :
+    def lights(self) -> Iterable["Light.Light"] :
         return iter(self.__lights)
     
-    def __getitem__(self, index) -> "LightBase.Light":
+    def __getitem__(self, index) -> "Light.Light":
         return self.__lights[index]
 
     def __setitem__(self, index, value:AnyLightValue ):
@@ -63,7 +65,7 @@ class AdHocLightGroup(LightGroupList):
         self.__adHocLights = []
         super().__init__(name=name,lights=self.__adHocLights,**kwargs)
         
-    def append(self, light:"LightBase.Light"|LightGroup):
+    def append(self, light:"Light.Light"|LightGroup):
         if isinstance(light, LightGroup):
             for l2 in LightGroup.lights:
                 self.append(l2)
@@ -84,13 +86,28 @@ class LightSource(LightGroupList):
         ensure( self.__nextGroupStartIndex + count  <= self.lightCount, "not enough lights remaining" )
         self.__nextGroupStartIndex += count
         return rv
-    
-    def nextNLights(self, count:int, name:str=None, **kwargs ) ->NextNLights:
+
+    def _nextNLights(self, count:int, name:str=None, desc:str=None, **kwargs ) ->NextNLights:
         return NextNLights( count=count,
-                           name=name or f"{self.name}[{self.__nextGroupStartIndex}:{self.__nextGroupStartIndex+count-1}]", 
+                           name=name or f"{desc}({self.name} [{self.__nextGroupStartIndex}:{self.__nextGroupStartIndex+count-1}])", 
                            source=self,**kwargs )
     
-    def lightChanged(self,light:"LightBase.Light"): raise NotImplemented
+    def nextNLights(self, count:int, name:str=None, **kwargs ) ->NextNLights:
+        return self._nextNLights( count=count, name=name, desc="nextN", **kwargs )
+    
+    def ring(self, count:int, name:str=None, **kwargs ) ->NextNLights:
+        return self._nextNLights( count=count, name=name, desc="ring", **kwargs )
+
+    def stick(self, count:int, name:str=None, **kwargs ) ->NextNLights:
+        return self._nextNLights( count=count, name=name, desc="stick", **kwargs )
+
+    def strip(self, count:int, name:str=None, **kwargs ) ->NextNLights:
+        return self._nextNLights( count=count, name=name, desc="strip", **kwargs )
+
+    def single(self, name:str=None, **kwargs ) ->NextNLights:
+        return self._nextNLights( count=1, name=name, desc="strip", **kwargs )
+
+    def lightChanged(self,light:"Light.Light"): raise NotImplemented
 
     
 #############################################################################
