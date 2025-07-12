@@ -17,7 +17,7 @@ from .ControlVariables import ControlVariable, IntermediateVariable
 from ..Scenes.Manager import SceneManager, Scene
 from ..Triggers.Timer import PeriodicTimerManager
 
-from .Expressions import EvaluationContext
+from .Expressions import EvaluationContext, UpdateContext
 from .Shutdown import ExitTask
 from LumensalisCP.Debug import Debuggable 
 from .I2CProvider import I2CProvider
@@ -31,6 +31,9 @@ from . import _preMainConfig
 
 import LumensalisCP.Main.ProfilerRL
 LumensalisCP.Main.ProfilerRL._rl_setFixedOverheads()
+
+
+import adafruit_connection_manager
 
 def _early_collect(tag:str):
     _preMainConfig.gcm.runCollection(force=True)
@@ -55,17 +58,21 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         _preMainConfig.gcm.main = self
         self.__cycle = 0
         
-        LumensalisCP.Main.Updates._getCurrentUpdateContext = self.getContext
-        
-        self.__startNs = time.monotonic_ns()
-        self._when:TimeInSeconds = self.newNow
+
+        #self.__startNs = time.monotonic_ns()
+        self.__startNow = time.monotonic()
+        self._when:TimeInSeconds = self.getNewNow()
 
         from LumensalisCP.Main.Dependents import MainRef
         MainRef._theManager = self
         
-        self.__evContext = EvaluationContext(self)
+        self._privateCurrentContext = EvaluationContext(self)
+        #def fetchCurrentContext( context:UpdateContext|None ) -> UpdateContext:
+        #   return context or self._privateCurrentContext
+        #LumensalisCP.Main.Updates.UpdateContext.fetchCurrentContext = fetchCurrentContext
+        UpdateContext._patch_fetchCurrentContext(self)
 
-        self.profiler = Profiler(self.__evContext )
+        self.profiler = Profiler(self._privateCurrentContext )
         
         self.__asyncTaskCreators = []
         self.__preFirstRunCallbacks:List[Callable] = []
@@ -103,6 +110,7 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         
 
         self._controlVariables:Mapping[str,ControlVariable] = {}
+        self._controlVariables:Mapping[str,ControlVariable] = {}
         self._monitorTargets = {}
 
         self._timers = PeriodicTimerManager(main=self)
@@ -135,8 +143,10 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
     seconds:float = property( lambda self: self._when )
     
     def getNewNow( self ) -> TimeInSeconds:
-        ns = time.monotonic_ns()
-        return (ns - self.__startNs) * 0.000000001
+        #ns = time.monotonic_ns()
+        #return (ns - self.__startNs) * 0.000000001
+        now = time.monotonic()
+        return now - self.__startNow
 
 
     @property
@@ -149,10 +159,10 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
     def timers(self) -> PeriodicTimerManager: return self._timers
     
     @property
-    def latestContext(self)->EvaluationContext: return  self.__evContext
+    def latestContext(self)->EvaluationContext: return  self._privateCurrentContext
 
     def getContext(self)->EvaluationContext: 
-        return  self.__evContext
+        return  self._privateCurrentContext
 
     @property
     def dmx(self):
@@ -167,8 +177,18 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
     @property
     def socketPool(self):
         if self.__socketPool is None:
-            import socketpool
-            self.__socketPool = socketpool.SocketPool(wifi.radio)
+            
+            import adafruit_connection_manager
+            if not wifi.radio.connected:
+                ssid = os.getenv("CIRCUITPY_WIFI_SSID")
+                self.sayAtStartup("Connecting to %r", ssid)
+                wifi.radio.connect(ssid, os.getenv("CIRCUITPY_WIFI_PASSWORD"))
+            #import socketpool
+            #self.__socketPool = socketpool.SocketPool(wifi.radio)
+            #self.sayAtStartup( "wifi.radio.start_dhcp()" )
+            #wifi.radio.start_dhcp()
+            pool = adafruit_connection_manager.get_radio_socketpool(wifi.radio)
+            self.__socketPool = pool
         return self.__socketPool
         
     def callLater( self, task ):
@@ -193,17 +213,25 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
 
     def addIntermediateVariable( self, name, *args, **kwds ) -> IntermediateVariable:
         variable = IntermediateVariable( name, *args,**kwds )
-        # self._controlVariables[name] = variable
+        self._controlVariables[name] = variable
         self.infoOut( f"added Variable {name}")
-        variable.updateValue( self.__evContext )
+        variable.updateValue( self._privateCurrentContext )
         return variable
 
     def addScene( self, name:str, *args, **kwds ) -> Scene:
         scene = self._scenes.addScene( name, *args, **kwds )
         return scene
     
+    def addScenes( self, *names:str ) -> List[Scene]:
+        return [self.addScene(name) for name in names]
+    
+    def sayAtStartup( self, fmt, *args ):
+        print( "-----" )
+        print( f"STARTUP {self.getNewNow():0.3f}: {safeFmt(fmt,*args)}" )
+        
     def addBasicWebServer( self, *args, **kwds ):
         from LumensalisCP.HTTP.BasicServer import BasicServer
+        self.sayAtStartup( "addBasicWebServer %r, %r ", args, kwds )
         server = BasicServer( *args, main=self, **kwds )
         self._webServer = server
         for v in self._controlVariables.values():
@@ -212,7 +240,14 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         self.__asyncTaskCreators.append( server.createAsyncTasks )
         
         def startWebServer():
-            self._webServer.start(str(wifi.radio.ipv4_address))
+            #pool = self.socketPool
+            #wifi.radio.start_dhcp()
+            if wifi.radio.ipv4_address is not None:
+                address = str(wifi.radio.ipv4_address)
+                self.sayAtStartup( "startWebServer on %r ", address )
+                self._webServer.start(address)
+            else:
+                self.sayAtStartup( "no address for startWebServer" )
 
         self.__preFirstRunCallbacks.append( startWebServer )
         return server
@@ -269,7 +304,7 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
 
     def dumpLoopTimings( self, count, minE=None, minF=None, **kwds ):
         rv = []
-        i = self.__evContext.updateIndex
+        i = self._privateCurrentContext.updateIndex
         #count = min(count, len(self.__taskLoopTimings))
         # count = min(count,self.profiler.timingsLength)
 
@@ -292,17 +327,12 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         self.__priorSleepWhen = self.getNewNow()
         
         mlc = _preMainConfig._mlc
-        #activeFrame = None
-        #if mlc.ENABLE_PROFILE:
-        #    def snapTime(tag):
-        #        return activeFrame.snap(tag)
-        #else:
-        #    def snapTime( tag): return None
-
         nextWait = self.getNewNow()
         
         try:
-            context = self.__evContext
+            for cb in self.__preFirstRunCallbacks:
+                cb()
+            context = self._privateCurrentContext
 
             self._when = self.getNewNow()
             
@@ -311,8 +341,8 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
                 now = self.getNewNow()
                 self._when = now
                 #priorWhen = self._when
-                self.__evContext.reset(now)
-                context = self.__evContext
+                self._privateCurrentContext.reset(now)
+                context = self._privateCurrentContext
                 
                 if mlc.ENABLE_PROFILE:
                     newFrame = self.profiler.nextNewFrame(context, eSleep = now  - self.__priorSleepWhen)
@@ -331,7 +361,7 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
                 
             while True:
                 with getNextFrame() as activeFrame:
-                    context = self.__evContext
+                    context = self._privateCurrentContext
                     #if mlc.ENABLE_PROFILE: 
                     #    snap = activeFrame.currentSnap
                         #snap.augment( 'when', self._when )
@@ -345,9 +375,9 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
                     #snapNowTest = ( time.monotonic_ns() - activeFrame.loopStartNS )# * 0.000000001
                     #snapNowTest = ( 99 - activeFrame.loopStartNS )# * 0.000000001
         
-                    snapNowTest = time.monotonic_ns()
-                    snapNowTest2 = snapNowTest # time.monotonic_ns()
-                    snapNowTest3 = snapNowTest2 # time.monotonic_ns()
+                    #snapNowTest = time.monotonic_ns()
+                    #snapNowTest2 = snapNowTest # time.monotonic_ns()
+                    #snapNowTest3 = snapNowTest2 # time.monotonic_ns()
                     
                     activeFrame.snap( 'timers' )
                     self._timers.update( context )
