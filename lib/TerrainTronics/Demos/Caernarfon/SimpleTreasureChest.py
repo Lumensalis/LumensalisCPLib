@@ -7,22 +7,21 @@ scenes = main.scenes
 
 sceneClosed = main.addScene( "closed" ) 
 sceneOpen = main.addScene( "open" ) 
-sceneOpening = main.addScene( "opening" ) 
-sceneClosing = main.addScene( "closing")
-
+sceneMoving  = main.addScene( "moving" )
 #############################################################################
-caernarfon = main.TerrainTronics.addCaernarfon( neoPixelCount=45 )
-neoPixelsChannelA = caernarfon.pixels 
-neoPixelsChannelB = caernarfon.initNeoPixOnServo(3,neoPixelCount=35)
 
-pixOnCaernarfon         = neoPixelsChannelA.nextNLights(1)
-insideSingle            = neoPixelsChannelA.nextNLights(1)
-leftStoneLights         = neoPixelsChannelA.nextNLights(3)
-centerStoneLights       = neoPixelsChannelA.nextNLights(7)
-rightStoneLights        = neoPixelsChannelA.nextNLights(3)
-frontLidStrip           = neoPixelsChannelA.nextNLights(8)
-sceneIndicatorLights    = neoPixelsChannelB.nextNLights(8)
-angleGaugeLights        = neoPixelsChannelB.nextNLights(12)
+caernarfon = main.TerrainTronics.addCaernarfon( neoPixelCount=45 )
+neoPixA = caernarfon.pixels 
+neoPixB = caernarfon.initNeoPixOnServo(3,neoPixelCount=35)
+
+pixOnCaernarfon         = neoPixA.single()
+insideSingle            = neoPixA.single()
+leftStoneLights         = neoPixA.ring(3)
+centerStoneLights       = neoPixA.ring(7)
+rightStoneLights        = neoPixA.ring(3)
+frontLidStrip           = neoPixA.stick(8)
+sceneIndicatorLights    = neoPixB.stick(8)
+angleGaugeLights        = neoPixB.ring(12)
 
 #############################################################################
 capTouch = main.adafruitFactory.addMPR121()
@@ -40,8 +39,8 @@ bottomTouch = capTouch.addInput( 8, "right" )
 
 ranger = main.i2cFactory.addVL530lx(updateInterval=0.25)
 gateFrontRange = ranger.range
-foo = main.addIntermediateVariable("foo", 0)
-fooRule = sceneClosed.addRule(  foo, 
+rangeTo50 = main.addIntermediateVariable("rangeTo50", 0)
+fooRule = sceneClosed.addRule(  rangeTo50, 
         gateFrontRange / 20
     ).when( 
             gateFrontRange < 1000
@@ -64,6 +63,11 @@ lid = Motion.ServoDoor(lidDrive,
         enableDbgOut=True
 )
 
+lid.opened.setScene( sceneOpen )
+lid.closed.setScene( sceneClosed )
+lid.opening.setScene( sceneMoving )
+lid.closing.setScene( sceneMoving )
+
 # setup touch actions
 @fireOnRising( rightStoneTouch )
 def open():
@@ -72,10 +76,12 @@ def open():
     
 fireOnRising( rightRimTouch, lid.close )
 
-    
-def sawTooth(context=None,when=None):
-    
-    return divmod((context or main.getContext()).when, 2.5)[1]/7.0
+oscillator2 = Oscillator.Oscillator( "o2",
+        low = 0.3, high = 2, frequency = 0.1 )
+
+oscillator = Oscillator.Oscillator( "sawtooth",
+        low = 0, high = 10, frequency = oscillator2 )
+
 
 
 #############################################################################
@@ -87,16 +93,18 @@ rbCycle = main.addControlVariable( "rbColorCycle", startingValue=3.1, min=0.1, m
 rbs = main.addControlVariable( "rbSpread", startingValue=0.6, min=0.1, max=3.0, kind=float )
 rbs.set( 0.7 )
 #rbcc, rbs = 3.1, 0.6
+centerPattern = PatternRLTest(  centerStoneLights, value=oscillator/20 )
 patterns = [
     Rainbow(leftStoneLights,colorCycle=rbCycle, spread=rbs ), #,whenOffset = 2.1 ),
     Rainbow(rightStoneLights,colorCycle=1.1, spread=2.0 ),
-    PatternRLTest(  centerStoneLights, value=sawTooth ),
 ]
 
-sceneOpen.addPatterns( frontLidStripPattern, *patterns )
-sceneClosed.addPatterns( *patterns )
-sceneOpening.addPatterns( *patterns )
-sceneClosing.addPatterns( *patterns )
+def fsp( color ):
+    return Blink( frontLidStrip, onTime=0.25, offTime=0.25, onValue = color )
+
+sceneOpen.addPatterns( fsp(LightValueRGB.GREEN), *patterns )
+sceneClosed.addPatterns( fsp(LightValueRGB.RED), centerPattern, *patterns  )
+sceneMoving.addPatterns( fsp(LightValueRGB.YELLOW), centerPattern )
     
 ENABLE_IR_REMOTE = False
 if ENABLE_IR_REMOTE:
@@ -117,6 +125,7 @@ if ENABLE_IR_REMOTE:
 
 
 web = main.addBasicWebServer()
+#web.monitorInput( oscillator )
 
 #############################################################################
 class TreasureChest( DemoBase ):

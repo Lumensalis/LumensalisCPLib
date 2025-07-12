@@ -1,9 +1,10 @@
 from ..Main.Manager import MainManager
-from ..Main.Expressions import EvaluationContext
+from ..Main.Expressions import EvaluationContext 
 
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
 from LumensalisCP.Main.Profiler import Profiler
+from LumensalisCP.Scenes.Scene import Scene
 
 class Actor(Debuggable):
     """
@@ -46,15 +47,30 @@ class Actor(Debuggable):
 class Behavior(Debuggable):
     __name: str|None 
     __actor: weakref.WeakReference[Actor] 
+    __scene: str|Scene|None
     
+    def __init__(self, actor:Actor, name:Optional[str] = None, scene:Optional[str|Scene] = None ):
+        super().__init__()
+        self.__name = name if name else self.__class__.__name__
+        self.__actor = weakref.ref(actor)
+        self.__scene = scene
+        
     @property
     def name(self) -> str:
         """Name of the behavior."""
         return self.__name  
     
+    def setScene(self, scene:str|Scene|None):
+        self.__scene = scene
+        if scene is not None and self.isActive:
+            context = EvaluationContext.fetchCurrentContext(None)
+            context.main.scenes.currentScene = scene
+        
     def enter(self, context:EvaluationContext) -> None:
         """Enter the behavior. This is called when the behavior is activated."""
         self.enableDbgOut and self.dbgOut("Entering behavior %s", self.name)
+        if self.__scene is not None:
+            context.main.scenes.currentScene = self.__scene
     
     def exit(self, context:EvaluationContext) -> None:
         """Exit the behavior. This is called when the behavior is deactivated."""
@@ -64,11 +80,9 @@ class Behavior(Debuggable):
     def actor(self) -> Actor:
         return self.__actor()   
         
-    def __init__(self, actor:Actor, name:str|None = None ):
-        super().__init__()
-        self.__name = name if name else self.__class__.__name__
-        self.__actor = weakref.ref(actor)
-        
+    @property
+    def isActive(self): return self.actor.currentBehavior is self
+    
     def __bool__(self):
         """Return True if the behavior is active."""
         return self.actor.currentBehavior is self

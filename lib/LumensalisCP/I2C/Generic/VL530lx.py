@@ -32,7 +32,7 @@ class VL53L0X(I2CDevice):
         self.__range = VL53L0XInput(target=self,name="range")
 
     @property
-    def range(self): return self.__range
+    def range(self) -> VL53L0XInput: return self.__range
     
     def derivedUpdateTarget(self, context:UpdateContext):
         if self.__readMode is None or self.__readMode  == 'startMeasurement':

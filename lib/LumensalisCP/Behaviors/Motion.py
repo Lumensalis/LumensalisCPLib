@@ -44,18 +44,22 @@ class ServoMovement(Motion):
     actor:"ServoDoor"
     target:Degrees = 0.0
     speed:DegreesPerSecond = 10
+    nextBehavior:"ServoMovement" | None
     
     def __init__(self, actor:"ServoDoor", name:str|None = None,
             target:Degrees|None = None, speed:DegreesPerSecond|None = None ):
         super().__init__(actor, name)
         self.reset( target=target, speed=speed)
+        self.nextBehavior = None
         
     def reset( self, target:Degrees|None=None, speed:DegreesPerSecond|None = None ):
         """Reset the servo movement parameters."""
+        if ( target is None or self.target == target) and (speed is None or speed == self.speed ): return
         if target is not None: self.target = target
         if speed is not None: self.speed = speed
         if self.actor.currentBehavior is self:
-            self.actor.setCurrentBehavior(self, reset=True)
+            self.actor._servo.moveTo( self.target, self.speed, UpdateContext.fetchCurrentContext(None) )
+        #    self.actor.setCurrentBehavior(self, reset=True)
 
     def activate( self, target:Degrees|None=None, speed:DegreesPerSecond|None = None, context:EvaluationContext|None=None ) -> "ServoMovement":
         self.reset( target=target,speed=speed)
@@ -63,13 +67,21 @@ class ServoMovement(Motion):
             self.actor.setCurrentBehavior(self)
         return self
 
+    def _complete(self,**kwds):
+        self.infoOut( f"_complete {kwds}" )
+        if self.nextBehavior is not None:
+            self.nextBehavior.activate()
         
     def enter(self, context):
+        super().enter(context)
         self.enableDbgOut and self.dbgOut( f"enter moveTo {self.target} at {self.speed}" )
         self.actor._servo.moveTo( self.target, self.speed, context )
+        self.actor._servo.onMoveComplete( self._complete )
     
     def exit(self, context):
-        self.enableDbgOut and self.dbgOut( f"exit" )
+        self.actor._servo.onMoveComplete( None )
+        super().exit(context)
+        
     
     
     
@@ -80,9 +92,9 @@ class ServoDoor(Door):
         Door (_type_): _description_
     """
     _servo:LocalServo
-    closedPosition:Degrees = 45.0
-    openPosition:Degrees = 90.0
-    defaultSpeed:TimeInSeconds = 5.0 # time required to move from closed to open
+    closedPosition:Degrees 
+    openPosition:Degrees 
+    defaultSpeed:TimeInSeconds 
     
     #opening: ServoMovement
     #closing: ServoMovement
@@ -114,17 +126,18 @@ class ServoDoor(Door):
         super().__init__(name, main, **kwds)
         self._servo = servo
         
-        if closedPosition is not None: self.closedPosition = closedPosition
-        if openPosition is not None: self.openPosition = openPosition
-        if defaultSpeed is not None: self.defaultSpeed = defaultSpeed
+        self.closedPosition = closedPosition if closedPosition is not None else 45.0
+        self.openPosition = openPosition if openPosition is not None else 75.0
+        self.defaultSpeed = defaultSpeed if defaultSpeed is not None else 5.0
         
-        self.opening = ServoMovement(self, "Opening"  )
-        self.closing = ServoMovement(self, "Closing" )
-        self.opened = ServoMovement(self, "Opened" )
-        self.closed = ServoMovement(self, "Closed" )
+        self.opening = ServoMovement(self, "Opening", target=self.openPosition  )
+        self.closing = ServoMovement(self, "Closing", target=self.closedPosition )
+        self.opened = ServoMovement(self, "Opened", target=self.openPosition )
+        self.closed = ServoMovement(self, "Closed", target=self.closedPosition )
         self.moving = ServoMovement(self, "Moving")
         self.stopped = ServoMovement(self, "Stopped")
-        
+        self.opening.nextBehavior = self.opened
+        self.closing.nextBehavior = self.closed
         if self.enableDbgOut:
             self.setEnableDebugWithChildren(self.enableDbgOut)
             
