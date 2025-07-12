@@ -23,9 +23,13 @@ class UpdateContext(object):
         
     def valueOf( self, value:Any ) -> Any: pass
     
-    def subFrame(self, name:str|None=None, name2:str|None=None) -> ProfileSubFrame: pass
-    def stubFrame(self, name:str|None=None, name2:str|None=None) -> ProfileStubFrame: pass
+    def subFrame(self, name:Optional[str]=None, name2:Optional[str]=None) -> ProfileSubFrame: pass
+    def stubFrame(self, name:Optional[str]=None, name2:Optional[str]=None) -> ProfileStubFrame: pass
 
+    @staticmethod
+    def fetchCurrentContext( context:"UpdateContext"|None ) -> "UpdateContext": pass
+        
+OptionalContextArg = Optional[UpdateContext]
 
 #############################################################################
 

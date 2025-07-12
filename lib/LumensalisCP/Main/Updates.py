@@ -11,26 +11,14 @@ class UpdateContext(object):
     _stubFrame = ProfileStubFrame( )
     
     def __init__( self, main:"LumensalisCP.Main.Manager.MainManager"=None ):
-        print( f"NEW UpdateContext @{id(self):X}")
+        #print( f"NEW UpdateContext @{id(self):X}")
         self.__updateIndex = 0
         self.__changedSources : List["LumensalisCP.Inputs.InputSource"] = []
         self.__mainRef = main.makeRef()
         self.__when = main.when
         self.activeFrame = None
         self.baseFrame = None
-        
-    @staticmethod
-    def fetchCurrentContext( context:"UpdateContext"|None ) -> "UpdateContext":
-        """return context if it is not None, otherwise return the current
-        context from the MainManager singleton
 
-        :param context: the (potentially None) context to try first
-        :type context: UpdateContext | None
-        :return: the current context
-        :rtype: UpdateContext
-        """
-        raise NotImplemented
-    
     @classmethod
     def _patch_fetchCurrentContext(cls, main:"LumensalisCP.Main.Manager.MainManager"):
         assert main is not None
@@ -79,6 +67,20 @@ class UpdateContext(object):
         
     def valueOf( self, value:Any ) -> Any:
         raise NotImplemented
+    
+        
+    @staticmethod
+    def fetchCurrentContext( context:"UpdateContext"|None ) -> "UpdateContext":
+        """return context if it is not None, otherwise return the current
+        context from the MainManager singleton
+
+        :param context: the (potentially None) context to try first
+        :type context: UpdateContext | None
+        :return: the current context
+        :rtype: UpdateContext
+        """
+        raise NotImplemented
+        
 
 #############################################################################
 
