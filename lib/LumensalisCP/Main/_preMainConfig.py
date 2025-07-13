@@ -130,7 +130,7 @@ class GCManager(object):
                 
             newThreshold = int( max( self.__absoluteMinimumThreshold, newThreshold ) )
             if  newThreshold != self.__actualFreeThreshold:
-                print( f"  (threshold changing {newThreshold - self.__actualFreeThreshold } from {self.__actualFreeThreshold} to {newThreshold} for {reason} df={delta_free}, cr={collectRatio})")
+                #print( f"  (threshold changing {newThreshold - self.__actualFreeThreshold } from {self.__actualFreeThreshold} to {newThreshold} for {reason} df={delta_free}, cr={collectRatio})")
                 self.__actualFreeThreshold = newThreshold
 
 
