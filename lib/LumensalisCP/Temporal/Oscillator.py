@@ -1,6 +1,7 @@
 from LumensalisCP.IOContext import *
 from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.Triggers.Timer import PeriodicTimer
+from LumensalisCP.Main.Terms import *
 import math
 
 class Oscillator( InputSource ):
@@ -24,7 +25,14 @@ class Oscillator( InputSource ):
         InputSource.__init__(self, name=name)
         self.low = low
         self.high = high
-        self.frequency = frequency
+        if frequency is not None:
+            ensure( period is None, "cannot use both frequency and period" )
+            self.frequency = frequency
+        else:
+            if period is not None:
+                self.period = period
+            else:
+                self.frequency = frequency
         
         self._lastFz21 = 0
         self._lastFz21Time:TimeInSeconds = 0.0
@@ -34,7 +42,7 @@ class Oscillator( InputSource ):
     
     @period.setter
     def period(self, v:float|Evaluatable  ): 
-        self.frequency = 1.0 / v
+        self.frequency = TERM(1.0) / v
         
     def __recalc( self, context:EvaluationContext ):
         """ move self._lastFz21 from 0.0 to 1.0 (exclusive) at frequency
@@ -66,3 +74,7 @@ class Oscillator( InputSource ):
         low = context.valueOf(self.low)
         high = context.valueOf(self.high)
         return low + z2one * (high-low)
+    
+    
+class Sawtooth(Oscillator):
+    pass
