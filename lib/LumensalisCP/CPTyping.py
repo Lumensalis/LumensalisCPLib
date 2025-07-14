@@ -4,7 +4,7 @@ try:
 	# imports used only for typing
     #import overrides
     from typing import *
-    from typing import IO
+    from typing import IO, List
     # any imports below this won't happen if the error gets raised
     LCPF_TYPING_IMPORTED = True
     
@@ -18,6 +18,8 @@ try:
         
     def makeTypingExpression( a ):
         return a
+    
+    from weakref import ReferenceType
 
 except ImportError:
 
@@ -121,6 +123,8 @@ except ImportError:
     Required = PseudoTypingModifier("Required")
     NotRequired = PseudoTypingModifier("NotRequired")
     Optional = PseudoTypingModifier("Optional")
+    ReferenceType = PseudoTypingModifier("ReferenceType")
+    Unpack = PseudoTypingModifier("Unpack")
     
     def makeTypingExpression( a ) -> PseudoTypingExpression:
         return PseudoTypingExpression.makeExpression(a)

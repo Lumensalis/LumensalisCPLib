@@ -16,6 +16,11 @@ class ShieldBase(ControllerConfigurableChildBase,Refreshable):
         Refreshable.__init__(self,refreshRate=refreshRate)
         
 
+    def mcPostCreate(self): 
+        super().mcPostCreate()
+        self.nliContainer =  self.main.shields
+        
+
 class ShieldI2CBase(ShieldBase,I2CProvider):
     def __init__(self, refreshRate=0.1, config=None, main=None, **kwds ):
         ShieldBase.__init__( self, refreshRate=refreshRate, config=config, main=main,**kwds )

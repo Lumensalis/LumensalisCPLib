@@ -40,4 +40,4 @@ class D1MiniBoardBase(ShieldI2CBase):
         self.D8= D1MiniPinProxy( 'D8', self )
         self.A0= D1MiniPinProxy( 'A0', self )
         
-        self.main._boards.append(self)
+        

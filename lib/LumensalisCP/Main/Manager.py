@@ -1,5 +1,6 @@
 import LumensalisCP.Debug
 
+from LumensalisCP.Identity.Local import NamedLocalIdentifiableList
 import time, math, asyncio, traceback, os, gc, wifi, displayio
 import busio, board
 import collections
@@ -31,7 +32,7 @@ from . import _preMainConfig
 
 import LumensalisCP.Main.ProfilerRL
 LumensalisCP.Main.ProfilerRL._rl_setFixedOverheads()
-
+from LumensalisCP.Shields.Base import ShieldBase
 
 import adafruit_connection_manager
 
@@ -43,6 +44,7 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
     theManager : "MainManager"|None = None
     ENABLE_EEPROM_IDENTITY = False
     profiler: Profiler
+    shields:NamedLocalIdentifiableList[ShieldBase]
     
     @staticmethod
     def initOrGetManager():
@@ -106,7 +108,7 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
 
         self._tasks:List[Callable] = []
         self.__shutdownTasks:List[ExitTask] = []
-        self._boards = []
+        self.shields = NamedLocalIdentifiableList(parent=self)
         
 
         self._controlVariables:Mapping[str,ControlVariable] = {}
@@ -398,9 +400,9 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
                         for task in self._tasks:
                             task()
                             
-                        activeFrame.snap( 'boards' )
-                        for board in self._boards:
-                            board.refresh(context)
+                        activeFrame.snap( 'shields' )
+                        for shield in self.shields:
+                            shield.refresh(context)
                             
                         if self._printStatCycles and self.__cycle % self._printStatCycles == 0:
                             self.infoOut( f"cycle {self.__cycle} at {self._when} with {len(self._tasks)} tasks, gmf={gc.mem_free()} cd={self.cycleDuration}" )

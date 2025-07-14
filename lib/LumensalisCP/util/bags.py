@@ -37,10 +37,12 @@ class NamedList(object):
         return self.__items[x]
 
     def append( self, item ):
-        assert item.name not in self.__byName
+        name = getattr(item,'name',None)
+        if name is not None:
+            assert item.name not in self.__byName
+            self.__byName[name] = item
         self.__items.append(item)
-        self.__byName[item.name] = item
-        
+                
     def extend( self, iterable ):
         for item in iterable:
             self.append(item)

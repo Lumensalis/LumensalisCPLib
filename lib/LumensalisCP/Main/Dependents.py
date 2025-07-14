@@ -4,7 +4,8 @@ from ..Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
 
-class MainChild( NamedLocalIdentifiable):
+#############################################################################
+class MainChild( NamedLocalIdentifiable ):
     
     def __init__( self, name:str, main):
         # type: (str, LumensalisCP.Main.Manager.MainManager ) -> None
@@ -15,11 +16,23 @@ class MainChild( NamedLocalIdentifiable):
 
     @property
     def main(self): return self.__main()
+    
+    def mcPostCreate(self): pass
 
+#############################################################################
 class FactoryBase( MainChild ):
     def __init__(self, main:"LumensalisCP.Main.Manager.MainManager"):
         super().__init__( self.__class__.__name__, main )
 
+    def makeChild( self, cls, **kwds ):
+        instance = cls( main=self.main, **kwds )
+        self.callPostCreate(instance)
+        return instance
+    
+    def callPostCreate(self, instance):
+        instance.mcPostCreate()
+        
+        
 class ManagerBase(object):
     
     def __init__(self):
