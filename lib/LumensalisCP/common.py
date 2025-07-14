@@ -2,7 +2,7 @@ from LumensalisCP.CPTyping import *
 from .Debug import Debuggable
 import traceback
 
-import LumensalisCP.util.weakrefish as weakref
+import LumensalisCP.pyCp.weakref as weakref
 
 # Common types used throughout the library
 
