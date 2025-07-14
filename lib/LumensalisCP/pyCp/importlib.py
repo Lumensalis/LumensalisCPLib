@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2025 James Fowler
+# SPDX-License-Identifier: MIT
+""" basic importlib for CircuitPython
+"""
+
 import sys
 import supervisor
 
