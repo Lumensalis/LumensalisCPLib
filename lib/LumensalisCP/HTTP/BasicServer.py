@@ -6,13 +6,17 @@ from LumensalisCP.common import *
 
 from asyncio import create_task, gather, run, sleep as async_sleep
 from LumensalisCP.Inputs import InputSource
+from adafruit_httpserver.methods import POST, PUT
 import socketpool
-import wifi, json, mdns, io
+import wifi, json, mdns, io, supervisor
 
 import adafruit_httpserver
-from adafruit_httpserver import Server, Request, Response, Websocket, GET
+from adafruit_httpserver import Server, Request, Response, Websocket, GET,Route
 
 from .ControlVars import ControlValueTemplateHelper
+
+from LumensalisCP.util.importing import reload
+from . import BasicServerRL
 
 class BasicServer(Server,Debuggable):
     
@@ -51,8 +55,6 @@ class BasicServer(Server,Debuggable):
         # TODO: handle additions after server startup better
         self.monitoredVariables.append(v)
 
-
-
     HTML_TEMPLATE_A = """
 <html lang="en">
     <head>
@@ -89,29 +91,47 @@ class BasicServer(Server,Debuggable):
 </html>
 """
 
+    def addReloadableRouteHandler( self, name, methods=[GET,POST,PUT] ):
+        functionName = f'BSR_{name}'
+        # @self.route(f'/{name}', methods, append_slash=True)
+        def handler(request: Request):
+            c = getattr( BasicServerRL, functionName, None )
+            ensure( c is not None, "missing reloadable %r", functionName )
+            return c(self,request)
+
+        def reloadingHandler(request: Request):
+            if supervisor.runtime.autoreload:
+                self.infoOut( "/%s request disabling autoreload", name )
+                supervisor.runtime.autoreload = False
+            reload( BasicServerRL )
+            return handler(request)
+        
+        self.add_routes( [
+                Route(f'/{name}', methods, handler, append_slash=True),
+                Route(f'/{name}/...', methods, handler, append_slash=True),
+                Route(f'/{name}Reload', methods, reloadingHandler, append_slash=True),
+                Route(f'/{name}Reload/...', methods, reloadingHandler, append_slash=True),
+            ] )
+        
     def _setupRoutes(self):
         print( "_setupRoutes" )
-        
-        
-        @self.route("/client", GET)
-        def client(request: Request):
-            
-            print( f"get /client with {[v.name for v in self.monitoredVariables]}")
-            vb = self.cvHelper.varBlocks(self.monitoredVariables)
-            parts = [
-                self.HTML_TEMPLATE_A,
-                vb['htmlParts'],
-                self.HTML_TEMPLATE_B,
-                vb['jsSelectors'],
-                
-                vb['wsReceiveds'],
-                
-                self.HTML_TEMPLATE_Z,
-            ]
-            html = "\n".join(parts)
-            
-            return Response(request, html, content_type="text/html")
 
+        self.addReloadableRouteHandler( "client", [GET])
+        self.addReloadableRouteHandler( "sak" )
+        if 0:
+            #@self.route("/client", GET)
+            #def client(request: Request):
+            #    return BasicServerRL.BasicServer_client(self,request)
+
+
+
+            #@self.route("/reloadSak", [GET,POST,PUT])
+            def reloadSak(request: Request):
+                if supervisor.runtime.autoreload:
+                    self.infoOut( "/reloadSak request disabling autoreload" )
+                    supervisor.runtime.autoreload = False
+                reload( BasicServerRL )
+                return BasicServerRL.BasicServer_sak(self,request)
 
         @self.route("/connect-websocket", GET)
         def connect_client(request: Request):
@@ -125,7 +145,6 @@ class BasicServer(Server,Debuggable):
             self.websocket = Websocket(request)
             self.priorMonitoredValue = {}
             return self.websocket
-        
         
         @self.route("/")
         def base(request: Request):
