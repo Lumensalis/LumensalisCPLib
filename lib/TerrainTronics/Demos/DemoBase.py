@@ -36,3 +36,7 @@ class DemoSubBase(object, DemoMixin):
     def setup(self):
         pass
     
+def demoMain(*args,**kwds):
+    main = MainManager.initOrGetManager()
+    main.addBasicWebServer()
+    main.run()

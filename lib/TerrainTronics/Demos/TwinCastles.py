@@ -23,6 +23,10 @@ class TwinCastles( DemoBase ):
         )
         caernarfon.pixels.refreshRate = 0.05 
          
+        self.ir =  ir = caernarfon.addIrRemote()
+        ir.showUnhandled = True
+        ir.enableDbgOut = True
+    
         scene = self.main.addScene( "simpleBlink" )
 
         c1 = caernarfon.pixels.nextNLights(1)
@@ -57,7 +61,7 @@ class TwinCastles( DemoBase ):
 
         #doorDrive = caernarfon.initServo( 1, "doorDrive", )
 
-        @scene.addTaskDef(period=0.25)
+        #@scene.addTaskDef(period=0.25)
         def dump():
             import json
             timings = dict(

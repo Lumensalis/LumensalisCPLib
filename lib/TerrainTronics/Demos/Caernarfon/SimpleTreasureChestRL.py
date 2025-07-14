@@ -10,11 +10,11 @@ from LumensalisCP.Triggers.Timer import PeriodicTimer, addPeriodicTaskDef
 from . import SimpleTreasureChest
 import wifi
 
-printDumpInterval = 21
-collectionCheckInterval = 23.51
+printDumpInterval = 33
+collectionCheckInterval = 5.51
 _mlc.ENABLE_PROFILE = False
-gcm.setMinimumThreshold(1217424)
-
+#gcm.setMinimumThreshold(1638400)
+gcm.setMinimumThreshold(638400)
 dumpConfig = ProfileWriteConfig(target=sys.stdout,
         minE = 0.000,
         minF=0.015,
@@ -80,7 +80,7 @@ def TreasureChest_finishSetup(self:SimpleTreasureChest.TreasureChest):
     from . import SimpleTreasureChestRL
     @addPeriodicTaskDef( "gc-collect", period=lambda: SimpleTreasureChestRL.collectionCheckInterval, main=main )
     def runCollection(context=None, when=None):
-        gcm.runCollection(context,when, show=True)
+        gcm.runCollection(context,when, show=False)
 
     def firstGC():
         gcm.runCollection(main.getContext(),main.when, force=True)
