@@ -140,7 +140,8 @@ class Scene(MainChild):
                     try:
                         pattern.refresh(context)
                     except Exception as inst:
-                        pattern.SHOW_EXCEPTION( inst, "pattern refresh failed in %r", self )
+                        SHOW_EXCEPTION( inst, "pattern %r refresh failed in %r", 
+                                       getattr(pattern,'name',pattern), self )
 
 def addSceneTask( scene:Scene, name:str = None, **kwds:SceneTaskKwargs ):
     def addTask( callable ):
