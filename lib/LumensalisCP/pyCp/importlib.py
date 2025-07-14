@@ -24,7 +24,6 @@ than CPython's.
     if verbose: 
         print( f"reloading module {module}")
 
-
     name = module.__name__
     # at this point, `del sys.modules[name]` followed by `__import__( name )`
     # would "work", but only for extremely trivial cases.  It fails to 
