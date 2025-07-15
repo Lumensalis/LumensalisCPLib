@@ -1,3 +1,4 @@
+from LumensalisCP.Main.Updates import Evaluatable
 from LumensalisCP.common import *
 
 import rainbowio

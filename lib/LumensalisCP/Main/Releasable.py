@@ -2,7 +2,7 @@
 
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
-import asyncio
+import asyncio.lock
 
 
 class ReleasablePool(object):

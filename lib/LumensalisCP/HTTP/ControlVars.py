@@ -1,4 +1,6 @@
 from LumensalisCP.CPTyping import *
+from LumensalisCP.Inputs import InputSource
+
 
 class ControlValueInstanceHelper(object):
     
