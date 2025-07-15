@@ -35,7 +35,7 @@ class Audio( MainChild ):
                 mixer_buffer_size = 2048,
                 main:"LumensalisCP.Main.Manager.MainManager"=None,
             ):
-        super().__init__(name="Audio",main=main)
+        super().__init__(main=main,name="Audio")
         assert Audio.theAudio is None
         Audio.theAudio = self
         

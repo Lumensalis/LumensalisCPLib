@@ -4,11 +4,11 @@ from ..Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
-
+import LumensalisCP.Main
 #############################################################################
 class MainChild( NamedLocalIdentifiable ):
     
-    def __init__( self, name:str, main):
+    def __init__( self, main:"LumensalisCP.Main.Manager.MainManager", name:Optional[str]=None ):
         # type: (str, LumensalisCP.Main.Manager.MainManager ) -> None
         NamedLocalIdentifiable.__init__( self, name = name or self.__class__.__name__)
         ensure( main is not None )
@@ -23,7 +23,7 @@ class MainChild( NamedLocalIdentifiable ):
 #############################################################################
 class FactoryBase( MainChild ):
     def __init__(self, main:"LumensalisCP.Main.Manager.MainManager"):
-        super().__init__( self.__class__.__name__, main )
+        super().__init__( main, name=self.__class__.__name__ )
 
     def makeChild( self, cls, **kwds ):
         instance = cls( main=self.main, **kwds )
@@ -53,9 +53,9 @@ class ManagerBase(object):
 
 class SubManagerBase(ManagerBase,MainChild):
     
-    def __init__(self, name:str = None, main:"LumensalisCP.Main.Manager.MainManager"=None ):
+    def __init__(self, main:"LumensalisCP.Main.Manager.MainManager"=None, name:str = None ):
         ManagerBase.__init__(self)
-        MainChild.__init__( self, name=name or self.__class__.__name__, main=main )
+        MainChild.__init__( self, main=main, name=name or self.__class__.__name__,  )
         
         self._registerManager()
 

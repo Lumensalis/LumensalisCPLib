@@ -70,8 +70,8 @@ class DMXRGBWatcher(DMXWatcher):
 class DMXManager(MainChild):
     pass
 
-    def __init__(self, main:MainManager):
-        super().__init__("DMX",main)
+    def __init__(self, main:MainManager, name:Optional[str] = None):
+        super().__init__(main=main,name=name)
         #self.__client = ArtNetClient()
         self._sasServer = StupidArtnetASIOServer(main.socketPool) #Create a server with the default port 6454
         self._universe = 0

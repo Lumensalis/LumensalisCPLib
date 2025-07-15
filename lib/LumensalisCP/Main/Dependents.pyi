@@ -1,5 +1,6 @@
 # from .Manager import MainManager
 
+from token import OP
 from ..Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.CPTyping import ForwardRef
 from LumensalisCP.Main.Manager import MainManager
@@ -7,7 +8,7 @@ from LumensalisCP.common import *
 
 class MainChild( NamedLocalIdentifiable):
     
-    def __init__( self, name:str, main:MainManager): pass
+    def __init__( self, main:MainManager, name:Optional[str]=None): pass
 
     main: MainManager
 
@@ -19,7 +20,7 @@ class ManagerBase(object):
     pass
 
 class SubManagerBase(ManagerBase,MainChild):
-    def __init__(self, name:str = None, main:MainManager =None ):pass
+    def __init__(self, main:MainManager =None, name:Optional[str]=None ):pass
 
 class ManagerRef(object):
     

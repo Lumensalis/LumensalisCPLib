@@ -49,6 +49,6 @@ class ConfigurableBase(object):
     
 class ControllerConfigurableChildBase(ConfigurableBase,MainChild):
     def __init__( self, name:str=None,  main:"LumensalisCP.Main.Manager.MainManager" = None, **kwargs ):
-        MainChild.__init__(self, name=name, main=main )
+        MainChild.__init__(self, main=main, name=name )
         ConfigurableBase.__init__( self, **kwargs )
         #print( f"ControllerConfigurableChildBase.__init__( name={name} kwargs={kwargs})")
