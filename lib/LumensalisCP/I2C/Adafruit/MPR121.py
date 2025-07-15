@@ -66,6 +66,17 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
             self.__inputs[pin] = input
             self.__updateUnusedPinMask()
         return input
+
+    def addInputs( self, *inArgs ) -> list[MPR121Input]:
+        rv = []
+        for inArg in inArgs:
+            if isinstance( inArg, (tuple,list) ):
+                pin, name = inArg
+            else:
+                pin,name = inArg, None
+            rv.append( self.addInput(pin,name) )
+        return rv
+        
     
     @property 
     def touchedInputs( self ):
