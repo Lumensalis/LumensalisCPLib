@@ -120,6 +120,8 @@ except ImportError:
     Generator =  PseudoTypingTBType("Generator")
     Iterable = PseudoTypingTBType("Iterable")
     
+    
+    Union = PseudoTypingModifier("Union")
     ForwardRef = PseudoTypingModifier("ForwardRef")
     Required = PseudoTypingModifier("Required")
     NotRequired = PseudoTypingModifier("NotRequired")
