@@ -97,3 +97,17 @@ class Spinner( Pattern ):
             else:
                 v = offValue 
             target[px] = v
+
+class PatternTemplate(object):
+    def __init__( self, patternClass:Type[Pattern], *args, **kwds ):
+        self.patternClass = patternClass
+        self.args = args
+        self.kwds = kwds
+    
+    def __call__(self, *args, **kwds ):
+        fullArgs = self.args + args
+        fullKwds = dict( self.kwds )
+        fullKwds.update( kwds )
+        return self.patternClass( *fullArgs, **fullKwds )
+    
+__all__ = [Spinner, PatternTemplate]
