@@ -5,6 +5,20 @@ from .Pattern import *
 from random import random as randomZeroToOne, randint
 
 #############################################################################
+#############################################################################
+
+#############################################################################
+import LumensalisCP.Main.Expressions as xm
+
+def prepRGBValue( value ):
+    
+    if (
+            isinstance( value, xm.ExpressionTerm ) or
+            isinstance( value, xm.Expression ) or
+            callable(value)
+    ):
+        return value
+    return LightValueRGB.toRGB( value )
 
 #############################################################################
 class Rainbow( Pattern ):
@@ -67,8 +81,8 @@ class Gauge( Pattern, NamedOutputTarget ):
                 value:ZeroToOne = 0.0,
                 **kwargs
             ):
-        self.__onValue = onValue
-        self.__offValue = offValue
+        self.__onValue = prepRGBValue(onValue)
+        self.__offValue = prepRGBValue(offValue)
         self.__value = value
         super().__init__( target=target,name=name, **kwargs)
         NamedOutputTarget.__init__(self, name=name )
@@ -118,8 +132,8 @@ class Blink( PatternGenerator ):
             ):
         self.onTime = onTime
         self.offTime = offTime
-        self.onValue = onValue
-        self.offValue = offValue
+        self.onValue = prepRGBValue(onValue)
+        self.offValue = prepRGBValue(offValue)
         self.intermediateRefresh = intermediateRefresh
         super().__init__(*args,**kwargs)
         
@@ -169,18 +183,7 @@ class Random( PatternGenerator ):
         #print(f"Random {self.duration} : {startValues} / {endValues}")
         yield MultiLightPatternStep( self.duration, starts=startValues, ends=endValues )
 
-
 #############################################################################
-import LumensalisCP.Main.Expressions as xm
-
-def prepRGBValue( value ):
-    if (
-            isinstance( value, xm.ExpressionTerm ) or
-            isinstance( value, xm.Expression ) or
-            callable(value)
-    ):
-        return value
-    return LightValueRGB.toRGB( value )
     
         
 class Cylon2( PatternGenerator ):
@@ -365,3 +368,4 @@ class Cylon( PatternGenerator ):
 
 #############################################################################
 
+__all__ = [Rainbow,Gauge,Blink,Random,Cylon2,Cylon,prepRGBValue]
