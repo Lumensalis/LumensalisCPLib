@@ -34,12 +34,8 @@ angleGaugeLights        = neoPixB.ring(12)
 
 #############################################################################
 # setup touch inputs
-leftStoneTouch = capTouch.addInput( 1, "left" )
-centerStoneTouch = capTouch.addInput( 2, "center" )
-rightStoneTouch = capTouch.addInput( 4, "right" )
-leftRimTouch = capTouch.addInput( 5,  )
-centerRimTouch = capTouch.addInput( 6 )
-rightRimTouch = capTouch.addInput( 7 )
+leftStoneTouch, centerStoneTouch, rightStoneTouch= capTouch.addInputs( 1, 2, 4 )
+leftRimTouch, centerRimTouch, rightRimTouch= capTouch.addInputs( 5, 6, 7 )
 bottomTouch = capTouch.addInput( 8 )
 
 #############################################################################
@@ -68,14 +64,13 @@ def next(): main.scenes.switchToNextIn( ["closed","opening","open","closing"] )
 oscillator2 = Oscillator.Oscillator( low = 0.3, high = 2, frequency = 0.1 )
 oscillator = Oscillator.Oscillator(  low = 0, high = 10, frequency = oscillator2 )
 
-frontLidStripPattern = Cylon2(frontLidStrip,sweepTime=0.5, dimRatio=0.9, onValue=LightValueRGB.RED )
-centerPattern = PatternRLTest(  centerStoneLights, value=oscillator/20 )
-rainbowLeft = Rainbow(leftStoneLights,colorCycle=rbCycle, spread=rbs ) #,whenOffset = 2.1 ),
-rainbowRight = Rainbow(rightStoneLights,colorCycle=1.1, spread=2.0 )
-aglSpinner = Spinner(angleGaugeLights, onValue=LightValueRGB.RED, tail=0.42,period=0.49)
-#def fsp( color ): return Blink( frontLidStrip, f"Blink{color}",  onTime=0.25, offTime=0.25, onValue = getattr(LightValueRGB,color) )
 fsp = PatternTemplate( Blink, frontLidStrip, onTime=0.25, offTime=0.25 )
 
+frontLidStripPattern = Cylon2(frontLidStrip,sweepTime=0.5, dimRatio=0.9, onValue=LightValueRGB.RED )
+centerPattern = PatternRLTest(  centerStoneLights, value=oscillator/20 )
+rainbowLeft = Rainbow(leftStoneLights,colorCycle=rbCycle, spread=rbs )
+rainbowRight = Rainbow(rightStoneLights,colorCycle=1.1, spread=2.0 )
+aglSpinner = Spinner(angleGaugeLights, onValue=LightValueRGB.RED, tail=0.42,period=0.49)
 centerSpin = Spinner(centerStoneLights)
 
 sceneOpen.addPatterns( fsp(onValue="GREEN"), aglSpinner, rainbowLeft, rainbowRight )

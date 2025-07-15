@@ -1,9 +1,9 @@
 import gc
 print( f"dir(gc)={dir(gc)}" )
 #gc.threshold( 16384 )
-from LumensalisCP.Main._preMainConfig import _mlc,gcm,printElapsed
+from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl,pmc_gcManager,printElapsed
 
-mlc = _mlc
+mlc = pmc_mainLoopControl
 
 mlc.nextWaitPeriod = 0.0025
 #gcm.setMinimumThreshold( 925000 )
@@ -13,15 +13,15 @@ mlc.nextWaitPeriod = 0.0025
 
 #gcm.minimumThreshold = 425000
 
-gcm.setMinimumThreshold( 325000 )
+pmc_gcManager.setMinimumThreshold( 325000 )
 
 printElapsed( "importing" )
 
 if 1:
     mlc.ENABLE_PROFILE = True
-    gcm.PROFILE_MEMORY = False
-    gcm.PROFILE_MEMORY_NESTED = False
-    gcm.PROFILE_MEMORY_ENTRIES = False
+    pmc_gcManager.PROFILE_MEMORY = False
+    pmc_gcManager.PROFILE_MEMORY_NESTED = False
+    pmc_gcManager.PROFILE_MEMORY_ENTRIES = False
     
 from ..DemoCommon import *
 from LumensalisCP.Lights.ProxyLights import *
@@ -478,10 +478,10 @@ class TreasureChest( DemoBase ):
  
         @addPeriodicTaskDef( "gc-collect", period=lambda: TreasureChest2RL.collectionCheckInterval, main=main )
         def runCollection(context=None, when=None):
-            gcm.runCollection(context,when, show=True)
+            pmc_gcManager.runCollection(context,when, show=True)
 
         def firstGC():
-            gcm.runCollection(main.getContext(),main.when, force=True)
+            pmc_gcManager.runCollection(main.getContext(),main.when, force=True)
         main.callLater(firstGC)
 
         gc.disable()

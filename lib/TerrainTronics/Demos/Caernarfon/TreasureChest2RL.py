@@ -1,6 +1,6 @@
 from ..DemoCommon import *
 
-from LumensalisCP.Main._preMainConfig import gcm
+from LumensalisCP.Main.PreMainConfig import pmc_gcManager
 from LumensalisCP.Main.Profiler import *
 import sys
 

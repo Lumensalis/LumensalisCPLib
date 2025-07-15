@@ -1,6 +1,6 @@
 from ..DemoCommon import *
 
-from LumensalisCP.Main._preMainConfig import gcm, _mlc
+from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
 from LumensalisCP.Main.Profiler import *
 import sys
 import LumensalisCP.pyCp.importlib
@@ -12,9 +12,9 @@ import wifi
 
 printDumpInterval = 33
 collectionCheckInterval = 5.51
-_mlc.ENABLE_PROFILE = False
+pmc_mainLoopControl.ENABLE_PROFILE = False
 #gcm.setMinimumThreshold(1638400)
-gcm.setMinimumThreshold(638400)
+pmc_gcManager.setMinimumThreshold(638400)
 dumpConfig = ProfileWriteConfig(target=sys.stdout,
         minE = 0.000,
         minF=0.015,
@@ -57,7 +57,7 @@ def fmtPool( cls ):
 
 def printDump( main:MainManager ):
     
-    if _mlc.ENABLE_PROFILE :
+    if pmc_mainLoopControl.ENABLE_PROFILE :
         context = main.getContext()
         i = context.updateIndex
         
@@ -80,10 +80,10 @@ def TreasureChest_finishSetup(self:SimpleTreasureChest.TreasureChest):
     from . import SimpleTreasureChestRL
     @addPeriodicTaskDef( "gc-collect", period=lambda: SimpleTreasureChestRL.collectionCheckInterval, main=main )
     def runCollection(context=None, when=None):
-        gcm.runCollection(context,when, show=False)
+        pmc_gcManager.runCollection(context,when, show=False)
 
     def firstGC():
-        gcm.runCollection(main.getContext(),main.when, force=True)
+        pmc_gcManager.runCollection(main.getContext(),main.when, force=True)
     main.callLater(firstGC)
     main.scenes.enableDbgOut = True
 

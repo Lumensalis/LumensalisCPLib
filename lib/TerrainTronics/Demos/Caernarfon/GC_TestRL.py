@@ -1,7 +1,7 @@
-from LumensalisCP.Main._preMainConfig import _mlc,gcm,printElapsed
+from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl,pmc_gcManager,printElapsed
 printElapsed("starting import GCTest_RL")
 
-from LumensalisCP.Main._preMainConfig import *
+from LumensalisCP.Main.PreMainConfig import *
 from ..DemoCommon import *
 from LumensalisCP.Main.Profiler import *
 import gc, supervisor, sys
@@ -21,10 +21,10 @@ usbCheckInterval = 0.25
 
 
 def setupMlcAndGcm():
-    _mlc.ENABLE_PROFILE = True
-    gcm.PROFILE_MEMORY = True
-    gcm.PROFILE_MEMORY_NESTED = True
-    gcm.PROFILE_MEMORY_ENTRIES = True
+    pmc_mainLoopControl.ENABLE_PROFILE = True
+    pmc_gcManager.PROFILE_MEMORY = True
+    pmc_gcManager.PROFILE_MEMORY_NESTED = True
+    pmc_gcManager.PROFILE_MEMORY_ENTRIES = True
     
 
 
@@ -59,7 +59,7 @@ def runCollection( context:UpdateContext, when:TimeInSeconds|None=None,
                   force:bool=False, show:bool=False):
 
     usbCheck( context, when )
-    gcm.runCollection(context,when, force=force, show=show)
+    pmc_gcManager.runCollection(context,when, force=force, show=show)
 
 def fmtPool( cls ):
     pool = cls.getReleasablePool()
@@ -84,7 +84,7 @@ def printDump( main:MainManager ):
     #print( f"entry {ProfileSnapEntry._allocs}/{ProfileSnapEntry._resets}  | base {ProfileFrameBase._allocs}/{ProfileFrameBase._resets}  ")
     print( f"pools : {fmtPool(ProfileSnapEntry)} {fmtPool(ProfileFrame)} {fmtPool(ProfileSubFrame)} {fmtPool(ProfileFrameBase)}" )
     print( f"   gc.mem_alloc={gc.mem_alloc()} gc.mem_free={gc.mem_free()}" )
-    gcm.runCollection(context, force=True )
+    pmc_gcManager.runCollection(context, force=True )
         
 printElapsed("import GCTest_RL complete")
         

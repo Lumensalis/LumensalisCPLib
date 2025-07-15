@@ -1,5 +1,5 @@
 #import LumensalisCP.Main._preMainConfig, gc
-from LumensalisCP.Main._preMainConfig import _mlc,gcm,printElapsed
+from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl,pmc_gcManager,printElapsed
 
 printElapsed( "starting imports" )
 from . import GC_TestRL
