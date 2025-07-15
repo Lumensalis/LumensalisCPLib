@@ -1,11 +1,11 @@
 from LumensalisCP.CPTyping import *
 from .Debug import Debuggable
 import traceback
-
+import LumensalisCP
 import LumensalisCP.pyCp.weakref as weakref
+import json, math
 
 # Common types used throughout the library
-
 # 
 TimeInNS:TypeAlias =  int # Time in nanoseconds
 TimeSpanInNS:TypeAlias  = int # Time span in nanoseconds

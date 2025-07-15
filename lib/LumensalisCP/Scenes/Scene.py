@@ -1,14 +1,8 @@
-#from LumensalisCP.CPTyping import *
-from LumensalisCP.Identity.Local import NamedLocalIdentifiableList
-from ..Main.Dependents import MainChild
-from ..Main.Expressions import ExpressionTerm, Expression
-from  LumensalisCP.IOContext import *# InputSource, OutputTarget
-#from LumensalisCP.common import *
+from  LumensalisCP.IOContext import *
+from LumensalisCP.Main.Dependents import MainChild
 
-from LumensalisCP.util.bags import *
-#from ..Main.Expressions import EvaluationContext
+from LumensalisCP.util.bags import NamedList
 from ..Lights.Patterns import Pattern
-from LumensalisCP.util.kwCallback import KWCallback
 from LumensalisCP.Main.Profiler import ProfileFrameBase
 
 class Setter(object):

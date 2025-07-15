@@ -1,5 +1,5 @@
 from .Values import *
-
+from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 #import LumensalisCP.Lights.LightBase as LightBase
 
 from . import Light
@@ -34,7 +34,7 @@ class LightGroup(NamedLocalIdentifiable):
 class LightGroupList(LightGroup):
     def __init__(self, lights:List["Light.Light"] = [], name:str|None=None,**kwargs):
         super().__init__(name=name,**kwargs)
-        self.__lights:List["LightBase.Light"] = lights
+        self.__lights:List["Light.Light"] = lights
 
     @property
     def lightCount(self) -> int: return len(self.__lights)

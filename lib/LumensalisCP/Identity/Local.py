@@ -166,3 +166,6 @@ class NamedLocalIdentifiableList(NamedLocalIdentifiableWithParent, UserList, Nam
             if child.name == name:
                 return child
         return None
+
+__all__ = [LocalIdentifiable,NamedLocalIdentifiable,NamedLocalIdentifiableWithParent,
+            NamedLocalIdentifiableContainerMixin,NamedLocalIdentifiableList]

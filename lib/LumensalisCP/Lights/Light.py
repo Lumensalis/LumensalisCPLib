@@ -1,5 +1,7 @@
 from .Groups import *
 
+from LumensalisCP.Outputs import OutputTarget
+
 #############################################################################
 
 class LightType:

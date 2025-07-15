@@ -6,11 +6,8 @@ from LumensalisCP.common import *
 
 from asyncio import create_task, gather, run, sleep as async_sleep
 from LumensalisCP.Inputs import InputSource
+from LumensalisCP.commonCPWifi import *
 from adafruit_httpserver.methods import POST, PUT, GET
-import socketpool
-import wifi, json, mdns, io, supervisor
-
-import adafruit_httpserver
 from adafruit_httpserver import Server, Request, Response, Websocket, Route, JSONResponse
 
 from .ControlVars import ControlValueTemplateHelper

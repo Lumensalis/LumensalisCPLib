@@ -1,7 +1,4 @@
 from .Light import *
-
-import LumensalisCP.Main.Manager
-
 from LumensalisCP.util.bags import Bag
 
 from random import random as randomZeroToOne, randint
@@ -14,11 +11,11 @@ class Pattern(NamedLocalIdentifiable):
     
     def __init__(self,  target:LightGroup=None, name:str=None, 
                  whenOffset:TimeInSeconds=0.0, startingSpeed:TimeInSeconds=1.0 ):
-        self.__name = name or (getattr( target,'name', '') + "-" + self.__class__.__name__)
+        #self.__name = name or (getattr( target,'name', '') + "-" + self.__class__.__name__)
         super().__init__(name=name)
         self.__running = False
         self.__speed:TimeInSeconds = startingSpeed
-        assert target is not None
+        assert target is not None, f"target LightGroup must be provided when creating {self.__class__.__name__} Pattern"
         self.__target = target
         
         self.__whenOffset:TimeInSeconds = whenOffset

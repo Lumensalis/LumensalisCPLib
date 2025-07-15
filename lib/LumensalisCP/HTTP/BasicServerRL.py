@@ -1,12 +1,8 @@
 
-from LumensalisCP.AutoStart import MainManager
-from LumensalisCP.I2C.I2CDevice import NamedLocalIdentifiableContainerMixin
-from LumensalisCP.Triggers import NamedLocalIdentifiable
+from LumensalisCP.IOContext import *
+from LumensalisCP.commonCPWifi import *
 from LumensalisCP.pyCp.importlib import reload
 from . import BasicServer
-from LumensalisCP.common import *
-import supervisor, gc, time
-import traceback
 
 #print()
 #print( f"----------------------" )
@@ -221,7 +217,7 @@ def BSR_client(self:BasicServer.BasicServer, request: Request):
         self.HTML_TEMPLATE_B,
         vb['jsSelectors'],
         
-        vb['wsReceiveds'],
+        vb['wsReceived'],
         
         self.HTML_TEMPLATE_Z,
     ]

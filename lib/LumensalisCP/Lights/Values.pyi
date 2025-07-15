@@ -114,7 +114,12 @@ if LCPF_TYPING_IMPORTED:
         str
      ] 
 else:
-    AnyLightValue = None
+    AnyLightValue = Union[
+         int, float, bool,
+         Tuple[float,float,float],
+         List [float],
+        str
+     ] 
 
 class LightValueBase(object):
     def __init__(self, *args, **kwds): pass
@@ -180,7 +185,7 @@ class LightValueNeoRGB(LightValueBase):
     @property
     def brightness(self)->float: pass
     
-    def setLight(self, value|AnyLightValue): pass
+    def setLight(self, value:AnyLightValue): pass
 
     @property
     def asNeoPixelInt(self)->int: pass
