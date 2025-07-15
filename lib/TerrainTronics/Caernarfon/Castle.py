@@ -1,18 +1,12 @@
-from adafruit_itertools import chain
-from LumensalisCP.Identity.Local import NamedLocalIdentifiableList
-import pwmio
-import neopixel
-import TerrainTronics.D1MiniBoardBase
-from LumensalisCP.common import *
-from LumensalisCP.Main.Updates import Refreshable, UpdateContext
-from LumensalisCP.Lights.NeoPixels import NeoPixelSource
 
+
+import TerrainTronics.D1MiniBoardBase
+from LumensalisCP.IOContext import *
+from LumensalisCP.commonCP import *
+from LumensalisCP.Lights.NeoPixels import NeoPixelSource
 from LumensalisCP.Gadgets.IrRemote import LCP_IRrecv, onIRCode
 from LumensalisCP.Gadgets.Servos import LocalServo
 
-from LumensalisCP.Triggers.Timer import PeriodicTimer
-from LumensalisCP.CPTyping import *
-import math
 
 
 class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
@@ -53,7 +47,7 @@ class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
         return None
     
     def nliGetContainers(self) -> list["NamedLocalIdentifiableContainerMixin"]|None:
-        return chain(  [ self.__pixelsContainer, self.__servoContainer ], super().nliGetContainers()) 
+        return itertools.chain(  [ self.__pixelsContainer, self.__servoContainer ], super().nliGetContainers()) 
 
     def doRefresh(self,context:UpdateContext):
         for pixels in self.__allPixels:

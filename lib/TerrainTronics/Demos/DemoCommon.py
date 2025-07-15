@@ -1,4 +1,4 @@
-from LumensalisCP.Main.Manager import MainManager
+
 from LumensalisCP.Main.Terms import *
 from LumensalisCP.IOContext import  InputSource, NamedOutputTarget, EvaluationContext, OptionalContextArg
 from LumensalisCP.Scenes.Scene import addSceneTask
@@ -10,7 +10,6 @@ import board, microcontroller
 from LumensalisCP.Lights.Patterns import *
 from LumensalisCP.Lights.TestPatterns import *
 from LumensalisCP.Temporal import Moving
-
 from LumensalisCP.Behaviors import Motion
 from LumensalisCP.Behaviors import Behavior
-
+from LumensalisCP.Main.Manager import MainManager

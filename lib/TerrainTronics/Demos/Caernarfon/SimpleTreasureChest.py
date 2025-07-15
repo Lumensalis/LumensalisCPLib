@@ -1,11 +1,8 @@
-from ..DemoCommon import *
+from LumensalisCP.Simple import *
 
 #############################################################################
-main = MainManager.initOrGetManager()
-
-sceneClosed = main.addScene( "closed" ) 
-sceneOpen = main.addScene( "open" ) 
-sceneMoving  = main.addScene( "moving" )
+main = ProjectManager()
+sceneClosed, sceneOpen, sceneMoving= main.addScenes( 3 ) 
 
 #############################################################################
 # setup hardware
@@ -76,12 +73,13 @@ centerPattern = PatternRLTest(  centerStoneLights, value=oscillator/20 )
 rainbowLeft = Rainbow(leftStoneLights,colorCycle=rbCycle, spread=rbs ) #,whenOffset = 2.1 ),
 rainbowRight = Rainbow(rightStoneLights,colorCycle=1.1, spread=2.0 )
 aglSpinner = Spinner(angleGaugeLights, onValue=LightValueRGB.RED, tail=0.42,period=0.49)
-def fsp( color ): return Blink( frontLidStrip, f"Blink{color}",  onTime=0.25, offTime=0.25, onValue = getattr(LightValueRGB,color) )
+#def fsp( color ): return Blink( frontLidStrip, f"Blink{color}",  onTime=0.25, offTime=0.25, onValue = getattr(LightValueRGB,color) )
+fsp = PatternTemplate( Blink, frontLidStrip, onTime=0.25, offTime=0.25 )
 
 centerSpin = Spinner(centerStoneLights)
 
-sceneOpen.addPatterns( fsp("GREEN"), aglSpinner, rainbowLeft, rainbowRight )
-sceneClosed.addPatterns( fsp("RED"), centerPattern, rainbowLeft, rainbowRight  )
-sceneMoving.addPatterns( fsp("YELLOW"), centerSpin, aglSpinner )
+sceneOpen.addPatterns( fsp(onValue="GREEN"), aglSpinner, rainbowLeft, rainbowRight )
+sceneClosed.addPatterns( fsp(onValue="RED"), centerPattern, rainbowLeft, rainbowRight  )
+sceneMoving.addPatterns( fsp(onValue="YELLOW"), centerSpin, aglSpinner )
 
 main.renameIdentifiables( globals() )
