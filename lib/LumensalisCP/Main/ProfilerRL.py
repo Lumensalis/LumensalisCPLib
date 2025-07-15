@@ -2,6 +2,7 @@
 import LumensalisCP.Main.Updates
 import time, math, asyncio, traceback, os, gc, wifi, displayio
 import busio, board
+
 import collections
 
 from LumensalisCP.common import *
@@ -11,7 +12,7 @@ from LumensalisCP.util.bags import Bag
 from LumensalisCP.common import SHOW_EXCEPTION
 import LumensalisCP.Main.Profiler
 
-from LumensalisCP.Main._preMainConfig import gcm, _mlc
+from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
 
 def _rl_setFixedOverheads():
     LumensalisCP.Main.Profiler.ProfileSnapEntry.gcFixedOverhead = 0
@@ -23,7 +24,7 @@ if getattr(  LumensalisCP.Main, 'Profiler', None ) is not None:
     _rl_setFixedOverheads()
 
 def notEnoughMemUsed( self, config:"LumensalisCP.Main.Profiler.ProfileWriteConfig" ):
-    return self.usedGC < config.minB if self.usedGC else not gcm.SHOW_ZERO_ALLOC_ENTRIES
+    return self.usedGC < config.minB if self.usedGC else not pmc_gcManager.SHOW_ZERO_ALLOC_ENTRIES
 
 def _heading( self ):
     if self.allocGc:
@@ -65,7 +66,7 @@ def ProfileFrame_writeOn(self:LumensalisCP.Main.Profiler.ProfileFrame,config:"Lu
         if self.eSleep < min(config.minE,config.minF) and self.e < config.minF and notEnoughMemUsed(self, config): 
             return
     except Exception as inst:
-        if not _mlc.ENABLE_PROFILE:
+        if not pmc_mainLoopControl.ENABLE_PROFILE:
             return 
         SHOW_EXCEPTION( inst, "ProfileFrame_writeOn check failed config=%r, eSleep=%r, e=%r, usedGC=%r", config, self.eSleep, self.e, self.usedGC )
         raise

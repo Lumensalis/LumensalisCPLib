@@ -1,6 +1,23 @@
 ############################################################################
 ## INTERNAL USE ONLY
+""" provides settings for MainManager / gc logic / etc
 
+Intended to allow configuration of internal diagnostics, by importing
+_first_, modifying as desired, and then continuing as normal.
+
+For example, in **code.py** :
+```python
+from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
+pmc_mainLoopControl.ENABLE_PROFILE = True
+pmc_gcManager.PROFILE_MEMORY = True
+
+from LumensalisCP.Simple import *
+main = ProjectManager()
+# ...
+```
+
+MUST NOT IMPORT ANY OTHER LUMENSALIS FILES    
+"""
 import supervisor, gc, sys, time
 
 class _MainLoopControl(object):
@@ -11,23 +28,17 @@ class _MainLoopControl(object):
         self.ENABLE_PROFILE = False
         self.nextWaitPeriod = 0.01
         self.profileTimings = 10
+        self.preMainVerbose = False
+        self.startupVerbose = True
+        self.printStatCycles = 5000
+        self.enableHttpDebug = False
         
     def getMsSinceStart(self):
         now = supervisor.ticks_ms()
         if now < self.__started:
             self.__started = now
         return now - self.__started
-    
-_mlc = _MainLoopControl()
 
-def printElapsed(desc):
-    gcUsed = gc.mem_alloc()
-    gcFree = gc.mem_free()
-    print( "%s : _mlc.getMsSinceStart()=%0.3f | %r used, %r free" % 
-          (desc,_mlc.getMsSinceStart()/1000.0, 
-           gcUsed, gcFree
-           ) )
-    
         
 class GCManager(object):
     
@@ -47,6 +58,7 @@ class GCManager(object):
         self.targetCollectPeriod = 0.15
         self.minCollectRatio = 0.0035
         
+        self.verboseCollect = True
         self.freeAfterLastCollection = gc.mem_free()
         self.PROFILE_MEMORY = False
         self.PROFILE_MEMORY_NESTED = False
@@ -75,27 +87,29 @@ class GCManager(object):
                 timeBeforeCollect = self.main.newNow
                 cycle = self.main.cycle
                 delta_cycles = max( 1, cycle - self.priorCycle )
-                currentMs = _mlc.getMsSinceStart()
+                currentMs = pmc_mainLoopControl.getMsSinceStart()
                 elapsedSincePriorCollectMS = currentMs - self.priorMs
                 delta_alloc = mem_alloc_before - self.prior_mem_alloc 
                 delta_free = mem_free_before - self.prior_mem_free
                 #print( f"cycle {cycle}, {len(main.timers.timers)}")
                 elapsedSeconds = elapsedSincePriorCollectMS/1000.0
-                print( f"GC per cycle = {elapsedSeconds/delta_cycles:0.03f}s, alloc={delta_alloc/delta_cycles:0.1f}, free={delta_free/delta_cycles:0.1f} skipping at {_mlc.getMsSinceStart()/1000.0:0.3f} / {timeBeforeCollect:0.3f} [{cycle}],  free={mem_free_before} alloc={mem_alloc_before}, since last collect = {elapsedSincePriorCollectMS/1000.0:.3f} [{delta_cycles}] {delta_alloc} alloc, {delta_free} free gc.mem_f/a()={mem_free_before_elapsed:.3f}/{mem_alloc_before_elapsed:.3f}" )
+                if self.verboseCollect:
+                    print( f"GC per cycle = {elapsedSeconds/delta_cycles:0.03f}s, alloc={delta_alloc/delta_cycles:0.1f}, free={delta_free/delta_cycles:0.1f} skipping at {pmc_mainLoopControl.getMsSinceStart()/1000.0:0.3f} / {timeBeforeCollect:0.3f} [{cycle}],  free={mem_free_before} alloc={mem_alloc_before}, since last collect = {elapsedSincePriorCollectMS/1000.0:.3f} [{delta_cycles}] {delta_alloc} alloc, {delta_free} free gc.mem_f/a()={mem_free_before_elapsed:.3f}/{mem_alloc_before_elapsed:.3f}" )
 
             return
         
         now = time.monotonic()
         mem_alloc_before = gc.mem_alloc()
         mem_alloc_before_elapsed = time.monotonic() - now
-        sys.stdout.write( "GC collect " )
+        if self.verboseCollect:
+            sys.stdout.write( f"{now:.3f} GC collect " )
         
         # run collection
         timeBeforeCollect = self.main.newNow
         gc.collect()
         timeAfterCollect = self.main.newNow
         
-        currentMs = _mlc.getMsSinceStart()
+        currentMs = pmc_mainLoopControl.getMsSinceStart()
         mem_alloc_after = gc.mem_alloc()
         mem_free_after = gc.mem_free()
         
@@ -111,7 +125,8 @@ class GCManager(object):
         delta_cycles = max( 1, cycle - self.priorCycle )
         collectRatio = collectElapsed / elapsedSincePriorCollect
         
-        print( f" took {collectElapsed:.3f} of {elapsedSincePriorCollect:.3f} at {_mlc.getMsSinceStart()/1000.0:0.3f} for {delta_cycles} cycles freeing {delta_alloc} ( {delta_alloc/delta_cycles:.1f} per cycle) leaving {mem_alloc_after} used, {mem_free_after} free t={self.__actualFreeThreshold} cr={collectRatio}  gc.mem_f/a()={mem_free_before_elapsed:.3f}/{mem_alloc_before_elapsed:.3f}" )
+        if self.verboseCollect:
+            print( f" took {collectElapsed:.3f} of {elapsedSincePriorCollect:.3f} at {pmc_mainLoopControl.getMsSinceStart()/1000.0:0.3f} for {delta_cycles} cycles freeing {delta_alloc} ( {delta_alloc/delta_cycles:.1f} per cycle) leaving {mem_alloc_after} used, {mem_free_after} free t={self.__actualFreeThreshold} cr={collectRatio}  gc.mem_f/a()={mem_free_before_elapsed:.3f}/{mem_alloc_before_elapsed:.3f}" )
 
         if self.targetCollectPeriod is not None and collectElapsed > self.targetCollectPeriod:
             
@@ -145,4 +160,15 @@ class GCManager(object):
         #print( f"GC collection at {timeBeforeCollect:0.3f} took {timeAfterCollect-timeBeforeCollect:.3f} of {elapsedSincePriorCollectMS/1000.0:.3f} for {delta_cycles} cycles freeing {delta_alloc} ( {delta_alloc/delta_cycles:.1f} per cycle) leaving {mem_alloc_after} used, {mem_free_after} free" )
             
             
-gcm = GCManager()
+pmc_gcManager = GCManager()
+pmc_mainLoopControl = _MainLoopControl()
+
+def printElapsed(desc):
+    gcUsed = gc.mem_alloc()
+    gcFree = gc.mem_free()
+    print( "%s : _mlc.getMsSinceStart()=%0.3f | %r used, %r free" % 
+          (desc,pmc_mainLoopControl.getMsSinceStart()/1000.0, 
+           gcUsed, gcFree
+           ) )
+    
+__all__ = [ pmc_gcManager, pmc_mainLoopControl, printElapsed ]

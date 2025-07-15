@@ -3,6 +3,7 @@
 from ..Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
+from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
 
 #############################################################################
 class MainChild( NamedLocalIdentifiable ):
@@ -46,7 +47,7 @@ class ManagerBase(object):
         existingManager = getattr( managerClass, '_theManager',None)
         if existingManager is not self:
             assert  existingManager is None
-            print( f"registering _theManager for {managerClass.__name__}")
+            if pmc_mainLoopControl.preMainVerbose: print( f"registering _theManager for {managerClass.__name__}")
             setattr( managerClass, '_theManager', self) 
 
 
@@ -81,3 +82,4 @@ class MainRef(object):
     def __call__( self ) -> LumensalisCP.Main.Manager.MainManager:
         return MainRef._theManager
 
+__all__ = [MainChild,FactoryBase,ManagerBase,SubManagerBase,ManagerRef,MainRef]

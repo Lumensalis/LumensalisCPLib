@@ -1,6 +1,6 @@
 
 import LumensalisCP.Main.Updates
-from LumensalisCP.Main._preMainConfig import _mlc
+from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
 import time, math, asyncio, traceback, os, gc, wifi, displayio
 import busio, board
 import collections
@@ -11,9 +11,9 @@ from LumensalisCP.util.kwCallback import KWCallback
 from LumensalisCP.util.bags import Bag
 from . import ProfilerRL
 from .Releasable import *
-from ._preMainConfig import gcm, _mlc
+from .PreMainConfig import pmc_gcManager, pmc_mainLoopControl
 import gc
-import asyncio.lock
+#import asyncio.lock
 
 
 TimePT = TimeInSeconds
@@ -75,7 +75,7 @@ class ProfileSnapEntry(Releasable):
             self._nextSnap = None
 
     def shouldProfileMemory(self):
-        return gcm.PROFILE_MEMORY_ENTRIES
+        return pmc_gcManager.PROFILE_MEMORY_ENTRIES
     
     def usedByProfile(self):
         if self.rawUsedGC:
@@ -468,7 +468,7 @@ class ProfileSubFrame(ProfileFrameBase):
             
         
     def shouldProfileMemory(self):
-        return gcm.PROFILE_MEMORY_NESTED
+        return pmc_gcManager.PROFILE_MEMORY_NESTED
         
 
 
@@ -487,7 +487,7 @@ class ProfileFrame(ProfileFrameBase):
         self.reset(  context, eSleep=eSleep)
         
     def shouldProfileMemory(self):
-        return gcm.PROFILE_MEMORY
+        return pmc_gcManager.PROFILE_MEMORY
 
     @classmethod
     def makeEntry(cls,   context:'LumensalisCP.Main.Updates.UpdateContext', eSleep=0.0):
@@ -593,7 +593,7 @@ class Profiler(object):
     
     def __init__(self, context:'LumensalisCP.Main.Updates.UpdateContext', timings=None, stub=None ):
         if stub is None:
-            stub = not _mlc.ENABLE_PROFILE
+            stub = not pmc_mainLoopControl.ENABLE_PROFILE
             
         self.stubFrame = ProfileStubFrame(context)
         self._preContextIndex = context.updateIndex
@@ -601,7 +601,7 @@ class Profiler(object):
             self.timings = [ self.stubFrame ]
             timings = 1
         else:
-            timings = timings or _mlc.profileTimings
+            timings = timings or pmc_mainLoopControl.profileTimings
             self.timings = [ ProfileFrame.makeEntry(context,0) for  _ in range(timings) ]
         
         self.timingsLength = timings

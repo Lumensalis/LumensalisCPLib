@@ -6,6 +6,7 @@ import binascii
 import board
 import adafruit_24lc32
 from adafruit_bus_device.i2c_device import I2CDevice
+from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
 
 
 class ControllerNVM(object):
@@ -113,7 +114,7 @@ class ControllerNVM(object):
 class ControllerIdentity(object):
     def __init__(self, main):
         processorUid = microcontroller.cpu.uid
-        print( f"processorUid({type(processorUid)}) = {processorUid}")
+        if pmc_mainLoopControl.preMainVerbose: print( f"processorUid({type(processorUid)}) = {processorUid}")
         self.processorUid = binascii.hexlify(processorUid).decode('utf-8')
 
         try:
