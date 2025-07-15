@@ -34,8 +34,8 @@ except ImportError:
             cached = PseudoTypingExpression._typeCache.get(arg,None)
             if cached is not None:
                 return cached
-            atype = type(arg)
-            if atype is type(object):
+            argType = type(arg)
+            if argType is type(object):
                 #print( f"adding class {arg} to cache" )
                 wrapper = PseudoTypingClass(arg)
                 PseudoTypingExpression._typeCache[arg] = wrapper

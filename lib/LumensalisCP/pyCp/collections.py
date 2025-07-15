@@ -7,16 +7,16 @@ except:
     class UserList(object):
         """A minimally complete user-defined wrapper around list objects."""
 
-        def __init__(self, initlist=None):
+        def __init__(self, initList=None):
             self.data = []
-            if initlist is not None:
+            if initList is not None:
                 # XXX should this accept an arbitrary sequence?
-                if type(initlist) == type(self.data):
-                    self.data[:] = initlist
-                elif isinstance(initlist, UserList):
-                    self.data[:] = initlist.data[:]
+                if type(initList) == type(self.data):
+                    self.data[:] = initList
+                elif isinstance(initList, UserList):
+                    self.data[:] = initList.data[:]
                 else:
-                    self.data = list(initlist)
+                    self.data = list(initList)
 
         def __repr__(self):
             return repr(self.data)
