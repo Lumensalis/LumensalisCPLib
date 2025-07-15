@@ -58,9 +58,9 @@ class ControlValueTemplateHelper(object):
     def varBlocks(self, vars:List[InputSource]):
         htmlParts = []
         jsSelectors = []
-        wsReceiveds = []
+        wsReceived = []
         
-        wsReceiveds.append( '''
+        wsReceived.append( '''
             function handleWSMessage( event ) {
                 try {
                     const receivedMessage = JSON.parse(event.data);
@@ -79,7 +79,7 @@ class ControlValueTemplateHelper(object):
             
             htmlParts.append( instanceHelper.htmlBlock() )
             jsSelectors.append( instanceHelper.jsSelectBlock() )
-            wsReceiveds.append( 
+            wsReceived.append( 
                f"""
                         if( receivedMessage.{v.name} !== undefined ) {{
                             value = receivedMessage.{v.name};
@@ -87,7 +87,7 @@ class ControlValueTemplateHelper(object):
                         }}
 """ )
 
-        wsReceiveds.append( '''
+        wsReceived.append( '''
                            
                     } catch (error) {
                         console.error('Error parsing JSON:', error);
@@ -98,6 +98,6 @@ class ControlValueTemplateHelper(object):
         return {
             'htmlParts' : "\n".join( htmlParts ),
             'jsSelectors' : "\n".join( jsSelectors ),
-            'wsReceiveds': "\n".join( wsReceiveds ),
+            'wsReceived': "\n".join( wsReceived ),
         }
         
