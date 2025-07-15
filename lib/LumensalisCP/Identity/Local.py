@@ -95,7 +95,10 @@ class NamedLocalIdentifiable(LocalIdentifiable,Debuggable):
                 if child.name == name:
                     return child
         return None
-        
+    
+    def __repr__(self)->str:
+        return self.name
+    
 #############################################################################
 
 class NamedLocalIdentifiableContainerMixin( object ):

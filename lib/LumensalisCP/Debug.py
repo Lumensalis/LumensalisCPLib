@@ -2,6 +2,7 @@
 import traceback, time
 
 class Debuggable( object ):
+    
     @staticmethod
     def _getNewNow():
         return time.monotonic()
@@ -28,6 +29,10 @@ class Debuggable( object ):
         if self.__dbgOutEnabled:
             print( self.__format("", fmtString, args, kwds ) )
 
+    
+    def startupOut( self, fmtString:str, *args, **kwds ):
+        print( self.__format("STARTUP", fmtString, args, kwds ) )
+            
     def infoOut( self, fmtString:str, *args, **kwds ):
         print( self.__format("INFO", fmtString, args, kwds ) )
         

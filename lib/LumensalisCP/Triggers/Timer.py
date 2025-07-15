@@ -121,7 +121,7 @@ class PeriodicTimer( Trigger ):
     def start(self, interval:TimeSpanInSeconds|None =None ):
         """start or restart the time"""
         interval = interval or self.getInterval()
-        print( f"start {self.name} when = {self.manager.main.when} interval={interval} _nextFire={self.__nextFire}" )
+        self.startupOut( f"start {self.name} when = {self.manager.main.when} interval={interval} _nextFire={self.__nextFire}" )
         next = self.manager.main.when + interval 
         if self.__nextFire is None:
             self.__nextFire = next
