@@ -1,44 +1,17 @@
-import LumensalisCP.Debug
 
-from LumensalisCP.Identity.Local import NamedLocalIdentifiableContainerMixin, NamedLocalIdentifiableList
-from LumensalisCP.Triggers import NamedLocalIdentifiable
-import time, math, asyncio, traceback, os, gc, wifi, displayio
-import busio, board
-import collections
+from LumensalisCP.commonPreManager import *
+from LumensalisCP.commonPreManager import pmc_mainLoopControl
 
-from LumensalisCP.CPTyping import *
-from LumensalisCP.common import *
+from LumensalisCP.Main import PreMainConfig
 
-from LumensalisCP.util.kwCallback import KWCallback
-from LumensalisCP.util.bags import Bag
-
-from LumensalisCP.Controllers.ConfigurableBase import ConfigurableBase
-from LumensalisCP.Controllers.Identity import ControllerIdentity, ControllerNVM
-from .ControlVariables import ControlVariable, IntermediateVariable
-
-from ..Scenes.Manager import SceneManager, Scene
-from ..Triggers.Timer import PeriodicTimerManager
-
-from .Expressions import EvaluationContext, UpdateContext
-from .Shutdown import ExitTask
-from LumensalisCP.Debug import Debuggable 
-from .I2CProvider import I2CProvider
-
-import LumensalisCP.Main.Dependents
-import LumensalisCP.Main.Updates
-
-from LumensalisCP.Main.Profiler import Profiler, ProfileFrameBase, ProfileSnapEntry
-
-from . import _preMainConfig
+import wifi, displayio
 
 import LumensalisCP.Main.ProfilerRL
 LumensalisCP.Main.ProfilerRL._rl_setFixedOverheads()
 from LumensalisCP.Shields.Base import ShieldBase
 
-import adafruit_connection_manager
-
 def _early_collect(tag:str):
-    _preMainConfig.gcm.runCollection(force=True)
+    PreMainConfig.pmc_gcManager.runCollection(force=True)
     
     
 from . import ManagerRL    
@@ -64,7 +37,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         NamedLocalIdentifiable.__init__(self,"main")
         
         MainManager.theManager = self
-        _preMainConfig.gcm.main = self
+        PreMainConfig.pmc_gcManager.main = self
 
         self.__cycle = 0
         
@@ -107,8 +80,6 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self.__identity = ControllerIdentity(self)
         self._when = self.newNow
         
-        self._printStatCycles = 5000
-
         self.cyclesPerSecond = 100
         self.cycleDuration = 0.01
 
@@ -134,7 +105,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self._scenes: SceneManager[Self] = SceneManager(main=self)
         self.__TerrainTronics = None
 
-        print( f"MainManager options = {self.config.options}" )
+        if pmc_mainLoopControl.preMainVerbose: print( f"MainManager options = {self.config.options}" )
         _early_collect("end manager init")
     
     def makeRef(self):
@@ -244,9 +215,10 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         return [self.addScene(name) for name in names]
     
     def sayAtStartup( self, fmt, *args ):
-        print( "-----" )
-        print( f"STARTUP {self.getNewNow():0.3f}: {safeFmt(fmt,*args)}" )
-        
+        if pmc_mainLoopControl.startupVerbose:
+            print( "-----" )
+            print( f"{self.getNewNow():0.3f} STARTUP : {safeFmt(fmt,*args)}" )
+            
     def addBasicWebServer( self, *args, **kwds ):
         from LumensalisCP.HTTP.BasicServer import BasicServer
         self.sayAtStartup( "addBasicWebServer %r, %r ", args, kwds )
@@ -300,7 +272,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def __runDeferredTasks(self):
         while len( self.__deferredTasks ):
             task = self.__deferredTasks.popleft()
-            print( f"running deferred {task}")
+            self.infoOut( f"running deferred {task}")
             try:
                 task()
             except Exception as inst:
@@ -327,7 +299,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         _early_collect("end manager init")
         self.__priorSleepWhen = self.getNewNow()
         
-        mlc = _preMainConfig._mlc
+        mlc = PreMainConfig.pmc_mainLoopControl
         self._nextWait = self.getNewNow()
         
         try:

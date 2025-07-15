@@ -15,6 +15,8 @@ from .ControlVars import ControlValueTemplateHelper
 from LumensalisCP.pyCp.importlib import reload
 from . import BasicServerRL
 
+from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
+
 class BasicServer(Server,Debuggable):
     
     def __init__( self, *args, main:"LumensalisCP.Main.Manager.MainManager"=None, **kwds ):
@@ -22,7 +24,7 @@ class BasicServer(Server,Debuggable):
         assert main is not None
         
         self.pool = main.socketPool
-        Server.__init__(self, self.pool, debug=True)
+        Server.__init__(self, self.pool, debug=pmc_mainLoopControl.enableHttpDebug )
         Debuggable.__init__(self)
 
         # TODO: make actual client instance for multiple connections...???
@@ -35,7 +37,7 @@ class BasicServer(Server,Debuggable):
         self._setupRoutes()
         
         TTCP_HOSTNAME = main.config.options.get('TTCP_HOSTNAME',None)
-        print(f"BasicServer TTCP_HOSTNAME = {TTCP_HOSTNAME}")
+        #print(f"BasicServer TTCP_HOSTNAME = {TTCP_HOSTNAME}")
         #if (TTCP_HOSTNAME := main.config.options.get('TTCP_HOSTNAME',None)) is not None:
         if TTCP_HOSTNAME is not None:
             self.infoOut(f"setting HOSTNAME to {TTCP_HOSTNAME}")
@@ -44,6 +46,11 @@ class BasicServer(Server,Debuggable):
             self.mdns_server.instance_name = TTCP_HOSTNAME
             self.mdns_server.advertise_service(service_type="_http", protocol="_tcp", port=5000)
         
+    def __str__(self):
+        port = f":{self.port}"
+        url = f"http://{self.host}{port}"
+        return f"{self.__class__.__name__}( {url} addr={wifi.radio.ipv4_address} )"
+    
     def monitorControlVariable( self, v:InputSource ):
         # TODO: handle additions after server startup better
         self.monitoredVariables.append(v)
@@ -95,7 +102,7 @@ class BasicServer(Server,Debuggable):
             try:
                 c = getattr( BasicServerRL, functionName, None )
                 ensure( c is not None, "missing reloadable %r", functionName )
-                print( f"handling reloadable route {name} with {functionName}, reloading={reloading} params={params}, kwds={kwds}")
+                self.enableDbgOut and self.dbgOut( f"handling reloadable route {name} with {functionName}, reloading={reloading} params={params}, kwds={kwds}")
                 rv =c(self,request,**kwds)
                 if rv is not None: return rv
                 return JSONResponse(request, {"unhandled request": name } )
@@ -106,7 +113,7 @@ class BasicServer(Server,Debuggable):
             if supervisor.runtime.autoreload:
                 self.infoOut( "/%s request disabling autoreload", name )
                 supervisor.runtime.autoreload = False
-            print( "reloading BasicServerRL" )
+            self.infoOut( "reloading BasicServerRL" )
             reload( BasicServerRL )
             return handler(request,reloading=True,**kwds)
         
@@ -124,7 +131,7 @@ class BasicServer(Server,Debuggable):
             ] )
         
     def _setupRoutes(self):
-        print( "_setupRoutes" )
+        # print( "_setupRoutes" )
 
         self.addReloadableRouteHandler( "client", [GET])
         self.addReloadableRouteHandler( "sak" )
@@ -149,7 +156,7 @@ class BasicServer(Server,Debuggable):
             """
             Serve a default static plain text message.
             """
-            print( "base request...")
+            self.infoOut( "base request...")
             return Response(request, "Hello from the CircuitPython HTTP Server!")
         
     async def handle_http_requests(self):
@@ -160,19 +167,19 @@ class BasicServer(Server,Debuggable):
                 pool_result = self.poll()
                 if pool_result == adafruit_httpserver.REQUEST_HANDLED_RESPONSE_SENT:
                     # Do something only after handling a request
-                    print( "handle_http_requests handled request")
+                    self.infoOut( "handle_http_requests handled request")
                     pass
                 
                 #print( "handle_http_requests sleep..")
                 await async_sleep(0.05)
     
         except Exception  as error:
-            print( f'handle_http_requests error {error}' )
+            self.SHOW_EXCEPTION( error, 'handle_http_requests error' )
             
 
     async def handle_websocket_requests(self):
         try:
-            print( 'handle_websocket_requests starting' )
+            self.startupOut( 'handle_websocket_requests starting' )
 
             while True:
                 if self.websocket is not None:
@@ -183,14 +190,11 @@ class BasicServer(Server,Debuggable):
                             jdata = json.loads(data)
                             self.main.handleWsChanges(jdata)
                         except Exception as inst:
-                            print( f"error on incoming websocket data {data} : {inst}")
-                        #r, g, b = int(data[1:3], 16), int(data[3:5], 16), int(data[5:7], 16)
-                        #print( f'fill {(r, g, b)}')
-                        #pixel.fill((r, g, b))
+                            self.SHOW_EXCEPTION( inst, "error on incoming websocket data %r", data )
 
                 await async_sleep(0.05)
         except Exception  as error:
-            print( f'handle_websocket_requests error {error}' )
+            self.SHOW_EXCEPTION( error, 'handle_websocket_requests error' )
 
 
     async def send_websocket_messages(self):
@@ -220,7 +224,7 @@ class BasicServer(Server,Debuggable):
             SHOW_EXCEPTION( error, 'send_websocket_messages error' )
 
     def createAsyncTasks( self ):
-        print( "createAsyncTasks... " )
+        self.dbgOut( "createAsyncTasks... " )
 
         return [
             create_task(self.handle_http_requests()),

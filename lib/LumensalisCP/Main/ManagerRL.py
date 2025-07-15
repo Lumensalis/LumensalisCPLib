@@ -1,18 +1,11 @@
-import asyncio
-from LumensalisCP.IOContext import NamedOutputTarget
-from LumensalisCP.Inputs import NamedLocalIdentifiable, InputSource
-from LumensalisCP.Main.Profiler import ProfileFrameBase, ProfileSnapEntry
-from LumensalisCP.Outputs import OutputTarget
+
+from LumensalisCP.commonPreManager import *
+
 from . import Manager
 
-from LumensalisCP.Identity.Local import NamedLocalIdentifiableContainerMixin, NamedLocalIdentifiableList,NamedLocalIdentifiable
+from .PreMainConfig import pmc_mainLoopControl, pmc_gcManager
 
-import gc
-from LumensalisCP.CPTyping import *
-from LumensalisCP.common import *
-from ._preMainConfig import _mlc, gcm
-
-mlc = _mlc
+mlc = pmc_mainLoopControl
     
 def MainManager_nliContainers(self:Manager.MainManager) -> Iterable[NamedLocalIdentifiableContainerMixin]|None:
     return [self.shields, self._i2cDevicesContainer, self._controlVariables]
@@ -24,7 +17,7 @@ def MainManager_nliGetChildren(self:Manager.MainManager) -> Iterable[NamedLocalI
         yield self.__dmx
 
 
-def MainManager_renameIdentifiables( self:Manager.MainManager, items:dict|None ):
+def MainManager_renameIdentifiables( self:Manager.MainManager, items:dict|None, verbose:bool = False ):
     if items is None:
         items = self._renameIdentifiablesItems
     else:
@@ -33,7 +26,7 @@ def MainManager_renameIdentifiables( self:Manager.MainManager, items:dict|None )
     for tag,val in items.items():
         if isinstance(val,NamedLocalIdentifiable):
             if not val.nliIsNamed:
-                print( f"renaming {type(val)}:{val.name} to {tag}" )
+                if verbose: print( f"renaming {type(val)}:{val.name} to {tag}" )
                 val.name = tag
 
             if isinstance(val,InputSource):
@@ -58,23 +51,11 @@ def MainManager_handleWsChanges( self:Manager.MainManager, changes:dict ):
 def MainManager_singleLoop( self:Manager.MainManager ): #, activeFrame:ProfileFrameBase):
     with self.getNextFrame() as activeFrame:
         context = self._privateCurrentContext
-        #if mlc.ENABLE_PROFILE: 
-        #    snap = activeFrame.currentSnap
-            #snap.augment( 'when', self._when )
-            #snap.augment( 'cycle', self.__cycle )
         
         activeFrame.snap( 'preTimers' )
-        #a = gc.mem_alloc()
         entry = ProfileSnapEntry.makeEntry( "foo", self.when, "bar" )
         entry.release()
-        
-        #snapNowTest = ( time.monotonic_ns() - activeFrame.loopStartNS )# * 0.000000001
-        #snapNowTest = ( 99 - activeFrame.loopStartNS )# * 0.000000001
 
-        #snapNowTest = time.monotonic_ns()
-        #snapNowTest2 = snapNowTest # time.monotonic_ns()
-        #snapNowTest3 = snapNowTest2 # time.monotonic_ns()
-        
         activeFrame.snap( 'timers' )
         self._timers.update( context )
         if not mlc.MINIMUM_LOOP:
@@ -98,8 +79,13 @@ def MainManager_singleLoop( self:Manager.MainManager ): #, activeFrame:ProfileFr
             for shield in self.shields:
                 shield.refresh(context)
                 
-            if self._printStatCycles and self.__cycle % self._printStatCycles == 0:
-                self.infoOut( f"cycle {self.__cycle} at {self._when} with {len(self._tasks)} tasks, gmf={gc.mem_free()} cd={self.cycleDuration}" )
+            if pmc_mainLoopControl.printStatCycles and self.__cycle % pmc_mainLoopControl.printStatCycles == 0:
+                #self.infoOut( f"cycle {self.__cycle} at {self._when} with {len(self._tasks)} tasks, gmf={gc.mem_free()} cd={self.cycleDuration}" )
+                self.infoOut( "cycle %d at %.3f : scene %s ip=%s with %d tasks, gmf=%d cd=%r",
+                             self.__cycle, self._when, 
+                             self.scenes.currentScene, self._webServer,
+                             len(self._tasks), gc.mem_free(), self.cycleDuration
+                        )
             #self._scenes.run( context )
             self.cycleDuration = 1.0 / (self.cyclesPerSecond *1.0)
             
@@ -137,7 +123,7 @@ def MainManager_getNextFrame(self) ->ProfileFrameBase:
         self._privateCurrentContext.reset(now)
         context = self._privateCurrentContext
         
-        if _mlc.ENABLE_PROFILE:
+        if pmc_mainLoopControl.ENABLE_PROFILE:
             newFrame = self.profiler.nextNewFrame(context, eSleep = now  - self.__priorSleepWhen)
             
             

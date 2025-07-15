@@ -1,53 +1,30 @@
-
-
-import LumensalisCP.Debug
-
-import time, math, asyncio, traceback, os, gc, rainbowio, wifi, displayio
-import busio, board
-import collections
-
-from LumensalisCP.common import *
-from LumensalisCP.CPTyping import *
-
-
-import LumensalisCP.I2C.I2CDevice
 from LumensalisCP.I2C.I2CDevice import I2CDevice
+from LumensalisCP.commonPreManager import *
 
-from LumensalisCP.Controllers.ConfigurableBase import ConfigurableBase
-from LumensalisCP.Controllers.Identity import ControllerIdentity
-from .ControlVariables import ControlVariable, IntermediateVariable
+from LumensalisCP.Main import PreMainConfig
 
-from ..Scenes.Manager import SceneManager, Scene
-from ..Triggers.Timer import PeriodicTimerManager
+import LumensalisCP.I2C.I2CFactory
+import LumensalisCP.I2C.Adafruit.AdafruitI2CFactory
+import busio
+from LumensalisCP.Lights.DMXManager import DMXManager
 
-from .Expressions import EvaluationContext
-from .Shutdown import ExitTask
-from LumensalisCP.Debug import Debuggable 
-import LumensalisCP.Audio 
+from LumensalisCP.Shields.Base import ShieldBase
 
-import LumensalisCP.Main.Dependents
-from TerrainTronics.Factory import TerrainTronicsFactory
-from LumensalisCP.I2C.Adafruit.AdafruitI2CFactory import AdafruitFactory
-from LumensalisCP.I2C.I2CFactory import I2CFactory
 from LumensalisCP.HTTP.BasicServer import BasicServer
 from LumensalisCP.Audio import Audio
-from LumensalisCP.Lights.DMXManager import DMXManager
-from socketpool import SocketPool
-from LumensalisCP.Main.Profiler import Profiler
+from TerrainTronics.Factory import TerrainTronicsFactory
 
-class MainManager(ConfigurableBase, Debuggable):
+class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     
     theManager : MainManager|None
-    i2cFactory : I2CFactory
-    adafruitFactory : AdafruitFactory
     dmx : DMXManager
-    socketPool : SocketPool
+    socketPool : Any # SocketPool
     profiler: Profiler
     
     @staticmethod
-    def initOrGetManager()->MainManager:pass
+    def initOrGetManager()->MainManager: ...
 
-    def __init__(self, config = None, **kwds ): pass
+    def __init__(self, config = None, **kwds ): ...
  
     def makeRef(self)-> LumensalisCP.Main.Dependents.MainRef: pass
 
@@ -67,6 +44,8 @@ class MainManager(ConfigurableBase, Debuggable):
     
     newNow: TimeInSeconds
 
+    def getNewNow( self ) -> TimeInSeconds: ...
+    
     @property
     def defaultI2C(self) -> busio.I2C: pass
     
@@ -80,6 +59,10 @@ class MainManager(ConfigurableBase, Debuggable):
      
     def getContext(self)->EvaluationContext: pass
 
+    @property
+    def dmx(self) -> LumensalisCP.Lights.DMXManager.DMXManager: ...
+    __dmx: LumensalisCP.Lights.DMXManager.DMXManager
+    
     def callLater( self, task ): pass
 
             
@@ -95,8 +78,10 @@ class MainManager(ConfigurableBase, Debuggable):
     
     def addScenes( self, n:int ) -> list[Scene]: pass
     
+    def sayAtStartup( self, fmt, *args ): ...
+    
     def addBasicWebServer( self, *args, **kwds ) -> BasicServer: pass
-        
+    _webServer:BasicServer|None
 
     def handleWsChanges( self, changes:dict ): pass
         
@@ -116,6 +101,8 @@ class MainManager(ConfigurableBase, Debuggable):
     def addTask( self, task ): pass
 
     def dumpLoopTimings( self, count:int, minE:TimeSpanInSeconds=None, minF:TimeSpanInSeconds=None, **kwds ): pass
+
+    def getNextFrame(self) ->ProfileFrameBase: ...
     
     async def taskLoop( self ): pass
 
