@@ -234,11 +234,13 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         variable.updateValue( self._privateCurrentContext )
         return variable
 
-    def addScene( self, name:str, *args, **kwds ) -> Scene:
+    def addScene( self, name:Optional[str]=None, *args, **kwds ) -> Scene:
         scene = self._scenes.addScene( name, *args, **kwds )
         return scene
     
-    def addScenes( self, *names:str ) -> List[Scene]:
+    def addScenes( self, n:int ):
+        #->  Unpack[Tuple[Scene, ...]]:
+        return [self.addScene() for _ in range(n)]
         return [self.addScene(name) for name in names]
     
     def sayAtStartup( self, fmt, *args ):
@@ -319,9 +321,6 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def renameIdentifiables(self, items:dict ):
         return ManagerRL.MainManager_renameIdentifiables(self, items )
     
-    
-    
-    
     async def taskLoop( self ):
         self.__priorSleepWhen = self.getNewNow()
         self.infoOut( "starting manager main run" )
@@ -337,35 +336,11 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
             context = self._privateCurrentContext
 
             self._when = self.getNewNow()
-            
-            activeFrame = None
-            def getNextFrfffame( ) -> ProfileFrameBase:
-                now = self.getNewNow()
-                self._when = now
-                #priorWhen = self._when
-                self._privateCurrentContext.reset(now)
-                context = self._privateCurrentContext
-                
-                if mlc.ENABLE_PROFILE:
-                    newFrame = self.profiler.nextNewFrame(context, eSleep = now  - self.__priorSleepWhen)
-                    
-                    
-                    #memBefore = gc.mem_alloc()
-                    #snap = newFrame.snap( 'start' )
-                    #snap.augment( 'updateIndex', context.updateIndex )
-                    #snap.augment( 'when', now )
-                    #snap.augment( 'cycle', self.__cycle )
-                else:
-                    newFrame = self.profiler.timings[0]
-                assert isinstance( newFrame, ProfileFrameBase )
-                context.baseFrame  = context.activeFrame = newFrame
-                return newFrame
-                
             while True:
                 ManagerRL.MainManager_singleLoop(self)
                 self.__latestSleepDuration = max(0.001, self._nextWait-self.__priorSleepWhen )
                 
-                await asyncio.sleep( self.__latestSleepDuration ) # self.cycleDuration )
+                await asyncio.sleep( self.__latestSleepDuration ) 
                 self.__cycle += 1    
 
         except Exception as inst:

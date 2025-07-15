@@ -91,7 +91,9 @@ class MainManager(ConfigurableBase, Debuggable):
         
     def addIntermediateVariable( self, name, *args, **kwds ) -> IntermediateVariable: pass
         
-    def addScene( self, name:str, *args, **kwds ) -> Scene: pass
+    def addScene( self, name:Optional[str]=None, *args, **kwds ) -> Scene: pass
+    
+    def addScenes( self, n:int ) -> list[Scene]: pass
     
     def addBasicWebServer( self, *args, **kwds ) -> BasicServer: pass
         
