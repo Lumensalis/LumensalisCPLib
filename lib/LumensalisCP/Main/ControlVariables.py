@@ -48,7 +48,7 @@ class ControlVariable(InputSource):
     def move( self, delta ):
         self.set( self._controlValue + delta )
 
-class IntermediateVariable( InputSource, NamedOutputTarget ):
+class IntermediateVariable( InputSource, OutputTarget ):
     """ combination of OutputTarget and InputSource
 
     changes to the OutputTarget (i.e. set)
@@ -59,7 +59,7 @@ class IntermediateVariable( InputSource, NamedOutputTarget ):
     """
     def __init__(self, name:str, value:Any = None ):
         InputSource.__init__(self,name=name)
-        NamedOutputTarget.__init__(self,name=name)
+        OutputTarget.__init__(self)
         self.__varValue = value
         
         

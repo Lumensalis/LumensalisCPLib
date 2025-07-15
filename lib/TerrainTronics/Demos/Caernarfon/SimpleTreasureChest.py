@@ -13,16 +13,16 @@ caernarfon = main.TerrainTronics.addCaernarfon( neoPixelCount=45 )
 neoPixA = caernarfon.pixels 
 neoPixB = caernarfon.initNeoPixOnServo(3,neoPixelCount=35)
 ir = caernarfon.addIrRemote(codenames="dvd_remote")     
-lidDrive = caernarfon.initServo( 1, "lidDrive", movePeriod=0.05 )
+lidDrive = caernarfon.initServo( 1, movePeriod=0.05 )
 
 capTouch = main.adafruitFactory.addMPR121()
 ranger = main.i2cFactory.addVL530lx(updateInterval=0.25)
 magInputs = main.adafruitFactory.addAW9523()
-lidClosedMag    = magInputs.addInput(1,"lidClosed")
-lidOpenMag      = magInputs.addInput(2,"mag2")
+lidClosedMag    = magInputs.addInput(1)
+lidOpenMag      = magInputs.addInput(2)
 
-rbCycle = main.addControlVariable( "rbColorCycle", startingValue=3.1, min=0.1, max=10.0, kind="TimeInSeconds" )
-rbs = main.addControlVariable( "rbSpread", startingValue=0.6, min=0.1, max=3.0, kind=float )
+rbCycle = main.addControlVariable( startingValue=3.1, min=0.1, max=10.0, kind="TimeInSeconds" )
+rbs = main.addControlVariable( startingValue=0.6, min=0.1, max=3.0, kind=float )
 
 #############################################################################
 # setup neoPixel modules
@@ -40,10 +40,10 @@ angleGaugeLights        = neoPixB.ring(12)
 leftStoneTouch = capTouch.addInput( 1, "left" )
 centerStoneTouch = capTouch.addInput( 2, "center" )
 rightStoneTouch = capTouch.addInput( 4, "right" )
-leftRimTouch = capTouch.addInput( 5, "left" )
-centerRimTouch = capTouch.addInput( 6, "center" )
-rightRimTouch = capTouch.addInput( 7, "right" )
-bottomTouch = capTouch.addInput( 8, "right" )
+leftRimTouch = capTouch.addInput( 5,  )
+centerRimTouch = capTouch.addInput( 6 )
+rightRimTouch = capTouch.addInput( 7 )
+bottomTouch = capTouch.addInput( 8 )
 
 #############################################################################
 # setup lid
@@ -68,17 +68,20 @@ def next(): main.scenes.switchToNextIn( ["closed","opening","open","closing"] )
 
 #############################################################################
 # setup LED patterns
-oscillator2 = Oscillator.Oscillator( "o2", low = 0.3, high = 2, frequency = 0.1 )
-oscillator = Oscillator.Oscillator( "sawtooth", low = 0, high = 10, frequency = oscillator2 )
+oscillator2 = Oscillator.Oscillator( low = 0.3, high = 2, frequency = 0.1 )
+oscillator = Oscillator.Oscillator(  low = 0, high = 10, frequency = oscillator2 )
 
 frontLidStripPattern = Cylon2(frontLidStrip,sweepTime=0.5, dimRatio=0.9, onValue=LightValueRGB.RED )
 centerPattern = PatternRLTest(  centerStoneLights, value=oscillator/20 )
 rainbowLeft = Rainbow(leftStoneLights,colorCycle=rbCycle, spread=rbs ) #,whenOffset = 2.1 ),
 rainbowRight = Rainbow(rightStoneLights,colorCycle=1.1, spread=2.0 )
-agl = Spinner(angleGaugeLights, "agl", onValue=LightValueRGB.RED, tail=0.42,period=0.49)
+aglSpinner = Spinner(angleGaugeLights, onValue=LightValueRGB.RED, tail=0.42,period=0.49)
 def fsp( color ): return Blink( frontLidStrip, f"Blink{color}",  onTime=0.25, offTime=0.25, onValue = getattr(LightValueRGB,color) )
 
-sceneOpen.addPatterns( fsp("GREEN"), agl, rainbowLeft, rainbowRight )
-sceneClosed.addPatterns( fsp("RED"), centerPattern, rainbowLeft, rainbowRight  )
-sceneMoving.addPatterns( fsp("YELLOW"), Spinner(centerStoneLights,"cspin"), agl )
+centerSpin = Spinner(centerStoneLights)
 
+sceneOpen.addPatterns( fsp("GREEN"), aglSpinner, rainbowLeft, rainbowRight )
+sceneClosed.addPatterns( fsp("RED"), centerPattern, rainbowLeft, rainbowRight  )
+sceneMoving.addPatterns( fsp("YELLOW"), centerSpin, aglSpinner )
+
+main.renameIdentifiables( globals() )

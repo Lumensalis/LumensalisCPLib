@@ -1,6 +1,7 @@
 from LumensalisCP.CPTyping import *
+from LumensalisCP.Identity.Local import NamedLocalIdentifiableContainerMixin, NamedLocalIdentifiableList
 from LumensalisCP.common import *
-from LumensalisCP.IOContext import InputSource, OutputTarget, UpdateContext, NamedLocalIdentifiable
+from LumensalisCP.IOContext import InputSource, NamedOutputTarget, OutputTarget, UpdateContext, NamedLocalIdentifiable
 
 import busio
 #import weakref
@@ -29,8 +30,15 @@ class I2CDevice( NamedLocalIdentifiable ):
         self.__nextUpdate:float = updateInterval
         main._addI2CDevice(self)
     
-
+        self._inputs = NamedLocalIdentifiableList(name='inputs',parent=self)
+        self._outputs = NamedLocalIdentifiableList(name='outputs',parent=self)
         
+
+    def nliGetContainers(self) -> Iterable[NamedLocalIdentifiableContainerMixin]|None:
+        yield self._inputs
+        yield self._outputs
+        
+            
     @property
     def i2c(self): return self.__i2c
     
@@ -61,15 +69,16 @@ class I2CInputSource( InputSource ):
     def __init__(self, target:I2CDevice = None, **kwargs ):
         super().__init__(**kwargs)
         self._wrTarget = target # weakref.ref(target)
+        self.nliSetContainer(target._inputs)
 
     @property
     def parentTarget(self): return self._wrTarget
     
     
-class I2COutputTarget( OutputTarget ):
+class I2COutputTarget( NamedOutputTarget ):
     def __init__(self, target:I2CDevice = None, **kwargs ):
         super().__init__(**kwargs)
         self._wrTarget = target # weakref.ref(target)
-
+        self.nliSetContainer(target._outputs)
     @property
     def parentTarget(self): return self._wrTarget    

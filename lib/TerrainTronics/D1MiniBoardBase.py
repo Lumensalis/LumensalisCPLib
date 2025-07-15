@@ -20,10 +20,13 @@ class D1MiniPinProxy(PinProxy):
     
 class D1MiniBoardBase(ShieldI2CBase):
     def __init__(self, **kwds ):
+        
         super().__init__( **kwds )
         
-        print( f"D1MiniBoardBase.__init__( {kwds})")
-        assert self.main is not None
+        #print( f"D1MiniBoardBase.__init__( {kwds})")
+        
+        main = getattr(self,'main',None)
+        assert main is not None
         
         self.TX = D1MiniPinProxy( 'TX', self )
         self.RX = D1MiniPinProxy( 'RX', self )

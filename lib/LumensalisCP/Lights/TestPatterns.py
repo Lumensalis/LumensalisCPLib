@@ -9,7 +9,7 @@ from LumensalisCP.Temporal.Oscillator import Sawtooth
 from . import TestPatternsRL
 from math import log
 
-class PatternRLTest( Pattern, NamedOutputTarget ):
+class PatternRLTest( Pattern, OutputTarget ):
     def __init__(self,
                 target:LightGroup=None, name:str=None, 
                 onValue:AnyLightValue = 1.0,
@@ -20,8 +20,8 @@ class PatternRLTest( Pattern, NamedOutputTarget ):
         self._onValue = onValue
         self._offValue = offValue
         self._value = value
-        super().__init__( target=target,name=name, **kwargs)
-        NamedOutputTarget.__init__(self, name=name )
+        Pattern.__init__( self, target=target,name=name, **kwargs)
+        OutputTarget.__init__(self )
 
     @property
     def value(self)->ZeroToOne: return self._value

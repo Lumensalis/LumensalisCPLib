@@ -1,6 +1,7 @@
 import LumensalisCP.Debug
 
-from LumensalisCP.Identity.Local import NamedLocalIdentifiableList
+from LumensalisCP.Identity.Local import NamedLocalIdentifiableContainerMixin, NamedLocalIdentifiableList
+from LumensalisCP.Triggers import NamedLocalIdentifiable
 import time, math, asyncio, traceback, os, gc, wifi, displayio
 import busio, board
 import collections
@@ -38,14 +39,18 @@ import adafruit_connection_manager
 
 def _early_collect(tag:str):
     _preMainConfig.gcm.runCollection(force=True)
+    
+    
+from . import ManagerRL    
         
-class MainManager(ConfigurableBase, I2CProvider, Debuggable):
+class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     
     theManager : "MainManager"|None = None
     ENABLE_EEPROM_IDENTITY = False
     profiler: Profiler
     shields:NamedLocalIdentifiableList[ShieldBase]
     
+
     @staticmethod
     def initOrGetManager():
         rv = MainManager.theManager
@@ -56,8 +61,11 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
     
     def __init__(self, config = None, **kwds ):
         assert MainManager.theManager is None
+        NamedLocalIdentifiable.__init__(self,"main")
+        
         MainManager.theManager = self
         _preMainConfig.gcm.main = self
+
         self.__cycle = 0
         
 
@@ -85,9 +93,12 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
             TTCP_HOSTNAME = os.getenv("TTCP_HOSTNAME")
         )
         displayio.release_displays()
-        super().__init__(config, defaults=mainConfigDefaults, **kwds )
-        Debuggable.__init__(self)
-        self.name = "MainManager"
+        
+        ConfigurableBase.__init__(self,  config, defaults=mainConfigDefaults, **kwds )
+        # I2CProvider.__init__( self, config=self.config, main=self )
+        #I2CProvider.__init__(self,)
+        #Debuggable.__init__(self)
+        #self.name = "MainManager"
         
         _early_collect("mid manager init")
 
@@ -108,16 +119,19 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
 
         self._tasks:List[Callable] = []
         self.__shutdownTasks:List[ExitTask] = []
-        self.shields = NamedLocalIdentifiableList(parent=self)
+        self.shields = NamedLocalIdentifiableList(name='shields',parent=self)
         
 
-        self._controlVariables:Mapping[str,ControlVariable] = {}
-        self._controlVariables:Mapping[str,ControlVariable] = {}
+        self.__anonInputs = NamedLocalIdentifiableList(name='inputs',parent=self)
+        self.__anonOutputs = NamedLocalIdentifiableList(name='outputs',parent=self)
+        
+        self._controlVariables = NamedLocalIdentifiableList(name='controlVariables',parent=self)
+
         self._monitorTargets = {}
 
         self._timers = PeriodicTimerManager(main=self)
 
-        self._scenes = SceneManager(main=self)
+        self._scenes: SceneManager[Self] = SceneManager(main=self)
         self.__TerrainTronics = None
 
         print( f"MainManager options = {self.config.options}" )
@@ -207,15 +221,15 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
             
         self.__shutdownTasks.append(task)
 
-    def addControlVariable( self, name, *args, **kwds ) -> ControlVariable:
+    def addControlVariable( self, name:Optional[str]=None, *args, **kwds ) -> ControlVariable:
         variable = ControlVariable( name, *args,**kwds )
-        self._controlVariables[name] = variable
+        variable.nliSetContainer(self._controlVariables)
         self.infoOut( f"added ControlVariable {name}")
         return variable
 
-    def addIntermediateVariable( self, name, *args, **kwds ) -> IntermediateVariable:
+    def addIntermediateVariable( self, name:Optional[str]=None, *args, **kwds ) -> IntermediateVariable:
         variable = IntermediateVariable( name, *args,**kwds )
-        self._controlVariables[name] = variable
+        variable.nliSetContainer(self._controlVariables)
         self.infoOut( f"added Variable {name}")
         variable.updateValue( self._privateCurrentContext )
         return variable
@@ -242,8 +256,6 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         self.__asyncTaskCreators.append( server.createAsyncTasks )
         
         def startWebServer():
-            #pool = self.socketPool
-            #wifi.radio.start_dhcp()
             if wifi.radio.ipv4_address is not None:
                 address = str(wifi.radio.ipv4_address)
                 self.sayAtStartup( "startWebServer on %r ", address )
@@ -255,19 +267,10 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         return server
 
     def handleWsChanges( self, changes:dict ):
-        
-        # print( f"handleWsChanges {changes}")
-        key = changes['name']
-        val = changes['value']
-        v = self._controlVariables.get(key,None)
-        if v is not None:
-            v.setFromWs( val )
-        else:
-            self.warnOut( f"missing cv {key} in {self._controlVariables.keys()} for wsChanges {changes}")
-    
+        return ManagerRL.MainManager_handleWsChanges(self, changes)
+
     async def msDelay( self, milliseconds ):
         await asyncio.sleep( milliseconds * 0.001 )
-        
     
     @property
     def audio(self) -> "LumensalisCP.Audio.Audio":
@@ -282,7 +285,6 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         self.__audio = Audio( *args, main=self,**kwds )
         return self.__audio
 
-    
     def movingValue( self, min=0, max=100, duration:float =1.0 ):
         base = math.floor( self._when / duration ) * duration
         subSpan = self._when - base
@@ -290,9 +292,7 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         value = ((max - min)*spanRatio) + min
         return value
 
-        
     def addTask( self, task ):
-        
         self._tasks.append( KWCallback.make( task ) )
         
     def __runDeferredTasks(self):
@@ -305,23 +305,23 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
                 SHOW_EXCEPTION( inst, "exception on deferred task %r", task )
 
     def dumpLoopTimings( self, count, minE=None, minF=None, **kwds ):
-        rv = []
-        i = self._privateCurrentContext.updateIndex
-        #count = min(count, len(self.__taskLoopTimings))
-        # count = min(count,self.profiler.timingsLength)
+        return ManagerRL.MainManager_dumpLoopTimings(self, count, minE=minE, minF=minF, **kwds )
 
-        
-        while count and i >= 0:
-            count -= 1
-            frame = self.profiler.timingForUpdate( i )
-            
-            if frame is not None:
-                frameData =  frame.jsonData(minE = minE, minF = minF, **kwds )
-                if frameData is not None:
-                    rv.append( frameData )
-            i -= 1
-        return rv
+    def getNextFrame(self) ->ProfileFrameBase:
+        return ManagerRL.MainManager_getNextFrame(self )
+    
+    def nliGetContainers(self) -> Iterable[NamedLocalIdentifiableContainerMixin]|None:
+        return ManagerRL.MainManager_nliContainers(self )
+   
+    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None:
+        return ManagerRL.MainManager_nliGetChildren(self )
 
+    def renameIdentifiables(self, items:dict ):
+        return ManagerRL.MainManager_renameIdentifiables(self, items )
+    
+    
+    
+    
     async def taskLoop( self ):
         self.__priorSleepWhen = self.getNewNow()
         self.infoOut( "starting manager main run" )
@@ -329,7 +329,7 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
         self.__priorSleepWhen = self.getNewNow()
         
         mlc = _preMainConfig._mlc
-        nextWait = self.getNewNow()
+        self._nextWait = self.getNewNow()
         
         try:
             for cb in self.__preFirstRunCallbacks:
@@ -339,7 +339,7 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
             self._when = self.getNewNow()
             
             activeFrame = None
-            def getNextFrame( ) -> ProfileFrameBase:
+            def getNextFrfffame( ) -> ProfileFrameBase:
                 now = self.getNewNow()
                 self._when = now
                 #priorWhen = self._when
@@ -362,61 +362,11 @@ class MainManager(ConfigurableBase, I2CProvider, Debuggable):
                 return newFrame
                 
             while True:
-                with getNextFrame() as activeFrame:
-                    context = self._privateCurrentContext
-                    #if mlc.ENABLE_PROFILE: 
-                    #    snap = activeFrame.currentSnap
-                        #snap.augment( 'when', self._when )
-                        #snap.augment( 'cycle', self.__cycle )
-                    
-                    activeFrame.snap( 'preTimers' )
-                    #a = gc.mem_alloc()
-                    entry = ProfileSnapEntry.makeEntry( "foo", self.when, "bar" )
-                    entry.release()
-                    
-                    #snapNowTest = ( time.monotonic_ns() - activeFrame.loopStartNS )# * 0.000000001
-                    #snapNowTest = ( 99 - activeFrame.loopStartNS )# * 0.000000001
-        
-                    #snapNowTest = time.monotonic_ns()
-                    #snapNowTest2 = snapNowTest # time.monotonic_ns()
-                    #snapNowTest3 = snapNowTest2 # time.monotonic_ns()
-                    
-                    activeFrame.snap( 'timers' )
-                    self._timers.update( context )
-                    if not mlc.MINIMUM_LOOP:
-
-                        activeFrame.snap( 'deferred' )
-                        if len( self.__deferredTasks ):
-                            self.__runDeferredTasks()
-                    
-                        activeFrame.snap( 'scenes' )
-                        self._scenes.run(context)
-                        
-                        activeFrame.snap( 'i2c' )
-                        for target in self.__i2cDevices:
-                            target.updateTarget(context)
-                            
-                        activeFrame.snap( 'tasks' )
-                        for task in self._tasks:
-                            task()
-                            
-                        activeFrame.snap( 'shields' )
-                        for shield in self.shields:
-                            shield.refresh(context)
-                            
-                        if self._printStatCycles and self.__cycle % self._printStatCycles == 0:
-                            self.infoOut( f"cycle {self.__cycle} at {self._when} with {len(self._tasks)} tasks, gmf={gc.mem_free()} cd={self.cycleDuration}" )
-                        #self._scenes.run( context )
-                        self.cycleDuration = 1.0 / (self.cyclesPerSecond *1.0)
-                        
-                    #if mlc.ENABLE_PROFILE:
-                    #    activeFrame.finish() 
-
-                    self.__priorSleepWhen = self.getNewNow()
-                    nextWait += mlc.nextWaitPeriod
-    
-                await asyncio.sleep( max(0.001,nextWait-self.__priorSleepWhen) ) # self.cycleDuration )
-                self.__cycle += 1
+                ManagerRL.MainManager_singleLoop(self)
+                self.__latestSleepDuration = max(0.001, self._nextWait-self.__priorSleepWhen )
+                
+                await asyncio.sleep( self.__latestSleepDuration ) # self.cycleDuration )
+                self.__cycle += 1    
 
         except Exception as inst:
             self.errOut( "EXCEPTION in task loop : {}".format(inst) )

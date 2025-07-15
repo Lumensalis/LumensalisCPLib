@@ -46,13 +46,14 @@ class CilgerranLED( DimmableLight ):
         return f"CilgerranLED( {self.name}, {self.__index}, v={self.__value}, dc={self.__output.duty_cycle} )"
 
 
-class CilgerranPixelSource( LightSource, OutputTarget ):
+class CilgerranPixelSource( LightSource, NamedOutputTarget ):
 
     def __init__( self, board:"CilgerranCastle", name:str|None=None, maxLeds = 8, **kwargs ):
         self.__leds:List[CilgerranLED] = [None] * maxLeds
         self.__maxLeds = maxLeds
 
-        super().__init__(name=name or "CilgerranLEDs", lights = self.__leds, **kwargs)
+        LightSource.__init__(self, name=name, lights = self.__leds, **kwargs)
+        NamedOutputTarget.__init__(self, name=name)
 
   
         self.__board = board

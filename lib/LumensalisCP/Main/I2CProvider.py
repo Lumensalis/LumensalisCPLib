@@ -1,4 +1,5 @@
 
+from LumensalisCP.Identity.Local import NamedLocalIdentifiableList
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
 
@@ -8,6 +9,9 @@ from LumensalisCP.I2C.I2CDevice import I2CDevice
 
 class I2CProvider(object):
     def __init__(self,config = None, main=None):
+        
+        
+        self._i2cDevicesContainer = NamedLocalIdentifiableList(name='i2cDevices',parent=main)
         
         self.infoOut( "I2CProvider init %r, %r", config, main )
         import LumensalisCP.I2C.I2CFactory
@@ -40,8 +44,9 @@ class I2CProvider(object):
     @property
     def defaultI2C(self): return self.__defaultI2C or board.I2C()
             
-    def _addI2CDevice(self, target:"LumensalisCP.I2C.I2CDevice.I2CDevice" ):
+    def _addI2CDevice(self, target:I2CDevice ):
         self.__i2cDevices.append(target)
+        target.nliSetContainer(self._i2cDevicesContainer)
    
     def _addBoardI2C( self, board, i2c:busio.I2C ):
         if self.__defaultI2C is None:

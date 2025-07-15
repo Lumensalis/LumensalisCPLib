@@ -1,5 +1,5 @@
 from .Light import *
-from LumensalisCP.Main.Manager import MainManager
+import LumensalisCP.Main.Manager
 import neopixel
 
 from LumensalisCP.util.bags import Bag
@@ -30,7 +30,7 @@ class NeoPixelLight( RGBLight ):
         return LightValueNeoRGB( self.__npiv )
     
 class NeoPixelSource( LightSource ):
-    def __init__(self, pin, pixelCount:int, name:str=None, refreshRate:float|None = 0.1, main:MainManager = None, **kwds):
+    def __init__(self, pin, pixelCount:int, name:str=None, refreshRate:float|None = 0.1, main:"LumensalisCP.Main.Manager.MainManager" = None, **kwds):
         self.__npLights:List[NeoPixelLight] = []
         super().__init__( lights = self.__npLights, name=name or f"{self.__class__.__name__}_{pin}" )
         self.neopix = neopixel.NeoPixel( pin, pixelCount,**kwds)

@@ -3,7 +3,7 @@ from ..DemoCommon import *
 from LumensalisCP.Main._preMainConfig import gcm, _mlc
 from LumensalisCP.Main.Profiler import *
 import sys
-import LumensalisCP.util.importing
+import LumensalisCP.pyCp.importlib
 
 from LumensalisCP.Triggers.Timer import PeriodicTimer, addPeriodicTaskDef
 
@@ -24,7 +24,7 @@ dumpConfig = ProfileWriteConfig(target=sys.stdout,
 
 def reloadSimpleTreasureChestRL():
     from . import SimpleTreasureChestRL
-    LumensalisCP.util.importing.reload( SimpleTreasureChestRL )
+    LumensalisCP.pyCp.importlib.reload( SimpleTreasureChestRL )
     
 def printEntry( name, entry, indent='' ):
     data = dict(**entry)

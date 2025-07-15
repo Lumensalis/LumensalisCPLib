@@ -6,16 +6,16 @@ from LumensalisCP.common import *
 
 from asyncio import create_task, gather, run, sleep as async_sleep
 from LumensalisCP.Inputs import InputSource
-from adafruit_httpserver.methods import POST, PUT
+from adafruit_httpserver.methods import POST, PUT, GET
 import socketpool
 import wifi, json, mdns, io, supervisor
 
 import adafruit_httpserver
-from adafruit_httpserver import Server, Request, Response, Websocket, GET,Route
+from adafruit_httpserver import Server, Request, Response, Websocket, Route, JSONResponse
 
 from .ControlVars import ControlValueTemplateHelper
 
-from LumensalisCP.util.importing import reload
+from LumensalisCP.pyCp.importlib import reload
 from . import BasicServerRL
 
 class BasicServer(Server,Debuggable):
@@ -91,26 +91,39 @@ class BasicServer(Server,Debuggable):
 </html>
 """
 
-    def addReloadableRouteHandler( self, name, methods=[GET,POST,PUT] ):
+    def addReloadableRouteHandler( self, name, methods=[GET,POST,PUT], params:Optional[str]=None ):
         functionName = f'BSR_{name}'
-        # @self.route(f'/{name}', methods, append_slash=True)
-        def handler(request: Request):
-            c = getattr( BasicServerRL, functionName, None )
-            ensure( c is not None, "missing reloadable %r", functionName )
-            return c(self,request)
+        
+        def handler(request: Request,reloading=False,**kwds):
+            try:
+                c = getattr( BasicServerRL, functionName, None )
+                ensure( c is not None, "missing reloadable %r", functionName )
+                print( f"handling reloadable route {name} with {functionName}, reloading={reloading} params={params}, kwds={kwds}")
+                rv =c(self,request,**kwds)
+                if rv is not None: return rv
+                return JSONResponse(request, {"unhandled request": name } )
+            except Exception as inst:
+                return BasicServerRL.ExceptionResponse(request, inst, "route exception" )
 
-        def reloadingHandler(request: Request):
+        def reloadingHandler(request: Request,**kwds):
             if supervisor.runtime.autoreload:
                 self.infoOut( "/%s request disabling autoreload", name )
                 supervisor.runtime.autoreload = False
+            print( "reloading BasicServerRL" )
             reload( BasicServerRL )
-            return handler(request)
+            return handler(request,reloading=True,**kwds)
         
-        self.add_routes( [
-                Route(f'/{name}', methods, handler, append_slash=True),
-                Route(f'/{name}/...', methods, handler, append_slash=True),
+        if params is not None:
+            self.add_routes( [
+                Route(f'/{name}Reload/{params}', methods, reloadingHandler),
+                Route(f'/{name}/{params}', methods, handler),
+            ] )
+        else:
+            self.add_routes( [
                 Route(f'/{name}Reload', methods, reloadingHandler, append_slash=True),
                 Route(f'/{name}Reload/...', methods, reloadingHandler, append_slash=True),
+                Route(f'/{name}', methods, handler, append_slash=True),
+                Route(f'/{name}/...', methods, handler, append_slash=True),
             ] )
         
     def _setupRoutes(self):
@@ -118,20 +131,8 @@ class BasicServer(Server,Debuggable):
 
         self.addReloadableRouteHandler( "client", [GET])
         self.addReloadableRouteHandler( "sak" )
-        if 0:
-            #@self.route("/client", GET)
-            #def client(request: Request):
-            #    return BasicServerRL.BasicServer_client(self,request)
-
-
-
-            #@self.route("/reloadSak", [GET,POST,PUT])
-            def reloadSak(request: Request):
-                if supervisor.runtime.autoreload:
-                    self.infoOut( "/reloadSak request disabling autoreload" )
-                    supervisor.runtime.autoreload = False
-                reload( BasicServerRL )
-                return BasicServerRL.BasicServer_sak(self,request)
+        self.addReloadableRouteHandler( "query", params="<name>" )
+        self.addReloadableRouteHandler( "cmd", [PUT,POST], params="<cmd>"  )
 
         @self.route("/connect-websocket", GET)
         def connect_client(request: Request):

@@ -29,7 +29,7 @@ from LumensalisCP.Triggers.Timer import PeriodicTimer, addPeriodicTaskDef
 from LumensalisCP.Behaviors.Motion import ServoDoor
 from LumensalisCP.Lights.TestPatterns import *
 
-from LumensalisCP.util.importing import reload
+from LumensalisCP.pyCp.importlib import reload
 import LumensalisCP.Main.ProfilerRL
 import TerrainTronics.Demos.Caernarfon.TreasureChest2RL
 from . import TreasureChest2RL

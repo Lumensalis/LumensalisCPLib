@@ -1,4 +1,5 @@
 
+from LumensalisCP.Triggers import NamedLocalIdentifiable
 from .Scene import Scene, SceneTask
 from ..Main.Expressions import EvaluationContext
 
@@ -6,10 +7,9 @@ from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
 from LumensalisCP.Main.Profiler import Profiler
 
-class SceneManager(Debuggable):
-    def __init__(self, main ):
-        super().__init__()
-        self.name = "SceneManager"
+class SceneManager(NamedLocalIdentifiable):
+    def __init__(self, main ) -> None:
+        super().__init__("SceneManager")
         self.main = main
         self._scenes:Mapping[str,Scene] = {}
         self.__currentScene:Scene = None
@@ -27,6 +27,9 @@ class SceneManager(Debuggable):
             return
         
         self.__currentScene.runTasks(context)
+
+    def nliGetChildren(self) -> Iterable['NamedLocalIdentifiable']|None:
+        return self._scenes.values()
         
     @property
     def currentScene(self): return self.__currentScene

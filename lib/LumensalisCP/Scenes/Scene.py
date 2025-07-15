@@ -1,4 +1,5 @@
 #from LumensalisCP.CPTyping import *
+from LumensalisCP.Identity.Local import NamedLocalIdentifiableList
 from ..Main.Dependents import MainChild
 from ..Main.Expressions import ExpressionTerm, Expression
 from  LumensalisCP.IOContext import *# InputSource, OutputTarget
@@ -17,8 +18,9 @@ class SceneTaskKwargs(TypedDict):
     task:Callable
     period:float | None
 
-class SceneTask(object):
+class SceneTask(NamedLocalIdentifiable):
     def __init__(self, task:Callable = None, period:float|None = 0.02, name = None ):
+        super().__init__(name=name)
         self.task_callback = KWCallback.make( task )
         if name is None:
             try:
@@ -44,17 +46,13 @@ class SceneTask(object):
         frame.snap( f"runSceneTask-{self.__name}" )
         self.task_callback(context=context)
 
-class SceneRule( Expression, Debuggable ):
+class SceneRule( NamedLocalIdentifiable, Expression,  ):
     def __init__( self, target:OutputTarget=None, term:ExpressionTerm=None, name=None ):
         #super().__init__(term)
         Expression.__init__(self,term)
-        Debuggable.__init__(self)
+        NamedLocalIdentifiable.__init__(self,name=name)
         self.target = target
-        self.__name = name or f"set {target.name}"
-        
-    @property
-    def name(self): return self.__name
-    
+
     def run( self, context:EvaluationContext, frame:ProfileFrameBase):
         #self.enableDbgOut and self.dbgOut( "running rule" )
         if self.updateValue( context ): # or len(context.changedTerms):
@@ -62,18 +60,26 @@ class SceneRule( Expression, Debuggable ):
             frame.snap( "ruleSet", self.target.name )
             self.target.set(self.value,context=context)
 
-    
 class Scene(MainChild):
     def __init__( self, *args, **kwargs ):
         super().__init__( *args, **kwargs )
-        
+
+        self.__rulesContainer = NamedLocalIdentifiableList("rules",parent=self)
         self.__rules: Mapping[str,SceneRule] = {}
+        
+        self.__tasksContainer = NamedLocalIdentifiableList("tasks",parent=self)
         self.__tasks:List[SceneTask] = []
+        
+        self.__patternsContainer = NamedLocalIdentifiableList("patterns",parent=self)
         self.__patterns:List[Pattern] = NamedList()
         
         self.__patternRefreshPeriod = 0.02
         self.__nextPatternsRefresh = 0
 
+    def nliGetContainers(self) -> list["NamedLocalIdentifiableContainerMixin"]|None:
+        
+        return [self.__rulesContainer, self.__tasksContainer, self.__patternsContainer]
+    
     @property
     def patterns(self) -> NamedList[Pattern]:
         return self.__patterns
@@ -82,13 +88,17 @@ class Scene(MainChild):
         if patternRefresh is not None:
             self.__patternRefreshPeriod = patternRefresh
         self.__patterns.extend(patterns)
+        for pattern in patterns:
+            pattern.nliSetContainer(self.__patternsContainer)
         
     
     def addRule(self, target:OutputTarget=None, term:ExpressionTerm=None, name=None ) ->SceneRule:
             assert isinstance( term, ExpressionTerm )
             rule = SceneRule( target=target, term=term, name=name )
             dictAddUnique( self.__rules, target.name, rule )
+            rule.nliSetContainer( self.__rulesContainer )
             return rule
+        
         
     def findOutput( self, tag:str ) -> OutputTarget:
         raise NotImplemented
@@ -108,6 +118,7 @@ class Scene(MainChild):
     def addTask( self, *args, **kwds:SceneTaskKwargs  ) -> SceneTask:
         task = SceneTask( *args, **kwds )
         self.__tasks.append( task )
+        task.nliSetContainer(self.__tasksContainer)
         return task
     
     

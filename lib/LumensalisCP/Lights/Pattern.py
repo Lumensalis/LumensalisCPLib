@@ -8,14 +8,14 @@ from random import random as randomZeroToOne, randint
 
 #############################################################################
 
-class Pattern(Debuggable):
+class Pattern(NamedLocalIdentifiable):
     
     _theManager:"LumensalisCP.Main.Manager.MainManager" = None
     
     def __init__(self,  target:LightGroup=None, name:str=None, 
                  whenOffset:TimeInSeconds=0.0, startingSpeed:TimeInSeconds=1.0 ):
         self.__name = name or (getattr( target,'name', '') + "-" + self.__class__.__name__)
-        super().__init__()
+        super().__init__(name=name)
         self.__running = False
         self.__speed:TimeInSeconds = startingSpeed
         assert target is not None
@@ -31,9 +31,6 @@ class Pattern(Debuggable):
     
     def offsetWhen( self, context:UpdateContext ) -> TimeInSeconds:
         return  context.when + self.__whenOffset
-            
-    @property
-    def name(self) -> str: return self.__name
 
     @property
     def target(self) -> LightGroup : return  self.__target

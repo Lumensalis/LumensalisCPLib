@@ -118,6 +118,7 @@ except ImportError:
     Dict = PseudoTypingTBType("Dict")
     Mapping = PseudoTypingTBType("Mapping")
     Generator =  PseudoTypingTBType("Generator")
+    Iterable = PseudoTypingTBType("Iterable")
     
     ForwardRef = PseudoTypingModifier("ForwardRef")
     Required = PseudoTypingModifier("Required")

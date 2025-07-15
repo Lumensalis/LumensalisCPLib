@@ -1,3 +1,5 @@
+from adafruit_itertools import chain
+from LumensalisCP.Identity.Local import NamedLocalIdentifiableList
 import pwmio
 import neopixel
 import TerrainTronics.D1MiniBoardBase
@@ -14,6 +16,10 @@ import math
 
 
 class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
+    
+    __servoContainer:NamedLocalIdentifiableList[LocalServo]
+    __pixelsContainer:NamedLocalIdentifiableList[NeoPixelSource]
+    
     def __init__(self, *args, name=None, **kwds ):
         name = name or "Caernarfon"
         super().__init__( *args, name=name, **kwds )
@@ -33,10 +39,22 @@ class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
         self.__pixels:NeoPixelSource = NeoPixelSource(
             c.neoPixelPin, c.neoPixelCount, main = self.main, refreshRate=0.05, brightness=c.neoPixelBrightness, auto_write=False, pixel_order=c.neoPixelOrder
         )
+        self.__servoContainer = NamedLocalIdentifiableList("servos", parent=self)
         self.__servos = [ None, None, None ]
         self.__neoPixOnServos = [ None, None, None ]
-        self.__allPixels = [self.__pixels]
+        self.__pixelsContainer = NamedLocalIdentifiableList("pixels", parent=self)
+        self.__allPixels: list[NeoPixelSource] = [self.__pixels]
+        
+        self.__pixels.nliSetContainer(self.__pixelsContainer)
     
+    def nliGetChildren(self) -> Iterable['NamedLocalIdentifiable']|None:
+        #if self._irRemote is not None:
+        #    return [ self._irRemote ]
+        return None
+    
+    def nliGetContainers(self) -> list["NamedLocalIdentifiableContainerMixin"]|None:
+        return chain(  [ self.__pixelsContainer, self.__servoContainer ], super().nliGetContainers()) 
+
     def doRefresh(self,context:UpdateContext):
         for pixels in self.__allPixels:
             pixels.refresh()
@@ -91,18 +109,20 @@ class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
             "VOL+": 0xffa857,
         }
         self._irRemote = LCP_IRrecv( self.D5.actualPin, codenames=codenames, main=self.main )
+        self.nliAddComponent(self._irRemote)
         return self._irRemote
     
     def analogInput( self, name, pin ):
         return self.main.addInput( name, pin )
     
-    def initServo( self, servoN:int, name:str = None, duty_cycle:int = 2 ** 15, frequency=50, **kwds) -> LocalServo:
+    def initServo( self, servoN:int, name:Optional[str] = None, duty_cycle:int = 2 ** 15, frequency=50, **kwds) -> LocalServo:
         ensure( self.__servos[servoN-1] is None, "servo position already in use by %r",  self.__servos[servoN-1] )
         ensure( self.__neoPixOnServos[servoN-1] is None, "servo position already in use by %r",  self.__neoPixOnServos[servoN-1]  )
         pin = self.config.option('servo{}pin'.format(servoN))
         name = name or f"servo{servoN}"
         pwm = pwmio.PWMOut( pin, duty_cycle=duty_cycle, frequency=frequency)
         servo = LocalServo(pwm,name, main=self.main, **kwds)
+        servo.nliSetContainer(self.__servoContainer)
         self.__servos[servoN-1] = servo
         return servo
     

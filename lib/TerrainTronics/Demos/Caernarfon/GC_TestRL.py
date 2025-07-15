@@ -5,7 +5,7 @@ from LumensalisCP.Main._preMainConfig import *
 from ..DemoCommon import *
 from LumensalisCP.Main.Profiler import *
 import gc, supervisor, sys
-from LumensalisCP.util.importing import reload
+from LumensalisCP.pyCp.importlib import reload
 
 printElapsed("import GCTest_RL internal")
 dumpConfig = ProfileWriteConfig(target=sys.stdout,

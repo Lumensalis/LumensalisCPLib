@@ -8,7 +8,7 @@ import adafruit_aw9523
 class AW9523Input(I2CInputSource):
     def __init__( self, parent:"AW9523", pin:int = None, name:str|None=None, **kwargs ):
         name = name or f"{parent.name}_I{pin}"
-        super().__init__(name=name,**kwargs)
+        super().__init__(parent,name=name,**kwargs)
         self.io = adafruit_aw9523.DigitalInOut( pin, parent.aw9523 )
         self.io.switch_to_input()
         

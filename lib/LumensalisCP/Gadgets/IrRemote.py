@@ -76,7 +76,7 @@ class LCP_IRrecv(MainChild):
                 ensure( codes is not None, "could not find %r in remotes catalog", codenames )
                 codenames = codes
             
-        self.codenames:Mapping(str,int) = codenames
+        self.codenames:Mapping[str,int] = codenames
 
         self._checkTimer = PeriodicTimer( updateInterval , manager=main.timers, name=f"{self.name}Check" )
         

@@ -51,6 +51,12 @@ def updateKWDefaults( kwargs:Mapping, **updatedDefaults ) -> Mapping:
             kwargs[tag] = val
     return kwargs
 
+def safeRepr( v ):
+    try:
+        return repr(v)
+    except Exception as inst:
+        return f"SAFEREPR( {type(v)}@{id(v)} : {inst} / {traceback.format_exception(inst)} )"
+
 def safeFmt( fmtStr:str, *args:Any ):
     """ A safe formatting function that returns a formatted string or an error message if formatting fails.
     """
@@ -58,7 +64,7 @@ def safeFmt( fmtStr:str, *args:Any ):
         try:
             return fmtStr % args
         except Exception as inst:
-            return "safeFmt( %r, ... ) failed : %s" % (fmtStr, inst )
+            return "safeFmt( %r, ... ) failed : %s %r" % (fmtStr, inst, traceback.format_exception(inst) )
     except:
         return "safeFmt failed"
     
@@ -117,4 +123,4 @@ def SHOW_EXCEPTION( inst, fmt:str, *args ):
     print( "\n".join(traceback.format_exception(inst)) )
     
     
-import LumensalisCP.Main.Expressions
+#import LumensalisCP.Main.Expressions
