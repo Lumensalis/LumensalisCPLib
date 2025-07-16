@@ -95,7 +95,8 @@ class ServoDoor(Door):
     closedPosition:Degrees 
     openPosition:Degrees 
     defaultSpeed:TimeInSeconds 
-    
+    openedSensor:InputSource|None
+    closedSensor:InputSource|None
     #opening: ServoMovement
     #closing: ServoMovement
     #closed: ServoMovement
@@ -119,6 +120,8 @@ class ServoDoor(Door):
             closedPosition:Degrees|None = None,
             openPosition:Degrees|None = None,
             defaultSpeed:TimeInSeconds|None = None,
+            openedSensor:InputSource|None = None,
+            closedSensor:InputSource|None = None,
             name:str|None = None, 
             main:"LumensalisCP.Main.Manager.MainManager"|None = None,
             **kwds
@@ -129,8 +132,9 @@ class ServoDoor(Door):
         self.closedPosition = closedPosition if closedPosition is not None else 45.0
         self.openPosition = openPosition if openPosition is not None else 75.0
         self.defaultSpeed = defaultSpeed if defaultSpeed is not None else 5.0
-        
-        self.opening = ServoMovement(self, "Opening", target=self.openPosition  )
+        self.openedSensor = openedSensor
+        self.closedSensor = closedSensor
+        self.opening = ServoMovement(self, "Opening", target=self.openPosition  )   
         self.closing = ServoMovement(self, "Closing", target=self.closedPosition )
         self.opened = ServoMovement(self, "Opened", target=self.openPosition )
         self.closed = ServoMovement(self, "Closed", target=self.closedPosition )
