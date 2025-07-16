@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Michał Pokusa
+# SPDX-FileCopyrightText: 2025 James Fowler
 #
 # SPDX-License-Identifier: Unlicense
 import LumensalisCP.Main.Manager

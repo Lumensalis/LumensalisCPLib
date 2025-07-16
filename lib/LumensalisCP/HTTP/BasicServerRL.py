@@ -82,7 +82,7 @@ def getQueryResult( target:NamedLocalIdentifiable, path:list[str], qConfig:Query
     if len(path):
         child = target.nliFind(path[0])
         if child is None: return { "missing child" : path[0]}
-        rv = { child.name : getQueryResult( child, path[1:], qConfig )  }
+        rv = { child.containerName : getQueryResult( child, path[1:], qConfig )  }
         if not qConfig.fillParents: return rv
     else: 
         rv = {}
@@ -152,7 +152,7 @@ def _reloadAll( ):
     return modules
 
     
-def BSR_cmd(self:BasicServer.BasicServer, request:Request, cmd:str=None, **kwds ):
+def BSR_cmd(self:BasicServer.BasicServer, request:Request, cmd:Optional[str]=None, **kwds ):
     """
     """
     
@@ -166,6 +166,15 @@ def BSR_cmd(self:BasicServer.BasicServer, request:Request, cmd:str=None, **kwds 
                 
             self.main.callLater( restart )
             return JSONResponse(request, { "action":"restarting"} )
+        
+        if cmd == "reset":
+            def reset():
+                print( "resetting" )
+                microcontroller.reset()
+                
+            self.main.callLater( reset )
+            return JSONResponse(request, { "action":"resetting"} )
+        
         if cmd == "reloadAll":
             modules = _reloadAll()
             
