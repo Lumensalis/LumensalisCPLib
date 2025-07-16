@@ -8,7 +8,7 @@ class OutputTarget(object):
     def __init__(self, name:str = None):
         pass
         
-    def set( self, value:Any, context:EvaluationContext ):
+    def set( self, value:Any, context:EvaluationContext ) -> None:
         raise NotImplemented
     
     
@@ -18,11 +18,11 @@ class NamedOutputTarget(NamedLocalIdentifiable,OutputTarget):
         NamedLocalIdentifiable.__init__(self, name=name)
         OutputTarget.__init__(self)
 
-    def set( self, value:Any, context:EvaluationContext ):
+    def set( self, value:Any, context:EvaluationContext ) -> None:
         raise NotImplemented
 
     def path( self ): return None
     
     
     
-__all__ = [ OutputTarget, NamedOutputTarget ]
+__all__ = [ 'OutputTarget', 'NamedOutputTarget' ]

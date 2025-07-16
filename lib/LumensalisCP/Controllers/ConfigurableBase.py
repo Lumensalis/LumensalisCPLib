@@ -1,13 +1,17 @@
 
+import LumensalisCP.Main
 from LumensalisCP.common import *
 from  .Config import ControllerConfig
 from  .Configs.Core import getConfig
+import LumensalisCP.Main
 from  LumensalisCP.Main.Dependents import MainChild
 import os, board, microcontroller
-
+if TYPE_CHECKING:
+    import LumensalisCP.Main.Manager
+    
 class ConfigurableBase(object):
     
-    def __init__(self, config=None, defaults:dict=None, **kwds ):
+    def __init__(self, config=None, defaults:Optional[dict]=None, **kwds ):
         if configSecondary := config == "secondary":
             config = None
             
@@ -22,7 +26,7 @@ class ConfigurableBase(object):
             
         if type(config) is str:
             configForName = getConfig(config)
-            ensure( configForName is not None, "no configuration exists for %r", config )
+            assert configForName is not None, f"no configuration exists for {config}"
             config = configForName.copy()
         elif config is None:
             config = ControllerConfig()
@@ -42,13 +46,14 @@ class ConfigurableBase(object):
             if hasattr( pin, 'actualPin' ):
                 pin = pin.actualPin
             if type(pin) is str:
-                pin = getattr( self.config.pins.lookupPin(pin) )
+                assert self.config.pins is not None
+                pin =  self.config.pins.lookupPin(pin) 
             
         assert isinstance( pin, microcontroller.Pin )
         return pin
     
 class ControllerConfigurableChildBase(ConfigurableBase,MainChild):
-    def __init__( self, name:str=None,  main:"LumensalisCP.Main.Manager.MainManager" = None, **kwargs ):
+    def __init__( self, main:LumensalisCP.Main.Manager.MainManager, name:Optional[str]=None, **kwargs ):
         MainChild.__init__(self, main=main, name=name )
         ConfigurableBase.__init__( self, **kwargs )
         #print( f"ControllerConfigurableChildBase.__init__( name={name} kwargs={kwargs})")

@@ -9,6 +9,9 @@ import array
 import LumensalisCP.Main.Manager
 from  LumensalisCP.Main.Dependents import MainChild
 
+if TYPE_CHECKING:
+    import LumensalisCP.Main.Manager 
+    
 class AudioSample( object ):
     def __init__( self, sample, filename ):
         self.sample = sample
@@ -23,6 +26,7 @@ class Audio( MainChild ):
     theAudio = None
 
     def __init__( self, 
+                main:LumensalisCP.Main.Manager.MainManager,
                 bit_clock:Pin|None = None, 
                 word_select:Pin|None= None, 
                 data:Pin|None= None, 
@@ -33,7 +37,6 @@ class Audio( MainChild ):
                 mixer_bits_per_sample = 16,
                 mixer_voice_count = 2,
                 mixer_buffer_size = 2048,
-                main:"LumensalisCP.Main.Manager.MainManager"=None,
             ):
         super().__init__(main=main,name="Audio")
         assert Audio.theAudio is None

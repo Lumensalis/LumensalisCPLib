@@ -9,6 +9,7 @@ from LumensalisCP.Triggers.Timer import PeriodicTimer
 from  LumensalisCP.Main.Dependents import MainChild
 
 import adafruit_irremote
+import json
 
 class LCP_IRrecv(MainChild):
     REMOTES_CATALOG_FILENAME = '/remotes.json'
@@ -50,7 +51,7 @@ class LCP_IRrecv(MainChild):
     
     showUnhandled:bool
     
-    def __init__(self, pin, codenames:Mapping = {}, main:MainManager = None, 
+    def __init__(self, pin, main:MainManager,  codenames:Mapping = {},
                  name:str|None = None, updateInterval = 0.1,
                  showUnhandled = False ):
         super().__init__( main=main, name=name )
@@ -63,7 +64,7 @@ class LCP_IRrecv(MainChild):
             raise
         
         self.decoder = adafruit_irremote.GenericDecode()
-        self.__callbacksByCode:Mapping[int,Callable] = {}
+        self.__callbacksByCode:dict[int,Callable] = {}
         self.__unhandledCallback = None
         self.__updateInterval = updateInterval
         self.__jsonCatalog = None
@@ -156,7 +157,7 @@ class LCP_IRrecv(MainChild):
             return callable
         return on2
 
-    def onCode( self, code:int|str=None, action:Callable = None ):
+    def onCode( self, code:int|str, action:Callable  ):
         assert code is not None
         assert action is not None
         self.addCallbackForCode( code, action )

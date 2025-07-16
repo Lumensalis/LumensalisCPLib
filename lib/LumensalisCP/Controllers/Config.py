@@ -13,7 +13,7 @@ class ControllerPins(object):
             pin = self.lookupPin( pinTag )
             setattr(self, pinName, pin )
     
-    def lookupPin( self, tag:str ):
+    def lookupPin( self, tag:str ) -> microcontroller.Pin :
         if tag.startswith("m"):
             pin = getattr( microcontroller.pin, tag[1:] )
         elif tag.startswith("b"):
@@ -63,15 +63,18 @@ class ControllerConfig(object):
                 self.setOption( tag, val )
     
     def setOption( self, tag, val ):
+        assert self.options is not None
         self.options[tag] = val
         setattr( self, tag, val )
         
     def option( self, tag, default=None ):
         if tag in ControllerPins.pinNames:
             return getattr( self.pins, tag )
+        assert self.options is not None
         return self.options.get( tag, default )
     
     def updateDefaultOptions( self, **kwds ):
+        assert self.options is not None
         for tag,val in kwds.items():
             if tag not in self.options:
                 self.setOption( tag, val)

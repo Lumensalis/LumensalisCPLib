@@ -5,15 +5,6 @@ from LumensalisCP.Lights.Light import *
 from LumensalisCP.Inputs import InputSource
 from LumensalisCP.Main.Updates import UpdateContext
 
-if 0:
-    import aioartnet
-    from aioartnet import (
-        DMX_UNIVERSE_SIZE,
-        ArtNetClient,
-        ArtNetUniverse,
-        ArtNetNode
-    )
-    from aioartnet.aio_artnet import ArtNetClientProtocol, DGAddr
 
 #import stupidArtnet
 from .LCP_StupidArtnetServer import StupidArtnetASIOServer
@@ -38,7 +29,7 @@ class DMXWatcher(InputSource):
             print( f" {self.name} data changed to {self.data}" )
             self.derivedUpdate()
             
-    def derivedUpdate(self): raise NotImplemented
+    def derivedUpdate(self) -> None: raise NotImplemented
 
 class DMXDimmerWatcher(DMXWatcher):
     def __init__(self, name, manager:"DMXManager", c1):

@@ -3,12 +3,17 @@ from __future__ import annotations
 try:
 	# imports used only for typing
     #import overrides
-    from typing import *
-    from typing import IO, List
+    from typing import IO, List, Any, TextIO, Callable, Tuple, List
+    from typing import Dict, Mapping, MutableMapping
+    from typing import Generator, Iterable, Iterator
+    from typing import Union, ForwardRef, Required, NotRequired, Optional
+    from typing import Unpack, TypeAlias 
+    from typing import Self, Type
+    
     # any imports below this won't happen if the error gets raised
     LCPF_TYPING_IMPORTED = True
     
-    class PseudoTypingExpression(object):
+    class PseudoTypingExpression(object): # type: ignore
         def __init__(self,*args,**kwds):
             raise NotImplemented    
     
@@ -16,7 +21,7 @@ try:
         def __init__(self,*args,**kwds):
             raise NotImplemented
         
-    def makeTypingExpression( a ):
+    def makeTypingExpression( a ): # type: ignore
         return a
     
     from weakref import ReferenceType
@@ -24,7 +29,7 @@ try:
 except ImportError:
 
     LCPF_TYPING_IMPORTED = False
-    
+    TYPE_CHECKING = False
     class PseudoTypingExpression(object):
         _typeCache = {}
         @staticmethod
@@ -105,10 +110,13 @@ except ImportError:
         pass
 
     class PseudoTypingModifier(PseudoTypingBracketableExpression):
-        pass
-
+        def __init__(self,name):
+            super().__init__()
+            self.name = name
+        
     Any = PseudoTypingTType("Any")
     TextIO = PseudoTypingTType("TextIO")
+    Self = PseudoTypingTType("Self")
     
     Callable = PseudoTypingTBType("Callable")
     Tuple = PseudoTypingTBType("Tuple")

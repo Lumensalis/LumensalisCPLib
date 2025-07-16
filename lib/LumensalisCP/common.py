@@ -22,7 +22,7 @@ Volts:TypeAlias  = float   # voltage in volts
 Hertz:TypeAlias  = float   # frequency in cycles per second
 
 
-def dictAddUnique( d:Mapping[str,Any], key:str, value:Any ) -> None:
+def dictAddUnique( d:Dict[Any,Any], key:Any, value:Any ) -> None:
     """_summary_
 add a unique key/value pair to a dictionary, or assert that the key is already present with the same value.
     Args:
@@ -35,7 +35,7 @@ add a unique key/value pair to a dictionary, or assert that the key is already p
     else:
         d[key] = value
 
-def updateKWDefaults( kwargs:Mapping, **updatedDefaults ) -> Mapping:
+def updateKWDefaults( kwargs:Dict[str,Any], **updatedDefaults ) -> Dict[str,Any]:
     """_summary_
 
     Args:
@@ -93,7 +93,12 @@ def ensure( condition:bool, fmtStr:str|None = None, *args:Any ):
             raise EnsureException( "ensure failed" )
         raise EnsureException( safeFmt( fmtStr, *args ) )
 
-
+try:
+    import typing
+    if TYPE_CHECKING:
+        import LumensalisCP.Inputs
+except:
+    pass
 
 def toZeroToOne( value:Any ) -> float:
     """ Convert a value to a float. If the value is already a float, it is returned as is.
@@ -102,12 +107,13 @@ def toZeroToOne( value:Any ) -> float:
     if type(value) is float: return value
     if type(value) is bool:
         return 1.0 if value else 0.0
-    if type(value) is object:
-        if isinstance(value,LumensalisCP.Inputs.InputSource):
-            return float( value.value )
 
     try:
-        return float(value)
+        if type(value) is object:
+            if isinstance(value,LumensalisCP.Inputs.InputSource):
+                return float( value.value )  # type: ignore
+
+        return float(value) # type: ignore
     except Exception as inst:
         print( f"toZeroToOne exception {inst} for {value}/{getattr(value,'__name__',None)}" )
         raise

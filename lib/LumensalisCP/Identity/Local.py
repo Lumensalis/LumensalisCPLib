@@ -25,9 +25,8 @@ class LocalIdentifiable(object):
     
     
 class NamedLocalIdentifiable(LocalIdentifiable,Debuggable):
-    __nliContaining:list[ReferenceType['NamedLocalIdentifiableContainerMixin']]|None = None
     
-    def __init__( self, name:Optional[str] ):
+    def __init__( self, name:Optional[str]=None ):
         self.__name = name
         LocalIdentifiable.__init__(self)
         Debuggable.__init__(self)
@@ -52,7 +51,8 @@ class NamedLocalIdentifiable(LocalIdentifiable,Debuggable):
     #########################################################################
 
     #__nliContainerRef:ReferenceType["NamedLocalIdentifiableContainerMixin"]
-    __name:str
+    __nliContaining:list[ReferenceType['NamedLocalIdentifiableContainerMixin']]|None = None
+    __name:str|None
     
     def nliGetContaining(self) -> Iterable["NamedLocalIdentifiableContainerMixin"]|None:
         c = self.__nliContaining
@@ -82,11 +82,11 @@ class NamedLocalIdentifiable(LocalIdentifiable,Debuggable):
     def nliDynamicName(self) -> str:
         return self.__name or f"{self.__class__.__name__}@{id(self):X}"
 
-    def nliFind(self,name:str) -> "NamedLocalIdentifiable"|None:
+    def nliFind(self,name:str) -> "NamedLocalIdentifiable|NamedLocalIdentifiableContainerMixin| None":
         containers = self.nliGetContainers()
         if containers is not None:
             for container in containers:
-                if container.name == name:
+                if container.containerName == name:
                     return container
                 
         children = self.nliGetChildren()
@@ -95,21 +95,22 @@ class NamedLocalIdentifiable(LocalIdentifiable,Debuggable):
                 if child.name == name:
                     return child
         return None
-    
-    def __repr__(self)->str:
-        return self.name
+
     
 #############################################################################
 
 class NamedLocalIdentifiableContainerMixin( object ):
-    name:str
+    @property
+    def containerName(self) -> str: ...
+    @property
+    def name(self) -> str: ...
     
     def nliRenameChild( self, child:NamedLocalIdentifiable, name:str ): pass
     
-    def nliAddChild( self, child:NamedLocalIdentifiable ):
+    def nliAddChild( self, child:NamedLocalIdentifiable ) -> None:
         raise NotImplemented
     
-    def nliRemoveChild( self, child:NamedLocalIdentifiable ):
+    def nliRemoveChild( self, child:NamedLocalIdentifiable ) -> None:
         raise NotImplemented
     
     def nliContainsChild( self, child:NamedLocalIdentifiable ) -> bool:
@@ -118,28 +119,30 @@ class NamedLocalIdentifiableContainerMixin( object ):
 #############################################################################
     
 class NamedLocalIdentifiableWithParent( NamedLocalIdentifiable ):
-    __parent=ReferenceType[NamedLocalIdentifiable]
+    __parent=weakref.ReferenceType[NamedLocalIdentifiable]
     
     def __init__(self, name:Optional[str] = None, parent:Optional[NamedLocalIdentifiable]=None ):
         NamedLocalIdentifiable.__init__(self,name=name)
         self.__parent = parent and weakref.ref(parent)
     
     def nliGetActualParent(self) -> NamedLocalIdentifiable|None: 
-        return self.__parent() if self.__parent is not None else None
+        if self.__parent is None: return None
+        return self.__parent() 
 
 #############################################################################
     
 class NamedLocalIdentifiableList(NamedLocalIdentifiableWithParent, UserList, NamedLocalIdentifiableContainerMixin ):
     
-    def __init__(self, name:Optional[list] = None, items:Optional[list] = None, parent:Optional[NamedLocalIdentifiable]=None ):
+    def __init__(self, name:Optional[str] = None, items:Optional[list] = None, parent:Optional[NamedLocalIdentifiable]=None ):
         #self.__parent = parent and weakref.ref(parent)
         NamedLocalIdentifiableWithParent.__init__(self,name=name,parent=parent)
         UserList.__init__(self,items)
 
     def keys(self):
         return [v.name for v in self]
-
-
+    @property
+    def containerName(self): return self.name
+    
     def values(self):
         return self.data
 
@@ -164,11 +167,11 @@ class NamedLocalIdentifiableList(NamedLocalIdentifiableWithParent, UserList, Nam
     def nliGetChildren(self) -> Iterable['NamedLocalIdentifiable']|None:
         return self
             
-    def nliFind(self,name:str) -> "NamedLocalIdentifiable"|None:
+    def nliFind(self,name:str) -> "NamedLocalIdentifiable|None":
         for child in self:
             if child.name == name:
                 return child
         return None
 
-__all__ = [LocalIdentifiable,NamedLocalIdentifiable,NamedLocalIdentifiableWithParent,
-            NamedLocalIdentifiableContainerMixin,NamedLocalIdentifiableList]
+__all__ = ['LocalIdentifiable','NamedLocalIdentifiable','NamedLocalIdentifiableWithParent',
+            'NamedLocalIdentifiableContainerMixin','NamedLocalIdentifiableList']
