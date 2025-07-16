@@ -53,8 +53,8 @@ class ControlVariable(InputSource):
             if value != self._controlValue:
                 self._controlValue = value
     
-    def getDerivedValue(self, context:UpdateContext) -> bool:
-        return self._controlValue == True
+    def getDerivedValue(self, context:UpdateContext) -> Any:
+        return self._controlValue
         
     def move( self, delta ):
         self.set( self._controlValue + delta )
