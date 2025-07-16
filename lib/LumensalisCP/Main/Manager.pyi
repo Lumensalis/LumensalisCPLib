@@ -1,4 +1,5 @@
 from LumensalisCP.I2C.I2CDevice import I2CDevice
+import LumensalisCP.Lights
 from LumensalisCP.commonPreManager import *
 
 from LumensalisCP.Main import PreMainConfig
@@ -14,12 +15,18 @@ from LumensalisCP.HTTP.BasicServer import BasicServer
 from LumensalisCP.Audio import Audio
 from TerrainTronics.Factory import TerrainTronicsFactory
 
+from LumensalisCP.Main.ControlVariables import Controller, ControlVariable 
+import LumensalisCP.Lights.DMXManager
+
 class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     
     theManager : MainManager|None
-    dmx : DMXManager
+
     socketPool : Any # SocketPool
     profiler: Profiler
+    defaultController:Controller
+    controllers:NamedLocalIdentifiableList[Controller]
+    _privateCurrentContext:EvaluationContext
     
     @staticmethod
     def initOrGetManager()->MainManager: ...
@@ -70,15 +77,17 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         
     def _addI2CDevice(self, target:I2CDevice ): pass
    
-    def addControlVariable( self, name, *args, **kwds ) -> ControlVariable: pass
-        
-    def addIntermediateVariable( self, name, *args, **kwds ) -> IntermediateVariable: pass
+   # TODO: mirror ControlVariable.__init__ 
+    def addControlVariable( self, *args, **kwds ) -> ControlVariable: pass
+    
+    # TODO: mirror IntermediateVariable.__init__ 
+    def addIntermediateVariable( self, *args, **kwds ) -> IntermediateVariable: pass
         
     def addScene( self, name:Optional[str]=None, *args, **kwds ) -> Scene: pass
     
     def addScenes( self, n:int ) -> list[Scene]: pass
     
-    def sayAtStartup( self, fmt, *args ): ...
+    def sayAtStartup( self, fmt:str, *args ): ...
     
     def addBasicWebServer( self, *args, **kwds ) -> BasicServer: pass
     _webServer:BasicServer|None
@@ -107,3 +116,5 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     async def taskLoop( self ): pass
 
     def run( self ): pass
+
+    def renameIdentifiables(self, d:dict[str,Any]): ...

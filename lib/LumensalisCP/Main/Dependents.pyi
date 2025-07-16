@@ -20,7 +20,7 @@ class ManagerBase(object):
     pass
 
 class SubManagerBase(ManagerBase,MainChild):
-    def __init__(self, main:MainManager =None, name:Optional[str]=None ):pass
+    def __init__(self, main:MainManager, name:Optional[str]=None ):pass
 
 class ManagerRef(object):
     

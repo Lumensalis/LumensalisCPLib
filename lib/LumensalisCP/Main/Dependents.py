@@ -1,14 +1,19 @@
 # from .Manager import MainManager
 
+import LumensalisCP.Main
 from ..Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
 import LumensalisCP.Main
+if TYPE_CHECKING:
+    import LumensalisCP.Main.Manager
+    from LumensalisCP.Main.Manager import MainManager
+    
 #############################################################################
 class MainChild( NamedLocalIdentifiable ):
     
-    def __init__( self, main:"LumensalisCP.Main.Manager.MainManager", name:Optional[str]=None ):
+    def __init__( self, main:MainManager, name:Optional[str]=None ):
         # type: (str, LumensalisCP.Main.Manager.MainManager ) -> None
         NamedLocalIdentifiable.__init__( self, name = name or self.__class__.__name__)
         ensure( main is not None )
@@ -22,7 +27,7 @@ class MainChild( NamedLocalIdentifiable ):
 
 #############################################################################
 class FactoryBase( MainChild ):
-    def __init__(self, main:"LumensalisCP.Main.Manager.MainManager"):
+    def __init__(self, main:MainManager):
         super().__init__( main, name=self.__class__.__name__ )
 
     def makeChild( self, cls, **kwds ):
@@ -53,9 +58,9 @@ class ManagerBase(object):
 
 class SubManagerBase(ManagerBase,MainChild):
     
-    def __init__(self, main:"LumensalisCP.Main.Manager.MainManager"=None, name:str = None ):
+    def __init__(self, main:MainManager, name:Optional[str] = None ):
         ManagerBase.__init__(self)
-        MainChild.__init__( self, main=main, name=name or self.__class__.__name__,  )
+        MainChild.__init__( self, main=main, name=name )
         
         self._registerManager()
 
@@ -71,15 +76,15 @@ class ManagerRef(object):
         assert manager is globalManager
 
     def __call__( self ) -> ManagerBase:
-        return getattr( self.managerClass, '_theManager', None )
+        return getattr( self.managerClass, '_theManager', None ) # type: ignore
 
 class MainRef(object):
-    _theManager:"LumensalisCP.Main.Manager.MainManager" = None
+    _theManager:LumensalisCP.Main.Manager.MainManager
     
-    def __init__( self, main:"LumensalisCP.Main.Manager.MainManager"=None  ):
+    def __init__( self, main:LumensalisCP.Main.Manager.MainManager ):
         assert main is not None and main is MainRef._theManager
 
     def __call__( self ) -> LumensalisCP.Main.Manager.MainManager:
         return MainRef._theManager
 
-__all__ = [MainChild,FactoryBase,ManagerBase,SubManagerBase,ManagerRef,MainRef]
+__all__ = ['MainChild','FactoryBase','ManagerBase','SubManagerBase','ManagerRef','MainRef']

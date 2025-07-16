@@ -1,4 +1,5 @@
 
+import LumensalisCP.Audio
 from LumensalisCP.commonPreManager import *
 from LumensalisCP.commonPreManager import pmc_mainLoopControl
 
@@ -12,18 +13,21 @@ from LumensalisCP.Shields.Base import ShieldBase
 
 def _early_collect(tag:str):
     PreMainConfig.pmc_gcManager.runCollection(force=True)
-    
-    
+
+
+from LumensalisCP.Main.ControlVariables import Controller, ControlVariable 
+import LumensalisCP.Audio
 from . import ManagerRL    
         
 class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     
-    theManager : "MainManager"|None = None
+    theManager : "MainManager|None" = None
     ENABLE_EEPROM_IDENTITY = False
     profiler: Profiler
     shields:NamedLocalIdentifiableList[ShieldBase]
+    controllers:NamedLocalIdentifiableList[Controller]
+    _privateCurrentContext:EvaluationContext
     
-
     @staticmethod
     def initOrGetManager():
         rv = MainManager.theManager
@@ -37,7 +41,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         NamedLocalIdentifiable.__init__(self,"main")
         
         MainManager.theManager = self
-        PreMainConfig.pmc_gcManager.main = self
+        PreMainConfig.pmc_gcManager.main = self # type: ignore
 
         self.__cycle = 0
         
@@ -47,12 +51,9 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self._when:TimeInSeconds = self.getNewNow()
 
         from LumensalisCP.Main.Dependents import MainRef
-        MainRef._theManager = self
+        MainRef._theManager = self  # type: ignore
         
         self._privateCurrentContext = EvaluationContext(self)
-        #def fetchCurrentContext( context:UpdateContext|None ) -> UpdateContext:
-        #   return context or self._privateCurrentContext
-        #LumensalisCP.Main.Updates.UpdateContext.fetchCurrentContext = fetchCurrentContext
         UpdateContext._patch_fetchCurrentContext(self)
 
         self.profiler = Profiler(self._privateCurrentContext )
@@ -68,10 +69,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         displayio.release_displays()
         
         ConfigurableBase.__init__(self,  config, defaults=mainConfigDefaults, **kwds )
-        # I2CProvider.__init__( self, config=self.config, main=self )
-        #I2CProvider.__init__(self,)
-        #Debuggable.__init__(self)
-        #self.name = "MainManager"
+
         
         _early_collect("mid manager init")
 
@@ -95,8 +93,9 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
         self.__anonInputs = NamedLocalIdentifiableList(name='inputs',parent=self)
         self.__anonOutputs = NamedLocalIdentifiableList(name='outputs',parent=self)
-        
-        self._controlVariables = NamedLocalIdentifiableList(name='controlVariables',parent=self)
+        self.controllers = NamedLocalIdentifiableList(name='controllers',parent=self)
+        self.defaultController = Controller(self)
+        self.defaultController.nliSetContainer(self.controllers)
 
         self._monitorTargets = {}
 
@@ -192,18 +191,11 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
             
         self.__shutdownTasks.append(task)
 
-    def addControlVariable( self, name:Optional[str]=None, *args, **kwds ) -> ControlVariable:
-        variable = ControlVariable( name, *args,**kwds )
-        variable.nliSetContainer(self._controlVariables)
-        self.infoOut( f"added ControlVariable {name}")
-        return variable
+    def addControlVariable( self, *args, **kwds ) -> ControlVariable:
+        return self.defaultController.addControlVariable( *args, **kwds )
 
-    def addIntermediateVariable( self, name:Optional[str]=None, *args, **kwds ) -> IntermediateVariable:
-        variable = IntermediateVariable( name, *args,**kwds )
-        variable.nliSetContainer(self._controlVariables)
-        self.infoOut( f"added Variable {name}")
-        variable.updateValue( self._privateCurrentContext )
-        return variable
+    def addIntermediateVariable( self,  *args, **kwds ) -> IntermediateVariable:
+        return self.defaultController.addIntermediateVariable( *args, **kwds )
 
     def addScene( self, name:Optional[str]=None, *args, **kwds ) -> Scene:
         scene = self._scenes.addScene( name, *args, **kwds )
@@ -224,9 +216,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self.sayAtStartup( "addBasicWebServer %r, %r ", args, kwds )
         server = BasicServer( *args, main=self, **kwds )
         self._webServer = server
-        for v in self._controlVariables.values():
-            server.monitorControlVariable( v )
-            
+
         self.__asyncTaskCreators.append( server.createAsyncTasks )
         
         def startWebServer():

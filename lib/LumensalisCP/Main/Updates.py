@@ -1,33 +1,71 @@
 from LumensalisCP.CPTyping import *
+from LumensalisCP.Debug import Debuggable
 from LumensalisCP.common import *
 
 import LumensalisCP.Main
 from LumensalisCP.Main.Profiler import ProfileFrame, ProfileSubFrame, ProfileStubFrame
+import LumensalisCP.Main.Releasable
 
+if TYPE_CHECKING:
+    from LumensalisCP.Main.Manager import MainManager
+    import LumensalisCP.Main.Manager 
+    from  LumensalisCP.Main.Expressions import EvaluationContext
+    from LumensalisCP.Inputs import InputSource
+    DirectValue = Type("int|bool|float|RGB")
+    OptionalContextArg = Optional[EvaluationContext]
 
+    
+class UpdateContextDebugManager(LumensalisCP.Main.Releasable.Releasable):
+    def __init__( self ):
+        self.context:'UpdateContext|None' = None
+        self.debugEvaluate = True
+        
+    def prepare( self, context:EvaluationContext, debugEvaluate = True ):
+        self.context = context
+        self.debugEvaluate = debugEvaluate
+
+    def __enter__(self):
+        assert self.context is not None
+        self.prior_debugEvaluate = self.context.debugEvaluate
+        self.context.debugEvaluate = self.debugEvaluate
+        return self
+
+    def __exit__(self, eT, eV, eTB ):
+        assert self.context is not None
+        self.context.debugEvaluate = self.prior_debugEvaluate
+        self.context = None
+
+    def releaseNested(self):
+        self.context = None
+        
 class UpdateContext(object):
     activeFrame: ProfileFrame
     
     _stubFrame = ProfileStubFrame( )
     
-    def __init__( self, main:"LumensalisCP.Main.Manager.MainManager"=None ):
+    def __init__( self, main:MainManager=None ):
         #print( f"NEW UpdateContext @{id(self):X}")
         self.__updateIndex = 0
-        self.__changedSources : List["LumensalisCP.Inputs.InputSource"] = []
+        self.__changedSources : list[InputSource] = []
         self.__mainRef = main.makeRef()
         self.__when = main.when
         self.activeFrame = None
         self.baseFrame = None
+        self.debugEvaluate = False
 
     @classmethod
-    def _patch_fetchCurrentContext(cls, main:"LumensalisCP.Main.Manager.MainManager"):
+    def _patch_fetchCurrentContext(cls, main:MainManager):
         assert main is not None
         assert main._privateCurrentContext is not None
-        def patchedFetchCurrentContext( context:"UpdateContext"|None ) -> "UpdateContext":
+        def patchedFetchCurrentContext( context:EvaluationContext|None ) -> EvaluationContext:
             return context or main._privateCurrentContext
         cls.fetchCurrentContext = patchedFetchCurrentContext
         
-        
+    def nestDebugEvaluate(self, debugEvaluate:bool|None = None ) -> UpdateContextDebugManager:
+        entry = UpdateContextDebugManager.releasableGetInstance()
+        entry.prepare( self,debugEvaluate if debugEvaluate is not None else self.debugEvaluate)
+        return entry
+    
     def reset( self, when:TimeInMS|None = None ):
         try:
             self.__updateIndex += 1
@@ -61,7 +99,7 @@ class UpdateContext(object):
     def stubFrame(self, name:str|None=None, name2:str|None=None) -> ProfileStubFrame:
         return UpdateContext._stubFrame
         
-    def addChangedSource( self, changed:"LumensalisCP.Inputs.InputSource"):
+    def addChangedSource( self, changed:InputSource):
         #self.__changedSources.append( changed )
         pass
         
@@ -70,7 +108,7 @@ class UpdateContext(object):
     
         
     @staticmethod
-    def fetchCurrentContext( context:"UpdateContext"|None ) -> "UpdateContext":
+    def fetchCurrentContext( context:EvaluationContext|None ) -> EvaluationContext:
         """return context if it is not None, otherwise return the current
         context from the MainManager singleton
 
@@ -84,7 +122,6 @@ class UpdateContext(object):
 
 #############################################################################
 
-OptionalContextArg = Optional[UpdateContext]
 
 #############################################################################
 class RefreshCycle(object):
@@ -92,7 +129,7 @@ class RefreshCycle(object):
         self.__refreshRate = refreshRate
         self.__nextRefresh = 0
         
-    def ready( self, context:UpdateContext ) -> bool:
+    def ready( self, context:EvaluationContext ) -> bool:
         if self.__nextRefresh >= context.when: return False
         
         self.__nextRefresh = context.when + self.__refreshRate
@@ -103,26 +140,35 @@ class Refreshable( object ):
         self.__refreshCycle = RefreshCycle( refreshRate=refreshRate )
     
     @final
-    def refresh( self, context:UpdateContext):
+    def refresh( self, context:EvaluationContext):
         if self.__refreshCycle.ready(context):
             self.doRefresh(context)
 
+    def doRefresh(self,context:EvaluationContext) -> None:
+        raise NotImplemented
 
 
 
 #############################################################################
 
-class Evaluatable(object):
+class Evaluatable(Debuggable):
     
-    def getValue(self, context:OptionalContextArg):
+    def getValue(self, context:OptionalContextArg) -> Any:
         """ current value of term"""
         raise NotImplemented
 
 
 
-def evaluate( value:Evaluatable|DirectValue, context:OptionalContextArg = None ):
+def evaluate( value:Evaluatable|DirectValue, context:OptionalContextArg = None, debugEvaluate:bool = False ):
     if isinstance( value, Evaluatable ):
-        return value.getValue(fetchCurrentContext(context))
+        context = UpdateContext.fetchCurrentContext(context)
+        prior_debugEvaluate = context.debugEvaluate
+        try:
+            context.debugEvaluate = prior_debugEvaluate or debugEvaluate
+            rv = value.getValue(context)
+        finally:
+            context.debugEvaluate = prior_debugEvaluate
+        return rv
     
     return value
 

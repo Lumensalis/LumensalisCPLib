@@ -163,6 +163,13 @@ class UnaryOperation(ExpressionOperation):
 
     @override
     def getValue(self, context:EvaluationContext) -> Any:
+        if context.debugEvaluate:
+            with context.nestDebugEvaluate():
+                v = self.term.getValue( context )
+                rv = self.op( context, v )
+                self.infoOut( "OP %r = %r", v, rv)
+            return rv
+
         return self.op( context, self.term.getValue( context ) )
 
 class BinaryOperation(ExpressionOperation):
@@ -184,6 +191,14 @@ class BinaryOperation(ExpressionOperation):
 
     @override
     def getValue(self, context:EvaluationContext) -> Any:
+        if context.debugEvaluate:
+            with context.nestDebugEvaluate():
+                a = self.term1.getValue( context )
+                b = self.term2.getValue( context )
+                rv = self.op( context, a, b )
+                self.infoOut( "%r OP %r = %r", a, b, rv)
+            return rv
+        
         return self.op( context, self.term1.getValue( context ), self.term2.getValue( context ) )
 
 
@@ -197,6 +212,8 @@ class ExpressionConstant(ExpressionTerm):
 
     @override
     def getValue(self, context:EvaluationContext) -> Any:
+        if context.debugEvaluate:
+            self.infoOut( "(constant %r)", self.__constantValue)
         return self.__constantValue
     
     
@@ -227,15 +244,14 @@ def makeUnaryOperation( term:ExpressionTerm=None, op:Callable[[EvaluationContext
 
 #############################################################################
 
-class EdgeTerm(ExpressionOperation,Debuggable):
-    def __init__(self, term:ExpressionTerm=None,
+class EdgeTerm(ExpressionOperation):
+    def __init__(self, term:ExpressionTerm,
                  reset:ExpressionTerm=None,
                  rising:bool = False,
                  falling:bool = False,
                  name:str=None
                  ):
         super().__init__()
-        Debuggable.__init__(self)
         self.name = name
         self.term = ensureIsTerm(term)
         self.__resetTerm = ensureIsTerm(reset) if reset is not None else None
@@ -367,7 +383,7 @@ class Expression( LumensalisCP.Main.Updates.Evaluatable ):
         self.updateValue(context)
         return self.__latestValue
     
-    def updateValue(self, context:EvaluationContext ):
+    def updateValue(self, context:EvaluationContext ) -> bool:
         term = self.term
         if self.whenClause is not None:
             whenResult = self.whenClause.getValue( context )

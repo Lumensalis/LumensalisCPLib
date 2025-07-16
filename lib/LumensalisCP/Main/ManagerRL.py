@@ -1,21 +1,23 @@
 
+import LumensalisCP.Main.Manager
 from LumensalisCP.commonPreManager import *
 
-from . import Manager
+from LumensalisCP.Main import Manager
 
 from .PreMainConfig import pmc_mainLoopControl, pmc_gcManager
 
 mlc = pmc_mainLoopControl
     
-def MainManager_nliContainers(self:Manager.MainManager) -> Iterable[NamedLocalIdentifiableContainerMixin]|None:
-    return [self.shields, self._i2cDevicesContainer, self._controlVariables]
+def MainManager_nliContainers(self:LumensalisCP.Main.Manager.MainManager) -> Iterable[NamedLocalIdentifiableContainerMixin]|None:
+    yield self.shields
+    yield self._i2cDevicesContainer
+    yield self.controllers
 
 def MainManager_nliGetChildren(self:Manager.MainManager) -> Iterable[NamedLocalIdentifiable]|None:
-    
     yield self._scenes
+    #yield self.defaultController
     if self.__dmx is not None:
         yield self.__dmx
-
 
 def MainManager_renameIdentifiables( self:Manager.MainManager, items:dict|None, verbose:bool = False ):
     if items is None:

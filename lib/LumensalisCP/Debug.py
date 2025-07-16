@@ -12,7 +12,10 @@ class Debuggable( object ):
         
     @property
     def _dbgName(self):
-        return getattr(self,'name',None) or self.__class__.__name__ 
+        name = getattr(self,'name',None) or getattr( self, '_DebuggableCachedName', None )
+        if name is not None: return name
+        self._DebuggableCachedName = f"{self.__class__.__name__}@{id(self):X}"
+        return self._DebuggableCachedName
     
     def __header( self, kind:str )->str:
         return "%.3f %s %s : " % (Debuggable._getNewNow(), kind, self._dbgName )

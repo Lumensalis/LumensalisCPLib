@@ -2,12 +2,12 @@
 
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
-import asyncio.lock
+import asyncio.lock  # type: ignore
 
 
 class ReleasablePool(object):
     
-    _freeHead:"Releasable"
+    _freeHead:"Releasable|None"
     
     def __init__(self, cls ):
         self._freeHead = None
@@ -32,12 +32,19 @@ class Releasable(object):
         if rv is None:
             rv = ReleasablePool(cls)
             setattr(cls,'__rp',rv)
-
         return rv
 
+    @classmethod 
+    def releasableGetInstance(cls) -> Self:
+        rp = cls.getReleasablePool()
+        entry = cls._make_getFree( rp )
+        if entry is None:
+            entry = cls()
+        return entry # type: ignore
+        
     @classmethod
     def _make_getFree(cls, rp:ReleasablePool):
-        if rp._freeHead:
+        if rp._freeHead is not None:
             entry = rp._freeHead
             rp._freeHead = entry._nextFree
             entry._nextFree = None
@@ -53,22 +60,8 @@ class Releasable(object):
         rp._rIndex += 1
         return entry
                         
-    @classmethod
-    def __ddd__makeEntry(cls,*args, **kwds):
-        rp = cls.getReleasablePool()
-        entry = cls._make_getFree( rp )
-
-        if entry is not None:
-            entry.reset( *args, **kwds )
-        else:
-            entry = cls(*args, **kwds)
-
-        cls._makeFinish( rp, entry )
-            
-        return entry
-
     _inUse:bool
-    _nextFree:"Releasable"|None
+    _nextFree:"Releasable|None"
     _rIndex:int
     
     def __init__(self):

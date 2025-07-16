@@ -1,4 +1,5 @@
 from LumensalisCP.CPTyping import *
+from LumensalisCP.Debug import Debuggable
 from LumensalisCP.common import *
 from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.Main.Dependents import MainRef
@@ -6,9 +7,24 @@ from LumensalisCP.Inputs import InputSource
 from LumensalisCP.Main.Profiler import ProfileFrame, ProfileSubFrame, ProfileStubFrame
 
 from LumensalisCP.Lights.Values import RGB
-
+from LumensalisCP.Main.Manager import MainManager
+import LumensalisCP.Main.Manager 
+from  LumensalisCP.Main.Expressions import EvaluationContext
+from LumensalisCP.Inputs import InputSource
 type DirectValue = int|bool|float|RGB
 
+import LumensalisCP.Main.Releasable
+
+class UpdateContextDebugManager(LumensalisCP.Main.Releasable.Releasable):
+    def __init__( self ): ...
+    def prepare( self, context:'UpdateContext', debugEvaluate = True ): ...
+    
+    def __enter__(self) -> 'UpdateContextDebugManager': ...
+        
+    def __exit__(self, eT, eV, eTB ): ...
+
+    def releaseNested(self): ...
+        
 class UpdateContext(object):
     def __init__( self, main:MainManager ): pass
     
@@ -18,6 +34,7 @@ class UpdateContext(object):
     changedSources: List[InputSource]
     activeFrame: ProfileFrame
     baseFrame: ProfileFrame
+    debugEvaluate:bool
 
     def addChangedSource( self, changed:InputSource):pass
         
@@ -28,6 +45,8 @@ class UpdateContext(object):
 
     @staticmethod
     def fetchCurrentContext( context:"UpdateContext"|None ) -> "UpdateContext": pass
+    
+    def nestDebugEvaluate(self, debugEvaluate:bool|None = None ) -> UpdateContextDebugManager: ...
         
 OptionalContextArg = Optional[UpdateContext]
 
@@ -35,11 +54,11 @@ OptionalContextArg = Optional[UpdateContext]
 
 #Type 
 
-class Evaluatable(object):
+class Evaluatable(Debuggable):
     
     def getValue(self, context:UpdateContext) -> DirectValue: pass
 
-def evaluate( value:Evaluatable|DirectValue, context:UpdateContext|None = None ) -> DirectValue: pass
+def evaluate( value:Evaluatable|DirectValue, context:UpdateContext|None = None, debugEvaluate:bool = False ) -> DirectValue: pass
 
 #############################################################################
             
