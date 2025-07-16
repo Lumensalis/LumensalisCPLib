@@ -1,3 +1,4 @@
+from token import OP
 from .Values import *
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 #import LumensalisCP.Lights.LightBase as LightBase
@@ -57,6 +58,12 @@ class NextNLights(LightGroupList):
         offset = source.startOfNextN(count)
         lights = list( [source[offset + index] for index in range(count)] )
         super().__init__(name=name,lights=lights,**kwargs)
+        
+class Ring(NextNLights): pass
+
+class Stick(NextNLights): pass
+
+class Strip(NextNLights): pass
 
 #############################################################################
 
@@ -87,25 +94,25 @@ class LightSource(LightGroupList):
         self.__nextGroupStartIndex += count
         return rv
 
-    def _nextNLights(self, count:int, name:str=None, desc:str=None, **kwargs ) ->NextNLights:
-        return NextNLights( count=count,
+    def _nextNLights(self, cls, count:int, name:Optional[str]=None, desc:Optional[str]=None, **kwargs ):
+        return cls( count=count,
                            name=name or f"{desc}({self.name} [{self.__nextGroupStartIndex}:{self.__nextGroupStartIndex+count-1}])", 
                            source=self,**kwargs )
     
-    def nextNLights(self, count:int, name:str=None, **kwargs ) ->NextNLights:
-        return self._nextNLights( count=count, name=name, desc="nextN", **kwargs )
+    def nextNLights(self, count:int, name:Optional[str]=None, **kwargs ) ->NextNLights:
+        return self._nextNLights( NextNLights, count=count, name=name, **kwargs )
     
-    def ring(self, count:int, name:str=None, **kwargs ) ->NextNLights:
-        return self._nextNLights( count=count, name=name, desc="ring", **kwargs )
+    def ring(self, count:int, name:Optional[str]=None, **kwargs ) -> Ring:
+        return self._nextNLights( Ring, count=count, name=name, **kwargs )
 
-    def stick(self, count:int, name:str=None, **kwargs ) ->NextNLights:
-        return self._nextNLights( count=count, name=name, desc="stick", **kwargs )
+    def stick(self, count:int, name:Optional[str]=None, **kwargs ) -> Stick:
+        return self._nextNLights( Stick, count=count, name=name, **kwargs )
 
-    def strip(self, count:int, name:str=None, **kwargs ) ->NextNLights:
-        return self._nextNLights( count=count, name=name, desc="strip", **kwargs )
+    def strip(self, count:int, name:Optional[str]=None, **kwargs ) -> Strip:
+        return self._nextNLights( Strip, count=count, name=name, **kwargs )
 
-    def single(self, name:str=None, **kwargs ) ->NextNLights:
-        return self._nextNLights( count=1, name=name, desc="strip", **kwargs )
+    def single(self, name:Optional[str]=None, **kwargs ) ->NextNLights:
+        return self._nextNLights( NextNLights, count=1, name=name, **kwargs )
 
     def lightChanged(self,light:"Light.Light"): raise NotImplemented
 
