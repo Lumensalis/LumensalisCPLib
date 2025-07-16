@@ -1,6 +1,6 @@
 
 from LumensalisCP.Main.Terms import *
-from LumensalisCP.IOContext import  InputSource, NamedOutputTarget, EvaluationContext, OptionalContextArg
+from LumensalisCP.IOContext import  InputSource, NamedOutputTarget, EvaluationContext
 from LumensalisCP.Scenes.Scene import addSceneTask
 from TerrainTronics.Caernarfon.Castle import onIRCode
 from LumensalisCP.Triggers import Trigger, fireOnSet, fireOnTrue, fireOnRising
