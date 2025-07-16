@@ -164,10 +164,10 @@ class UnaryOperation(ExpressionOperation):
     @override
     def getValue(self, context:EvaluationContext) -> Any:
         if context.debugEvaluate:
-            with context.nestDebugEvaluate():
+            with context.nestDebugEvaluate() as nde:
                 v = self.term.getValue( context )
                 rv = self.op( context, v )
-                self.infoOut( "OP %r = %r", v, rv)
+                nde.say(self, "OP %r = %r", v, rv)
             return rv
 
         return self.op( context, self.term.getValue( context ) )
@@ -192,11 +192,11 @@ class BinaryOperation(ExpressionOperation):
     @override
     def getValue(self, context:EvaluationContext) -> Any:
         if context.debugEvaluate:
-            with context.nestDebugEvaluate():
+            with context.nestDebugEvaluate() as nde:
                 a = self.term1.getValue( context )
                 b = self.term2.getValue( context )
                 rv = self.op( context, a, b )
-                self.infoOut( "%r OP %r = %r", a, b, rv)
+                nde.say(self, "%r OP %r = %r", a, b, rv)
             return rv
         
         return self.op( context, self.term1.getValue( context ), self.term2.getValue( context ) )

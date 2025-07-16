@@ -16,6 +16,11 @@ type DirectValue = int|bool|float|RGB
 import LumensalisCP.Main.Releasable
 
 class UpdateContextDebugManager(LumensalisCP.Main.Releasable.Releasable):
+    prior_debugEvaluate:bool
+    prior_debugIndent:int
+    context:EvaluationContext
+    debugEvaluate:bool
+    
     def __init__( self ): ...
     def prepare( self, context:'UpdateContext', debugEvaluate = True ): ...
     
@@ -24,8 +29,10 @@ class UpdateContextDebugManager(LumensalisCP.Main.Releasable.Releasable):
     def __exit__(self, eT, eV, eTB ): ...
 
     def releaseNested(self): ...
+    
+    def say( self, message, *args, instance:Optional[Debuggable]=None ) -> None: ...
         
-class UpdateContext(object):
+class UpdateContext(Debuggable):
     def __init__( self, main:MainManager ): pass
     
     main: MainManager
@@ -35,6 +42,8 @@ class UpdateContext(object):
     activeFrame: ProfileFrame
     baseFrame: ProfileFrame
     debugEvaluate:bool
+    _debugIndent:int
+    
 
     def addChangedSource( self, changed:InputSource):pass
         
@@ -58,7 +67,7 @@ class Evaluatable(Debuggable):
     
     def getValue(self, context:UpdateContext) -> DirectValue: pass
 
-def evaluate( value:Evaluatable|DirectValue, context:UpdateContext|None = None, debugEvaluate:bool = False ) -> DirectValue: pass
+def evaluate( value:Evaluatable|DirectValue, context:EvaluationContext|None = None ) -> DirectValue: pass
 
 #############################################################################
             

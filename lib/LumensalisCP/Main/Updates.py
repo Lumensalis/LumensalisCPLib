@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     
 class UpdateContextDebugManager(LumensalisCP.Main.Releasable.Releasable):
     def __init__( self ):
-        self.context:'UpdateContext|None' = None
+        #self.context:EvaluationContext|None = None
         self.debugEvaluate = True
         
     def prepare( self, context:EvaluationContext, debugEvaluate = True ):
@@ -27,23 +27,46 @@ class UpdateContextDebugManager(LumensalisCP.Main.Releasable.Releasable):
     def __enter__(self):
         assert self.context is not None
         self.prior_debugEvaluate = self.context.debugEvaluate
+        self.prior_debugIndent = self.context._debugIndent
         self.context.debugEvaluate = self.debugEvaluate
+        self.context._debugIndent = self.debugIndent = self.prior_debugIndent + 2
         return self
 
     def __exit__(self, eT, eV, eTB ):
         assert self.context is not None
         self.context.debugEvaluate = self.prior_debugEvaluate
+        self.context._debugIndent = self.prior_debugIndent 
         self.context = None
+
+    def say( self, instanceOrMessage:Debuggable|str, *args ) -> None:
+        if type(instanceOrMessage) is str:
+            message = instanceOrMessage
+            instance = None
+        else:
+            instance = instanceOrMessage
+            assert isinstance( instance, Debuggable )
+            assert len(args) > 0
+            message = args[0]
+            assert type(message) is str
+            args = args[1:]
+        pfx = "                       "[:self.debugIndent] + "nde| "
+        if len(args): message = safeFmt(message,*args)
+            
+        self.context.infoOut( "NDE %.32s %s %s",
+                             "" if instance is None else instance._dbgName,
+                              "                       "[:self.debugIndent],
+                             message )
 
     def releaseNested(self):
         self.context = None
         
-class UpdateContext(object):
+class UpdateContext(Debuggable):
     activeFrame: ProfileFrame
     
     _stubFrame = ProfileStubFrame( )
     
     def __init__( self, main:MainManager=None ):
+        super().__init__()
         #print( f"NEW UpdateContext @{id(self):X}")
         self.__updateIndex = 0
         self.__changedSources : list[InputSource] = []
@@ -52,6 +75,7 @@ class UpdateContext(object):
         self.activeFrame = None
         self.baseFrame = None
         self.debugEvaluate = False
+        self._debugIndent = 0
 
     @classmethod
     def _patch_fetchCurrentContext(cls, main:MainManager):
@@ -61,7 +85,7 @@ class UpdateContext(object):
             return context or main._privateCurrentContext
         cls.fetchCurrentContext = patchedFetchCurrentContext
         
-    def nestDebugEvaluate(self, debugEvaluate:bool|None = None ) -> UpdateContextDebugManager:
+    def nestDebugEvaluate(self, debugEvaluate:bool|None = True ) -> UpdateContextDebugManager:
         entry = UpdateContextDebugManager.releasableGetInstance()
         entry.prepare( self,debugEvaluate if debugEvaluate is not None else self.debugEvaluate)
         return entry
@@ -73,12 +97,13 @@ class UpdateContext(object):
             self.__when = when or self.main.when
             self.activeFrame = None
             self.baseFrame = None
+            self._debugIndent = 0
         except Exception as inst:
             print( f"UpdateContext.refresh @{id(self):X} failed : {inst}")
             raise
         
     @property
-    def main(self): return self.__mainRef()
+    def main(self) -> MainManager: return self.__mainRef()
         
     @property
     def when(self) -> TimeInSeconds : return self.__when
@@ -159,16 +184,16 @@ class Evaluatable(Debuggable):
 
 
 
-def evaluate( value:Evaluatable|DirectValue, context:OptionalContextArg = None, debugEvaluate:bool = False ):
+def evaluate( value:Evaluatable|DirectValue, context:OptionalContextArg = None ):
     if isinstance( value, Evaluatable ):
         context = UpdateContext.fetchCurrentContext(context)
-        prior_debugEvaluate = context.debugEvaluate
-        try:
-            context.debugEvaluate = prior_debugEvaluate or debugEvaluate
-            rv = value.getValue(context)
-        finally:
-            context.debugEvaluate = prior_debugEvaluate
-        return rv
+        if  context.debugEvaluate:
+            with context.nestDebugEvaluate() as nde:
+                rv = value.getValue(context)
+                nde.say(value, "evaluate returning %r", rv)
+            return rv
+        else:
+            return value.getValue(context)
     
     return value
 
