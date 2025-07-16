@@ -11,7 +11,8 @@ if TYPE_CHECKING:
     import LumensalisCP.Main.Manager 
     from  LumensalisCP.Main.Expressions import EvaluationContext
     from LumensalisCP.Inputs import InputSource
-    DirectValue = Type("int|bool|float|RGB")
+    from LumensalisCP.Lights.Values import RGB
+    DirectValue = Type( int | bool | float | RGB )
     OptionalContextArg = Optional[EvaluationContext]
 
     
@@ -65,14 +66,14 @@ class UpdateContext(Debuggable):
     
     _stubFrame = ProfileStubFrame( )
     
-    def __init__( self, main:MainManager=None ):
+    def __init__( self, main:MainManager ):
         super().__init__()
         #print( f"NEW UpdateContext @{id(self):X}")
         self.__updateIndex = 0
         self.__changedSources : list[InputSource] = []
         self.__mainRef = main.makeRef()
         self.__when = main.when
-        self.activeFrame = None
+        #self.activeFrame = None
         self.baseFrame = None
         self.debugEvaluate = False
         self._debugIndent = 0
@@ -95,7 +96,7 @@ class UpdateContext(Debuggable):
             self.__updateIndex += 1
             #self.__changedSources.clear()
             self.__when = when or self.main.when
-            self.activeFrame = None
+            if hasattr(self, 'activeFrame'): del self.activeFrame 
             self.baseFrame = None
             self._debugIndent = 0
         except Exception as inst:
@@ -133,7 +134,7 @@ class UpdateContext(Debuggable):
     
         
     @staticmethod
-    def fetchCurrentContext( context:EvaluationContext|None ) -> EvaluationContext:
+    def fetchCurrentContext( context:Optional[EvaluationContext]|None ) -> EvaluationContext:
         """return context if it is not None, otherwise return the current
         context from the MainManager singleton
 

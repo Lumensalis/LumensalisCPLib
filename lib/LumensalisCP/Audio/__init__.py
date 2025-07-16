@@ -10,7 +10,7 @@ import LumensalisCP.Main.Manager
 from  LumensalisCP.Main.Dependents import MainChild
 
 if TYPE_CHECKING:
-    import LumensalisCP.Main.Manager 
+    from  LumensalisCP.Main.Manager import MainManager
     
 class AudioSample( object ):
     def __init__( self, sample, filename ):
@@ -23,10 +23,10 @@ class AudioSample( object ):
         
         
 class Audio( MainChild ):
-    theAudio = None
+    theAudio:'Audio'
 
     def __init__( self, 
-                main:LumensalisCP.Main.Manager.MainManager,
+                main:MainManager,
                 bit_clock:Pin|None = None, 
                 word_select:Pin|None= None, 
                 data:Pin|None= None, 
@@ -39,7 +39,7 @@ class Audio( MainChild ):
                 mixer_buffer_size = 2048,
             ):
         super().__init__(main=main,name="Audio")
-        assert Audio.theAudio is None
+        assert getattr(Audio,'theAudio',None) is None
         Audio.theAudio = self
         
         bit_clock = bit_clock or board.IO14

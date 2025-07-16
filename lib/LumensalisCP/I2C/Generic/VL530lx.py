@@ -1,5 +1,6 @@
 
 from LumensalisCP.CPTyping import *
+from LumensalisCP.Main.Expressions import EvaluationContext
 from LumensalisCP.common import *
 from ..I2CDevice import I2CDevice, I2CInputSource, UpdateContext
 
@@ -36,7 +37,7 @@ class VL53L0X(I2CDevice):
     @property
     def range(self) -> VL53L0XInput: return self.__range
     
-    def derivedUpdateTarget(self, context:UpdateContext):
+    def derivedUpdateTarget(self, context:EvaluationContext):
         if self.__readMode is None or self.__readMode  == 'startMeasurement':
             self._sensor.do_range_measurement()
             self.__readMode = "measuring"

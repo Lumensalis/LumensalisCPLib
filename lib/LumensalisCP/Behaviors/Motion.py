@@ -6,7 +6,8 @@ from LumensalisCP.Main.Profiler import Profiler
 from .Behavior import Behavior, Actor
 from ..Gadgets.Servos import LocalServo
 
-import LumensalisCP.Main.Manager
+if TYPE_CHECKING:
+    from LumensalisCP.Main.Manager import MainManager
 
 class Motion(Behavior):
     """
@@ -20,7 +21,7 @@ class Motion(Behavior):
 
 class Door(Actor):
     
-    def __init__(self, name:str|None = None, main:"LumensalisCP.Main.Manager.MainManager"|None = None, **kwds):
+    def __init__(self, name:str|None = None, main:MainManager|None = None, **kwds):
         super().__init__(name, main, **kwds)
         
     def open(self, speed:TimeInSeconds|None = None, context:EvaluationContext|None=None) -> Behavior:
@@ -41,10 +42,10 @@ class ServoMovement(Motion):
     Args:
         Motion (_type_): _description_
     """
-    actor:"ServoDoor"
+    #actor:"ServoDoor"
     target:Degrees = 0.0
     speed:DegreesPerSecond = 10
-    nextBehavior:"ServoMovement" | None
+    nextBehavior:"ServoMovement|None"
     
     def __init__(self, actor:"ServoDoor", name:str|None = None,
             target:Degrees|None = None, speed:DegreesPerSecond|None = None ):
@@ -74,7 +75,7 @@ class ServoMovement(Motion):
         
     def enter(self, context):
         super().enter(context)
-        self.enableDbgOut and self.dbgOut( f"enter moveTo {self.target} at {self.speed}" )
+        if self.enableDbgOut: self.dbgOut( f"enter moveTo {self.target} at {self.speed}" )
         self.actor._servo.moveTo( self.target, self.speed, context )
         self.actor._servo.onMoveComplete( self._complete )
     
@@ -86,7 +87,7 @@ class ServoMovement(Motion):
     
     
 class ServoDoor(Door):
-    """_summary_
+    """ Door driven by servo
 
     Args:
         Door (_type_): _description_
@@ -97,19 +98,14 @@ class ServoDoor(Door):
     defaultSpeed:TimeInSeconds 
     openedSensor:InputSource|None
     closedSensor:InputSource|None
-    #opening: ServoMovement
-    #closing: ServoMovement
-    #closed: ServoMovement
-    #opened: ServoMovement
-    #moving: ServoMovement
-    #stopped: ServoMovement
+
     
     @property
     def span(self) -> Degrees:
         return  self.openPosition - self.closedPosition 
     
     def convertSpeed(self, speed:TimeInSeconds) -> DegreesPerSecond:
-            (speed/self.span)
+        return (speed/self.span)
     
     @property
     def openRatio(self):
@@ -123,7 +119,7 @@ class ServoDoor(Door):
             openedSensor:InputSource|None = None,
             closedSensor:InputSource|None = None,
             name:str|None = None, 
-            main:"LumensalisCP.Main.Manager.MainManager"|None = None,
+            main:MainManager|None = None,
             **kwds
         ):
         super().__init__(name, main, **kwds)
@@ -161,13 +157,13 @@ class ServoDoor(Door):
     def close(self, speed:TimeInSeconds|None = None, context:EvaluationContext|None=None) -> Behavior:
         return self.closing.activate(speed=speed, target=self.closedPosition, context=context)
 
-    def stop(self, context:EvaluationContext|None=None) -> None:
+    def stop(self, context:EvaluationContext|None=None) -> Motion:
         return self.stopped.activate(target=self._servo.lastSetAngle, context=context)
 
     def moveTo(self, target:Degrees, speed:TimeInSeconds|None = None, context:EvaluationContext|None=None) -> None:
-        return self.moving.activate(speed=speed, target=target, context=context)
+        self.moving.activate(speed=speed, target=target, context=context)
 
-    def jog(self, offset:Degrees, speed:TimeInSeconds|None = None, context:EvaluationContext|None=None) -> None:
+    def jog(self, offset:Degrees, speed:TimeInSeconds|None = None, context:EvaluationContext|None=None) -> Motion:
         return self.moving.activate(speed=speed, target=self._servo.lastSetAngle + offset, context=context)
             
     def addOpenTrigger( self, Input): pass
@@ -178,4 +174,4 @@ class ServoDoor(Door):
         Returns:
             _type_: _description_
         """
-        self.enableDbgOut and self.dbgOut("ServoDoor move completed")
+        if self.enableDbgOut: self.dbgOut("ServoDoor move completed")

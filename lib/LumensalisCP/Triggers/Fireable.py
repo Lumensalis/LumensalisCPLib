@@ -22,14 +22,14 @@ class Fireable( Debuggable ):
     def __init__(self):
         super().__init__()
     
-    def fire(self, context:UpdateContext) -> Any:
+    def fire(self, context:EvaluationContext) -> Any:
         raise NotImplemented
     
     def unless( self, condition:FireCondition):
         return FireableUnless( condition, self )
     
-    def __call__(self, context:Optional[UpdateContext]=None) ->Any :
-        return self.fire(context=UpdateContext.fetchCurrentContext(context))
+    def __call__(self, context:Optional[EvaluationContext]=None) ->Any :
+        return self.fire(context=EvaluationContext.fetchCurrentContext(context))
         
 
 class FireableCB( Fireable ):
@@ -40,7 +40,7 @@ class FireableCB( Fireable ):
         self._kwds = kwds
         self._cb = KWCallback( cb )
     
-    def fire(self, context:UpdateContext) ->Any :
+    def fire(self, context:EvaluationContext) ->Any :
         
         if self.enableDbgOut or context.debugEvaluate: 
             with context.nestDebugEvaluate() as nde:
@@ -58,7 +58,7 @@ class FireableUnless( Fireable ):
         self._action =  action
         self.enableDbgOut = action.enableDbgOut
         
-    def fire(self, context:UpdateContext) ->Any :
+    def fire(self, context:EvaluationContext) ->Any :
         if self.enableDbgOut or context.debugEvaluate: 
             with context.nestDebugEvaluate() as nde:
                 

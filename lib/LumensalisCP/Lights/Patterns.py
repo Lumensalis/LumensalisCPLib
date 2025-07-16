@@ -13,8 +13,7 @@ import LumensalisCP.Main.Expressions as xm
 def prepRGBValue( value ):
     
     if (
-            isinstance( value, xm.ExpressionTerm ) or
-            isinstance( value, xm.Expression ) or
+            isinstance( value, Evaluatable ) or
             callable(value)
     ):
         return value
@@ -24,8 +23,8 @@ def prepRGBValue( value ):
 class Rainbow( Pattern ):
     def __init__(self,
                  *args,
-                 colorCycle:TimeInSeconds = 1.0,
-                 spread:float = 1,
+                 colorCycle:TimeInSeconds|Evaluatable = 1.0,
+                 spread:float|Evaluatable = 1,
                  **kwargs
             ):
         self.__colorCycle = colorCycle
@@ -75,10 +74,10 @@ class Rainbow( Pattern ):
 #############################################################################
 class Gauge( Pattern, NamedOutputTarget ):
     def __init__(self,
-                target:LightGroup=None, name:str=None, 
+                target:LightGroup, name:Optional[str]=None, 
                 onValue:AnyLightValue = 1.0,
                 offValue:AnyLightValue = 0.0,
-                value:ZeroToOne = 0.0,
+                value:ZeroToOne|Evaluatable = 0.0,
                 **kwargs
             ):
         self.__onValue = prepRGBValue(onValue)
@@ -88,7 +87,7 @@ class Gauge( Pattern, NamedOutputTarget ):
         NamedOutputTarget.__init__(self, name=name )
 
     @property
-    def value(self)->ZeroToOne: return self.__value
+    def value(self)->ZeroToOne|Evaluatable: return self.__value
     
     @property
     def onValue(self): return  self.__onValue

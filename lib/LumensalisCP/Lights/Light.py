@@ -14,7 +14,7 @@ class LightType:
 #############################################################################
 class Light(OutputTarget):
     
-    def __init__(self, source:LightSource=None, index:int = 0, name:str|None = None):
+    def __init__(self, source:LightSource, index:int = 0, name:Optional[str] = None):
         super().__init__(name=name)
         assert source is not None
         self.__source:LightSource = source

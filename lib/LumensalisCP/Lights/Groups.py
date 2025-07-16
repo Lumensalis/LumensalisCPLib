@@ -1,4 +1,3 @@
-from token import OP
 from .Values import *
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 #import LumensalisCP.Lights.LightBase as LightBase
@@ -27,7 +26,8 @@ class LightGroup(NamedLocalIdentifiable):
     def __setitem__(self, index:int, value:AnyLightValue ): 
         self[index].setValue(value)
     
-    def values(self,  context: UpdateContext = None ):
+    def values(self,  context: Optional[EvaluationContext] = None ):
+        context = UpdateContext.fetchCurrentContext(context)
         return [ light.getValue(context) for light in self.lights]
                 
 #############################################################################
@@ -72,9 +72,9 @@ class AdHocLightGroup(LightGroupList):
         self.__adHocLights = []
         super().__init__(name=name,lights=self.__adHocLights,**kwargs)
         
-    def append(self, light:"Light.Light"|LightGroup):
+    def append(self, light:Light.Light|LightGroup):
         if isinstance(light, LightGroup):
-            for l2 in LightGroup.lights:
+            for l2 in light.lights:
                 self.append(l2)
             return
         ensure( light not in self.__adHocLights, "light %s already in %s", light, self )

@@ -246,7 +246,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def addI2SAudio(self, *args, **kwds ) -> "LumensalisCP.Audio.Audio":
         from LumensalisCP.Audio import Audio
         assert self.__audio is None
-        self.__audio = Audio( *args, main=self,**kwds )
+        self.__audio = Audio( main=self, *args,**kwds )
         return self.__audio
 
     def movingValue( self, min=0, max=100, duration:float =1.0 ):

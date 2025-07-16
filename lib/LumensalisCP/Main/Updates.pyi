@@ -53,7 +53,7 @@ class UpdateContext(Debuggable):
     def stubFrame(self, name:Optional[str]=None, name2:Optional[str]=None) -> ProfileStubFrame: pass
 
     @staticmethod
-    def fetchCurrentContext( context:"UpdateContext"|None ) -> "UpdateContext": pass
+    def fetchCurrentContext( context:Optional[EvaluationContext]|None ) -> EvaluationContext: pass
     
     def nestDebugEvaluate(self, debugEvaluate:bool|None = None ) -> UpdateContextDebugManager: ...
         

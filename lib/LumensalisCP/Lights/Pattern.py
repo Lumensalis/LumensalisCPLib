@@ -2,16 +2,17 @@ from .Light import *
 from LumensalisCP.util.bags import Bag
 
 from random import random as randomZeroToOne, randint
-
+if TYPE_CHECKING:
+    from LumensalisCP.Main.Manager import MainManager
+    
 #############################################################################
 
 class Pattern(NamedLocalIdentifiable):
     
-    _theManager:"LumensalisCP.Main.Manager.MainManager" = None
+    _theManager:MainManager = None
     
-    def __init__(self,  target:LightGroup=None, name:str=None, 
+    def __init__(self,  target:LightGroup, name:Optional[str]=None, 
                  whenOffset:TimeInSeconds=0.0, startingSpeed:TimeInSeconds=1.0 ):
-        #self.__name = name or (getattr( target,'name', '') + "-" + self.__class__.__name__)
         super().__init__(name=name)
         self.__running = False
         self.__speed:TimeInSeconds = startingSpeed
@@ -50,7 +51,7 @@ class Pattern(NamedLocalIdentifiable):
     def setRunning(self, value:bool, context:UpdateContext|None=None ):
         self.__running = value
 
-    def refresh( self, context:UpdateContext ):
+    def refresh( self, context:EvaluationContext ) -> None:
         raise NotImplemented
 
     def main(self):
@@ -66,9 +67,12 @@ class PatternGeneratorStep(object):
     def __init__( self, duration: TimeInSeconds=1.0 ):
         self.duration = duration
     
-    def startValue( self, index:int=0, context:UpdateContext = None ): raise NotImplemented
-    def endValue( self, index:int=0, context:UpdateContext = None ): raise NotImplemented
-    def intermediateValue( self, index:int=0, progression:ZeroToOne = 0, context:UpdateContext = None): raise NotImplemented
+    def startValue( self, index:int, context:EvaluationContext ) -> None:
+        raise NotImplemented
+    def endValue( self, index:int, context:EvaluationContext  )-> None:
+        raise NotImplemented
+    def intermediateValue( self, index:int, progression:ZeroToOne , context:EvaluationContext) ->None:
+        raise NotImplemented
 
 
 #############################################################################
@@ -76,8 +80,8 @@ class PatternGeneratorStep(object):
 class PatternGeneratorSharedStep(PatternGeneratorStep):
     def __init__( self, 
                  duration: TimeInSeconds=1.0,
-                 startValue: AnyLightValue|None =  None, 
-                 endValue: AnyLightValue|None =  None, 
+                 startValue: Optional[AnyLightValue] =  None, 
+                 endValue: Optional[AnyLightValue] =  None, 
                  intermediateRefresh: TimeInSeconds|None = None,
             ):
         super().__init__(duration=duration)
@@ -87,15 +91,15 @@ class PatternGeneratorSharedStep(PatternGeneratorStep):
         self.intermediateRefresh = intermediateRefresh
     
     @override
-    def startValue( self, index:int = 0, context:UpdateContext=None ):
+    def startValue( self, index:int, context:EvaluationContext ):
         return context.valueOf( self._startValue )
     
     @override
-    def endValue( self, index:int = 0, context:UpdateContext=None ):
+    def endValue( self, index:int , context:EvaluationContext ):
         return context.valueOf( self._endValue )
 
     @override
-    def intermediateValue( self, index, progression:ZeroToOne, context:UpdateContext ):
+    def intermediateValue( self, index, progression:ZeroToOne, context:EvaluationContext ):
         start = self.startValue(index,context=context)
         return start + ( (self.endValue(index,context=context) - start ) * progression )
 
@@ -108,11 +112,11 @@ class MultiLightPatternStep(PatternGeneratorSharedStep):
         self.__ends = ends
     
     @override
-    def startValue( self, index:int = 0, context:UpdateContext=None ):
+    def startValue( self, index:int, context:EvaluationContext ):
         return context.valueOf( self.__starts[index] )
     
     @override
-    def endValue( self, index:int = 0, context:UpdateContext=None ):
+    def endValue( self, index:int, context:EvaluationContext ):
         return context.valueOf( self.__ends[index] )
 
 #############################################################################
@@ -136,7 +140,7 @@ class PatternGenerator(Pattern):
                     intermediateCount = self.__intermediateCount,
         )
         
-    def refresh( self, context:UpdateContext ):
+    def refresh( self, context:EvaluationContext ):
         if self.__nextRefresh < context.when:
             context.activeFrame.snap(f"PGRefresh-{self.name}")
             if self.__nextStep < context.when:
@@ -173,10 +177,10 @@ class PatternGenerator(Pattern):
             self.target[lx].set( self.__step.startValue(lx,context) , context )
             #light.setValue( self.__step.startValue(lx,context), context=context )
 
-    def regenerate(self, context:UpdateContext) -> Generator[PatternGeneratorSharedStep]:
+    def regenerate(self, context:EvaluationContext) -> Generator[PatternGeneratorSharedStep]:
         raise NotImplemented
 
-    def setRunning(self, value:bool, context:UpdateContext|None=None ):
+    def setRunning(self, value:bool, context:EvaluationContext|None=None ):
         super().setRunning(value, context)
 
 #############################################################################
