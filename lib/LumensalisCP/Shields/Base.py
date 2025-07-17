@@ -7,7 +7,7 @@ from LumensalisCP.IOContext import NamedOutputTarget, EvaluationContext, Refresh
 
 #from LumensalisCP.Shields.Pins import PinHolder, PinProxy
 #from digitalio import DigitalInOut, Direction
-from LumensalisCP.Identity.Local import NamedLocalIdentifiableList
+from LumensalisCP.Identity.Local import NamedLocalIdentifiableList, NamedLocalIdentifiableContainerMixin
 from LumensalisCP.Inputs import NamedLocalIdentifiable
 from LumensalisCP.Main.I2CProvider import I2CProvider
 
@@ -18,7 +18,7 @@ class ShieldBase(ControllerConfigurableChildBase,Refreshable):
         Refreshable.__init__(self,refreshRate=refreshRate)
         self.__componentsContainer = NamedLocalIdentifiableList("components", parent=self)
         
-    def nliGetContainers(self):
+    def nliGetContainers(self) -> Iterable[NamedLocalIdentifiableContainerMixin]:
         return [ self.__componentsContainer ]
     
     def nliAddComponent(self, component:NamedLocalIdentifiable):

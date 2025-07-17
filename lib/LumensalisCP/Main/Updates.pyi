@@ -57,7 +57,7 @@ class UpdateContext(Debuggable):
     
     def nestDebugEvaluate(self, debugEvaluate:bool|None = None ) -> UpdateContextDebugManager: ...
         
-OptionalContextArg = Optional[UpdateContext]
+OptionalContextArg = Optional[EvaluationContext]
 
 #############################################################################
 
@@ -65,7 +65,7 @@ OptionalContextArg = Optional[UpdateContext]
 
 class Evaluatable(Debuggable):
     
-    def getValue(self, context:UpdateContext) -> DirectValue: pass
+    def getValue(self, context:Optional[EvaluationContext]=None) -> DirectValue: pass
 
 def evaluate( value:Evaluatable|DirectValue, context:EvaluationContext|None = None ) -> DirectValue: pass
 

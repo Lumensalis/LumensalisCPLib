@@ -51,7 +51,7 @@ class LCP_IRrecv(MainChild):
     
     showUnhandled:bool
     
-    def __init__(self, pin, main:MainManager,  codenames:Mapping = {},
+    def __init__(self, pin, main:MainManager,  codenames:Mapping[str,int]|str|None = {},
                  name:str|None = None, updateInterval = 0.1,
                  showUnhandled = False ):
         super().__init__( main=main, name=name )

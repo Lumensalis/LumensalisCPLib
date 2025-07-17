@@ -62,7 +62,7 @@ class FireableUnless( Fireable ):
         if self.enableDbgOut or context.debugEvaluate: 
             with context.nestDebugEvaluate() as nde:
                 
-                unless = evaluate(self._condition,context )
+                unless = evaluate(self._condition,context )  # type: ignore
                 if not unless:
                     nde.say( self, "unless firing..." )
                     return self._action.fire( context )
@@ -70,7 +70,7 @@ class FireableUnless( Fireable ):
                     nde.say( self, "unless skipped" )
                     
         else:
-            unless = evaluate(self._condition,context )
+            unless = evaluate(self._condition,context ) # type: ignore
             if not unless:
                 return self._action.fire( context )
         

@@ -26,16 +26,16 @@ class Light(OutputTarget):
     @property
     def sourceIndex(self)->int: return self.__sourceIndex
     
-    def setValue(self,value:AnyLightValue, context: UpdateContext = None ):
+    def setValue(self,value:AnyLightValue, context: Optional[EvaluationContext] = None ) -> None:
         raise NotImplemented
 
-    def set( self, value:Any, context:UpdateContext ):
+    def set( self, value:Any, context:EvaluationContext ):
         self.setValue( value, context )
     
     @property
     def value(self): return self.getValue()
     
-    def getValue(self, context: UpdateContext = None ) -> AnyLightValue:
+    def getValue(self, context: Optional[EvaluationContext] = None ) -> AnyLightValue:
         raise NotImplemented
     
     def getLightValue(self)-> LightValueBase: raise NotImplemented  
@@ -44,7 +44,7 @@ class Light(OutputTarget):
         return self.getLightValue().asRGB
     
     @property
-    def lightType(self): raise NotImplemented  
+    def lightType(self)->int: raise NotImplemented  
 
 #############################################################################
 class SolidLight(Light):

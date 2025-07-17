@@ -90,7 +90,7 @@ class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
         return pixels
     
 
-    def addIrRemote(self, codenames:Mapping|None = None) -> LCP_IRrecv:
+    def addIrRemote(self, codenames:Mapping[str,int]|str|None = None) -> LCP_IRrecv:
         assert self._irRemote is None
         codenames = codenames or {
             "CH-": 0xffa25d,

@@ -11,6 +11,9 @@ from LumensalisCP.Main.Profiler import Profiler, ProfileFrame
 
 _simpleValueTypes = set([int,bool,float])
 
+if TYPE_CHECKING:
+    from LumensalisCP.Inputs import InputSource
+    
 #class EvaluationContext(LumensalisCP.Main.Updates.UpdateContext):
 class EvaluationContext(UpdateContext):    
     
@@ -62,19 +65,19 @@ class EvaluationContext(UpdateContext):
     
 #############################################################################
 
-def makeExpressionConstant(value:Any=None) -> "ExpressionTerm" : 
+def makeExpressionConstant(value:Any=None) -> "ExpressionTerm" :  # type: ignore
     raise NotImplemented
 
-def makeBinaryOperation( term1:"ExpressionTerm"=None, term2:"ExpressionTerm"=None, op:Callable[[EvaluationContext,"ExpressionTerm","ExpressionTerm"]] =None ) -> "ExpressionTerm":
+def makeBinaryOperation( term1:"ExpressionTerm"=None, term2:"ExpressionTerm"=None, op:Callable[[EvaluationContext,"ExpressionTerm","ExpressionTerm"]] =None ) -> "ExpressionTerm": # type: ignore
     raise NotImplemented
 
-def makeUnaryOperation( term:"ExpressionTerm"=None, op:Callable[[EvaluationContext,"ExpressionTerm"]] =None)  -> "ExpressionTerm":
+def makeUnaryOperation( term:"ExpressionTerm"=None, op:Callable[[EvaluationContext,"ExpressionTerm"]] =None)  -> "ExpressionTerm": # type: ignore
     raise NotImplemented
 
-def TERM( value:Any ) -> "ExpressionTerm" :
+def TERM( value:Any ) -> "ExpressionTerm" : # type: ignore
     raise NotImplemented
 
-def ensureIsTerm( term:"ExpressionTerm" ) -> "ExpressionTerm" :
+def ensureIsTerm( term:"ExpressionTerm" ) -> "ExpressionTerm" : # type: ignore
     raise NotImplemented
 
 #############################################################################
@@ -83,14 +86,7 @@ class ExpressionTerm(LumensalisCP.Main.Updates.Evaluatable):
     def __init__(self):
         pass
     
-        
-    #def value(self, context:EvaluationContext) -> Any:
-    def getValue(self, context:EvaluationContext):
-        # type: (EvaluationContext) -> Any
-        """ current value of term"""
-        raise NotImplemented
-    
-
+ 
     def terms(self) -> Generator["ExpressionTerm"]:
         yield self
         
@@ -233,13 +229,13 @@ def MIN( a:Any, b:Any ):
 
 #############################################################################
 
-def makeExpressionConstant(value:Any=None) -> ExpressionTerm: 
+def makeExpressionConstant( value:Any ) -> ExpressionTerm: 
     return ExpressionConstant(value)
 
-def makeBinaryOperation( term1:ExpressionTerm=None, term2:ExpressionTerm=None, op:Callable[[EvaluationContext,ExpressionTerm,ExpressionTerm]]=None ) -> ExpressionTerm:
+def makeBinaryOperation( term1:ExpressionTerm, term2:ExpressionTerm, op:Callable[[EvaluationContext,ExpressionTerm,ExpressionTerm]] ) -> ExpressionTerm:
     return BinaryOperation( term1=term1, term2=TERM(term2), op=op )
 
-def makeUnaryOperation( term:ExpressionTerm=None, op:Callable[[EvaluationContext,ExpressionTerm]]=None )  -> ExpressionTerm:
+def makeUnaryOperation( term:ExpressionTerm, op:Callable[[EvaluationContext,ExpressionTerm]] )  -> ExpressionTerm:
     return UnaryOperation( term=TERM(term), op=op )
 
 #############################################################################
@@ -271,7 +267,7 @@ class EdgeTerm(ExpressionOperation):
                 yield t2
 
     @override
-    def getValue(self, context:EvaluationContext = None ) -> Any:
+    def getValue(self, context:Optional[EvaluationContext] = None ) -> Any:
         assert context is not None
         if context is not None and self.__latestUpdateIndex != context.updateIndex:
             priorUpdateIndex = self.__latestUpdateIndex
@@ -301,7 +297,7 @@ class EdgeTerm(ExpressionOperation):
                 if self.__resetTerm is not None:
                     self.__awaitingReset = True
                     
-                self.enableDbgOut and self.dbgOut( "edge from %s to %s, value=%s at %s", prior, termValue, self.__value, self.__latestUpdateIndex  )
+                if self.enableDbgOut: self.dbgOut( "edge from %s to %s, value=%s at %s", prior, termValue, self.__value, self.__latestUpdateIndex  )
             else:
                 if self.__value != False:
                     self.enableDbgOut and self.dbgOut( "no edge term=%s at %s", termValue, self.__latestUpdateIndex  )
@@ -371,7 +367,7 @@ class Expression( LumensalisCP.Main.Updates.Evaluatable ):
         self.__otherwise = condition
         return self
     
-    def sources( self ) -> Mapping[str,"LumensalisCP.Inputs.InputSource"]:
+    def sources( self ) -> Mapping[str,]:
         rv = {}
         for term in self.terms():
             if isinstance(term,LumensalisCP.Inputs.InputSource):

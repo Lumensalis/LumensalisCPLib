@@ -6,6 +6,9 @@ from LumensalisCP.common import *
 from LumensalisCP.Main.Profiler import Profiler
 from LumensalisCP.Scenes.Scene import Scene
 
+if TYPE_CHECKING:
+    import weakref
+
 class Actor(Debuggable):
     """
     Base class for actors in the scene.
@@ -18,12 +21,15 @@ class Actor(Debuggable):
         
         super().__init__(**kwds)
         self.name = name if name else self.__class__.__name__
-        self.main = main or MainManager.theManager
+        main = main or MainManager.theManager
+        assert main is not None
+        self.main = main 
         self.__currentBehavior = None
         
     @property
-    def currentBehavior(self) -> "Behavior":
+    def currentBehavior(self) -> "Behavior|None":
         """Current behavior of the actor."""
+        #assert self.__currentBehavior is not None
         return self.__currentBehavior
 
     @currentBehavior.setter
@@ -34,10 +40,10 @@ class Actor(Debuggable):
     def setCurrentBehavior(self, behavior:"Behavior", reset:bool=False ) -> None:
         """Set the current behavior of the actor."""
         if self.__currentBehavior is behavior and reset is False:   
-            self.enableDbgOut and self.dbgOut("Behavior %s is already current, not changing", behavior.name)
+            if self.enableDbgOut: self.dbgOut("Behavior %s is already current, not changing", behavior.name)
             return
         
-        self.enableDbgOut and self.dbgOut("Setting current behavior to %s", behavior.name)
+        if self.enableDbgOut: self.dbgOut("Setting current behavior to %s", behavior.name)
         if self.__currentBehavior is not None:
             self.__currentBehavior.exit(self.main.getContext())
         self.__currentBehavior = behavior
@@ -45,13 +51,13 @@ class Actor(Debuggable):
             self.__currentBehavior.enter(self.main.getContext())
         
 class Behavior(Debuggable):
-    __name: str|None 
-    __actor: weakref.WeakReference[Actor] 
+    __name: str
+    __actor: weakref.ReferenceType[Actor] 
     __scene: str|Scene|None
     
     def __init__(self, actor:Actor, name:Optional[str] = None, scene:Optional[str|Scene] = None ):
         super().__init__()
-        self.__name = name if name else self.__class__.__name__
+        self.__name = name or self.__class__.__name__
         self.__actor = weakref.ref(actor)
         self.__scene = scene
         
@@ -68,13 +74,13 @@ class Behavior(Debuggable):
         
     def enter(self, context:EvaluationContext) -> None:
         """Enter the behavior. This is called when the behavior is activated."""
-        self.enableDbgOut and self.dbgOut("Entering behavior %s", self.name)
+        if self.enableDbgOut: self.dbgOut("Entering behavior %s", self.name)
         if self.__scene is not None:
             context.main.scenes.currentScene = self.__scene
     
     def exit(self, context:EvaluationContext) -> None:
         """Exit the behavior. This is called when the behavior is deactivated."""
-        self.enableDbgOut and self.dbgOut("Exiting behavior %s", self.name)    
+        if self.enableDbgOut: self.dbgOut("Exiting behavior %s", self.name)    
         
     @property
     def actor(self) -> Actor:

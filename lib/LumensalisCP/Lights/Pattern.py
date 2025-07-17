@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 class Pattern(NamedLocalIdentifiable):
     
-    _theManager:MainManager = None
+    _theManager:MainManager
     
     def __init__(self,  target:LightGroup, name:Optional[str]=None, 
                  whenOffset:TimeInSeconds=0.0, startingSpeed:TimeInSeconds=1.0 ):
@@ -27,7 +27,7 @@ class Pattern(NamedLocalIdentifiable):
     @whenOffset.setter
     def whenOffset(self,offset:TimeInSeconds): self.__whenOffset = offset
     
-    def offsetWhen( self, context:UpdateContext ) -> TimeInSeconds:
+    def offsetWhen( self, context:EvaluationContext ) -> TimeInSeconds:
         return  context.when + self.__whenOffset
 
     @property
@@ -45,10 +45,10 @@ class Pattern(NamedLocalIdentifiable):
     @running.setter
     def running(self, running:bool): self.setRunning(running)
 
-    def setSpeed(self, value:TimeInSeconds, context:UpdateContext|None=None ):
+    def setSpeed(self, value:TimeInSeconds, context:EvaluationContext|None=None ):
         self.__speed = value
 
-    def setRunning(self, value:bool, context:UpdateContext|None=None ):
+    def setRunning(self, value:bool, context:EvaluationContext|None=None ):
         self.__running = value
 
     def refresh( self, context:EvaluationContext ) -> None:
@@ -156,7 +156,7 @@ class PatternGenerator(Pattern):
                     self.target[lx] = self.__step.intermediateValue(lx,progression,context)
                     #light.setValue( self.__step.intermediateValue(lx,progression,context), context=context )
     
-    def stepForward( self, context:UpdateContext ):
+    def stepForward( self, context:EvaluationContext ):
         if self.__gen is None:
             self.__gen = self.regenerate( context )
         try:

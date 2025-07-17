@@ -11,10 +11,10 @@ from math import log
 
 class PatternRLTest( Pattern, OutputTarget ):
     def __init__(self,
-                target:LightGroup=None, name:str=None, 
-                onValue:AnyLightValue = 1.0,
-                offValue:AnyLightValue = 0.0,
-                value:ZeroToOne = 0.0,
+                target:LightGroup, name:Optional[str]=None, 
+                onValue:AnyLightValue|Evaluatable = 1.0,
+                offValue:AnyLightValue|Evaluatable = 0.0,
+                value:ZeroToOne|Evaluatable = 0.0,
                 **kwargs
             ):
         self._onValue = onValue
@@ -24,7 +24,7 @@ class PatternRLTest( Pattern, OutputTarget ):
         OutputTarget.__init__(self )
 
     @property
-    def value(self)->ZeroToOne: return self._value
+    def value(self)->ZeroToOne|Evaluatable: return self._value
     
     @property
     def onValue(self): return  self._onValue

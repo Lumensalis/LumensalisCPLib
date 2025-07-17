@@ -21,14 +21,14 @@ class I2CFactory(object):
         self.main = main
     
         
-    def addDisplay_SSD1306(self, *args, **kwds:I2CFactoryAddArgs ):
+    def addDisplay_SSD1306(self, *args, **kwds ):
         from .Generic.Display_SSD1306 import Display_SSD1306
         return Display_SSD1306( *args, main=self.main, **kwds )
 
-    def addDisplayIO_SSD1306(self, *args, **kwds:I2CFactoryAddArgs ):
+    def addDisplayIO_SSD1306(self, *args, **kwds ):
         from .Generic.DisplayIO_SSD1306 import DisplayIO_SSD1306
         return DisplayIO_SSD1306( *args, main=self.main, **kwds )
 
-    def addVL530lx(self, *args, **kwds:I2CFactoryAddArgs ):
+    def addVL530lx(self, *args, **kwds ):
         from .Generic.VL530lx import VL53L0X
         return VL53L0X( *args, main=self.main, **kwds )

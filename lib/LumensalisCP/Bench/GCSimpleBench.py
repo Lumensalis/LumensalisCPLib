@@ -226,7 +226,7 @@ class GCTestRunResultScope(object):
             gc.collect()            
         return rv
             
-    def runInternal(self, config:GCTestRunConfig, args:GCTesterTestParameters ):
+    def runInternal(self, config:GCTestRunConfig, args:GCTesterTestParameters ) -> None:
         raise NotImplemented
 
 class GCTestRunResult(GCTestRunResultScope):

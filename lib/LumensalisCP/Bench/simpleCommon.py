@@ -1,7 +1,6 @@
+from __future__ import annotations
 
 import supervisor, gc, time, sys
-
-from __future__ import annotations
 
 
 class mutableObject(object):
@@ -15,15 +14,15 @@ try:
     import weakref
     
     
-    class PseudoTypingExpression(object):
+    class PseudoTypingExpression(object): # type: ignore
         def __init__(self,*args,**kwds):
             raise NotImplemented    
     
     class PseudoTypingType(object):
-        def __init__(self,*args,**kwds):
+        def __init__(self,*args,**kwds): 
             raise NotImplemented
         
-    def makeTypingExpression( a ):
+    def makeTypingExpression( a ):  # type: ignore
         return a
         
 except:

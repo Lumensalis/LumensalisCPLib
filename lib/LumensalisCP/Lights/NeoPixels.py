@@ -7,35 +7,39 @@ from LumensalisCP.util.bags import Bag
 #import adafruit_led_animation.animation.blink
 #import adafruit_led_animation.helper
 
+if TYPE_CHECKING:
+    from LumensalisCP.Main.Manager import MainManager
+    
 class NeoPixelLight( RGBLight ):
 
     def __init__(self, source:"NeoPixelSource", index:int = 0):
         super().__init__(source=source, index=index)
         self.__npiv = 0
         
-    def setValue(self,value:AnyLightValue, context: UpdateContext = None ):
+    def setValue(self,value:AnyLightValue, context: Optional[EvaluationContext] = None ) ->None:
         if context is not None:
             value = context.valueOf(value)
         v = LightValueNeoRGB.toNeoPixelInt(value)
         if v != self.__npiv:
             self.__npiv = v
-            source:"NeoPixelSource" = self.source
+            source = self.source
             source.neopix[self.sourceIndex] = v
             source.lightChanged(self)
 
-    def getValue(self, context: UpdateContext = None ) -> AnyLightValue:
+    def getValue(self, context: Optional[EvaluationContext] = None ) -> AnyLightValue:
         return self.__npiv
     
     def getLightValue( self ):
         return LightValueNeoRGB( self.__npiv )
     
 class NeoPixelSource( LightSource ):
-    def __init__(self, pin, pixelCount:int, name:str=None, refreshRate:float|None = 0.1, main:"LumensalisCP.Main.Manager.MainManager" = None, **kwds):
+    def __init__(self, pin, pixelCount:int, name:Optional[str]=None, refreshRate:float|None = 0.1, main:MainManager|None = None, **kwds):
         self.__npLights:List[NeoPixelLight] = []
         super().__init__( lights = self.__npLights, name=name or f"{self.__class__.__name__}_{pin}" )
         self.neopix = neopixel.NeoPixel( pin, pixelCount,**kwds)
         for index in range(pixelCount):
             self.__npLights.append( NeoPixelLight( self, index) )
+        assert main is not None
         self._main = main
         self._changesSinceRefresh = 0
         self._refreshRate = refreshRate

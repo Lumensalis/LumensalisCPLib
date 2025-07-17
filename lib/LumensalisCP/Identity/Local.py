@@ -56,8 +56,11 @@ class NamedLocalIdentifiable(LocalIdentifiable,Debuggable):
     
     def nliGetContaining(self) -> Iterable["NamedLocalIdentifiableContainerMixin"]|None:
         c = self.__nliContaining
-        return None if c is None else [i() for i in c] 
-
+        if c is None: return None
+        for i in c:
+            v = i()
+            if v is not None: yield v
+        
     def nliGetChildren(self) -> Iterable['NamedLocalIdentifiable']|None:
         return None
 

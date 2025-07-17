@@ -46,7 +46,7 @@ class WriteScope(object):
     """
     target:TextIO
     config:WriteConfig
-    parent: weakref [ "WriteScope" ] | None
+    parent: weakref.ReferenceType [ "WriteScope" ] | None
     
     showScopes=property( lambda self: self.config.showScopes )
     

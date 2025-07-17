@@ -75,7 +75,7 @@ ir.onCode( "NEXT", do( main.scenes.switchToNextIn, ["sceneClosed","sceneOpening"
 oscillator2 = Oscillator.Oscillator( low = 0.3, high = 2, frequency = 0.1 )
 oscillator = Oscillator.Oscillator(  low = 0, high = 10, frequency = oscillator2 )
 
-fsp = PatternTemplate( Blink, frontLidStrip, onTime=0.25, offTime=0.25 )
+frontLidBlink = PatternTemplate( Blink, frontLidStrip, onTime=0.25, offTime=0.25 )
 
 frontLidStripPattern = Cylon2(frontLidStrip,sweepTime=0.5, dimRatio=0.9, onValue=LightValueRGB.RED )
 centerPattern = PatternRLTest(  centerStoneLights, value=oscillator/20 )
@@ -84,8 +84,8 @@ rainbowRight = Rainbow(rightStoneLights,colorCycle=1.1, spread=2.0 )
 aglSpinner = Spinner(angleGaugeLights, onValue=LightValueRGB.RED, tail=0.42,period=0.49)
 centerSpin = Spinner(centerStoneLights)
 
-sceneOpen.addPatterns( fsp(onValue="GREEN"), aglSpinner, rainbowLeft, rainbowRight )
-sceneClosed.addPatterns( fsp(onValue="RED"), centerPattern, rainbowLeft, rainbowRight  )
-sceneMoving.addPatterns( fsp(onValue="YELLOW"), centerSpin, aglSpinner )
+sceneOpen.addPatterns( frontLidBlink(onValue="GREEN"), aglSpinner, rainbowLeft, rainbowRight )
+sceneClosed.addPatterns( frontLidBlink(onValue="RED"), centerPattern, rainbowLeft, rainbowRight  )
+sceneMoving.addPatterns( frontLidBlink(onValue="YELLOW"), centerSpin, aglSpinner )
 
 main.renameIdentifiables( globals() )
