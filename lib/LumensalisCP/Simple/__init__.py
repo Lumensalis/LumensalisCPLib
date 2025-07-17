@@ -20,3 +20,4 @@ def do( cb, *args, **kwds ):
 
 def doDbg( cb, *args, **kwds ):
     return Fireable.makeDbgCallback( cb, *args, **kwds )
+

@@ -12,13 +12,13 @@ from math import log
 class PatternRLTest( Pattern, OutputTarget ):
     def __init__(self,
                 target:LightGroup, name:Optional[str]=None, 
-                onValue:AnyLightValue|Evaluatable = 1.0,
-                offValue:AnyLightValue|Evaluatable = 0.0,
+                a:AnyLightValue|Evaluatable = 1.0,
+                b:AnyLightValue|Evaluatable = 0.0,
                 value:ZeroToOne|Evaluatable = 0.0,
                 **kwargs
             ):
-        self._onValue = onValue
-        self._offValue = offValue
+        self._onValue = a
+        self._offValue = b
         self._value = value
         Pattern.__init__( self, target=target,name=name, **kwargs)
         OutputTarget.__init__(self )
@@ -27,9 +27,9 @@ class PatternRLTest( Pattern, OutputTarget ):
     def value(self)->ZeroToOne|Evaluatable: return self._value
     
     @property
-    def onValue(self): return  self._onValue
-    @onValue.setter
-    def onValue(self,v):  self._onValue = v
+    def a(self): return  self._onValue
+    @a.setter
+    def a(self,v):  self._onValue = v
     
     def set( self, value:ZeroToOne, context:EvaluationContext ):
         self._value = value
@@ -41,18 +41,21 @@ class PatternRLTest( Pattern, OutputTarget ):
         maxPx = int(maxPxf)
         pxR = maxPxf - maxPx
         
-        onValue = LightValueRGB.toRGB( context.valueOf(self._onValue) )
-        offValue = LightValueRGB.toRGB( context.valueOf(self._offValue) )
+        a = LightValueRGB.toRGB( context.valueOf(self._onValue) )
+        b = LightValueRGB.toRGB( context.valueOf(self._offValue) )
         
         
         for px in range(target.lightCount):
             if px < maxPx:
-                v = onValue 
+                v = a 
             elif px > maxPx:
-                v = offValue 
+                v = b 
             else:
-                v = offValue.fadeTowards(onValue, pxR)
+                v = b.fadeTowards(a, pxR)
             target[px] = v
+
+ABFade = PatternRLTest
+
 
 class Spinner( Pattern ):
     def __init__(self,
@@ -99,6 +102,11 @@ class Spinner( Pattern ):
             target[px] = v
 
 class PatternTemplate(object):
+    """ shorthand for creating patterns with consistent options
+
+    :param object: _description_
+    :type object: _type_
+    """
     def __init__( self, patternClass:Type[Pattern], *args, **kwds ):
         self.patternClass = patternClass
         self.args = args

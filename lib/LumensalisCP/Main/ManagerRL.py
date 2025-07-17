@@ -6,20 +6,33 @@ from LumensalisCP.Main import Manager
 
 from .PreMainConfig import pmc_mainLoopControl, pmc_gcManager
 
+if TYPE_CHECKING:
+    from LumensalisCP.Main.Manager import MainManager
+
+
 mlc = pmc_mainLoopControl
     
-def MainManager_nliContainers(self:LumensalisCP.Main.Manager.MainManager) -> Iterable[NamedLocalIdentifiableContainerMixin]|None:
+def MainManager_nliContainers(self:MainManager) -> Iterable[NamedLocalIdentifiableContainerMixin]|None:
     yield self.shields
     yield self._i2cDevicesContainer
     yield self.controllers
 
-def MainManager_nliGetChildren(self:Manager.MainManager) -> Iterable[NamedLocalIdentifiable]|None:
+def MainManager_nliGetChildren(self:MainManager) -> Iterable[NamedLocalIdentifiable]|None:
     yield self._scenes
     #yield self.defaultController
     if self.__dmx is not None:
         yield self.__dmx
 
-def MainManager_renameIdentifiables( self:Manager.MainManager, items:dict|None, verbose:bool = False ):
+
+def MainManager_launchProject( self:MainManager, globals:Optional[dict]=None, verbose:bool = False ): 
+    if globals is not None:
+        self.renameIdentifiables( globals, verbose=verbose )
+    self.addBasicWebServer()
+    self.run()
+
+
+
+def MainManager_renameIdentifiables( self:MainManager, items:Optional[dict]=None, verbose:bool = False ):
     if items is None:
         items = self._renameIdentifiablesItems
     else:
@@ -39,7 +52,7 @@ def MainManager_renameIdentifiables( self:Manager.MainManager, items:dict|None, 
                     val.nliSetContainer(self.__anonOutputs)
                     
 
-def MainManager_handleWsChanges( self:Manager.MainManager, changes:dict ):
+def MainManager_handleWsChanges( self:MainManager, changes:dict ):
         
         # print( f"handleWsChanges {changes}")
         key = changes['name']
@@ -50,7 +63,7 @@ def MainManager_handleWsChanges( self:Manager.MainManager, changes:dict ):
         else:
             self.warnOut( f"missing cv {key} in {self._controlVariables.keys()} for wsChanges {changes}")
 
-def MainManager_singleLoop( self:Manager.MainManager ): #, activeFrame:ProfileFrameBase):
+def MainManager_singleLoop( self:MainManager ): #, activeFrame:ProfileFrameBase):
     with self.getNextFrame() as activeFrame:
         context = self._privateCurrentContext
         
@@ -100,7 +113,7 @@ def MainManager_singleLoop( self:Manager.MainManager ): #, activeFrame:ProfileFr
     #await asyncio.sleep( max(0.001,self._nextWait-self.__priorSleepWhen) ) # self.cycleDuration )
     #self.__cycle += 1        
 
-def MainManager_dumpLoopTimings( self:Manager.MainManager, count, minE=None, minF=None, **kwds ):
+def MainManager_dumpLoopTimings( self:MainManager, count, minE=None, minF=None, **kwds ):
         rv = []
         i = self._privateCurrentContext.updateIndex
         #count = min(count, len(self.__taskLoopTimings))
@@ -118,7 +131,7 @@ def MainManager_dumpLoopTimings( self:Manager.MainManager, count, minE=None, min
             i -= 1
         return rv
     
-def MainManager_getNextFrame(self) ->ProfileFrameBase:
+def MainManager_getNextFrame(self:MainManager) ->ProfileFrameBase:
         now = self.getNewNow()
         self._when = now
         #priorWhen = self._when

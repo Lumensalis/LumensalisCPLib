@@ -72,6 +72,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     
     def callLater( self, task ): pass
 
+    def launchProject(self, globals:Optional[dict]=None, verbose:bool = False ): ...
             
     def addExitTask(self,task:ExitTask|Callable): pass
         

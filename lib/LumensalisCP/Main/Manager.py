@@ -280,8 +280,11 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None:
         return ManagerRL.MainManager_nliGetChildren(self )
 
-    def renameIdentifiables(self, items:dict ):
-        return ManagerRL.MainManager_renameIdentifiables(self, items )
+    def launchProject(self, globals:Optional[dict]=None, verbose:bool = False ):
+        return ManagerRL.MainManager_launchProject(self, globals, verbose=verbose )
+
+    def renameIdentifiables(self, items:Optional[dict]=None, verbose:bool = False ):
+        return ManagerRL.MainManager_renameIdentifiables(self, items, verbose )
     
     async def taskLoop( self ):
         self.__priorSleepWhen = self.getNewNow()

@@ -36,7 +36,7 @@ def _heading( self ):
          
 def ProfileFrameEntry_writeOn(self:LumensalisCP.Main.Profiler.ProfileSnapEntry,config:"LumensalisCP.Main.Profiler.ProfileWriteConfig",indent=''):
     if self.e < config.minE and  notEnoughMemUsed(self, config): return # and self.tag not in ['start', 'end']: return 
-    config.target.write( f"   {_heading(self)}{indent}:{self.lw:0.3f} {self.name:32s} {self.name2 or "":32s} @{id(self):X}\r\n" )
+    config.target.write( f"   {_heading(self)}{indent}:{self.lw:0.3f} {self.name:32s} {self.name2 or '':32s} @{id(self):X}\r\n" )
 
     if self.nest is not None:
         self.nest.writeOn( config, indent=indent+'# ')
@@ -51,7 +51,7 @@ def ProfileFrameBase_iterSnaps(self:LumensalisCP.Main.Profiler.ProfileFrameBase)
 
 def ProfileFrameBase_writeOn(self:LumensalisCP.Main.Profiler.ProfileFrameBase,config:"LumensalisCP.Main.Profiler.ProfileWriteConfig",indent=''):
     if self.e < config.minSubF and notEnoughMemUsed(self, config): return
-    config.target.write( f"   {_heading(self)}{indent}>{self._name or "??":.22s} {self.name2 or "??":.22s}@{id(self):X} {self.start:0.3f} {getattr(self,'usedGC',0)}b\r\n" )
+    config.target.write( f"   {_heading(self)}{indent}>{self._name or '??':.22s} {self.name2 or '??':.22s}@{id(self):X} {self.start:0.3f} {getattr(self,'usedGC',0)}b\r\n" )
     indent = indent+" ^ "
     
     

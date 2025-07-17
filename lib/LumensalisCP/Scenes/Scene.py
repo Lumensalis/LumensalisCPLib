@@ -9,28 +9,18 @@ class Setter(object):
     pass
 
 class SceneTaskKwargs(TypedDict):
-    task:Callable
-    period:float | None
+    period:TimeInSeconds 
+    name:Optional[str]
 
 class SceneTask(NamedLocalIdentifiable):
-    def __init__(self, task:Callable = None, period:float|None = 0.02, name = None ):
+    def __init__(self, task:Callable, period:TimeInSeconds = 0.02, name:Optional[str] = None ):
         super().__init__(name=name)
         self.task_callback = KWCallback.make( task )
-        if name is None:
-            try:
-                name = task.__name__
-            except:
-                name = repr(task)
-
-        self.__name = name or task.__name__
         self.__period = period
         self.__nextRun = period
         
     @property
-    def period(self): return self.__period
-    
-    @property
-    def name(self): return self.__name
+    def period(self) -> TimeInSeconds: return self.__period
     
     def run( self, scene:"Scene", context: EvaluationContext, frame:ProfileFrameBase ):
         if self.__nextRun is not None:
@@ -41,7 +31,7 @@ class SceneTask(NamedLocalIdentifiable):
         self.task_callback(context=context)
 
 class SceneRule( NamedLocalIdentifiable, Expression,  ):
-    def __init__( self, target:OutputTarget=None, term:ExpressionTerm=None, name=None ):
+    def __init__( self, target:OutputTarget, term:ExpressionTerm, name:Optional[str]=None ):
         #super().__init__(term)
         Expression.__init__(self,term)
         NamedLocalIdentifiable.__init__(self,name=name)
@@ -50,7 +40,7 @@ class SceneRule( NamedLocalIdentifiable, Expression,  ):
     def run( self, context:EvaluationContext, frame:ProfileFrameBase):
         #self.enableDbgOut and self.dbgOut( "running rule" )
         if self.updateValue( context ): # or len(context.changedTerms):
-            self.enableDbgOut and self.dbgOut( f"setting target {self.target.name} to {self.value} in rule {self.name}")
+            if self.enableDbgOut: self.dbgOut( f"setting target {self.target.name} to {self.value} in rule {self.name}")
             frame.snap( "ruleSet", self.target.name )
             self.target.set(self.value,context=context)
 
@@ -65,7 +55,7 @@ class Scene(MainChild):
         self.__tasks:List[SceneTask] = []
         
         self.__patternsContainer = NamedLocalIdentifiableList("patterns",parent=self)
-        self.__patterns:List[Pattern] = NamedList()
+        self.__patterns:NamedList[Pattern] = NamedList()
         
         self.__patternRefreshPeriod = 0.02
         self.__nextPatternsRefresh = 0
@@ -78,18 +68,23 @@ class Scene(MainChild):
     def patterns(self) -> NamedList[Pattern]:
         return self.__patterns
     
-    def addPatterns(self, *patterns, patternRefresh:float = None ):
-        if patternRefresh is not None:
-            self.__patternRefreshPeriod = patternRefresh
+    def addPatterns(self, *patterns:Pattern ):
+        """add patterns to a scene
+
+        :param patternRefresh: _description_, defaults to None
+        :type patternRefresh: float, optional
+        """
+        #if patternRefresh is not None:
+        #    self.__patternRefreshPeriod = patternRefresh
         self.__patterns.extend(patterns)
         for pattern in patterns:
             pattern.nliSetContainer(self.__patternsContainer)
         
     
-    def addRule(self, target:OutputTarget=None, term:ExpressionTerm=None, name=None ) ->SceneRule:
+    def addRule(self, target:OutputTarget, term:ExpressionTerm, name:Optional[str]=None ) ->SceneRule:
             assert isinstance( term, ExpressionTerm )
             rule = SceneRule( target=target, term=term, name=name )
-            dictAddUnique( self.__rules, target.name, rule )
+            #dictAddUnique( self.__rules, target.name, rule )
             rule.nliSetContainer( self.__rulesContainer )
             return rule
         
@@ -97,35 +92,35 @@ class Scene(MainChild):
     def findOutput( self, tag:str ) -> OutputTarget:
         raise NotImplemented
                     
-    def addRules(self, **kwargs:Mapping[str,ExpressionTerm] ):
+    def addRules(self, **kwargs:ExpressionTerm ):
         for tag, val in kwargs.items():
             self.addRule( self.findOutput(tag), val )
 
     def sources( self ) -> Mapping[str,InputSource]:
         rv = {}
-        for setting in self.__rules.values():
+        for setting in self.__rulesContainer:
             for source in setting.sources().values():
                 dictAddUnique( rv, source.name, source )
     
         return rv
 
-    def addTask( self, *args, **kwds:SceneTaskKwargs  ) -> SceneTask:
+    def addTask( self, *args, **kwds:Unpack[SceneTaskKwargs]  ) -> SceneTask:
         task = SceneTask( *args, **kwds )
         self.__tasks.append( task )
         task.nliSetContainer(self.__tasksContainer)
         return task
     
     
-    def addTaskDef( self, name:str = None, **kwds:SceneTaskKwargs  ) -> SceneTask:
+    def addTaskDef( self, **kwds:SceneTaskKwargs  )  -> Callable[..., Any]:
 
         def addTask( callable ):
-            self.addTask(callable, name = name or callable.__name__, **kwds)
+            self.addTask(callable, **kwds)
             return callable
         
         return addTask
     
     def runTasks(self, context:EvaluationContext):
-        self.enableDbgOut and self.dbgOut( f"scene {self.name} run tasks ({len(self.__tasks)} tasks, {len(self.__rules)} rules) on update {context.updateIndex}..."  )
+        if self.enableDbgOut: self.dbgOut( f"scene {self.name} run tasks ({len(self.__tasks)} tasks, {len(self.__rulesContainer)} rules) on update {context.updateIndex}..."  )
         with context.subFrame('runScene', self.name ) as activeFrame:
             for task in self.__tasks:
                 try:
@@ -133,7 +128,7 @@ class Scene(MainChild):
                 except Exception as inst:
                     self.SHOW_EXCEPTION(  inst, "running task %s", task.name )
             activeFrame.snap("rules")
-            for tag, rule in self.__rules.items():
+            for rule in self.__rulesContainer:
                 try:
                     rule.run( context, frame=activeFrame )
                 except Exception as inst:
@@ -148,8 +143,8 @@ class Scene(MainChild):
                         SHOW_EXCEPTION( inst, "pattern %r refresh failed in %r", 
                                        getattr(pattern,'name',pattern), self )
 
-def addSceneTask( scene:Scene, name:str = None, **kwds:SceneTaskKwargs ):
+def addSceneTask( scene:Scene, **kwds:SceneTaskKwargs ):
     def addTask( callable ):
-        scene.addTask(callable, name = name, **kwds)
+        scene.addTask(callable, **kwds)
         
     return addTask
