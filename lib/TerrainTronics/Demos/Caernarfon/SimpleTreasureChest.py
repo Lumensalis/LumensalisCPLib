@@ -30,8 +30,15 @@ frontLidStrip           = neoPixA.stick(8)
 sceneIndicatorLights    = neoPixB.stick(8)
 angleGaugeLights        = neoPixB.ring(12)
 
+
 # StemmaQT modules
 timeOfFlightSensor = main.i2cFactory.addVL530lx(updateInterval=0.25)
+vcnl4040 = main.adafruitFactory.addVCNL4040()
+luxTest = vcnl4040.lux
+lightLevel = vcnl4040.light
+proximity = vcnl4040.proximity
+white = vcnl4040.white
+main.monitor( luxTest, lightLevel, proximity, white )
 
 # setup touch inputs : http://lumensalis.com/ql/h2Touch
 capTouch = main.adafruitFactory.addMPR121()

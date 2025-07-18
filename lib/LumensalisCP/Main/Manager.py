@@ -97,7 +97,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self.defaultController = Controller(self)
         self.defaultController.nliSetContainer(self.controllers)
 
-        self._monitorTargets = {}
+        self._monitored = []
 
         self._timers = PeriodicTimerManager(main=self)
 
@@ -124,9 +124,12 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def when(self) -> TimeInSeconds:
         return self._when 
     
-    cycle = property( lambda self: self.__cycle )
-    millis = property( lambda self: int( self._when * 1000) )
-    seconds:float = property( lambda self: self._when )
+    @property
+    def cycle(self) -> int : return self.__cycle 
+    @property
+    def millis(self) -> TimeInMS : return int(self._when * 1000)
+    @property
+    def seconds(self) -> TimeInSeconds: return self._when 
     
     def getNewNow( self ) -> TimeInSeconds:
         #ns = time.monotonic_ns()
@@ -229,6 +232,10 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
         self.__preFirstRunCallbacks.append( startWebServer )
         return server
+
+    def monitor( self, *inputs:InputSource, **kwds ) -> None:
+        return ManagerRL.MainManager_monitor(self, *inputs, **kwds )
+
 
     def handleWsChanges( self, changes:dict ):
         return ManagerRL.MainManager_handleWsChanges(self, changes)

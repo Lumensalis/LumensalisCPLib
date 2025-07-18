@@ -24,9 +24,26 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
     socketPool : Any # SocketPool
     profiler: Profiler
+    shields:NamedLocalIdentifiableList[ShieldBase]
     defaultController:Controller
     controllers:NamedLocalIdentifiableList[Controller]
+    
+    
+    __anonInputs : NamedLocalIdentifiableList[InputSource]
+    __anonOutputs : NamedLocalIdentifiableList[NamedOutputTarget]
+    __latestSleepDuration:TimeSpanInSeconds
+    _monitored:list[InputSource]
+    _nextWait:TimeInSeconds
+    __priorSleepWhen:TimeInSeconds
     _privateCurrentContext:EvaluationContext
+    _renameIdentifiablesItems:dict[str,Any]
+    _scenes: SceneManager
+    __shutdownTasks:List[ExitTask]
+    __startNow: TimeInSeconds
+    _tasks:List[Callable]
+    _timers: PeriodicTimerManager
+    _webServer:BasicServer|None
+    _when: TimeInSeconds
     
     @staticmethod
     def initOrGetManager()->MainManager: ...
@@ -45,17 +62,15 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     @property
     def when(self) -> TimeInSeconds: pass
 
-    cycle: int
-    millis: int
-    seconds: TimeInSeconds
-    
-    newNow: TimeInSeconds
 
-    def getNewNow( self ) -> TimeInSeconds: ...
-    
     @property
-    def defaultI2C(self) -> busio.I2C: pass
-    
+    def cycle(self) -> int : ...
+    @property
+    def millis(self) -> TimeInMS : ...
+    @property
+    def seconds(self) -> TimeInSeconds: ...
+    def getNewNow( self ) -> TimeInSeconds: ...
+
     @property
     def scenes(self) -> SceneManager: pass
     
@@ -91,7 +106,6 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def sayAtStartup( self, fmt:str, *args ): ...
     
     def addBasicWebServer( self, *args, **kwds ) -> BasicServer: pass
-    _webServer:BasicServer|None
 
     def handleWsChanges( self, changes:dict ): pass
         
@@ -118,4 +132,6 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
     def run( self ): pass
 
-    def renameIdentifiables(self, d:dict[str,Any]): ...
+    def renameIdentifiables(self, d:dict[str,Any], verbose:bool = False ): ...
+    
+    def monitor( self, *inputs:InputSource, **kwds ) -> None: ...

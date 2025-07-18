@@ -46,6 +46,14 @@ def ExceptionResponse( request: Request, inst:Exception, message:Optional[str]=N
     )
     
 #############################################################################
+def inputSourceSnapshot( input:InputSource ) -> dict[str,Any]:
+    return dict(
+        value= input.getValue(),
+        lc=input.__latestChangeIndex,
+        lu=input.__latestUpdateIndex,
+        localId=input.localId,
+        cls = input.__class__.__name__,
+    )
 
 def getStatusInfo(self:BasicServer.BasicServer, request:Request ):
     main = self.main
@@ -66,7 +74,8 @@ def getStatusInfo(self:BasicServer.BasicServer, request:Request ):
                 nextWait = main._nextWait,
                 priorWhen = main.__priorSleepWhen,
                 latestSleepDuration = main.__latestSleepDuration
-            )
+            ),
+            'monitored': dict( [ [i.name, inputSourceSnapshot(i)] for i in main._monitored] )
             
         }
     return rv

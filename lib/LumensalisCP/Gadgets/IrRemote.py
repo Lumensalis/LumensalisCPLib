@@ -10,6 +10,7 @@ from  LumensalisCP.Main.Dependents import MainChild
 
 import adafruit_irremote   # pyright: ignore[reportMissingImports]
 import json
+import pulseio
 
 class LCP_IRrecv(MainChild):
     REMOTES_CATALOG_FILENAME = '/remotes.json'

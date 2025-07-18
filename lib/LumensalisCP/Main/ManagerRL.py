@@ -31,7 +31,6 @@ def MainManager_launchProject( self:MainManager, globals:Optional[dict]=None, ve
     self.run()
 
 
-
 def MainManager_renameIdentifiables( self:MainManager, items:Optional[dict]=None, verbose:bool = False ):
     if items is None:
         items = self._renameIdentifiablesItems
@@ -51,6 +50,11 @@ def MainManager_renameIdentifiables( self:MainManager, items:Optional[dict]=None
                 if val.nliGetContaining() is None:
                     val.nliSetContainer(self.__anonOutputs)
                     
+def MainManager_monitor( self:MainManager, *inputs:InputSource, enableDbgOut:Optional[bool]=None,**kwds ) ->None :
+    for i in inputs:
+        if enableDbgOut is not None:
+            i.enableDbgOut = enableDbgOut
+        self._monitored.append(i) 
 
 def MainManager_handleWsChanges( self:MainManager, changes:dict ):
         
