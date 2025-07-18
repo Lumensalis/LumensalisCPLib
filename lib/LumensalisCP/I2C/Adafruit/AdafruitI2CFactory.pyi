@@ -8,6 +8,7 @@ from .MPR121 import MPR121
 from .Magnetic import TLV493D
 from .AW9523 import AW9523
 from .PCA9685 import PCA9685
+from .VCNL4040 import VCNL4040
 
 class AdafruitFactory(I2CFactory):
     
@@ -22,3 +23,5 @@ class AdafruitFactory(I2CFactory):
     def addAW9523( self, *args, **kwds:I2CFactoryAddArgs ) -> AW9523: ...
 
     def addPCA9685( self, *args, **kwds ) -> PCA9685: ...
+    
+    def addVCNL4040( self, *args, **kwds ) -> VCNL4040: ...

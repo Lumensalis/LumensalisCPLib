@@ -22,7 +22,11 @@ class AdafruitFactory(I2CFactory):
         from .MPR121 import MPR121
         return MPR121( *args, **kwds )
     
-
+    def addVCNL4040( self, *args, **kwds ) -> "LumensalisCP.I2C.Adafruit.VCNL4040.VCNL4040":
+        updateKWDefaults( kwds, main=self.main )
+        from .VCNL4040 import VCNL4040
+        return VCNL4040( *args, **kwds )
+    
     def addTLV493D( self, *args, **kwds ):
         updateKWDefaults( kwds, main=self.main )
         from .Magnetic import TLV493D
