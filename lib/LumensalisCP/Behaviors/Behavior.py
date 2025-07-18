@@ -1,3 +1,4 @@
+from __future__ import annotations
 from ..Main.Manager import MainManager
 from ..Main.Expressions import EvaluationContext 
 
@@ -5,6 +6,7 @@ from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
 from LumensalisCP.Main.Profiler import Profiler
 from LumensalisCP.Scenes.Scene import Scene
+from LumensalisCP.Debug import Debuggable
 
 if TYPE_CHECKING:
     import weakref
@@ -15,7 +17,7 @@ class Actor(Debuggable):
     
     """
     
-    __currentBehavior:"Behavior"|None = None
+    __currentBehavior:Behavior|None = None
     
     def __init__(self, name:str|None = None, main:MainManager|None = None, **kwds ):
         
@@ -84,7 +86,9 @@ class Behavior(Debuggable):
         
     @property
     def actor(self) -> Actor:
-        return self.__actor()   
+        rv = self.__actor()   
+        assert rv is not None
+        return rv
         
     @property
     def isActive(self): return self.actor.currentBehavior is self

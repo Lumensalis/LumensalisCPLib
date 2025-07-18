@@ -53,7 +53,7 @@ class Audio( MainChild ):
                 voice_count = mixer_voice_count,
                 sample_rate = mixer_sample_rate,
                 channel_count=mixer_channel_count,
-                samples_signed = mixer_signed,
+                samples_signed = bool(mixer_signed),
                 bits_per_sample = mixer_bits_per_sample,
                 buffer_size = mixer_buffer_size, 
             )
@@ -94,7 +94,7 @@ class Audio( MainChild ):
             sample = audiocore.WaveFile(wave_file)
 
         assert sample is not None
-        self.enableDbgOut and self.dbgOut( f"sample {filename} at {sample.sample_rate} is {sample}" )
+        if self.enableDbgOut: self.dbgOut( f"sample {filename} at {sample.sample_rate} is {sample}" )
         if self.mixer is not None:
             for tag in [ 'sample_rate', 'bits_per_sample', 'channel_count' ]:
                 vSample, vMixer  =  getattr(sample,tag),  self.__mixerConfig[tag]
@@ -111,7 +111,7 @@ class Audio( MainChild ):
         return rv
         
     def stop(self, voice:int = 0):
-        self.enableDbgOut and self.dbgOut( "stopping" )
+        if self.enableDbgOut: self.dbgOut( "stopping" )
         if self.mixer is not None:
             self.mixer.stop_voice(voice=voice)
         else:

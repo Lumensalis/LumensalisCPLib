@@ -46,7 +46,7 @@ class ServoMovement(Motion):
     target:Degrees = 0.0
     speed:DegreesPerSecond = 10
     nextBehavior:"ServoMovement|None"
-    
+        
     def __init__(self, actor:"ServoDoor", name:str|None = None,
             target:Degrees|None = None, speed:DegreesPerSecond|None = None ):
         super().__init__(actor, name)
@@ -59,7 +59,7 @@ class ServoMovement(Motion):
         if target is not None: self.target = target
         if speed is not None: self.speed = speed
         if self.actor.currentBehavior is self:
-            self.actor._servo.moveTo( self.target, self.speed, UpdateContext.fetchCurrentContext(None) )
+            self.actor._servo.moveTo( self.target, self.speed, UpdateContext.fetchCurrentContext(None) ) # type: ignore
         #    self.actor.setCurrentBehavior(self, reset=True)
 
     def activate( self, target:Degrees|None=None, speed:DegreesPerSecond|None = None, context:EvaluationContext|None=None ) -> "ServoMovement":
@@ -76,11 +76,11 @@ class ServoMovement(Motion):
     def enter(self, context):
         super().enter(context)
         if self.enableDbgOut: self.dbgOut( f"enter moveTo {self.target} at {self.speed}" )
-        self.actor._servo.moveTo( self.target, self.speed, context )
-        self.actor._servo.onMoveComplete( self._complete )
+        self.actor._servo.moveTo( self.target, self.speed, context )  # type: ignore
+        self.actor._servo.onMoveComplete( self._complete )  # type: ignore
     
     def exit(self, context):
-        self.actor._servo.onMoveComplete( None )
+        self.actor._servo.onMoveComplete( None )  # type: ignore
         super().exit(context)
         
     

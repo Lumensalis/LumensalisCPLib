@@ -2,7 +2,7 @@ from ..I2C.I2CDevice import I2CDevice
 
 import displayio, terminalio
 from i2cdisplaybus import I2CDisplayBus
-import adafruit_display_text.label
+import adafruit_display_text.label  # pyright: ignore[reportMissingImports]
 
 class EZDisplayBase(object):
     def __init__(self, displayWidth = 128, displayHeight = 64, **kwds ):

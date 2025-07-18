@@ -8,7 +8,7 @@ from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.Triggers.Timer import PeriodicTimer
 from  LumensalisCP.Main.Dependents import MainChild
 
-import adafruit_irremote
+import adafruit_irremote   # pyright: ignore[reportMissingImports]
 import json
 
 class LCP_IRrecv(MainChild):

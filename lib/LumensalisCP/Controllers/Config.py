@@ -1,4 +1,4 @@
-import microcontroller, neopixel, board
+import microcontroller, board
 
 # Map from specific controllers actual pins to D1 Mini pin names
 class ControllerPins(object):
@@ -15,13 +15,13 @@ class ControllerPins(object):
     
     def lookupPin( self, tag:str ) -> microcontroller.Pin :
         if tag.startswith("m"):
-            pin = getattr( microcontroller.pin, tag[1:] )
+            pin = getattr( microcontroller.pin, tag[1:] ) # type: ignore
         elif tag.startswith("b"):
             pin = getattr(board, tag[1:] )
         #elif tag.startswith("D"):
         #    pin = getattr(board, tag[1:] )
         elif tag.startswith("GPIO"):
-            pin = getattr( microcontroller.pin, tag )
+            pin = getattr( microcontroller.pin, tag ) # type: ignore
         else:
             pin = getattr(board, tag, None )
         assert( pin is not None )

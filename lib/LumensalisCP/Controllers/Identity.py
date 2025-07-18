@@ -4,10 +4,12 @@ import os, sys, json
 import microcontroller
 import binascii
 import board
-import adafruit_24lc32
+import adafruit_24lc32 # pyright: ignore[reportMissingImports]
 from adafruit_bus_device.i2c_device import I2CDevice
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
 
+if TYPE_CHECKING:
+    from nvm import ByteArray
 
 class ControllerNVM(object):
     MAGIC = b"LCP"
@@ -17,9 +19,12 @@ class ControllerNVM(object):
     )
     
     def __init__(self, nvm = microcontroller.nvm ):
-        self.__nvm = nvm
+        assert nvm is not None
+        self.__nvm: ByteArray = nvm
 
+    
     @property 
+    
     def nvm(self): return self.__nvm
     
 

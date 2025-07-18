@@ -7,5 +7,5 @@ Partly for convenience and DRY, but also to minimize missing import problem repo
 
 import digitalio, analogio, pwmio
 import supervisor, board, microcontroller
-import neopixel, pulseio
+import neopixel # pyright: ignore[reportMissingImports]
 import io, gc

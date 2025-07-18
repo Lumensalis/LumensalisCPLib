@@ -1,4 +1,4 @@
-import adafruit_motor.servo
+import adafruit_motor.servo   # pyright: ignore[reportMissingImports]
 import pwmio
 from LumensalisCP.IOContext import *
 #from LumensalisCP.Main.Expressions import NamedOutputTarget, EvaluationContext, UpdateContext
@@ -13,7 +13,7 @@ import math
 class LocalServo( 
                       #adafruit_motor.servo.Servo,
                       NamedOutputTarget ):
-    def __init__(self, pwm:pwmio.PWMOut=None, name:str=None, 
+    def __init__(self, pwm:pwmio.PWMOut, name:Optional[str]=None, 
                  movePeriod:TimeInSeconds = 0.05,
                  moveSpeed:DegreesPerSecond = 60.0,
                  angleMin:Degrees = 10,

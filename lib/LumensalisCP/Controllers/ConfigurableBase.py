@@ -18,7 +18,7 @@ class ConfigurableBase(object):
         if config is None:
             config = os.getenv("TTCP_CONTROLLER")
             if config is None:
-                config = board.board_id
+                config = board.board_id # type : ignore
                 
         if configSecondary:
             ensure( config is not None, "auto config lookup failed" )

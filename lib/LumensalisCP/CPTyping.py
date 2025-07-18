@@ -10,6 +10,8 @@ try:
     from typing import Unpack, TypeAlias 
     from typing import Self 
     from typing import Type, TypeAlias, TypedDict, TypeVar
+    
+    from typing import ByteString
     from functools import wraps
     
     

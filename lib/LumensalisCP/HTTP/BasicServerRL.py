@@ -1,8 +1,10 @@
 
+import traceback
 from LumensalisCP.IOContext import *
 from LumensalisCP.commonCPWifi import *
 from LumensalisCP.pyCp.importlib import reload
 from . import BasicServer
+import traceback
 
 #print()
 #print( f"----------------------" )
@@ -10,7 +12,7 @@ from . import BasicServer
 #print( f"----------------------" )
 #print()
 
-from adafruit_httpserver import DELETE, GET, POST, PUT, JSONResponse, Request, Response
+from adafruit_httpserver import DELETE, GET, POST, PUT, JSONResponse, Request, Response  # pyright: ignore[reportAttributeAccessIssue]
 
 _v2jSimpleTypes = { int, str, bool, float,type(None) }
 def valToJson( val ):

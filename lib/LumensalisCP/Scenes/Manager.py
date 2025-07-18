@@ -35,7 +35,7 @@ class SceneManager(NamedLocalIdentifiable):
     def currentScene(self): return self.__currentScene
         
     @currentScene.setter
-    def currentScene(self, scene:Scene):  self.setScene(scene)
+    def currentScene(self, scene:Scene|str):  self.setScene(scene)
         
     def setScene(self, scene:Scene|str ):
         if type(scene) is str:
