@@ -51,8 +51,9 @@ class LCP_IRrecv(MainChild):
     }
     
     showUnhandled:bool
+    codenames:dict[str,int]
     
-    def __init__(self, pin, main:MainManager,  codenames:Mapping[str,int]|str|None = {},
+    def __init__(self, pin, main:MainManager,  codenames:dict[str,int]|str|None = {},
                  name:str|None = None, updateInterval = 0.1,
                  showUnhandled = False ):
         super().__init__( main=main, name=name )
@@ -76,10 +77,13 @@ class LCP_IRrecv(MainChild):
                 codenames = builtinCodes
             else:
                 codes = self.jsonCatalog.get( codenames,None )
-                ensure( codes is not None, "could not find %r in remotes catalog", codenames )
+                assert codes is not None, f"could not find {codenames} in remotes catalog"
                 codenames = codes
-            
-        self.codenames:Mapping[str,int] = codenames
+            self.codenames = codenames
+        elif codenames is None:
+            self.codenames = {}
+        else:
+            self.codenames = codenames 
 
         self._checkTimer = PeriodicTimer( updateInterval , manager=main.timers, name=f"{self.name}Check" )
         
@@ -95,22 +99,26 @@ class LCP_IRrecv(MainChild):
             
         main.callLater( startIrTimer )
 
+    __jsonCatalog: dict[str,dict[str,int]]|None
 
     @property
-    def jsonCatalog(self) -> Mapping[str,int]:
+    def jsonCatalog(self) ->  dict[str,dict[str,int]]:
         if self.__jsonCatalog is None:
-            remotes = {}
+            remotes:dict[str,dict[str,int]] = {}
             try:
                 with open( self.REMOTES_CATALOG_FILENAME, 'r') as f:
                     remotes = json.load(f)
+                    assert remotes is not None
             except Exception as inst:
                 print( f"failed to load {self.REMOTES_CATALOG_FILENAME} : {inst}")
+                remotes = {}
+                
             self.__jsonCatalog = remotes
         return self.__jsonCatalog
     
     def handleRawCode(self, rawCode ):
         code = 0
-        self.enableDbgOut and self.dbgOut( f"handleRawCode {rawCode}" )
+        if self.enableDbgOut: self.dbgOut( f"handleRawCode {rawCode}" )
         for byte in rawCode:
             code = (code *256) + byte
             
@@ -118,7 +126,7 @@ class LCP_IRrecv(MainChild):
         
         cb = self.__callbacksByCode.get(code,None) # self.__unhandledCallback)
         if cb is not None:
-            self.enableDbgOut and self.dbgOut( f"calling callback for code {code}, cb={cb}" )
+            if self.enableDbgOut: self.dbgOut( f"calling callback for code {code}, cb={cb}" )
             cb()
         else:
             self._unhandled(code, rawCode)
@@ -172,12 +180,12 @@ class LCP_IRrecv(MainChild):
             
             self.handleRawCode( code )
         except adafruit_irremote.IRNECRepeatException:  # unusual short code!
-            self.enableDbgOut and self.dbgOut("NEC repeat!")
+            if self.enableDbgOut: self.dbgOut("NEC repeat!")
         except (
             adafruit_irremote.IRDecodeException,
             adafruit_irremote.FailedToDecode,
         ) as e:  # failed to decode
-            self.enableDbgOut and self.dbgOut("Failed to decode: %r /  %s %r", pulses, e.args, e )
+            if self.enableDbgOut: self.dbgOut("Failed to decode: %r /  %s %r", pulses, e.args, e )
 
     
 def onIRCode( ir: LCP_IRrecv, code:int|str ):

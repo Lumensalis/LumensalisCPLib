@@ -19,7 +19,7 @@ AnyLightValue = Union[
     ] 
 
 class RGB(object):
-    __slots__ = [ '_r', '_g', '_b' ]
+    # __slots__ = [ '_r', '_g', '_b' ]
     
     CONVERTORS = dict(
         int= lambda v:RGB.fromNeoPixelInt(v),
@@ -101,10 +101,10 @@ class RGB(object):
         return (self.r + self.g + self.b) / 3.0
     
     def __repr__(self):
-        return safeFmt( "(%r,%r,%r)", self.r, self.g, self.b)
+        return safeFmt( "(%.3f,%.3f,%.3f)", self.r, self.g, self.b)
     
     def __str__(self):
-        return safeFmt( "(%r,%r,%r)", self.r, self.g, self.b)
+        return safeFmt( "(%.3f,%.3f,%.3f)", self.r, self.g, self.b)
     #Point = namedtuple('Point', ['x', 'y'])
     
     

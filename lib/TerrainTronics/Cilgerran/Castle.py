@@ -31,7 +31,6 @@ class CilgerranLED( DimmableLight ):
     def _brightnessChanged(self):
         self.__output.duty_cycle = int( self.__value * self.source.brightness * CilgerranLED.DUTY_CYCLE_RANGE )
 
-    @overload
     def getValue(self, context: UpdateContext = None ) -> AnyLightValue:
         return self.__value
     

@@ -34,11 +34,13 @@ angleGaugeLights        = neoPixB.ring(12)
 # StemmaQT modules
 timeOfFlightSensor = main.i2cFactory.addVL530lx(updateInterval=0.25)
 vcnl4040 = main.adafruitFactory.addVCNL4040()
-luxTest = vcnl4040.lux
-lightLevel = vcnl4040.light
-proximity = vcnl4040.proximity
-white = vcnl4040.white
-main.monitor( luxTest, lightLevel, proximity, white )
+
+lightSensor = vcnl4040.light
+proximitySensor = vcnl4040.proximity
+vcnl4040.light_integration_time = 2
+vcnl4040.proximity_integration_time = 2
+main.monitor( lightSensor, proximitySensor, ) # enableDbgOut = True )
+
 
 # setup touch inputs : http://lumensalis.com/ql/h2Touch
 capTouch = main.adafruitFactory.addMPR121()
@@ -93,10 +95,21 @@ centerPattern = ABFade( centerStoneLights, value=oscillator/20, a =LightValueRGB
 rainbowLeft = Rainbow(leftStoneLights,colorCycle=rbCycle, spread=rbs )
 rainbowRight = Rainbow(rightStoneLights,colorCycle=1.1, spread=2.0 )
 aglSpinner = Spinner(angleGaugeLights, onValue=LightValueRGB.RED, tail=0.42,period=0.49)
+
+#lightSensor.enableDbgOut = True
+lsZ21 = Z21Adapted( lightSensor )
+#lsZ21.enableDbgOut = True
+ls256 = lsZ21 * 256
+#ls256.enableDbgOut = True
+
+csWheel = ColorWheel( ls256 )
+csWheel.enableDbgOut = True
+
+closedSpin = Spinner(angleGaugeLights,onValue=csWheel,period=3.49 )
 centerSpin = Spinner(centerStoneLights)
 
 sceneOpen.addPatterns( frontLidBlink(onValue="GREEN"), aglSpinner, rainbowLeft, rainbowRight )
-sceneClosed.addPatterns( frontLidBlink(onValue="RED"), centerPattern, rainbowLeft, rainbowRight  )
+sceneClosed.addPatterns( frontLidBlink(onValue="RED"), closedSpin, centerPattern, rainbowLeft, rainbowRight  )
 sceneMoving.addPatterns( frontLidBlink(onValue="YELLOW"), centerSpin, aglSpinner )
 
 #############################################################################

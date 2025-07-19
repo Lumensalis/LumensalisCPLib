@@ -1,4 +1,5 @@
-
+from __future__ import annotations
+from typing import Optional
 
 #############################################################################
 
@@ -10,11 +11,11 @@ from .WriteScope import *
 #############################################################################
 
 class GCTestAllocScopeSample(object):
-    mem_alloc: int
-    mem_free: int
+    mem_alloc: int|float
+    mem_free: int|float
     when: float
     
-    def __init__(self, copy:"GCTestAllocScopeSample"|None = None ):
+    def __init__(self, copy:GCTestAllocScopeSample|None = None ):
         if copy is None:
             self.clear()
         else:
@@ -40,8 +41,8 @@ class GCTestAllocScopeSample(object):
         self.when = 0.0
         
     def sample(self):
-        self.mem_alloc = gc.mem_alloc()
-        self.mem_free = gc.mem_free()
+        self.mem_alloc = gc.mem_alloc() # type: ignore
+        self.mem_free = gc.mem_free() # type: ignore
         self.when = time.monotonic()
         
     def __sub__(self, rhs:"GCTestAllocScopeSample" ):
@@ -86,7 +87,7 @@ class GCTesterTestParameters(object):
         
         return GCTesterTestParameters( name, args, kwds )
 
-    def writeOnScope(self, writeScope:WriteScope|None = None):
+    def writeOnScope(self, writeScope:WriteScope):
         with writeScope.startDict(indentItems=False) as nested:
             nested.addTaggedItems( name=self.name, args=self.args, kwds=self.kwds )
             
@@ -100,7 +101,7 @@ class GCTestAllocScopeData(object):
     def __repr__(self):
         return f"e:{self.elapsed}"
     
-    def __init__(self, copy:"GCTestAllocScopeData"|None = None ):
+    def __init__(self, copy:GCTestAllocScopeData|None = None ):
         if copy is None:
             self.before = GCTestAllocScopeSample()
             self.after = GCTestAllocScopeSample()
@@ -166,7 +167,7 @@ class GCTestRunConfig(object):
     @property
     def totalCycles(self) ->int: return self.cycles * self.innerCycles
 
-    def writeOnScope(self, writeScope:WriteScope|None = None):
+    def writeOnScope(self, writeScope):
         with writeScope.startDict(indentItems=False) as nested:
             #nested.addTaggedEntries([
             #        ('args',self.args),
@@ -180,7 +181,7 @@ class GCTestRunConfig(object):
              )
     
     def __repr__(self):
-        return f"(args={self.args} kwds={self.kwds} c={self.cycles} ic={self.innerCycles} optimizeArgs={self.optimizeArgs} )"
+        return f"(c={self.cycles} ic={self.innerCycles} optimizeArgs={self.optimizeArgs} )"
     
     def invoke(self, target:GCTestTarget, testArgs:GCTesterTestParameters ):
         args = testArgs.args
@@ -231,8 +232,7 @@ class GCTestRunResultScope(object):
 
 class GCTestRunResult(GCTestRunResultScope):
     target:GCTestTarget
-    name:str
-    exc:Exception
+    exc:Exception|None
     
     def __init__(self, target:GCTestTarget, config:GCTestRunConfig):
         super().__init__(config)
@@ -299,7 +299,7 @@ class GCTestRunResults(GCTestRunResultScope):
                 result.exc = inst
                 #raise
 
-    def writeOnScope(self, writeScope:WriteScope|None = None):
+    def writeOnScope(self, writeScope:WriteScope):
         #writeScope = TargetedWriteScope.makeScope(writeScope)
 
         with writeScope.startDict(indentItems=True) as selfScope:
@@ -332,18 +332,15 @@ _fNameRe = re.compile( r'^<function (.*) at [0-9a-fA-FxX]+>$' )
 def _getName( f ):
     fn = getattr( f, '__name__', None )
     #print( f"f={f} fn={fn}" )
-    fcls = getattr( f, '__class__',None )
+    fnClassName = getattr( f, '__class__',None )
     if fn is not None:
-        #if fcls is not None:
-        #    print( f"fcls={fcls} d={dir(fcls)} {fcls.__class__} {fcls.__dict__} {fcls.__bases__}")
-        #    return fcls.__name__ + "." + fn
         return fn
     fr = repr(f)
     m = _fNameRe.match(fr)
     if m:
         return m.group(1)
 
-    fcn = getattr( fcls, '__name__', None )
+    fcn = getattr( fnClassName, '__name__', None )
     print( f"f is a {type(f)} : {f}  df={dir(f)} fcn={fcn} fn={fn}" )
     raise Exception( f"unnamed type {type(f)} : {f}")
     return fr
@@ -389,13 +386,15 @@ class GCTester(object):
     signature:GCTestSignature
     
     def __init__(self,
-                 signature:GCTestSignature|list,
-                 baseline:Callable|None = None, 
+                 signature:Optional[GCTestSignature|list]=None,
+                 baseline:Optional[Callable] = None, 
                  ):
         self.targets = [GCTestTarget("baseline", baseline or (lambda *args,**kwds:None) )]
         if not isinstance(signature,GCTestSignature):
+            # TODO : this is probably not right?
+            assert type(signature) is list
             sigArgs = signature
-            signature = GCTestSignature( signature, sigArgs )
+            signature = GCTestSignature( "???", sigArgs )
             
         assert isinstance(signature,GCTestSignature)
         self.signature = signature
@@ -464,7 +463,7 @@ class GCTesterAndParametersResult(mutableObject):
                     
 class GCTesterAndArgsResults(object):
     def __init__(self, root:GCTesterAndArgs, config:GCTestRunConfig ):
-        self.entries:List [GCTesterAndParametersResult] = []
+        self.entries:List [GCTestRunResults] = []
         self.name = root.name
         self.config = config
         self.signature = root.signature
@@ -478,16 +477,16 @@ class GCTesterAndArgsResults(object):
 
 
 class GCTestSet(object):
-    testers: Mapping[str,GCTesterAndArgs]
+    testers: dict[str,GCTesterAndArgs]
     
     def __init__( self ):
         pass
         self.testers = {}
         
-    def addTester(self, name:str, signature:GCTestSignature|list, tests:List[Callable]|None = None, baseline:Callable|None=None ):
+    def addTester(self, name:str, signature:Optional[GCTestSignature|list]=None, tests:Optional[List[Callable]] = None, baseline:Callable|None=None ):
         tester = GCTester( signature=signature,baseline=baseline)
-        
-        tester.addTests(*tests)
+
+        if tests is not None: tester.addTests(*tests)
         
         rv = GCTesterAndArgs( name, tester )
         self.testers[name] = rv

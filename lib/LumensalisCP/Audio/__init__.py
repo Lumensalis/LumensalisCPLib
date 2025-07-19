@@ -9,6 +9,8 @@ import array
 import LumensalisCP.Main.Manager
 from  LumensalisCP.Main.Dependents import MainChild
 
+# TODO : recheck / fix everything with # type: ignore
+
 if TYPE_CHECKING:
     from  LumensalisCP.Main.Manager import MainManager
     
@@ -57,7 +59,7 @@ class Audio( MainChild ):
                 bits_per_sample = mixer_bits_per_sample,
                 buffer_size = mixer_buffer_size, 
             )
-            self.mixer = audiomixer.Mixer( **self.__mixerConfig )
+            self.mixer = audiomixer.Mixer( **self.__mixerConfig ) # type: ignore
             self.audio.play( self.mixer )
             
         self.__masterVolume = 1.0
@@ -74,7 +76,7 @@ class Audio( MainChild ):
             self.mixer.voice[0].level = self.__masterVolume * self.__sampleVolume
         
     def play( self, sample:AudioSample, loop:bool=False, level:float = 1.0, voice:int = 0 ):
-        self.enableDbgOut and self.dbgOut( "playing %s, loop=%s", sample.filename, loop )
+        if self.enableDbgOut: self.dbgOut( "playing %s, loop=%s", sample.filename, loop )
         self.__sampleVolume = max(0.0, min(1.0,float(level)))
         if self.mixer is not None:
             self.mixer.voice[voice].level =  self.__masterVolume * self.__sampleVolume
@@ -86,12 +88,12 @@ class Audio( MainChild ):
     def readSample( self, filename:str ):
         sample = None
         if filename.endswith(".mp3"):
-            sample = audiomp3.MP3Decoder(filename)
+            sample = audiomp3.MP3Decoder(filename) # type: ignore
 
 
         if filename.endswith(".wav"):
             wave_file = open(filename, "rb")
-            sample = audiocore.WaveFile(wave_file)
+            sample = audiocore.WaveFile(wave_file) # type: ignore
 
         assert sample is not None
         if self.enableDbgOut: self.dbgOut( f"sample {filename} at {sample.sample_rate} is {sample}" )
@@ -122,7 +124,7 @@ class Audio( MainChild ):
         sample_rate = 8000
         tone_volume = .1  # Increase or decrease this to adjust the volume of the tone.
         frequency = 440  # Set this to the Hz of the tone you want to generate.
-        length = sample_rate // frequency  # One freqency period
+        length = sample_rate // frequency  # One frequency period
         sine_wave = array.array("H", [0] * length)
         for i in range(length):
             sine_wave[i] = int((math.sin(math.pi * 2 * frequency * i / sample_rate) *

@@ -1,3 +1,4 @@
+# type: ignore
 from LumensalisCP.IOContext import *
 from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.Triggers.Timer import PeriodicTimer
@@ -12,15 +13,15 @@ class Moving( NamedOutputTarget, Refreshable ):
         Refreshable (_type_): _description_
     """
     
-    speed:TimeInSeconds|Evaluatable # time required for full range move
     target:ZeroToOne|Evaluatable # destination value
     moving:bool # true if still moving towards destination
     
     @property
-    def speed(self):
+    def speed(self) -> TimeInSeconds|Evaluatable:
+        # time required for full range move
         raise NotImplemented
         
-    def __init__(self, name:str=None, 
+    def __init__(self, name:Optional[str]=None, 
                  speed:TimeInSeconds = 1.0,
                  target:ZeroToOne = 0.0,
                  main:MainManager = None,

@@ -44,10 +44,11 @@ class I2CDevice( NamedLocalIdentifiable ):
     
     @property
     def main(self): return self.__main
+
     
     def derivedUpdateTarget(self, context:EvaluationContext) -> None:
-        raise NotImplemented
-    
+        self.raiseNotImplemented( 'derivedUpdateTarget' )
+
     def updateTarget(self, context:EvaluationContext) -> bool:
         if not self.__updateInterval: return False
         now = context.when or self.__main.when

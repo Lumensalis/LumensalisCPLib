@@ -171,4 +171,4 @@ def printElapsed(desc):
            gcUsed, gcFree
            ) )
     
-__all__ = [ pmc_gcManager, pmc_mainLoopControl, printElapsed ]
+__all__ = [ 'pmc_gcManager', 'pmc_mainLoopControl', 'printElapsed' ]

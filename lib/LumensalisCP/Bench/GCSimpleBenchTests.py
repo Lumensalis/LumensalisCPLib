@@ -16,17 +16,14 @@ def baz(a, w:int=1):
     return v+w
         
 def simpleTest():
-    tester = GCTester(baseline = lambda a: None )
-    tester.addTests( foo=foo,bar=bar,baz=baz
-                    )
-    
-    config = GCTestRunConfig(cycles=10, innerCycles=5,args=[2])
-    print( "running..." )
-    results = tester.run(config=config)
-    results.writeOnScope(sys.stdout)
-    
-    config.optimizeArgs = True
-    tester.run(config=config).writeOnScope(sys.stdout)
+    s = GCTestSet()
+    #tester = GCTester(baseline = lambda a: None )
+    s.addTester( "simple",
+            signature = [GCTArg("a",Any)],
+            baseline =  lambda a: None,
+            tests=[ foo,bar,baz ]
+        ).addArgs( "two", [2])
+    s.run()
 
 #############################################################################
 
@@ -42,7 +39,7 @@ class KtClass(object):
         return None
 
 def ktBar( a=None, b=None, c=None ):
-    return a + 1
+    return a + 1 # type: ignore 
 
 def ktBarABC( a, b, c ):
     return a
@@ -84,7 +81,10 @@ from LumensalisCP.util.kwCallback import KWCallback
 def kwcWrap( name:str|None=None ):
     def wrapper( callable:Callable  ):
         cb = KWCallback(callable,name=name)
-        cb.__name__ = cb.name
+        try:
+            # TODO:  callable naming cleanup
+            cb.__name__ = cb.name # type: ignore
+        except: pass
         return cb
 
     return wrapper
@@ -101,61 +101,6 @@ def wktBarABC( a, b, c ):
 def wktBarNone( a=None, b=None, c=None ):
     return None
 
-def kwdsTest():
-    tester = GCTester(baseline = kwdsBaseline )
-    ktc = KtClass()
-    tester.addTests(
-            ktFoo,
-            ktBar,
-            ktBarABC,
-            ktBaz,
-            ktBazA,
-            ktBazK,
-            ktBarNone,
-            wktBarNone,
-            wktFooBarNoneA,
-            wktBarABC,
-        )
-    if 0:
-        tester.addTests(
-            ktFooBar,
-            ktFooBarK,
-            ktFooBarNone,
-            ktFooBarNoneK,
-            ktFooBarNoneA,
-            
-            ktc.kBar,
-            ktFoo=ktFoo,
-            
-            ktBar=ktBar,
-            ktBaz=ktBaz
-        )
-
-    print( "\n\nrunning kwdsTest..." )
-    outerWriteScope = TargetedWriteScope( sys.stdout )
-    outerWriteScope.config.detailed = False
-    
-    with outerWriteScope.startList(indentItems=True) as writeScope:
-        config = GCTestRunConfig(cycles=15, innerCycles=5,optimizeArgs=True)
-        
-        def run( *args, optimizeArgs=None, **kwds):
-            config.args=args if len(args) else None
-            config.kwds=kwds if len(kwds) else None
-            config.optimizeArgs = config.optimizeArgs if optimizeArgs is None else optimizeArgs
-            writeScope.write( tester.run(config=config) )    
-        
-        run( 1 )
-        run( 3.5 )
-        run( 5, 6 )
-        run( 2, 3, 4 )
-        run( 13, c=99 )
-        run( 17, b=5, c=99 )
-        run( b = 5 )
-        
-        if 0:
-            run( 18, 4 )
-            run( "hello world, la la la la la la la", 4 )
-         
 #############################################################################
 
 def kwdsSetTest():
@@ -216,10 +161,10 @@ def setTest():
     def filteredIterated( l ): return filter( None, iter(l) ) 
     def copyFilteredIterated( l ): return list(filter( None, iter(l) ) )
     def iterated( l ): return iter(l)
-    def iteratedD( l=None, m=2, n=3 ): return iter(l)
+    def iteratedD( l=None, m=2, n=3 ): return iter(l)  # type: ignore
     def iteratedA( *args ): return iter(args[0])
     def iteratedAK( *args, **kwds ): return iter(args[0])
-    def iteratedlAK( l, *args, **kwds ): return iter(l)
+    def iteratedLAK( l, *args, **kwds ): return iter(l)
     def listComprehension( l ): return [i for i in l]
     
     ct = ContextTest()
@@ -242,7 +187,7 @@ def setTest():
                 iterated,
                 iteratedA,
                 iteratedAK,
-                iteratedlAK,
+                iteratedLAK,
                 iteratedD,
                 listComprehension,
                 justSortedWithContext,

@@ -1,10 +1,10 @@
 
 import traceback, time
 
-
 try:
-    import typing
-    from typing import NoReturn
+    from typing import TYPE_CHECKING
+    if TYPE_CHECKING:
+        from typing import NoReturn
 except: pass    
     
 
@@ -65,7 +65,7 @@ class Debuggable( object ):
     def raiseNotImplemented( self,  fmtString:str="", *args) -> None:
         raise Exception( f"NotImplemented ON {self.__class__.__name__}{self._dbgName} : {self.__formatArgs(fmtString,args)}" )
     
-    def raiseException( self,  fmtString:str, *args, excClass=Exception, **kwds) -> NoReturn:
+    def raiseException( self,  fmtString:str, *args, excClass=Exception, **kwds): # -> NoReturn:
         raise excClass( f"{self.__formatArgs(fmtString,args)} ON {self._dbgName}" )
 
     def setEnableDebugWithChildren( self, setting:bool, *args, **kwds ):

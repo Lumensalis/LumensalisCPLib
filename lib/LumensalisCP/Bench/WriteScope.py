@@ -4,8 +4,11 @@ Support for "structured output" based lists, and dicts
 Allows classes to implement a writeOnScope method which can be used for 
 a variety of output options including indented printing, json, ...
 """
-
+from __future__ import annotations
+from typing import TYPE_CHECKING, Sequence
 from .simpleCommon import *
+if TYPE_CHECKING:
+    import weakref
     
 #############################################################################
 
@@ -21,7 +24,7 @@ class WriteConfig(object):
         self.detailed = True
 
     
-    def write( self, scope:"WriteScope", value:Any ):
+    def write( self, scope:WriteScope, value:Any ):
             
         if hasattr( value, 'writeOnScope' ):
             value.writeOnScope( scope )
@@ -46,7 +49,7 @@ class WriteScope(object):
     """
     target:TextIO
     config:WriteConfig
-    parent: weakref.ReferenceType [ "WriteScope" ] | None
+    _parentRef: weakref.ref [WriteScope] | None
     
     showScopes=property( lambda self: self.config.showScopes )
     
@@ -58,7 +61,7 @@ class WriteScope(object):
     }
     
     
-    def __init__(self, ts:"WriteScope"|None, mode=None,indentItems:bool|None=None
+    def __init__(self, ts:WriteScope|None, mode=None,indentItems:bool|None=None
                  ):
         """_summary_
 
@@ -71,20 +74,24 @@ class WriteScope(object):
             self.config:WriteConfig = ts.config 
             self.target:TextIO = ts.target
             self.indent = ts.indent + "   "
-            self.parent = weakref.ref(ts)
+            self._parentRef = weakref.ref(ts)
         else:
             assert self.target is not None and self.config is not None
             self.indent = "\r\n"
-            self.parent = None
+            self._parentRef = None
         self.indentItems = indentItems
         self.mode=mode
         self.added = 0
         self._writingTagged = False
-        
+    
+    @property
+    def parent(self) -> WriteScope|None:
+        if self._parentRef is not None:
+            return self._parentRef()
 
     def getScopedDefault( self, tag:str ) -> Any:
         if self.parent is None: return None
-        return self.parent().getScopedDefault(tag)
+        return self.parent.getScopedDefault(tag)
         
     def nestedTag( self, tag:str ) -> str|None:
         return None
@@ -102,13 +109,14 @@ class WriteScope(object):
         self._addTagBeforeItem(tag)
         return DictWriteScope( self,indentItems=indentItems)
     
-    def addDict(self, items:dict, tag:str|None=None,indentItems:bool|None=None) -> "DictWriteScope":
+    def addDict(self, items:dict[str,Any], tag:str|None=None,indentItems:bool|None=None) -> DictWriteScope:
         """write dict"""
         with self.startDict( tag,indentItems=indentItems ) as nested:
             nested.addTaggedEntries( items.items() )
+        return nested
 
     
-    def startNamedType(self,instance,tag:str|None=None,indentItems:bool|None=None) -> "NamedTypeWriteScope":
+    def startNamedType(self,instance,tag:str|None=None,indentItems:bool|None=None) -> NamedTypeWriteScope:
         """start scope for writing tag/value dict
 
         Args:
@@ -157,7 +165,7 @@ class WriteScope(object):
                 self.target.write(self.indent)
         self.added += 1
         
-    def addItem( self, item:Any ):
+    def addItem( self, item:Any ) -> None:
         raise NotImplemented
     
     def write( self, item ):
@@ -244,7 +252,7 @@ class DictWriteScope(WriteScope):
         for tag,val in kwds.items():
             self.addTaggedItem(tag,val)
 
-    def addTaggedEntries(self, entries:List[Tuple[str,Any]]):
+    def addTaggedEntries(self, entries:Sequence[tuple[str,Any]]):
         """  add tag/value pairs
 
         order of entries will be maintained in output (unlike addTaggedItems)

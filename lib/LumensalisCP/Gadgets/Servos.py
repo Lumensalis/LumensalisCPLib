@@ -13,12 +13,14 @@ import math
 class LocalServo( 
                       #adafruit_motor.servo.Servo,
                       NamedOutputTarget ):
-    def __init__(self, pwm:pwmio.PWMOut, name:Optional[str]=None, 
+    def __init__(self, pwm:pwmio.PWMOut, 
+                 main:MainManager,
+                 name:Optional[str]=None, 
                  movePeriod:TimeInSeconds = 0.05,
                  moveSpeed:DegreesPerSecond = 60.0,
                  angleMin:Degrees = 10,
                  angleMax:Degrees = 135,
-                 main:MainManager = None,
+                 
                  **kwds ):
         #adafruit_motor.servo.Servo.__init__(self, pwm, **kwds)
         NamedOutputTarget.__init__(self, name=name)
@@ -61,18 +63,18 @@ class LocalServo(
             self.__servo.angle = None
     
     
-    def set( self, angle:Degrees|None, context:EvaluationContext=None ):
+    def set( self, value:Degrees|None, context:Optional[EvaluationContext]=None ):
         if self.__moving:
             self.stop(turnOff=False)
-        self.__set( angle, context )
+        self.__set( value, context )
 
-    def __set( self, angle:Degrees|None, context:EvaluationContext=None ):
+    def __set( self, angle:Degrees|None, context:Optional[EvaluationContext]=None ):
         if angle is not None:
             angle = self.rangedAngle( angle )
             self.__lastSetAngle = angle
         self.__servo.angle = angle
         
-    def moveTo( self, angle:Degrees, speed:DegreesPerSecond|None=None, context:EvaluationContext=None ):
+    def moveTo( self, angle:Degrees, speed:Optional[DegreesPerSecond]|None=None, context:Optional[EvaluationContext]=None ):
         assert angle is not None
         span =  angle - self.__lastSetAngle
         if span == 0:
@@ -90,7 +92,7 @@ class LocalServo(
         self.__moveSpan = angle - self.__lastSetAngle
         self.__moveTimeAtStart = context.when if context is not None else self.__moveTimer.manager.main.when
             
-        self.enableDbgOut and self.dbgOut( f"moveTo {self.__moveTarget}d from {self.__moveAngleStart}d / {self.__moveTimeAtStart :0.3f}s at {self.__moveSpeed}dPs, span {self.__moveSpan}" )
+        if self.enableDbgOut:self.dbgOut( f"moveTo {self.__moveTarget}d from {self.__moveAngleStart}d / {self.__moveTimeAtStart :0.3f}s at {self.__moveSpeed}dPs, span {self.__moveSpan}" )
         self.__moveTimer.start()
 
     def onStop( self, callable:Callable ):

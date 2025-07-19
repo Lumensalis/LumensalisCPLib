@@ -36,11 +36,8 @@ class HarlechXL_LED( DimmableLight ):
     def _brightnessChanged(self):
         self.__driver.br( self.__index, self._driverValue )
 
-    
-    @overload
     def getValue(self, context: UpdateContext = None ) -> AnyLightValue:
         return self.__value
-    
     
     def __repr__(self):
         return f"CilgerranLED( {self.name}, {self.__index}, v={self.__value} )"

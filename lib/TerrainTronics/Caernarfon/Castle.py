@@ -115,7 +115,7 @@ class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
         pin = self.config.option('servo{}pin'.format(servoN))
         name = name or f"servo{servoN}"
         pwm = pwmio.PWMOut( pin, duty_cycle=duty_cycle, frequency=frequency)
-        servo = LocalServo(pwm,name, main=self.main, **kwds)
+        servo = LocalServo(pwm, main=self.main, name=name, **kwds)
         servo.nliSetContainer(self.__servoContainer)
         self.__servos[servoN-1] = servo
         return servo

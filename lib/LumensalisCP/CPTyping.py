@@ -10,6 +10,7 @@ try:
     from typing import Unpack, TypeAlias 
     from typing import Self 
     from typing import Type, TypeAlias, TypedDict, TypeVar
+    from typing import NoReturn
     
     from typing import ByteString
     from functools import wraps
@@ -121,6 +122,7 @@ except ImportError:
                 self.name = name
             
         Any = PseudoTypingTType("Any")
+        NoReturn = PseudoTypingTType("NoReturn")
         TextIO = PseudoTypingTType("TextIO")
         Self = PseudoTypingTType("Self")
         
