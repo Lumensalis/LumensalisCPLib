@@ -1,6 +1,6 @@
-from .Light import *
+from LumensalisCP.Lights.Light import *
 from LumensalisCP.util.bags import Bag
-
+from LumensalisCP.CPTyping import *
 from random import random as randomZeroToOne, randint
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
@@ -64,49 +64,31 @@ class Pattern(NamedLocalIdentifiable):
 #############################################################################
 
 class PatternGeneratorStep(object):
-    def __init__( self, duration: TimeInSeconds=1.0 ):
-        self.duration = duration
-    
-    def startValue( self, index:int, context:EvaluationContext ) -> None:
-        raise NotImplemented
-    def endValue( self, index:int, context:EvaluationContext  )-> None:
-        raise NotImplemented
-    def intermediateValue( self, index:int, progression:ZeroToOne , context:EvaluationContext) ->None:
-        raise NotImplemented
-
-
-#############################################################################
-
-class PatternGeneratorSharedStep(PatternGeneratorStep):
     def __init__( self, 
-                 duration: TimeInSeconds=1.0,
-                 startValue: Optional[AnyLightValue] =  None, 
+                 startValue: AnyLightValue, 
                  endValue: Optional[AnyLightValue] =  None, 
+                 duration: TimeInSeconds=1.0,
                  intermediateRefresh: TimeInSeconds|None = None,
             ):
-        super().__init__(duration=duration)
         self._startValue = startValue
-        self._endValue = endValue or startValue
+        self._endValue:AnyLightValue = endValue or startValue
         self.duration = duration
         self.intermediateRefresh = intermediateRefresh
     
-    @override
     def startValue( self, index:int, context:EvaluationContext ):
         return context.valueOf( self._startValue )
     
-    @override
     def endValue( self, index:int , context:EvaluationContext ):
         return context.valueOf( self._endValue )
 
-    @override
     def intermediateValue( self, index, progression:ZeroToOne, context:EvaluationContext ):
         start = self.startValue(index,context=context)
         return start + ( (self.endValue(index,context=context) - start ) * progression )
 
 #############################################################################
 
-class MultiLightPatternStep(PatternGeneratorSharedStep):
-    def __init__(self, duration, starts:List[AnyLightValue], ends:List[AnyLightValue], **kwds ):
+class MultiLightPatternStep(PatternGeneratorStep):
+    def __init__(self, duration, starts:Sequence[AnyLightValue], ends:Sequence[AnyLightValue], **kwds ):
         super().__init__(duration=duration, **kwds)
         self.__starts = starts
         self.__ends = ends
@@ -126,8 +108,8 @@ class PatternGenerator(Pattern):
         super().__init__( *args, **kwargs )
         self.__nextStep = 0.0
         self.__nextRefresh = 0.0
-        self.__step:PatternGeneratorSharedStep|None = None
-        self.__gen: Generator[PatternGeneratorSharedStep]|None = None
+        self.__step:PatternGeneratorStep|None = None
+        self.__gen: Iterator[PatternGeneratorStep]|None = None
         self.__stepCount = 0
         self.__intermediateCount = 0
     
@@ -146,6 +128,8 @@ class PatternGenerator(Pattern):
             if self.__nextStep < context.when:
                 self.stepForward( context )
             else:
+                assert self.__step is not None
+                assert self.__step.intermediateRefresh is not None
                 when = self.offsetWhen( context )
                 duration = context.valueOf(self.__step.duration)
                 progression = (self.__nextStep - when) / duration
@@ -177,7 +161,7 @@ class PatternGenerator(Pattern):
             self.target[lx].set( self.__step.startValue(lx,context) , context )
             #light.setValue( self.__step.startValue(lx,context), context=context )
 
-    def regenerate(self, context:EvaluationContext) -> Generator[PatternGeneratorSharedStep]:
+    def regenerate(self, context:EvaluationContext) -> Iterator[PatternGeneratorStep]:
         raise NotImplemented
 
     def setRunning(self, value:bool, context:Optional[EvaluationContext]=None ):

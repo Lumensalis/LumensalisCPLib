@@ -1,4 +1,4 @@
-from .DemoCommon import *
+from LumensalisCP.Demo.DemoCommon import *
 import wifi
 LED_COUNT = 8
 NEO_PIXEL_COUNT = 40

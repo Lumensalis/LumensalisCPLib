@@ -1,5 +1,5 @@
 from LumensalisCP.CPTyping import *
-from .Debug import Debuggable
+from LumensalisCP.Debug import Debuggable
 import traceback
 import LumensalisCP
 import LumensalisCP.pyCp.weakref as weakref

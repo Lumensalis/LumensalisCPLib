@@ -1,4 +1,4 @@
-from ..DemoCommon import *
+from LumensalisCP.Demo.DemoCommon import *
 from LumensalisCP.Main.Terms import *
 from LumensalisCP.Scenes.Scene import addSceneTask
 import math

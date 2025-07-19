@@ -1,4 +1,4 @@
-from .Values import *
+from LumensalisCP.Lights.Values import *
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 #import LumensalisCP.Lights.LightBase as LightBase
 

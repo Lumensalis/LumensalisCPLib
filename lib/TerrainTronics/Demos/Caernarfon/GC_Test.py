@@ -9,7 +9,7 @@ import gc
 
 GC_TestRL.setupMlcAndGcm()
 
-from ..DemoBase import DemoBase
+from LumensalisCP.Demo.DemoBase import DemoBase
 from LumensalisCP.Triggers.Timer import PeriodicTimer, addPeriodicTaskDef
 from LumensalisCP.util.bags import Bag
 

@@ -2,7 +2,7 @@ from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl,pmc_gcManager,pr
 printElapsed("starting import GCTest_RL")
 
 from LumensalisCP.Main.PreMainConfig import *
-from ..DemoCommon import *
+from LumensalisCP.Demo.DemoCommon import *
 from LumensalisCP.Main.Profiler import *
 import gc, supervisor, sys
 from LumensalisCP.pyCp.importlib import reload

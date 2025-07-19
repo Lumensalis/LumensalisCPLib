@@ -1,8 +1,10 @@
+from LumensalisCP.common import *
 from LumensalisCP.Main.Dependents import FactoryBase
+if TYPE_CHECKING:
+    from LumensalisCP.Main.Manager import MainManager
+
 
 class TerrainTronicsFactory(FactoryBase):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def addCaernarfon( self, config=None, **kwds ):
         from .Caernarfon import CaernarfonCastle

@@ -1,4 +1,4 @@
-from .Groups import *
+from LumensalisCP.Lights.Groups import *
 
 from LumensalisCP.Outputs import OutputTarget
 

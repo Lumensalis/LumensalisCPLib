@@ -1,4 +1,4 @@
-from ..DemoCommon import *
+from LumensalisCP.Demo.DemoCommon import *
 from LumensalisCP.Lights.Patterns import *
 
 class TestLeds(DemoSubBase):

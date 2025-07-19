@@ -5,7 +5,7 @@ Allows classes to implement a writeOnScope method which can be used for
 a variety of output options including indented printing, json, ...
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Sequence, Optional
 from .simpleCommon import *
 if TYPE_CHECKING:
     import weakref
@@ -112,7 +112,7 @@ class WriteScope(object):
     def addDict(self, items:dict[str,Any], tag:Optional[str]=None,indentItems:Optional[bool]=None) -> DictWriteScope:
         """write dict"""
         with self.startDict( tag,indentItems=indentItems ) as nested:
-            nested.addTaggedEntries( items.items() )
+            nested.addTaggedEntries( items.items() ) # type: ignore
         return nested
 
     

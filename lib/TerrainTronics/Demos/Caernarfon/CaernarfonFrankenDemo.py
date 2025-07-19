@@ -1,4 +1,4 @@
-from ..DemoCommon import *
+from LumensalisCP.Demo.DemoCommon import *
 from adafruit_simplemath import constrain
 import displayio
 

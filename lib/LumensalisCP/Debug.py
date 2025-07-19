@@ -1,13 +1,11 @@
-
-import traceback, time
+from __future__ import annotations
 
 try:
-    from typing import TYPE_CHECKING
-    if TYPE_CHECKING:
-        from typing import NoReturn
-except: pass    
+    from typing import NoReturn, Never
+except ImportError:
+    pass
     
-
+import traceback, time
 class Debuggable( object ):
     
     @staticmethod
@@ -62,8 +60,9 @@ class Debuggable( object ):
         print( self.__format("EXCEPTION", fmtString, args, kwds ) )
         print( f"{inst}\n{''.join(traceback.format_exception(inst))}" )
 
-    def raiseNotImplemented( self,  fmtString:str="", *args) -> None:
+    def raiseNotImplemented( self,  fmtString:str="", *args) -> Never:
         raise Exception( f"NotImplemented ON {self.__class__.__name__}{self._dbgName} : {self.__formatArgs(fmtString,args)}" )
+        return None
     
     def raiseException( self,  fmtString:str, *args, excClass=Exception, **kwds): # -> NoReturn:
         raise excClass( f"{self.__formatArgs(fmtString,args)} ON {self._dbgName}" )

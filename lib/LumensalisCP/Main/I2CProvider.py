@@ -6,9 +6,12 @@ from LumensalisCP.CPTyping import *
 import busio
 import board
 from LumensalisCP.I2C.I2CDevice import I2CDevice
+if TYPE_CHECKING:
+    from LumensalisCP.Main.Manager import MainManager
 
-class I2CProvider(object):
-    def __init__(self,config = None, main=None):
+
+class I2CProvider(Debuggable):
+    def __init__(self,config, main:MainManager):
         
         
         self._i2cDevicesContainer = NamedLocalIdentifiableList(name='i2cDevices',parent=main)
@@ -18,10 +21,10 @@ class I2CProvider(object):
         import LumensalisCP.I2C.Adafruit.AdafruitI2CFactory
         self.adafruitFactory =  LumensalisCP.I2C.Adafruit.AdafruitI2CFactory.AdafruitFactory(main=main)
         self.i2cFactory =  LumensalisCP.I2C.I2CFactory.I2CFactory(main=main)
-        self.__i2cChannels:Mapping[Tuple[int,int],busio.I2C] = {}
+        self.__i2cChannels:dict[tuple[int|str,int|str],busio.I2C] = {}
 
-        self.__i2cDevices:List["LumensalisCP.I2C.I2CDevice.I2CDevice"] = []
-        self.__defaultI2C:busio.I2C = None
+        self.__i2cDevices:List[I2CDevice] = []
+        self.__defaultI2C:busio.I2C|None = None
         self.__identityI2C = None
         i2c = config.option('i2c')
         sdaPin = config.SDA

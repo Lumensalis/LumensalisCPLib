@@ -10,12 +10,13 @@ import busio
 from LumensalisCP.Lights.DMXManager import DMXManager
 
 from LumensalisCP.Shields.Base import ShieldBase
+from LumensalisCP.Main.ControlVariables import Controller, ControlVariable 
 
 from LumensalisCP.HTTP.BasicServer import BasicServer
 from LumensalisCP.Audio import Audio
 from TerrainTronics.Factory import TerrainTronicsFactory
 
-from LumensalisCP.Main.ControlVariables import Controller, ControlVariable 
+from LumensalisCP.Main.Dependents import MainRef
 import LumensalisCP.Lights.DMXManager
 
 class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
@@ -50,7 +51,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
     def __init__(self, config = None, **kwds ): ...
  
-    def makeRef(self)-> LumensalisCP.Main.Dependents.MainRef: pass
+    def makeRef(self)-> MainRef: pass
 
     
     @property
@@ -107,6 +108,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     
     def addBasicWebServer( self, *args, **kwds ) -> BasicServer: pass
 
+    def monitor( self, *inputs:InputSource, **kwds ) -> None: ...
     def handleWsChanges( self, changes:dict ): pass
         
     
@@ -134,4 +136,3 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
     def renameIdentifiables(self, d:dict[str,Any], verbose:bool = False ): ...
     
-    def monitor( self, *inputs:InputSource, **kwds ) -> None: ...

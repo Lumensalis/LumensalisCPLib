@@ -1,6 +1,7 @@
-from .Light import *
+from __future__ import annotations
+from LumensalisCP.Lights.Light import *
 import LumensalisCP.Main.Manager
-import neopixel
+import neopixel # type: ignore
 
 from LumensalisCP.util.bags import Bag
 
@@ -22,7 +23,7 @@ class NeoPixelLight( RGBLight ):
         v = LightValueNeoRGB.toNeoPixelInt(value)
         if v != self.__npiv:
             self.__npiv = v
-            source = self.source
+            source:NeoPixelSource = self.source # type: ignore
             source.neopix[self.sourceIndex] = v
             source.lightChanged(self)
 

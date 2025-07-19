@@ -5,12 +5,14 @@ try:
     #import overrides
     from typing import IO, List, Any, TextIO, Callable, Tuple, List
     from typing import Dict, Mapping, MutableMapping
-    from typing import Generator, Iterable, Iterator
+    from typing import Sequence, Generator, Iterable, Iterator
     from typing import Union, ForwardRef, Required, NotRequired, Optional
     from typing import Unpack, TypeAlias 
     from typing import Self 
     from typing import Type, TypeAlias, TypedDict, TypeVar
     from typing import NoReturn, final
+    
+    from typing import overload, override
     
     from typing import ByteString
     from functools import wraps

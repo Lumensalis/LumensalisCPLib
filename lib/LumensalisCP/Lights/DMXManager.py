@@ -1,5 +1,5 @@
-from ..Main.Dependents import *
-from ..Main.Manager import MainManager
+from LumensalisCP.Main.Dependents import *
+from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.common import *
 from LumensalisCP.Lights.Light import *
 from LumensalisCP.Inputs import InputSource
@@ -106,19 +106,6 @@ class DMXManager(MainChild):
         self._settings = data
         for watcher in self._watchers:
             watcher.update( )
-
-
-    async def _aioArtNet_runNode(self):
-        self.artnet_node = ArtNetNode()
-        self.artnet_node.add_handler(self.handle_dmx)
-        await self.artnet_node.start()
-        try:
-            await asyncio.Future()  # Run forever
-        except asyncio.CancelledError:
-            await self.artnet_node.stop()
-
-    async def _aioArtNet_handleConnect(self):
-        await self.__client.connect()
         
     def createAsyncTasks(self):
         return [

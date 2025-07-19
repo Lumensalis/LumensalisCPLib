@@ -7,7 +7,7 @@ Partly for convenience and DRY, but also to minimize missing import problem repo
 
 
 
-from .commonCP import *
+from LumensalisCP.commonCP import *
 import adafruit_httpserver # type: ignore
 import socketpool
 import wifi,  mdns

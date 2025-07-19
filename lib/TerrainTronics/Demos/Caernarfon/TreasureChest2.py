@@ -23,7 +23,7 @@ if 1:
     pmc_gcManager.PROFILE_MEMORY_NESTED = False
     pmc_gcManager.PROFILE_MEMORY_ENTRIES = False
     
-from ..DemoCommon import *
+from LumensalisCP.Demo.DemoCommon import *
 from LumensalisCP.Lights.ProxyLights import *
 from LumensalisCP.Triggers.Timer import PeriodicTimer, addPeriodicTaskDef
 from LumensalisCP.Behaviors.Motion import ServoDoor

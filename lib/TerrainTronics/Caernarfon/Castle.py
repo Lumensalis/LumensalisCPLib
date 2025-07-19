@@ -31,12 +31,12 @@ class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
         self._irRemote = None
         self.initI2C()
         self.__pixels:NeoPixelSource = NeoPixelSource(
-            c.neoPixelPin, pixelCount=c.neoPixelCount, main = self.main, refreshRate=0.05, brightness=c.neoPixelBrightness, auto_write=False, pixel_order=c.neoPixelOrder
+            c.neoPixelPin, pixelCount=c.neoPixelCount, main = self.main, refreshRate=0.05, brightness=c.neoPixelBrightness, auto_write=False, pixel_order=c.neoPixelOrder # type: ignore
         )
         self.__servoContainer = NamedLocalIdentifiableList("servos", parent=self)
-        self.__servos = [ None, None, None ]
-        self.__neoPixOnServos = [ None, None, None ]
-        self.__pixelsContainer = NamedLocalIdentifiableList("pixels", parent=self)
+        self.__servos:list[LocalServo|None] = [ None, None, None ]
+        self.__neoPixOnServos:list[NeoPixelSource|None] = [ None, None, None ]
+        self.__pixelsContainer  = NamedLocalIdentifiableList("pixels", parent=self)
         self.__allPixels: list[NeoPixelSource] = [self.__pixels]
         
         self.__pixels.nliSetContainer(self.__pixelsContainer)
@@ -58,22 +58,34 @@ class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
     def pixels(self) -> NeoPixelSource: return self.__pixels
         
     @property
-    def neoPixOnServo1(self) -> NeoPixelSource: return  self.__neoPixOnServos[0] 
+    def neoPixOnServo1(self) -> NeoPixelSource: 
+        assert self.__neoPixOnServos[0] is not None
+        return  self.__neoPixOnServos[0] 
     @property
-    def neoPixOnServo2(self) -> NeoPixelSource: return  self.__neoPixOnServos[1] 
+    def neoPixOnServo2(self) -> NeoPixelSource: 
+        assert self.__neoPixOnServos[1] is not None
+        return  self.__neoPixOnServos[1] 
     @property
-    def neoPixOnServo3(self) -> NeoPixelSource: return  self.__neoPixOnServos[2] 
+    def neoPixOnServo3(self) -> NeoPixelSource: 
+        assert self.__neoPixOnServos[2] is not None
+        return  self.__neoPixOnServos[2] 
 
     @property
-    def servo1(self) -> LocalServo: return  self.__servos[0] 
+    def servo1(self) -> LocalServo: 
+        assert self.__servos[0] is not None
+        return  self.__servos[0] 
     @property
-    def servo2(self) -> LocalServo: return  self.__servos[1] 
+    def servo2(self) -> LocalServo: 
+        assert self.__servos[1] is not None
+        return  self.__servos[1] 
     @property
-    def servo3(self) -> LocalServo: return  self.__servos[2]
+    def servo3(self) -> LocalServo:
+        assert self.__servos[2] is not None
+        return  self.__servos[2]
     
     def initNeoPixOnServo( self, servoN:int, 
                 neoPixelCount:int = 1,
-                name:str = None, 
+                name:Optional[str] = None, 
                 neoPixelOrder = neopixel.GRB,
                 neoPixelBrightness = 0.2,
              ) -> NeoPixelSource:
@@ -90,7 +102,7 @@ class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
         return pixels
     
 
-    def addIrRemote(self, codenames:Mapping[str,int]|str|None = None) -> LCP_IRrecv:
+    def addIrRemote(self, codenames:dict[str,int]|str|None = None) -> LCP_IRrecv:
         assert self._irRemote is None
         codenames = codenames or {
             "CH-": 0xffa25d,
@@ -102,7 +114,7 @@ class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
             "VOL-": 0xffe01f,
             "VOL+": 0xffa857,
         }
-        self._irRemote = LCP_IRrecv( self.D5.actualPin, codenames=codenames, main=self.main )
+        self._irRemote = LCP_IRrecv( self.D5.actualPin, main=self.main, codenames=codenames )
         self.nliAddComponent(self._irRemote)
         return self._irRemote
     

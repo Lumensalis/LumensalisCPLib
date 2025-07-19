@@ -1,4 +1,4 @@
-from ..DemoCommon import *
+from LumensalisCP.Demo.DemoCommon import *
 
 from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
 from LumensalisCP.Main.Profiler import *

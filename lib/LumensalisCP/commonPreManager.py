@@ -1,7 +1,7 @@
 from LumensalisCP.common import *
 import LumensalisCP.Debug
 
-from LumensalisCP.Identity.Local import NamedLocalIdentifiableContainerMixin, NamedLocalIdentifiableList,NamedLocalIdentifiable
+from LumensalisCP.Identity.Local import NamedLocalIdentifiableContainerMixin, NamedLocalIdentifiableList,NamedLocalIdentifiable, NamedLocalIdentifiableInterface
 
 import time, math, asyncio, traceback, os, gc, asyncio
 import collections

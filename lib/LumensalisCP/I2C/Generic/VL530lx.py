@@ -2,7 +2,7 @@
 from LumensalisCP.CPTyping import *
 from LumensalisCP.Main.Expressions import EvaluationContext
 from LumensalisCP.common import *
-from ..I2CDevice import I2CDevice, I2CInputSource, UpdateContext
+from LumensalisCP.I2C.I2CDevice import  I2CDevice, I2CInputSource, UpdateContext
 
 import adafruit_vl53l0x
 import simpleio

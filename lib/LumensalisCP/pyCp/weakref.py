@@ -1,15 +1,20 @@
+
 _weakrefImported = False
 try:
     from weakref import ref, ReferenceType
     _weakrefImported = True
+    lcpfRef = ref
 except:
-    if not _weakrefImported:
-        from ..CPTyping import ReferenceType
-        class _ref(object):
-            def __init__(self, target:object ):
-                self.__referenced = target
-                
-            def __call__(self) -> object|None:
-                return self.__referenced
+    _standardWeakref = None
+    #from LumensalisCP.CPTyping import ReferenceType
+    ReferenceType = None
+    class _ref(object):
+        def __init__(self, target:object ):
+            self.__referenced = target
             
-        def ref(a): return _ref(a)
+        def __call__(self) -> object|None:
+            return self.__referenced
+    ref = _ref        
+    lcpfRef = _ref 
+
+__all__ = ['ref','ReferenceType', 'lcpfRef']

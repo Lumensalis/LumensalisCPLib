@@ -1,3 +1,4 @@
+from __future__ import annotations
 from LumensalisCP.CPTyping import *
 from LumensalisCP.Debug import Debuggable
 from LumensalisCP.common import *
@@ -12,9 +13,8 @@ if TYPE_CHECKING:
     from  LumensalisCP.Main.Expressions import EvaluationContext
     from LumensalisCP.Inputs import InputSource
     from LumensalisCP.Lights.Values import RGB
-    DirectValue = Type( int | bool | float | RGB )
     OptionalContextArg = Optional[EvaluationContext]
-
+    DirectValue = Type[ int|bool|float|RGB ]
     
 class UpdateContextDebugManager(LumensalisCP.Main.Releasable.Releasable):
     context:EvaluationContext|None
@@ -23,8 +23,8 @@ class UpdateContextDebugManager(LumensalisCP.Main.Releasable.Releasable):
         #self.context:EvaluationContext|None = None
         self.debugEvaluate = True
     
-    def prepare( self, context:EvaluationContext, debugEvaluate = True ):
-        self.context = context
+    def prepare( self, context:UpdateContext, debugEvaluate = True ):
+        self.context = context # type: ignore
         self.debugEvaluate = debugEvaluate
 
     def __enter__(self):

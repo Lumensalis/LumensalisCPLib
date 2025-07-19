@@ -8,17 +8,26 @@ from LumensalisCP.common import *
 
 class MainChild( NamedLocalIdentifiable):
     
-    def __init__( self, main:MainManager, name:Optional[str]=None): pass
+    def __init__( self, main:MainManager, name:Optional[str]=None): ...
 
-    main: MainManager
+    
+    @property
+    def main(self) -> MainManager: ...
+    
+    def mcPostCreate(self): pass
+    
 
-class FactoryBase( object ):
-    def __init__(self, main:MainManager):pass
-    main: MainManager
+class FactoryBase( MainChild ):
+    def __init__(self, main:MainManager): ...
+    
+    def makeChild( self, cls, **kwds ): ...
+    
+    def callPostCreate(self, instance): ...
     
 class ManagerBase(object):
     pass
-
+    def _registerManager( self ): ...
+    
 class SubManagerBase(ManagerBase,MainChild):
     def __init__(self, main:MainManager, name:Optional[str]=None ):pass
 

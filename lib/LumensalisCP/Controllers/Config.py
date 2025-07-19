@@ -66,7 +66,16 @@ class ControllerConfig(object):
         assert self.options is not None
         self.options[tag] = val
         setattr( self, tag, val )
-        
+
+    def  getRequiredPin( self, tag, default=None ) -> microcontroller.Pin :
+        if tag in ControllerPins.pinNames:
+            rv = getattr( self.pins, tag )
+        else:
+            assert self.options is not None
+            rv =  self.options.get( tag, default )
+        assert isinstance(rv, microcontroller.Pin)
+        return rv
+            
     def option( self, tag, default=None ):
         if tag in ControllerPins.pinNames:
             return getattr( self.pins, tag )

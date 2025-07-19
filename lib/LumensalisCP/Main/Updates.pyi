@@ -56,7 +56,9 @@ class UpdateContext(Debuggable):
     def fetchCurrentContext( context:Optional[EvaluationContext]|None ) -> EvaluationContext: pass
     
     def nestDebugEvaluate(self, debugEvaluate:bool|None = None ) -> UpdateContextDebugManager: ...
-        
+
+    def reset( self, when:TimeInMS|None = None ): ...
+            
 OptionalContextArg = Optional[EvaluationContext]
 
 #############################################################################

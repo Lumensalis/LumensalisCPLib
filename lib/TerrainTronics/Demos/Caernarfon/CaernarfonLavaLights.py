@@ -1,4 +1,4 @@
-from .DemoCommon import *
+from LumensalisCP.Demo.DemoCommon import *
 from random import randrange
 
 class CaernarfonLavaLights( DemoBase ):

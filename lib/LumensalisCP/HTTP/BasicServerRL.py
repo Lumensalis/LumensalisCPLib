@@ -12,7 +12,9 @@ import traceback
 #print( f"----------------------" )
 #print()
 
-from adafruit_httpserver import DELETE, GET, POST, PUT, JSONResponse, Request, Response  # pyright: ignore[reportAttributeAccessIssue]
+
+#from adafruit_httpserver import DELETE, GET, POST, PUT, JSONResponse, Request, Response  # pyright: ignore[reportMissingImports|reportAttributeAccessIssue]
+from adafruit_httpserver import DELETE, GET, POST, PUT, JSONResponse, Request, Response  # pyright: ignore
 
 _v2jSimpleTypes = { int, str, bool, float,type(None) }
 def valToJson( val ):
@@ -58,6 +60,8 @@ def inputSourceSnapshot( input:InputSource ) -> dict[str,Any]:
 def getStatusInfo(self:BasicServer.BasicServer, request:Request ):
     main = self.main
     context = main.getContext()
+    monitoredInfo = [ (i.name, inputSourceSnapshot(i)) for i in main._monitored]
+    monitored = dict( monitoredInfo  )
     rv =  {
             'supervisor': {
                 'runtime': attrsToDict( supervisor.runtime, ['autoreload','run_reason'] ),
@@ -75,8 +79,7 @@ def getStatusInfo(self:BasicServer.BasicServer, request:Request ):
                 priorWhen = main.__priorSleepWhen,
                 latestSleepDuration = main.__latestSleepDuration
             ),
-            'monitored': dict( [ [i.name, inputSourceSnapshot(i)] for i in main._monitored] )
-            
+            'monitored': monitored
         }
     return rv
 
@@ -87,12 +90,14 @@ class QueryConfig(object):
     includeId:bool = True
     includeType:bool = True
     
-def getQueryResult( target:NamedLocalIdentifiable, path:list[str], qConfig:Optional[QueryConfig]=None ):
+def getQueryResult( target:NamedLocalIdentifiableInterface, path:list[str], qConfig:Optional[QueryConfig]=None ):
     rv = None
     if qConfig is None: qConfig=QueryConfig()
     if len(path):
+        assert isinstance(target,NamedLocalIdentifiable)
         child = target.nliFind(path[0])
         if child is None: return { "missing child" : path[0]}
+        assert isinstance(child,NamedLocalIdentifiableContainerMixin)
         rv = { child.containerName : getQueryResult( child, path[1:], qConfig )  }
         if not qConfig.fillParents: return rv
     else: 
@@ -100,7 +105,7 @@ def getQueryResult( target:NamedLocalIdentifiable, path:list[str], qConfig:Optio
     name = getattr(target,"name",None)
     if qConfig.includeName and name is not None: rv['name'] = name
     if qConfig.includeType and not isinstance(target,NamedLocalIdentifiableContainerMixin):  rv["type"] = type(target).__name__
-    if qConfig.includeId: rv["localId"] = target.localId
+    if qConfig.includeId and hasattr(target,'localId'): rv["localId"] = target.localId # type: ignore
     oldRecurseChildren = qConfig.recurseChildren
     try:
         if len(path) == 0 and qConfig.recurseChildren is None: qConfig.recurseChildren = True

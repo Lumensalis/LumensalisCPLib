@@ -1,4 +1,4 @@
-from ..DemoCommon import *
+from LumensalisCP.Demo.DemoCommon import *
 from LumensalisCP.Lights.ProxyLights import *
 from LumensalisCP.Triggers.Timer import PeriodicTimer
 

@@ -77,7 +77,7 @@ class RGB(object):
         self.b = b
     
     def _rgbTuple(self) -> Tuple[ZeroToOne,ZeroToOne,ZeroToOne]:
-        return self
+        return (self.r, self.g, self.b)
         
     @staticmethod
     def fromNeoPixelInt( npi:int ) ->"RGB":
@@ -108,7 +108,7 @@ class RGB(object):
     #Point = namedtuple('Point', ['x', 'y'])
     
     
-RGB.CONVERTORS[RGB.__class__.__name__] = lambda v:v
+# RGB.CONVERTORS[RGB.__class__.__name__] = lambda v:v
 RGB.CONVERTORS['RGB'] = lambda v:v
 
 
@@ -126,7 +126,7 @@ class LightValueBase(object):
     @property
     def asRGB(self) -> RGB: raise NotImplemented
 
-    def setLight(self, value): raise NotImplemented
+    def setLight(self, value) ->None: raise NotImplemented
 
 def registerToRGB( cf = lambda v:v):
     def r( cls ):
@@ -210,7 +210,7 @@ class LightValueNeoRGB(LightValueBase):
         elif isinstance( value, RGB ):
             return value.toNeoPixelInt()
         
-        ensure( False, "cannot convert %r (%s) to NeoRGB", value, type(value))
+        assert False,  safeFmt("cannot convert %r (%s) to NeoRGB", value, type(value))
     
     
     @staticmethod

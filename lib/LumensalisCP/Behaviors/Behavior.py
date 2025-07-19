@@ -1,6 +1,6 @@
 from __future__ import annotations
-from ..Main.Manager import MainManager
-from ..Main.Expressions import EvaluationContext 
+from LumensalisCP.Main.Manager import MainManager
+from LumensalisCP.Main.Expressions import EvaluationContext 
 
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *

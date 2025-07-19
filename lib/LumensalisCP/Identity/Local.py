@@ -1,8 +1,8 @@
-
+from __future__ import annotations
 from LumensalisCP.common import *
-from ..Debug import Debuggable
-import LumensalisCP.pyCp.weakref as weakref
-from ..CPTyping import ReferenceType, Optional, Iterable
+from LumensalisCP.Debug import Debuggable
+import LumensalisCP.pyCp.weakref as lcpWeakref
+from LumensalisCP.CPTyping import ReferenceType, Optional, Iterable
 
 from LumensalisCP.pyCp.collections import UserList
 
@@ -24,7 +24,13 @@ class LocalIdentifiable(object):
     def localId(self): return self.__localId
     
     
-class NamedLocalIdentifiable(LocalIdentifiable,Debuggable):
+class NamedLocalIdentifiableInterface:
+    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None: ...
+
+    def nliGetContainers(self) -> Iterable[NamedLocalIdentifiableContainerMixin]|None: ...
+    def nliSetContainer(self, container:NamedLocalIdentifiableContainerMixin): ...
+            
+class NamedLocalIdentifiable(LocalIdentifiable,NamedLocalIdentifiableInterface,Debuggable):
     
     def __init__( self, name:Optional[str]=None ):
         self.__name = name
@@ -74,9 +80,9 @@ class NamedLocalIdentifiable(LocalIdentifiable,Debuggable):
         #    oldContainer.nliRemoveChild(self)
         ensure( not container.nliContainsChild(self), "item %s already in %s", safeRepr(self), safeRepr(container) ) 
         if self.__nliContaining is None:
-            self.__nliContaining = [ weakref.ref( container ) ]
+            self.__nliContaining = [ lcpWeakref.lcpfRef( container ) ]
         else:
-            self.__nliContaining.append( weakref.ref( container ) )
+            self.__nliContaining.append( lcpWeakref.lcpfRef( container ) )
         container.nliAddChild(self)
 
     @property
@@ -102,7 +108,7 @@ class NamedLocalIdentifiable(LocalIdentifiable,Debuggable):
     
 #############################################################################
 
-class NamedLocalIdentifiableContainerMixin( object ):
+class NamedLocalIdentifiableContainerMixin( NamedLocalIdentifiableInterface ):
     @property
     def containerName(self) -> str: ...
     @property
@@ -122,11 +128,11 @@ class NamedLocalIdentifiableContainerMixin( object ):
 #############################################################################
     
 class NamedLocalIdentifiableWithParent( NamedLocalIdentifiable ):
-    __parent=weakref.ReferenceType[NamedLocalIdentifiable]
+    __parent:lcpWeakref.ReferenceType[NamedLocalIdentifiable]|None
     
     def __init__(self, name:Optional[str] = None, parent:Optional[NamedLocalIdentifiable]=None ):
         NamedLocalIdentifiable.__init__(self,name=name)
-        self.__parent = parent and weakref.ref(parent)
+        self.__parent = parent if parent is None else lcpWeakref.lcpfRef(parent)
     
     def nliGetActualParent(self) -> NamedLocalIdentifiable|None: 
         if self.__parent is None: return None
@@ -137,7 +143,7 @@ class NamedLocalIdentifiableWithParent( NamedLocalIdentifiable ):
 class NamedLocalIdentifiableList(NamedLocalIdentifiableWithParent, UserList, NamedLocalIdentifiableContainerMixin ):
     
     def __init__(self, name:Optional[str] = None, items:Optional[list] = None, parent:Optional[NamedLocalIdentifiable]=None ):
-        #self.__parent = parent and weakref.ref(parent)
+        #self.__parent = parent and lcpWeakref.ref(parent)
         NamedLocalIdentifiableWithParent.__init__(self,name=name,parent=parent)
         UserList.__init__(self,items)
 
@@ -177,4 +183,4 @@ class NamedLocalIdentifiableList(NamedLocalIdentifiableWithParent, UserList, Nam
         return None
 
 __all__ = ['LocalIdentifiable','NamedLocalIdentifiable','NamedLocalIdentifiableWithParent',
-            'NamedLocalIdentifiableContainerMixin','NamedLocalIdentifiableList']
+            'NamedLocalIdentifiableContainerMixin','NamedLocalIdentifiableList', 'NamedLocalIdentifiableInterface']

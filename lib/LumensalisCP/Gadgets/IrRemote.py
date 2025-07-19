@@ -83,7 +83,8 @@ class LCP_IRrecv(MainChild):
         elif codenames is None:
             self.codenames = {}
         else:
-            self.codenames = codenames 
+            assert type(codenames) is not str
+            self.codenames = codenames # type: ignore
 
         self._checkTimer = PeriodicTimer( updateInterval , manager=main.timers, name=f"{self.name}Check" )
         

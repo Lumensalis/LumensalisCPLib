@@ -10,7 +10,7 @@
 # it avoids loading the supporting code until it's actually used
 
 from LumensalisCP.CPTyping import *
-from .I2CDevice import I2CDeviceInitArgs
+from LumensalisCP.I2C.I2CDevice import  I2CDeviceInitArgs
 
 class I2CFactoryAddArgs(I2CDeviceInitArgs):
     pass

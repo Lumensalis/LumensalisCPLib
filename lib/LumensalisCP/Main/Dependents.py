@@ -1,19 +1,18 @@
 # from .Manager import MainManager
 
-import LumensalisCP.Main
 from ..Identity.Local import NamedLocalIdentifiable
-from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
-import LumensalisCP.Main
+import LumensalisCP.pyCp.weakref as weakref
+
 if TYPE_CHECKING:
     import LumensalisCP.Main.Manager
     from LumensalisCP.Main.Manager import MainManager
-    
+
 #############################################################################
 class MainChild( NamedLocalIdentifiable ):
     
-    def __init__( self, main:MainManager, name:Optional[str]=None ):
+    def __init__( self, main:LumensalisCP.Main.Manager.MainManager, name:Optional[str]=None ):
         # type: (str, LumensalisCP.Main.Manager.MainManager ) -> None
         NamedLocalIdentifiable.__init__( self, name = name or self.__class__.__name__)
         ensure( main is not None )
@@ -21,7 +20,8 @@ class MainChild( NamedLocalIdentifiable ):
         # print( f"MainChild __init__( name={self.name}, main={main})")
 
     @property
-    def main(self): return self.__main()
+    def main(self) -> LumensalisCP.Main.Manager.MainManager:
+        return self.__main() # type: ignore
     
     def mcPostCreate(self): pass
 
@@ -79,12 +79,12 @@ class ManagerRef(object):
         return getattr( self.managerClass, '_theManager', None ) # type: ignore
 
 class MainRef(object):
-    _theManager:LumensalisCP.Main.Manager.MainManager
+    _theManager:MainManager
     
-    def __init__( self, main:LumensalisCP.Main.Manager.MainManager ):
+    def __init__( self, main:MainManager|Any ):
         assert main is not None and main is MainRef._theManager
 
-    def __call__( self ) -> LumensalisCP.Main.Manager.MainManager:
+    def __call__( self ) -> MainManager:
         return MainRef._theManager
 
 __all__ = ['MainChild','FactoryBase','ManagerBase','SubManagerBase','ManagerRef','MainRef']

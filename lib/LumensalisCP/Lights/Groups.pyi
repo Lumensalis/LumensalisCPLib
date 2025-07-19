@@ -1,6 +1,6 @@
-from .Values import *
+from LumensalisCP.Lights.Values import *
 
-from .Light import Light
+from LumensalisCP.Lights.Light import Light
 
 #############################################################################
 

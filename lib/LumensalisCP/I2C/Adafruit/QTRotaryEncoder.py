@@ -6,7 +6,7 @@ import adafruit_seesaw.rotaryio
 import adafruit_seesaw.digitalio
 import adafruit_seesaw.neopixel
 
-from ..I2CDevice import I2CDevice
+from LumensalisCP.I2C.I2CDevice import  I2CDevice
 
 class QtRotary(I2CDevice):
     def __init__(self, *args, **kwds ):

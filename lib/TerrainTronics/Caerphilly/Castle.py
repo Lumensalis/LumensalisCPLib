@@ -1,15 +1,10 @@
 
 import TerrainTronics.D1MiniBoardBase
-from LumensalisCP.common import *
-from LumensalisCP.CPTyping import *
-#from LumensalisCP.Lights.LightBase import *
-from LumensalisCP.Main.Updates import Refreshable, UpdateContext
-import neopixel
+from LumensalisCP.commonCP import *
+from LumensalisCP.IOContext import *
+from LumensalisCP.Gadgets.Servos import LocalServo
 from LumensalisCP.Lights.NeoPixels import NeoPixelSource
-
 from LumensalisCP.Gadgets.IrRemote import LCP_IRrecv, onIRCode
-
-import LumensalisCP.Main.Expressions
 
 class CaerphillyCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
     
@@ -30,10 +25,10 @@ class CaerphillyCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
         self._irRemote = None
         self.initI2C()
         self.__pixels:NeoPixelSource = NeoPixelSource(
-            c.neoPixelPin, pixelCount=c.neoPixelCount, main = self.main, refreshRate=0.05, brightness=c.neoPixelBrightness, auto_write=False, pixel_order=c.neoPixelOrder
-        )
-        self.__servos = [ None, None, None ]
-        self.__neoPixOnServos = [ None, None, None ]
+            c.neoPixelPin, pixelCount=c.neoPixelCount, main = self.main, refreshRate=0.05, brightness=c.neoPixelBrightness, auto_write=False, pixel_order=c.neoPixelOrder # type: ignore
+        ) 
+        self.__servos:list[None|LocalServo] = [ None, None, None ]
+        self.__neoPixOnServos:list[None|NeoPixelSource] = [ None, None, None ]
         self.__allPixels = [self.__pixels]
         
     def doRefresh(self,context:EvaluationContext):
@@ -47,7 +42,7 @@ class CaerphillyCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
     
     def initNeoPixOnServo( self, servoN:int, 
                 neoPixelCount:int = 1,
-                name:str = None, 
+                name:Optional[str] = None, 
                 neoPixelOrder = neopixel.GRB,
                 neoPixelBrightness = 0.2,
              ) -> NeoPixelSource:

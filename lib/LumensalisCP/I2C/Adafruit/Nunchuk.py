@@ -1,6 +1,6 @@
 import adafruit_nunchuk
 
-from ..I2CDevice import I2CDevice
+from LumensalisCP.I2C.I2CDevice import  I2CDevice
 import simpleio
 
 

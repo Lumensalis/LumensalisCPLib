@@ -3,7 +3,7 @@
 Intended to be used as `from LumensalisCP.Simple import *`
 """
 
-from TerrainTronics.Demos.DemoCommon import *
+from LumensalisCP.Demo.DemoCommon import *
 from LumensalisCP.Lights.Values import RGB
 from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.Triggers.Fireable import Fireable

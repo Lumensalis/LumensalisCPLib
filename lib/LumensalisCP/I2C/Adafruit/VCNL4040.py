@@ -1,7 +1,7 @@
 
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
-from ..I2CDevice import I2CDevice, I2CInputSource, EvaluationContext
+from LumensalisCP.I2C.I2CDevice import  I2CDevice, I2CInputSource, EvaluationContext
 
 import adafruit_vcnl4040 # type: ignore
 
@@ -54,7 +54,7 @@ class VCNL4040ReadableDescriptor:
         assert False
         self.name = name
 
-    def __get__(self, obj:'VCNL4040', objtype=None):
+    def __get__(self, obj:'VCNL4040', objType=None):
         try:
             return  getattr(obj.vcnl4040, self.inputName)
         except:

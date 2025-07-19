@@ -1,6 +1,6 @@
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
-from ..Config import ControllerConfig
+from LumensalisCP.Controllers.Config import ControllerConfig
 
 configs = {
     'lolin_s2_mini' : ControllerConfig(

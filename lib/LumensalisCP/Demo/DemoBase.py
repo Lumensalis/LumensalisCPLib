@@ -2,9 +2,9 @@ from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.Main.Terms import *
 from LumensalisCP.CPTyping  import *
 from LumensalisCP.common import *
-from .DemoMixin import DemoMixin
+from LumensalisCP.Demo.DemoMixin import DemoMixin
 
-class DemoBase(object, DemoMixin):
+class DemoBase( DemoMixin):
     pass
     main: MainManager
     
@@ -24,7 +24,7 @@ class DemoBase(object, DemoMixin):
         print( "DemoBase main.run() ..." )
         self.main.run()
         
-class DemoSubBase(object, DemoMixin):
+class DemoSubBase( DemoMixin):
     pass
     def __init__(self, demo:DemoBase, *args,**kwds):
         self.demo = demo

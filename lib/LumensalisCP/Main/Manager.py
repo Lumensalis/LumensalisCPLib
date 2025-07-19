@@ -1,10 +1,14 @@
+from __future__ import annotations
 
 import LumensalisCP.Audio
+import LumensalisCP.Main.Dependents
+import LumensalisCP.Main.Manager
 from LumensalisCP.commonPreManager import *
 from LumensalisCP.commonPreManager import pmc_mainLoopControl
 
 from LumensalisCP.Main import PreMainConfig
 
+from TerrainTronics.Factory import TerrainTronicsFactory
 import wifi, displayio
 
 import LumensalisCP.Main.ProfilerRL
@@ -17,8 +21,14 @@ def _early_collect(tag:str):
 
 from LumensalisCP.Main.ControlVariables import Controller, ControlVariable 
 import LumensalisCP.Audio
-from . import ManagerRL    
-        
+from LumensalisCP.Main import ManagerRL
+
+import LumensalisCP.Main.Dependents
+
+if TYPE_CHECKING:
+    from LumensalisCP.Lights.DMXManager import DMXManager
+    
+    
 class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     
     theManager : "MainManager|None" = None
@@ -54,7 +64,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         MainRef._theManager = self  # type: ignore
         
         self._privateCurrentContext = EvaluationContext(self)
-        UpdateContext._patch_fetchCurrentContext(self)
+        UpdateContext._patch_fetchCurrentContext(self) # type: ignore
 
         self.profiler = Profiler(self._privateCurrentContext )
         
@@ -82,14 +92,14 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self.cycleDuration = 0.01
 
         self._webServer = None
-        self.__deferredTasks = collections.deque( [], 99, True )
+        self.__deferredTasks = collections.deque( [], 99, True ) # type: ignore
         self.__audio = None
-        self.__dmx : "LumensalisCP.Lights.DMXManager.DMXManager"|None = None
+        self.__dmx :DMXManager|None = None
 
         self._tasks:List[Callable] = []
         self.__shutdownTasks:List[ExitTask] = []
         self.shields = NamedLocalIdentifiableList(name='shields',parent=self)
-        
+
 
         self.__anonInputs = NamedLocalIdentifiableList(name='inputs',parent=self)
         self.__anonOutputs = NamedLocalIdentifiableList(name='outputs',parent=self)
@@ -101,7 +111,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
         self._timers = PeriodicTimerManager(main=self)
 
-        self._scenes: SceneManager[Self] = SceneManager(main=self)
+        self._scenes: SceneManager = SceneManager(main=self)
         self.__TerrainTronics = None
 
         if pmc_mainLoopControl.preMainVerbose: print( f"MainManager options = {self.config.options}" )
@@ -112,12 +122,12 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
     @property
     def identity(self) -> ControllerIdentity: return self.__identity
-    
+
     @property
-    def TerrainTronics(self):
+    def TerrainTronics(self:'MainManager') -> TerrainTronicsFactory:
         if self.__TerrainTronics is None:
             from TerrainTronics.Factory import TerrainTronicsFactory
-            self.__TerrainTronics = TerrainTronicsFactory( main = self )
+            self.__TerrainTronics = TerrainTronicsFactory( self.getMMSelf() )
         return self.__TerrainTronics
     
     @property
@@ -153,11 +163,15 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def getContext(self)->EvaluationContext: 
         return  self._privateCurrentContext
 
+    def getMMSelf(self) -> LumensalisCP.Main.Manager.MainManager:
+        # TODO : why is pylance flagging this as wrong?
+        return self # type: ignore
+    
     @property
     def dmx(self):
         if self.__dmx is None:
             import LumensalisCP.Lights.DMXManager
-            self.__dmx = LumensalisCP.Lights.DMXManager.DMXManager( self )
+            self.__dmx = LumensalisCP.Lights.DMXManager.DMXManager( self.getMMSelf() )
             
             self.__asyncTaskCreators.append( self.__dmx.createAsyncTasks )
 
@@ -167,7 +181,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def socketPool(self):
         if self.__socketPool is None:
             
-            import adafruit_connection_manager
+            import adafruit_connection_manager # type: ignore
             if not wifi.radio.connected:
                 ssid = os.getenv("CIRCUITPY_WIFI_SSID")
                 self.sayAtStartup("Connecting to %r", ssid)
@@ -190,7 +204,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
             
     def addExitTask(self,task:ExitTask|Callable):
         if not isinstance( task, ExitTask ):
-            task = ExitTask( main=self,task=task)
+            task = ExitTask( main=self.getMMSelf(),task=task)
             
         self.__shutdownTasks.append(task)
 
@@ -217,7 +231,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def addBasicWebServer( self, *args, **kwds ):
         from LumensalisCP.HTTP.BasicServer import BasicServer
         self.sayAtStartup( "addBasicWebServer %r, %r ", args, kwds )
-        server = BasicServer( *args, main=self, **kwds )
+        server = BasicServer( *args, main=self.getMMSelf(), **kwds )
         self._webServer = server
 
         self.__asyncTaskCreators.append( server.createAsyncTasks )
@@ -226,7 +240,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
             if wifi.radio.ipv4_address is not None:
                 address = str(wifi.radio.ipv4_address)
                 self.sayAtStartup( "startWebServer on %r ", address )
-                self._webServer.start(address)
+                self._webServer.start(address) # type: ignore
             else:
                 self.sayAtStartup( "no address for startWebServer" )
 
@@ -234,11 +248,11 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         return server
 
     def monitor( self, *inputs:InputSource, **kwds ) -> None:
-        return ManagerRL.MainManager_monitor(self, *inputs, **kwds )
+        return ManagerRL.MainManager_monitor(self.getMMSelf(), *inputs, **kwds )
 
 
     def handleWsChanges( self, changes:dict ):
-        return ManagerRL.MainManager_handleWsChanges(self, changes)
+        return ManagerRL.MainManager_handleWsChanges(self.getMMSelf(), changes)
 
     async def msDelay( self, milliseconds ):
         await asyncio.sleep( milliseconds * 0.001 )
@@ -253,7 +267,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def addI2SAudio(self, *args, **kwds ) -> "LumensalisCP.Audio.Audio":
         from LumensalisCP.Audio import Audio
         assert self.__audio is None
-        self.__audio = Audio( main=self, *args,**kwds )
+        self.__audio = Audio( main=self.getMMSelf(), *args,**kwds )
         return self.__audio
 
     def movingValue( self, min=0, max=100, duration:float =1.0 ):
@@ -276,22 +290,22 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
                 SHOW_EXCEPTION( inst, "exception on deferred task %r", task )
 
     def dumpLoopTimings( self, count, minE=None, minF=None, **kwds ):
-        return ManagerRL.MainManager_dumpLoopTimings(self, count, minE=minE, minF=minF, **kwds )
+        return ManagerRL.MainManager_dumpLoopTimings(self.getMMSelf(), count, minE=minE, minF=minF, **kwds )
 
     def getNextFrame(self) ->ProfileFrameBase:
-        return ManagerRL.MainManager_getNextFrame(self )
+        return ManagerRL.MainManager_getNextFrame(self ) # type: ignore
     
     def nliGetContainers(self) -> Iterable[NamedLocalIdentifiableContainerMixin]|None:
-        return ManagerRL.MainManager_nliContainers(self )
+        return ManagerRL.MainManager_nliContainers(self ) # type: ignore
    
     def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None:
-        return ManagerRL.MainManager_nliGetChildren(self )
+        return ManagerRL.MainManager_nliGetChildren(self ) # type: ignore
 
     def launchProject(self, globals:Optional[dict]=None, verbose:bool = False ):
-        return ManagerRL.MainManager_launchProject(self, globals, verbose=verbose )
+        return ManagerRL.MainManager_launchProject(self.getMMSelf(), globals, verbose=verbose )
 
     def renameIdentifiables(self, items:Optional[dict]=None, verbose:bool = False ):
-        return ManagerRL.MainManager_renameIdentifiables(self, items, verbose )
+        return ManagerRL.MainManager_renameIdentifiables(self.getMMSelf(), items, verbose )
     
     async def taskLoop( self ):
         self.__priorSleepWhen = self.getNewNow()
@@ -309,7 +323,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
             self._when = self.getNewNow()
             while True:
-                ManagerRL.MainManager_singleLoop(self)
+                ManagerRL.MainManager_singleLoop(self) # type: ignore
                 self.__latestSleepDuration = max(0.001, self._nextWait-self.__priorSleepWhen )
                 
                 await asyncio.sleep( self.__latestSleepDuration ) 

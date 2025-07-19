@@ -1,4 +1,4 @@
-from ..I2CDevice import I2CDevice
+from LumensalisCP.I2C.I2CDevice import  I2CDevice
 
 from adafruit_ssd1306 import SSD1306_I2C
 
