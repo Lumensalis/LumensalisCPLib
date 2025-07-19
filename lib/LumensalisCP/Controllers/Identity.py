@@ -27,22 +27,23 @@ class ControllerNVM(object):
     
     def nvm(self): return self.__nvm
     
+    def _nvmSpan(self, span:str|Tuple[int,int] ) -> Tuple[int,int]:
+        if type(span) is str:
+            return self.SPANS[span] 
+        return span # type: ignore
 
     def _nvmClear(self, span:str|Tuple[int,int] ):
-        span = self.SPANS[span] if type(span) is str else span
-        start, end = span
+        start, end = self._nvmSpan(span)
         self.__nvm[start:end] = b"\x00" * (end-start)
 
     def _nvmSetStr(self, span:str|Tuple[int,int], value:str ):
-        span = self.SPANS[span] if type(span) is str else span
-        start, end = span
+        start, end = self._nvmSpan(span)
         ensure( len(value) <= end-start, "string too long" )
         self._nvmClear(span)
         self.__nvm[start:start+len(value)] = bytes(value.encode())
 
     def _nvmGetStr(self, span:str|Tuple[int,int] ):
-        span = self.SPANS[span] if type(span) is str else span
-        start, end = span
+        start, end = self._nvmSpan(span)
         asBytes = self.__nvm[start:end]
         asStr = str( asBytes.decode() )
         return asStr[0:asStr.index("\0")]
@@ -84,7 +85,7 @@ class ControllerNVM(object):
         buffer = bytearray(2)
         data_length = len(data)
         nvm = self.__nvm
-        max_size = nvm._max_size
+        max_size = nvm._max_size # type: ignore
         
         
         if (start + data_length) > max_size:
@@ -94,7 +95,7 @@ class ControllerNVM(object):
                     " override this warning."
                 )
         
-        with nvm._i2c as i2c:
+        with nvm._i2c as i2c: # type: ignore
             for i in range(0, data_length):
                 assert  (start + i) < max_size
                 #buffer[0] = (start + i) >> 8
@@ -109,7 +110,7 @@ class ControllerNVM(object):
         #write_buffer[0] = start >> 8
         write_buffer[0] = start & 0xFF
         read_buffer = bytearray(end-start)
-        with self.__nvm._i2c as i2c:
+        with self.__nvm._i2c as i2c: # type: ignore
             # i2c: I2CDevice
             i2c.write_then_readinto(write_buffer, read_buffer)
             
