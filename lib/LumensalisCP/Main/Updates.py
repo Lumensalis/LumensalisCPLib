@@ -17,10 +17,12 @@ if TYPE_CHECKING:
 
     
 class UpdateContextDebugManager(LumensalisCP.Main.Releasable.Releasable):
+    context:EvaluationContext|None
+    
     def __init__( self ):
         #self.context:EvaluationContext|None = None
         self.debugEvaluate = True
-        
+    
     def prepare( self, context:EvaluationContext, debugEvaluate = True ):
         self.context = context
         self.debugEvaluate = debugEvaluate
@@ -40,6 +42,7 @@ class UpdateContextDebugManager(LumensalisCP.Main.Releasable.Releasable):
         self.context = None
 
     def say( self, instanceOrMessage:Debuggable|str, *args ) -> None:
+        assert self.context is not None
         if type(instanceOrMessage) is str:
             message = instanceOrMessage
             instance = None
@@ -178,6 +181,9 @@ class Refreshable( object ):
 #############################################################################
 
 class Evaluatable(Debuggable):
+    def __init__(self):
+        super().__init__()
+        self.enableDbgEvaluate = False
     
     def getValue(self, context:OptionalContextArg) -> Any:
         """ current value of term"""
@@ -188,7 +194,7 @@ class Evaluatable(Debuggable):
 def evaluate( value:Evaluatable|DirectValue, context:OptionalContextArg = None ):
     if isinstance( value, Evaluatable ):
         context = UpdateContext.fetchCurrentContext(context)
-        if  context.debugEvaluate:
+        if  context.debugEvaluate or value.enableDbgEvaluate:
             with context.nestDebugEvaluate() as nde:
                 rv = value.getValue(context)
                 nde.say(value, "evaluate returning %r", rv)

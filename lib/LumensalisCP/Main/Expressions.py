@@ -46,9 +46,10 @@ class EvaluationContext(UpdateContext):
                 value = term.getValue( self )
                 print( f"valueOf term {term} = {value}")
             elif isinstance( value, Expression ):
+                expression = value
                 value.updateValue( self )
                 value = value.value
-                print( f"valueOf Expression {term} = {value}")
+                print( f"valueOf Expression {expression} = {value}")
             elif callable(value):
                 value = self.valueOf(value())
         elif isinstance( value, ExpressionTerm ):
@@ -61,8 +62,6 @@ class EvaluationContext(UpdateContext):
         return value        
 
 
-
-    
 #############################################################################
 
 def makeExpressionConstant(value:Any=None) -> "ExpressionTerm" :  # type: ignore
@@ -82,13 +81,43 @@ def ensureIsTerm( term:"ExpressionTerm" ) -> "ExpressionTerm" : # type: ignore
 
 #############################################################################
 
+class ExpressionOperationException( Exception ):
+    def __init__( self, term:'ExpressionTerm', message:Optional[str]=None, inst:Optional[Exception]=None ):
+        self.term = term
+        self.inst = inst
+        self.message = message
+        messageParts = []
+        try:
+            if message is not None:
+                messageParts.append(message)
+                messageParts.append(" : ")    
+            messageParts.append(term.__class__.__name__)
+            messageParts.append(": ")
+            messageParts.extend(term.expressionStrParts())
+            if inst is not None:
+                messageParts.append(" : ")
+                messageParts.append(str(inst))
+        except Exception as formatException:
+            messageParts.append(" formatting exception:")
+            messageParts.append(str(formatException))
+            pass
+        self.fullMessage = message = ''.join(messageParts)
+        super().__init__(message)
+
+#############################################################################
+
 class ExpressionTerm(LumensalisCP.Main.Updates.Evaluatable):
     def __init__(self):
-        pass
-    
- 
+        super().__init__()
+
     def terms(self) -> Generator["ExpressionTerm"]:
         yield self
+        
+    def expressionStrParts(self) -> Generator[str]:
+        self.raiseNotImplemented( 'expressionStrParts' )
+        
+    def expressionAsString(self) -> str:
+        return ''.join( self.expressionStrParts())
         
     #def _makeTerm(self, other ):
     #    return other if isinstance( other, "ExpressionTerm" ) else makeExpressionConstant( other )
@@ -96,10 +125,11 @@ class ExpressionTerm(LumensalisCP.Main.Updates.Evaluatable):
     def OR( self, other:Any ) -> "ExpressionTerm":         return makeBinaryOperation( self, TERM( other ), lambda c, a, b: a or b )
     def AND( self, other:Any )-> "ExpressionTerm":         return makeBinaryOperation( self, TERM( other ), lambda c, a, b: a and b )
     
-    def __add__( self, other:Any )-> "ExpressionTerm":         return makeBinaryOperation( self, TERM( other ), lambda c, a, b: a + b )
-    def __sub__( self, other:Any ) -> "ExpressionTerm":    return makeBinaryOperation( self, TERM( other ), lambda c, a, b: a - b )
-    def __mul__( self, other:Any ) -> "ExpressionTerm":    return makeBinaryOperation( self, TERM( other ), lambda c, a, b: a * b )
-    def __truediv__( self, other:Any )-> "ExpressionTerm":    return makeBinaryOperation( self, TERM( other ), lambda c, a, b: a / b )
+    def __add__( self, other:Any )-> "ExpressionTerm":     return BinOp_add( self, other )
+    def __sub__( self, other:Any ) -> "ExpressionTerm":    return BinOp_sub( self, other )
+    def __mul__( self, other:Any ) -> "ExpressionTerm":    return BinOp_mul( self, other )
+    def __truediv__( self, other:Any )-> "ExpressionTerm":    return BinOp_truediv( self, other )    
+    
     def __floordiv__( self, other:Any )-> "ExpressionTerm":   return makeBinaryOperation( self, TERM( other ), lambda c, a, b: a // b )
     def __mod__( self, other:Any )-> "ExpressionTerm":        return makeBinaryOperation( self, TERM( other ), lambda c, a, b: a % b )
     def __divmod__( self, other:Any )-> "ExpressionTerm":    return makeBinaryOperation( self, TERM( other ), lambda c, a, b: divmod(a,b) )
@@ -130,8 +160,6 @@ class ExpressionTerm(LumensalisCP.Main.Updates.Evaluatable):
         """ current value of term"""
         pass
 
-
-
 def ensureIsTerm( term:ExpressionTerm ) -> ExpressionTerm:
     assert isinstance( term, ExpressionTerm )
     return term
@@ -144,11 +172,18 @@ class ExpressionOperation(ExpressionTerm):
 
 #############################################################################
 
-class UnaryOperation(ExpressionOperation):
-    def __init__(self, term:ExpressionTerm=None, op:Callable[[EvaluationContext,ExpressionTerm]]=None ):
+class UnaryOperationBase(ExpressionOperation):
+    OP_STRING = "???"
+    
+    def __init__(self, term:Any ):
         super().__init__()
-        self.term = ensureIsTerm(term)
-        self.op = op
+        self.term = TERM(term)
+    
+    def expressionStrParts(self) -> Generator[str]:
+        yield self.OP_STRING
+        yield('(')
+        for p in self.term.expressionStrParts(): yield p
+        yield(')')
 
     def terms(self) -> Generator["ExpressionTerm"]:
         for term in super().terms():
@@ -157,25 +192,45 @@ class UnaryOperation(ExpressionOperation):
             for t2 in child.terms():
                 yield t2
 
+    def calculate( self, context:EvaluationContext, a:Any ) ->Any:
+        self.raiseNotImplemented('calculate')
+        
     @override
     def getValue(self, context:EvaluationContext) -> Any:
         if context.debugEvaluate:
             with context.nestDebugEvaluate() as nde:
                 v = self.term.getValue( context )
-                rv = self.op( context, v )
+                rv = self.calculate( context, v )
                 nde.say(self, "OP %r = %r", v, rv)
             return rv
 
-        return self.op( context, self.term.getValue( context ) )
+        try:
+            a = self.term.getValue( context )
+            return  self.calculate( context, a ) 
+        except Exception as inst:
+            raise ExpressionOperationException( self, "getValue", inst=inst)
 
-class BinaryOperation(ExpressionOperation):
-    def __init__(self, term1:ExpressionTerm=None, term2:ExpressionTerm=None, op:Callable[[EvaluationContext,ExpressionTerm,ExpressionTerm]]=None ):
-        super().__init__()
+#############################################################################
+
+class UnaryOperation(UnaryOperationBase):
+    def __init__(self, term:Any, op:Callable[[EvaluationContext,ExpressionTerm]]=None ):
+        super().__init__(term)
         self.op = op
-        self.term1 = ensureIsTerm(term1)
-        self.term2 = ensureIsTerm(term2)
+        
+    @override
+    def calculate( self, context:EvaluationContext, a:Any ) ->Any:
+        return self.op( context, a  )
+    
+#############################################################################
 
-    def terms(self) -> Generator["ExpressionTerm"]:
+class BinaryOperationBase(ExpressionOperation):
+    OP_STRING = "???"
+    def __init__(self, term1:ExpressionTerm, term2:Any ):
+        super().__init__()
+        self.term1 = ensureIsTerm(term1)
+        self.term2 = ensureIsTerm(TERM(term2))
+
+    def terms(self) -> Generator[ExpressionTerm]:
         for term in super().terms():
             yield term
         for child in self.term1.terms():
@@ -185,18 +240,68 @@ class BinaryOperation(ExpressionOperation):
             for t2 in child.terms():
                 yield t2
 
+    def expressionStrParts(self) -> Generator[str]:
+        yield('(')
+        for p in self.term1.expressionStrParts(): yield p
+        yield(')')
+        yield self.OP_STRING
+        yield('(')
+        for p in self.term2.expressionStrParts(): yield p
+        yield(')')
+
+    def calculate( self, context:EvaluationContext, a:Any, b:Any ) ->Any:
+        self.raiseNotImplemented( 'calculate' )
+
     @override
     def getValue(self, context:EvaluationContext) -> Any:
         if context.debugEvaluate:
             with context.nestDebugEvaluate() as nde:
                 a = self.term1.getValue( context )
                 b = self.term2.getValue( context )
-                rv = self.op( context, a, b )
+                rv = self.calculate( context, a, b )
                 nde.say(self, "%r OP %r = %r", a, b, rv)
             return rv
         
-        return self.op( context, self.term1.getValue( context ), self.term2.getValue( context ) )
+        try:
+            a = self.term1.getValue( context )
+            b = self.term2.getValue( context )
+            return  self.calculate( context, a, b ) 
+        except Exception as inst:
+            raise ExpressionOperationException( self, "getValue", inst=inst)
+            
+            #self.op( context, self.term1.getValue( context ), self.term2.getValue( context ) )
 
+#############################################################################
+
+class BinaryOperation(BinaryOperationBase):
+    def __init__(self, term1:ExpressionTerm, term2:Any, op:Callable[[EvaluationContext,ExpressionTerm,ExpressionTerm]]=None ):
+        super().__init__(term1, term2)
+        self.op = op
+        
+    @override
+    def calculate( self, context:EvaluationContext, a:Any, b:Any ) ->Any:
+        return self.op( context, a, b )
+
+#############################################################################
+
+class BinOp_truediv(BinaryOperationBase):
+    OP_STRING = "/"
+    def calculate( self, context:EvaluationContext, a, b ): return a / b 
+
+
+class BinOp_mul(BinaryOperationBase):
+    OP_STRING = "*"
+    def calculate( self, context:EvaluationContext, a, b ): return a * b 
+
+class BinOp_add(BinaryOperationBase):
+    OP_STRING = "+"
+    def calculate( self, context:EvaluationContext, a, b ): return a + b 
+
+class BinOp_sub(BinaryOperationBase):
+    OP_STRING = "-"
+    def calculate( self, context:EvaluationContext, a, b ): return a - b 
+    
+#############################################################################
 
 class ExpressionConstant(ExpressionTerm):
     constantTypes = { int : True, bool: True, float: True, str: True }
@@ -206,20 +311,22 @@ class ExpressionConstant(ExpressionTerm):
         assert self.constantTypes.get(type(value), True)
         self.__constantValue = value
 
+    def expressionStrParts(self) -> Generator[str]:
+        yield str(self.__constantValue)
+        
     @override
     def getValue(self, context:EvaluationContext) -> Any:
         if context.debugEvaluate:
             self.infoOut( "(constant %r)", self.__constantValue)
         return self.__constantValue
-    
-    
+
+#############################################################################
+
 def TERM( value:Any ) -> ExpressionTerm :
     return value if isinstance( value, ExpressionTerm ) else makeExpressionConstant( value )
 
 def NOT( value:Any ):
     return  makeUnaryOperation( TERM( value ), lambda c, a: not a ) 
-
-
 
 def MAX( a:Any, b:Any ):
     return  makeBinaryOperation( TERM( a ), TERM( b ), lambda c, a, b: max(a,b) ) 
@@ -330,6 +437,7 @@ class CallbackSource( ExpressionTerm ):
 
 class Expression( LumensalisCP.Main.Updates.Evaluatable ):
     def __init__( self, term:ExpressionTerm ):
+        super().__init__()
         self.__root = ensureIsTerm(term)
         self.__when:ExpressionTerm|None = None
         self.__otherwise:ExpressionTerm|None = None
@@ -367,7 +475,7 @@ class Expression( LumensalisCP.Main.Updates.Evaluatable ):
         self.__otherwise = condition
         return self
     
-    def sources( self ) -> Mapping[str,]:
+    def sources( self ) -> Mapping[str,LumensalisCP.Inputs.InputSource]:
         rv = {}
         for term in self.terms():
             if isinstance(term,LumensalisCP.Inputs.InputSource):
@@ -375,7 +483,7 @@ class Expression( LumensalisCP.Main.Updates.Evaluatable ):
 
         return rv
     
-    def getValue(self, context:EvaluationContext ):
+    def getValue(self, context:EvaluationContext|None ):
         self.updateValue(context)
         return self.__latestValue
     

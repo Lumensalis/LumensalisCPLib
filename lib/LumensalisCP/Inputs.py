@@ -20,6 +20,11 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm):
     def __repr__( self ):
         return safeFmt( "%s:%s = %r", self.__class__.__name__, self.name, self.value )
     
+    def expressionStrParts(self) -> Generator[str]:
+        yield( self.__class__.__name__ )
+        yield(':')
+        yield( self.name )
+
     def getDerivedValue(self, context:EvaluationContext) -> Any:
         raise NotImplemented
     
@@ -40,21 +45,22 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm):
             context.addChangedSource( self )
             return True
 
-        if context.debugEvaluate or self.enableDbgOut:
+        if context.debugEvaluate:
             with context.nestDebugEvaluate() as nde:
                 val = self.getDerivedValue( context )
                 self.__latestUpdateIndex = context.updateIndex
                 
                 if val == self.__latestValue:
-                    nde.say( self, "updateValue unchanged (%r) on update %d", self.__latestValue, context.updateIndex )
+                    if self.enableDbgOut: self.dbgOut( "updateValue unchanged (%r) on update %d", self.__latestValue, context.updateIndex )
                     return False
                 else:
-                    nde.say( self, "value changed from %r to %r on %s", self.__latestValue, val, context.updateIndex )
+                    nde.say( self, "value changing from %r to %r on %s", self.__latestValue, val, context.updateIndex )
         else:
             val = self.getDerivedValue( context )
             self.__latestUpdateIndex = context.updateIndex
             if val == self.__latestValue:
                 return False
+            if self.enableDbgOut: self.dbgOut( "updateValue changing from %r to %r on %s", self.__latestValue, val, context.updateIndex )
                 
         self.__latestValue = val
         self.__latestChangeIndex = context.updateIndex
