@@ -59,7 +59,7 @@ ABFade = PatternRLTest
 
 class Spinner( Pattern ):
     def __init__(self,
-                target:LightGroup=None, name:str=None, 
+                target:Optional[LightGroup]=None, name:Optional[str]=None, 
                 onValue:AnyLightValue = 1.0,
                 offValue:AnyLightValue = 0.0,
                 period:TimeSpanInSeconds = 0.5,

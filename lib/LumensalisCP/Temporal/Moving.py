@@ -56,18 +56,18 @@ class Moving( NamedOutputTarget, Refreshable ):
             self.__moveTimer.stop()
         
     
-    def set( self, value:ZeroToOne|None, context:EvaluationContext=None ):
+    def set( self, value:ZeroToOne|None, context:Optional[EvaluationContext]=None ):
         if self.__moving:
             self.stop()
         self.__set( value, context )
 
-    def __set( self, value:ZeroToOne|None, context:EvaluationContext=None ):
+    def __set( self, value:ZeroToOne|None, context:Optional[EvaluationContext]=None ):
         if angle is not None:
             angle = self.rangedAngle( angle )
             self.__lastSetAngle = angle
         self.__servo.angle = angle
         
-    def moveTo( self, value:ZeroToOne, speed:Optional[TimeInSeconds]=None, context:EvaluationContext=None ):
+    def moveTo( self, value:ZeroToOne, speed:Optional[TimeInSeconds]=None, context:Optional[EvaluationContext]=None ):
         assert value is not None
         span =  angle - self.__lastSetAngle
         if span == 0:
@@ -94,7 +94,7 @@ class Moving( NamedOutputTarget, Refreshable ):
     def onMoveComplete( self, callable:Callable ):
         self.__moveCompleteCB = callable
 
-    def _updateMove(self, when:TimeInSeconds=None, context:EvaluationContext=None):
+    def _updateMove(self, when:Optional[TimeInSeconds]=None, context:Optional[EvaluationContext]=None):
         assert when is not None
 
         finished = False

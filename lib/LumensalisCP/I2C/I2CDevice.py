@@ -1,21 +1,25 @@
+from __future__ import annotations
 from LumensalisCP.CPTyping import *
 from LumensalisCP.Identity.Local import NamedLocalIdentifiableContainerMixin, NamedLocalIdentifiableList
 from LumensalisCP.common import *
 from LumensalisCP.IOContext import EvaluationContext, InputSource, NamedOutputTarget, OutputTarget, UpdateContext, NamedLocalIdentifiable
 
+if TYPE_CHECKING:
+    import LumensalisCP.Main.Manager
+    from  LumensalisCP.Main.Manager import MainManager
 import busio
 #import weakref
 
 class I2CDeviceInitArgs(TypedDict):
     i2c: busio.I2C
-    main: "LumensalisCP.Main.Manager.MainManager"
+    main: MainManager
     address: int
     updateInterval:float|None
 
 class I2CDevice( NamedLocalIdentifiable ):
-    def __init__(self, i2c=None, main:"LumensalisCP.Main.Manager.MainManager"=None,
+    def __init__(self, main:MainManager, i2c=None, 
                  address:int|None = None, updateInterval:float|None = None,
-                 name:str=None
+                 name:Optional[str]=None
         ):
         super().__init__(name=name or self.__class__.__name__)
         
@@ -27,7 +31,7 @@ class I2CDevice( NamedLocalIdentifiable ):
         self.__address = address
         self.__updates = 0
         self.__updateInterval = updateInterval
-        self.__nextUpdate:float = updateInterval
+        self.__nextUpdate:float = main.when
         main._addI2CDevice(self)
     
         self._inputs = NamedLocalIdentifiableList(name='inputs',parent=self)

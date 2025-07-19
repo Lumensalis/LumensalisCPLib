@@ -13,7 +13,7 @@ from .Trigger import Trigger
 #############################################################################
 
 
-def fireOnSet( source:InputSource=None, trigger:Trigger=None ):
+def fireOnSet( source:Optional[InputSource]=None, trigger:Optional[Trigger]=None ):
     assert source is not None
     # assert trigger is not None
     def on2( callable:Callable ):
@@ -26,7 +26,7 @@ def fireOnSet( source:InputSource=None, trigger:Trigger=None ):
 
 
 
-def fireOnTrue( expression:Expression|ExpressionTerm, target=None, trigger:Trigger=None ):
+def fireOnTrue( expression:Expression|ExpressionTerm, target=None, trigger:Optional[Trigger]=None ):
     # assert trigger is not None
     def on2( callable:Callable, expression=expression, trigger=trigger ):
 
@@ -54,8 +54,8 @@ def fireOnTrue( expression:Expression|ExpressionTerm, target=None, trigger:Trigg
     return on2
 
 
-def fireOnClick( expression:Expression|ExpressionTerm, trigger:Trigger=None ):
+def fireOnClick( expression:Expression|ExpressionTerm, trigger:Optional[Trigger]=None ):
     return  fireOnTrue( expression=expression, trigger=trigger )
 
-def fireOnRising( expression:Expression|ExpressionTerm, target=None, trigger:Trigger=None ):
+def fireOnRising( expression:Expression|ExpressionTerm, target=None, trigger:Optional[Trigger]=None ):
     return  fireOnTrue( expression= rising( expression ), trigger=trigger, target=target )

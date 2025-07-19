@@ -149,7 +149,7 @@ class NamedLocalIdentifiableList(NamedLocalIdentifiableWithParent, UserList, Nam
     def values(self):
         return self.data
 
-    def get(self, key:str, default:Any=None):
+    def get(self, key:str, default:Optional[Any]=None):
         for v in self:
             if v.name == key:
                 return v

@@ -7,7 +7,7 @@ import LumensalisCP.Main.Manager
 
 class ExitTask(object):
     
-    def __init__(self, main:"LumensalisCP.Main.Manager.MainManager", task:Callable, name:str=None ):
+    def __init__(self, main:"LumensalisCP.Main.Manager.MainManager", task:Callable, name:Optional[str]=None ):
         self.name = name or task.__name__
         self.__main = main
         self.__task = task

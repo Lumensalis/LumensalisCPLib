@@ -101,8 +101,12 @@ class LocalServo(
     def onMoveComplete( self, callable:Callable ):
         self.__moveCompleteCB = callable
 
-    def _updateMove(self, when:TimeInSeconds=None, context:EvaluationContext=None):
+    def _updateMove(self, when:TimeInSeconds, context:EvaluationContext):
         assert when is not None
+        assert self.__moveTimeAtStart is not None
+        assert self.__moveSpan is not None
+        assert self.__moveAngleStart is not None
+        assert self.__moveTarget is not None
 
         finished = False
         elapsed = when - self.__moveTimeAtStart

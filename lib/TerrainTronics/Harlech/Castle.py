@@ -76,7 +76,7 @@ class KeepAlive(Debuggable):
         self.__output.value = state
         self.__state = state
      
-    def _timerHit(self,when:float=None, **kwds):
+    def _timerHit(self,when:Optional[float]=None, **kwds):
         
         if self.__nextPulse <= when:
             self.enableDbgOut and self.dbgOut( "start pulse" )
@@ -108,15 +108,15 @@ class HarlechCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
         
     def __init__(self, *args,
                 name=None, 
-                version:str=None,
-                oePin:str=None,
+                version:Optional[str]=None,
+                oePin:Optional[str]=None,
                 brightness = 1.0,
                 ledRefreshRate:float = 50.0,
                 refreshRate=0.05,
                 addKeepAlive = True,
                 keepAlivePin=None,
-                keepAliveCycle:float=None,
-                keepAlivePulse:float=None,
+                keepAliveCycle:Optional[float]=None,
+                keepAlivePulse:Optional[float]=None,
                 baudrate=1000000,
                 oeBrightness=True, 
                  **kwds ):

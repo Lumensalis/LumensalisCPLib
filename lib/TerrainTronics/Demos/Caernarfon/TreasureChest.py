@@ -231,7 +231,7 @@ class TreasureChest( DemoBase ):
         ranger = main.i2cFactory.addVL530lx(updateInterval=0.25)
         rangeDump = dict( rMin = 99999, rMax = 0, rMaxB = 1, rMaxBCap=2192, rCount = 0 )
         
-        def updateCylonColor(context:UpdateContext=None, **kwargs):
+        def updateCylonColor(context:Optional[UpdateContext]=None, **kwargs):
             
             range = ranger.range.getValue(context=context) 
             showDump = ((rangeDump['rCount'] % 10) == 0)

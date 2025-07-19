@@ -64,7 +64,7 @@ class EvaluationContext(UpdateContext):
 
 #############################################################################
 
-def makeExpressionConstant(value:Any=None) -> "ExpressionTerm" :  # type: ignore
+def makeExpressionConstant(value:Optional[Any]=None) -> "ExpressionTerm" :  # type: ignore
     raise NotImplemented
 
 def makeBinaryOperation( term1:"ExpressionTerm"=None, term2:"ExpressionTerm"=None, op:Callable[[EvaluationContext,"ExpressionTerm","ExpressionTerm"]] =None ) -> "ExpressionTerm": # type: ignore
@@ -306,7 +306,7 @@ class BinOp_sub(BinaryOperationBase):
 class ExpressionConstant(ExpressionTerm):
     constantTypes = { int : True, bool: True, float: True, str: True }
     
-    def __init__( self, value:Any=None ):
+    def __init__( self, value:Optional[Any]=None ):
         super().__init__()
         assert self.constantTypes.get(type(value), True)
         self.__constantValue = value
@@ -349,10 +349,10 @@ def makeUnaryOperation( term:ExpressionTerm, op:Callable[[EvaluationContext,Expr
 
 class EdgeTerm(ExpressionOperation):
     def __init__(self, term:ExpressionTerm,
-                 reset:ExpressionTerm=None,
+                 reset:Optional[ExpressionTerm]=None,
                  rising:bool = False,
                  falling:bool = False,
-                 name:str=None
+                 name:Optional[str]=None
                  ):
         super().__init__()
         self.name = name
@@ -411,10 +411,10 @@ class EdgeTerm(ExpressionOperation):
                 self.__value = False
         return self.__value
 
-def rising( term:ExpressionTerm=None, **kwds ) -> EdgeTerm:
+def rising( term:Optional[ExpressionTerm]=None, **kwds ) -> EdgeTerm:
     return EdgeTerm( term=TERM(term), rising=True, **kwds )
 
-def falling( term:ExpressionTerm=None, **kwds )  -> EdgeTerm:
+def falling( term:Optional[ExpressionTerm]=None, **kwds )  -> EdgeTerm:
     return EdgeTerm( term=TERM(term), falling=True, **kwds )
 
 #############################################################################

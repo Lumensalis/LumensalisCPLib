@@ -31,7 +31,7 @@ class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
         self._irRemote = None
         self.initI2C()
         self.__pixels:NeoPixelSource = NeoPixelSource(
-            c.neoPixelPin, c.neoPixelCount, main = self.main, refreshRate=0.05, brightness=c.neoPixelBrightness, auto_write=False, pixel_order=c.neoPixelOrder
+            c.neoPixelPin, pixelCount=c.neoPixelCount, main = self.main, refreshRate=0.05, brightness=c.neoPixelBrightness, auto_write=False, pixel_order=c.neoPixelOrder
         )
         self.__servoContainer = NamedLocalIdentifiableList("servos", parent=self)
         self.__servos = [ None, None, None ]
@@ -82,7 +82,7 @@ class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
         name = name or f"pixel{servoN}"
 
         pixels = NeoPixelSource(
-            pin, neoPixelCount, main = self.main, refreshRate=0.05,
+            pin,  main = self.main, pixelCount=neoPixelCount, refreshRate=0.05,
                 brightness=neoPixelBrightness, auto_write=False, pixel_order=neoPixelOrder
         )
         self.__neoPixOnServos[servoN-1] = pixels

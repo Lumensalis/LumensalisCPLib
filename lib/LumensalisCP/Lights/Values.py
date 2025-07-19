@@ -150,23 +150,17 @@ class LightValueRGB(RGB, LightValueBase ):
         rv = getattr(LightValueRGB,color,None )
         if rv is None:
             raise KeyError( safeFmt("unknown color %r",color) )
-        
+        if rv is None:
+            return LightValueRGB.BLACK
         return rv
 
     @staticmethod
     def toRGB( value:AnyLightValue )->RGB:
         
         convertor = RGB.CONVERTORS.get(type(value).__name__,None)
-        if convertor is not None:
-            return convertor(value)
+        assert convertor is not None, safeFmt( "cannot convert %r (%s) to RGB", value, type(value))
+        return convertor(value)
         
-        #if isinstance( value, RGB):
-        #    return value
-
-        # if isinstance( value, LightValueBase): return value.asRGB
-
-        ensure( False, "cannot convert %r (%s) to RGB", value, type(value))
-
     @staticmethod
     def prepRGBValue( value ):
         if (

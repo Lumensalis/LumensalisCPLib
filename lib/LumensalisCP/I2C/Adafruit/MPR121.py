@@ -55,7 +55,7 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
     @property
     def lastTouched(self): return self.__lastTouched
         
-    def addInput( self, pin:int=None, name:str = None ):
+    def addInput( self, pin:Optional[int]=None, name:str = None ):
         assert pin >= 0 and pin < len(self.__inputs)
         input = self.__inputs[pin]
     

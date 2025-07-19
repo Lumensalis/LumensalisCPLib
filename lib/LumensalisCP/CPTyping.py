@@ -10,7 +10,7 @@ try:
     from typing import Unpack, TypeAlias 
     from typing import Self 
     from typing import Type, TypeAlias, TypedDict, TypeVar
-    from typing import NoReturn
+    from typing import NoReturn, final
     
     from typing import ByteString
     from functools import wraps

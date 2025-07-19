@@ -124,7 +124,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
     def addTask( self, task ): pass
 
-    def dumpLoopTimings( self, count:int, minE:TimeSpanInSeconds=None, minF:TimeSpanInSeconds=None, **kwds ): pass
+    def dumpLoopTimings( self, count:int, minE:Optional[TimeSpanInSeconds]=None, minF:Optional[TimeSpanInSeconds]=None, **kwds ): pass
 
     def getNextFrame(self) ->ProfileFrameBase: ...
     

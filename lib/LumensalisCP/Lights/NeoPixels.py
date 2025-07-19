@@ -33,7 +33,9 @@ class NeoPixelLight( RGBLight ):
         return LightValueNeoRGB( self.__npiv )
     
 class NeoPixelSource( LightSource ):
-    def __init__(self, pin, pixelCount:int, name:Optional[str]=None, refreshRate:float|None = 0.1, main:MainManager|None = None, **kwds):
+    def __init__(self, pin, main:MainManager, pixelCount:int, name:Optional[str]=None, 
+                 refreshRate:float|None = 0.1,
+                 **kwds):
         self.__npLights:List[NeoPixelLight] = []
         super().__init__( lights = self.__npLights, name=name or f"{self.__class__.__name__}_{pin}" )
         self.neopix = neopixel.NeoPixel( pin, pixelCount,**kwds)

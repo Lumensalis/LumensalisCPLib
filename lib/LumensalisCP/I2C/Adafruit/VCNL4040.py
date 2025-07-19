@@ -13,7 +13,7 @@ class VCNL4040ConfigDescriptor:
         print( f"{self.__class__.__name__}.__set_name__ {name}" )
         self.attrName = name
 
-    def __get__(self, obj:'VCNL4040', objtype=None):
+    def __get__(self, obj:'VCNL4040', objType=None):
         value = getattr(obj.vcnl4040, self.attrName)
         #logging.info('Accessing %r giving %r', self.public_name, value)
         return value

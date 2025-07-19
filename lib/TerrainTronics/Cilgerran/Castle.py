@@ -132,7 +132,7 @@ class CilgerranCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
     
     def __init__(self, *args,
                 name=None, 
-                version:str=None,
+                version:Optional[str]=None,
                 brightness = 1.0,
                 refreshRate=0.001,
                 ledCount:int|None = None,

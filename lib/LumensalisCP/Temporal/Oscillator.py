@@ -14,7 +14,7 @@ class Oscillator( InputSource ):
     high:float|Evaluatable # destination value
     
 
-    def __init__(self, name:str=None, 
+    def __init__(self, name:Optional[str]=None, 
                  frequency:Hertz|Evaluatable = None,
                  period:TimeInSeconds|Evaluatable|None  = None,
                  
