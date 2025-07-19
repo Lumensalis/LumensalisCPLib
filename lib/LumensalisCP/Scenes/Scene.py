@@ -38,7 +38,7 @@ class SceneRule( NamedLocalIdentifiable, Expression,  ):
         self.target = target
 
     def run( self, context:EvaluationContext, frame:ProfileFrameBase):
-        #self.enableDbgOut and self.dbgOut( "running rule" )
+        #if self.enableDbgOut: self.dbgOut( "running rule" )
         if self.updateValue( context ): # or len(context.changedTerms):
             if self.enableDbgOut: self.dbgOut( f"setting target {self.target.name} to {self.value} in rule {self.name}")
             frame.snap( "ruleSet", self.target.name )

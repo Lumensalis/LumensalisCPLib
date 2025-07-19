@@ -44,7 +44,7 @@ class SceneManager(NamedLocalIdentifiable):
             scene = actualScene
         
         if scene  != self.__currentScene:
-            self.enableDbgOut and self.dbgOut( "switching from scene %r to scene %r", self.__currentScene, scene )
+            if self.enableDbgOut: self.dbgOut( "switching from scene %r to scene %r", self.__currentScene, scene )
             self.__currentScene = scene
             
     def switchToNextIn( self, sceneList ):

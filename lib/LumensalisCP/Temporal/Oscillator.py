@@ -65,7 +65,7 @@ class Oscillator( InputSource ):
         offset = timeDelta / cycleTime
         vOver = offset + self._lastFz21
         v = vOver - math.floor(vOver)
-        self.enableDbgOut and self.dbgOut(f"__recalc v={v} prior={self._lastFz21} frequency={frequency} timeDelta={timeDelta:.03f} offset={offset:.03f} vOver={vOver:.03f}")
+        if self.enableDbgOut: self.dbgOut(f"__recalc v={v} prior={self._lastFz21} frequency={frequency} timeDelta={timeDelta:.03f} offset={offset:.03f} vOver={vOver:.03f}")
         self._lastFz21 = v
         return v
 

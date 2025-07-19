@@ -103,7 +103,7 @@ class BasicServer(Server,Debuggable):
             try:
                 c = getattr( BasicServerRL, functionName, None )
                 ensure( c is not None, "missing reloadable %r", functionName )
-                self.enableDbgOut and self.dbgOut( f"handling reloadable route {name} with {functionName}, reloading={reloading} params={params}, kwds={kwds}")
+                if self.enableDbgOut: self.dbgOut( f"handling reloadable route {name} with {functionName}, reloading={reloading} params={params}, kwds={kwds}")
                 rv =c(self,request,**kwds)
                 if rv is not None: return rv
                 return JSONResponse(request, {"unhandled request": name } )
@@ -219,7 +219,7 @@ class BasicServer(Server,Debuggable):
                             json.dump( payload, jsonBuffer )
                         message = jsonBuffer.getvalue() if useStringIO else json.dumps(payload)
                         self.websocket.send_message(message, fail_silently=True)
-                        self.enableDbgOut and self.dbgOut( "wrote WS update : %r", message )
+                        if self.enableDbgOut: self.dbgOut( "wrote WS update : %r", message )
                 await async_sleep(0.5)
         except Exception  as error:
             SHOW_EXCEPTION( error, 'send_websocket_messages error' )

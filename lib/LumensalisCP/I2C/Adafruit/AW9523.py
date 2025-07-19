@@ -29,7 +29,7 @@ class AW9523Input(I2CInputSource):
         
         if self._value != value:
             self._value = value
-            self.enableDbgOut and self.dbgOut( "INPUT %s = %s (%X & %X)", self.__pin, value, inputsValue, self.__mask )
+            if self.enableDbgOut: self.dbgOut( "INPUT %s = %s (%X & %X)", self.__pin, value, inputsValue, self.__mask )
             self.updateValue( context )    
     
 
@@ -70,7 +70,7 @@ class AW9523(I2CDevice):
         if self.__lastInputs != inputValues:
             self.__lastInputs = inputValues
             self.__changes += 1
-            self.enableDbgOut and self.dbgOut( "AW9523 = %X",  inputValues )
+            if self.enableDbgOut: self.dbgOut( "AW9523 = %X",  inputValues )
             
             for input in self.__ios:
                 if input is not None:

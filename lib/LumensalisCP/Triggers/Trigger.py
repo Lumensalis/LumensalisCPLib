@@ -29,12 +29,12 @@ class Trigger(Debuggable):
     def name(self): return self.__name
     
     def addAction( self, action:Callable ):
-        self.enableDbgOut and self.dbgOut( "addAction( %r )", action )
+        if self.enableDbgOut: self.dbgOut( "addAction( %r )", action )
         self.__actions.append( KWCallback.make( action ) )
 
 
     def fire(self, **kwds ):
-        self.enableDbgOut and self.dbgOut( f"firing timer {self.name}[{len(self.__actions)}]")
+        if self.enableDbgOut: self.dbgOut( f"firing timer {self.name}[{len(self.__actions)}]")
         for action in self.__actions:
             try:
                 action( **kwds )
@@ -50,7 +50,7 @@ class Trigger(Debuggable):
             
             expression.updateValue(context)
             shouldFire = expression.value
-            self.enableDbgOut and self.dbgOut( "fireOnTrue shouldFire=%s", shouldFire)
+            if self.enableDbgOut: self.dbgOut( "fireOnTrue shouldFire=%s", shouldFire)
             if shouldFire:
                 self.fire(source=source, context=context, **kwargs)
             
@@ -69,10 +69,10 @@ class Trigger(Debuggable):
         def test(source:Optional[InputSource]=None, context:EvaluationContext = None, **kwargs):
             
             if source.getValue(context):
-                self.enableDbgOut and self.dbgOut( "firing on set of %s", source.name )
+                if self.enableDbgOut: self.dbgOut( "firing on set of %s", source.name )
                 self.fire(source=source, context=context, **kwargs)
             else:
-                self.enableDbgOut and self.dbgOut( "no fire on %s", source.name )
+                if self.enableDbgOut: self.dbgOut( "no fire on %s", source.name )
                 
             
         source.onChange( test )

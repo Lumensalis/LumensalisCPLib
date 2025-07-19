@@ -21,7 +21,7 @@ class TLV493DInput(I2CInputSource):
         reading = readingTuple[self.__mx]
         if self._lastReading != reading:
             self._lastReading = reading
-            self.enableDbgOut and self.dbgOut( "TLV493DInput = %s", reading )
+            if self.enableDbgOut: self.dbgOut( "TLV493DInput = %s", reading )
             self.updateValue( context )
             
 
@@ -37,7 +37,7 @@ class I2CSimpleInput(I2CInputSource):
     def _setValue( self, value, context:EvaluationContext):
         if self.__simpleValue != value:
             self.__simpleValue = value
-            self.enableDbgOut and self.dbgOut( "value  = %s", value )
+            if self.enableDbgOut: self.dbgOut( "value  = %s", value )
             self.updateValue( context )
             
             
@@ -84,4 +84,4 @@ class TLV493D(I2CDevice,adafruit_tlv493d.TLV493D):
             distance = math.sqrt( crTotal )
             self.__distance._setValue( distance, context )
 
-            self.enableDbgOut and self.dbgOut( "new reading : %8.1f [ %5d %5d %5d ] ", distance, *reading )
+            if self.enableDbgOut: self.dbgOut( "new reading : %8.1f [ %5d %5d %5d ] ", distance, *reading )

@@ -385,7 +385,7 @@ class EdgeTerm(ExpressionOperation):
                 self.__value = False
                 resetValue = self.__resetTerm.getValue( context )
                 if resetValue:
-                    self.enableDbgOut and self.dbgOut( "reset succeeded, value=%s at %s", self.__value, self.__latestUpdateIndex  )
+                    if self.enableDbgOut: self.dbgOut( "reset succeeded, value=%s at %s", self.__value, self.__latestUpdateIndex  )
                     self.__awaitingReset = False
                     
                 return False
@@ -407,7 +407,7 @@ class EdgeTerm(ExpressionOperation):
                 if self.enableDbgOut: self.dbgOut( "edge from %s to %s, value=%s at %s", prior, termValue, self.__value, self.__latestUpdateIndex  )
             else:
                 if self.__value != False:
-                    self.enableDbgOut and self.dbgOut( "no edge term=%s at %s", termValue, self.__latestUpdateIndex  )
+                    if self.enableDbgOut: self.dbgOut( "no edge term=%s at %s", termValue, self.__latestUpdateIndex  )
                 self.__value = False
         return self.__value
 

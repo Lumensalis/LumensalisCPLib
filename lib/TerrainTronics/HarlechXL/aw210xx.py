@@ -198,12 +198,12 @@ class AW210xxBase(Debuggable):
         else:
             self.i2c.write_then_readinto(bytes([register]), self._buffer, in_end=1)
         rv = int( self._buffer[0])
-        self.enableDbgOut and self.dbgOut( "_read_register(%.X)=%X", register, rv )
+        if self.enableDbgOut: self.dbgOut( "_read_register(%.X)=%X", register, rv )
         return rv
         # return int(self.i2c.readfrom_mem(self.addr, register, 1)[0])
 
     def _write_register(self, register: int, val: int) -> None:
-        self.enableDbgOut and self.dbgOut( "_write_register(%.X)=%X", register, val )
+        if self.enableDbgOut: self.dbgOut( "_write_register(%.X)=%X", register, val )
         with self.i2c:
             self.i2c.write(bytes([register, val]))
 
