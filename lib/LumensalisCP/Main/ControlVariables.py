@@ -53,7 +53,7 @@ class ControlVariable(InputSource):
             if value != self._controlValue:
                 self._controlValue = value
     
-    def getDerivedValue(self, context:UpdateContext) -> Any:
+    def getDerivedValue(self, context:EvaluationContext) -> Any:
         return self._controlValue
         
     def move( self, delta ):
@@ -76,7 +76,7 @@ class IntermediateVariable( InputSource, OutputTarget ):
         self.__varValue = value
         
         
-    def getDerivedValue(self, context:UpdateContext) -> Any:
+    def getDerivedValue(self, context:EvaluationContext) -> Any:
         return self.__varValue
     
     def set( self, value:Any, context:Optional[EvaluationContext]=None ):

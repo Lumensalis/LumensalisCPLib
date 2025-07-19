@@ -14,10 +14,10 @@ class TLV493DInput(I2CInputSource):
         self.__mx  = mx
         self._lastReading = 0
 
-    def getDerivedValue(self, context:UpdateContext) -> bool:
+    def getDerivedValue(self, context:EvaluationContext) -> bool:
         return self._lastReading 
     
-    def _setValue( self, readingTuple, context:UpdateContext):
+    def _setValue( self, readingTuple, context:EvaluationContext):
         reading = readingTuple[self.__mx]
         if self._lastReading != reading:
             self._lastReading = reading
@@ -31,10 +31,10 @@ class I2CSimpleInput(I2CInputSource):
         self.__simpleValue = value
 
 
-    def getDerivedValue(self, context:UpdateContext) -> bool:
+    def getDerivedValue(self, context:EvaluationContext) -> bool:
         return self.__simpleValue 
     
-    def _setValue( self, value, context:UpdateContext):
+    def _setValue( self, value, context:EvaluationContext):
         if self.__simpleValue != value:
             self.__simpleValue = value
             self.enableDbgOut and self.dbgOut( "value  = %s", value )
@@ -69,7 +69,7 @@ class TLV493D(I2CDevice,adafruit_tlv493d.TLV493D):
     @property
     def distance(self) -> I2CSimpleInput: return self.__distance
     
-    def derivedUpdateTarget(self, context:UpdateContext):
+    def derivedUpdateTarget(self, context:EvaluationContext):
         reading = self.magnetic
         if self.__lastReading != reading:
             # self.dbgOut( "MPR121 = %X" % allTouched )

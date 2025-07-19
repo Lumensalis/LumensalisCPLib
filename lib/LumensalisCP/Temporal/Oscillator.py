@@ -69,7 +69,7 @@ class Oscillator( InputSource ):
         self._lastFz21 = v
         return v
 
-    def getDerivedValue(self, context:UpdateContext):
+    def getDerivedValue(self, context:EvaluationContext):
         z2one = self.__recalc(context)
         low = context.valueOf(self.low)
         high = context.valueOf(self.high)

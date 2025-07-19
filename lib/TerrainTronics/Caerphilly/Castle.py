@@ -36,7 +36,7 @@ class CaerphillyCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
         self.__neoPixOnServos = [ None, None, None ]
         self.__allPixels = [self.__pixels]
         
-    def doRefresh(self,context:UpdateContext):
+    def doRefresh(self,context:EvaluationContext):
         for pixels in self.__allPixels:
             pixels.refresh()
         

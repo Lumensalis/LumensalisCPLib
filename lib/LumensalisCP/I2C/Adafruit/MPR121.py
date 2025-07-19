@@ -15,10 +15,10 @@ class MPR121Input(I2CInputSource):
     @property 
     def pin(self): return self.__pin
     
-    def getDerivedValue(self, context:UpdateContext) -> bool:
+    def getDerivedValue(self, context:EvaluationContext) -> bool:
         return self._touched
     
-    def _setTouched( self, allTouched, context:UpdateContext):
+    def _setTouched( self, allTouched, context:EvaluationContext):
         touched = (allTouched & self.__mask) != 0
         if self._touched != touched:
             self._touched = touched
@@ -95,7 +95,7 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
     def onUnused( self, cb:Callable):
         self.__onUnusedCB = cb
                     
-    def derivedUpdateTarget(self, context:UpdateContext):
+    def derivedUpdateTarget(self, context:EvaluationContext):
         with context.stubFrame('dUpdateTarget', self.name) as frame:
             frame.snap( "getTouched")
             allTouched = self.touched()

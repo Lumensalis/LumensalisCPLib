@@ -41,7 +41,7 @@ class DMXDimmerWatcher(DMXWatcher):
         self.__dimmerValue = self.data[0]/255.0
         self.dbgOut( "derivedUpdate  =  %r", self.__dimmerValue)
         
-    def getDerivedValue(self, context:UpdateContext) -> Any:
+    def getDerivedValue(self, context:EvaluationContext) -> Any:
         #self.dbgOut( "getDerivedValue returning %r", self.__dimmerValue)
         return self.__dimmerValue
 
@@ -55,7 +55,7 @@ class DMXRGBWatcher(DMXWatcher):
         ensure( len(self.data) == 3, "expected 3, not %r in %r", len(self.data), self.data )
         self.__rgbValue =  RGB( self.data[0]/255.0, self.data[1]/255.0, self.data[2]/255.0 )
 
-    def getDerivedValue(self, context:UpdateContext) -> Any:
+    def getDerivedValue(self, context:EvaluationContext) -> Any:
         return self.__rgbValue
 
 class DMXManager(MainChild):

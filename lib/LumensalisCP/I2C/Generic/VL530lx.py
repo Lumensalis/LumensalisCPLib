@@ -12,12 +12,12 @@ class VL53L0XInput(I2CInputSource):
         super().__init__(**kwargs)
         self._range = 8192
         
-    def getDerivedValue(self, context:UpdateContext) -> bool:
+    def getDerivedValue(self, context:EvaluationContext) -> bool:
         if context.debugEvaluate:
             self.infoOut( "getDerivedValue = %r", self._range )
         return self._range
     
-    def _setRange( self, range, context:UpdateContext):
+    def _setRange( self, range, context:EvaluationContext):
         if self._range != range:
             self._range = range
             #self.dbgOut( "MPR121Input = %s", touched )

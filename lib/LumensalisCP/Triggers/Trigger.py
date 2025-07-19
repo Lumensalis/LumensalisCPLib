@@ -46,7 +46,7 @@ class Trigger(Debuggable):
             expression = Expression(expression)
 
         self._onTrueExpression = expression
-        def test(source:Optional[InputSource]=None, context:UpdateContext = None, **kwargs):
+        def test(source:Optional[InputSource]=None, context:EvaluationContext = None, **kwargs):
             
             expression.updateValue(context)
             shouldFire = expression.value
@@ -66,7 +66,7 @@ class Trigger(Debuggable):
 
     def fireOnSet( self, source:InputSource):
         
-        def test(source:Optional[InputSource]=None, context:UpdateContext = None, **kwargs):
+        def test(source:Optional[InputSource]=None, context:EvaluationContext = None, **kwargs):
             
             if source.getValue(context):
                 self.enableDbgOut and self.dbgOut( "firing on set of %s", source.name )

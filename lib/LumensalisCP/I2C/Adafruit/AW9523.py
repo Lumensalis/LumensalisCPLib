@@ -19,11 +19,11 @@ class AW9523Input(I2CInputSource):
     @property 
     def pin(self): return self.__pin
     
-    def getDerivedValue(self, context:UpdateContext) -> bool:
+    def getDerivedValue(self, context:EvaluationContext) -> bool:
         return self._value
     
     
-    def _setFromInputs( self, inputsValue, context:UpdateContext):
+    def _setFromInputs( self, inputsValue, context:EvaluationContext):
         value = (inputsValue & self.__mask) != 0
         #self.dbgOut( "_setFromInputs  %X / %r",  inputsValue, value )
         
@@ -64,7 +64,7 @@ class AW9523(I2CDevice):
     def lastInputs(self): return self.__lastInputs
 
 
-    def derivedUpdateTarget(self, context:UpdateContext):
+    def derivedUpdateTarget(self, context:EvaluationContext):
         inputValues = self.aw9523.inputs
         self.__updates += 1
         if self.__lastInputs != inputValues:

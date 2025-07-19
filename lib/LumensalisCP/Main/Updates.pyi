@@ -74,12 +74,12 @@ def evaluate( value:Evaluatable|DirectValue, context:EvaluationContext|None = No
 class RefreshCycle(object):
     def __init__(self, refreshRate:TimeInSeconds = 0.1): pass
 
-    def ready( self, context:UpdateContext ) -> bool: pass
+    def ready( self, context:EvaluationContext ) -> bool: pass
 
 class Refreshable( object ):
     def __init__(self, refreshRate:TimeInSeconds = 0.1 ): pass
     
     @final
-    def refresh( self, context:UpdateContext): pass
+    def refresh( self, context:EvaluationContext): pass
 
 #############################################################################

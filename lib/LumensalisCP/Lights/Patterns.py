@@ -52,7 +52,7 @@ class Rainbow( Pattern ):
         self.__colorCycleWhenOffset = (((priorWhen+priorOffset) / priorCycle) * newCycle) - newWhen
         self.__colorCycle = newCycle
     
-    def refresh( self, context:UpdateContext ):
+    def refresh( self, context:EvaluationContext ):
         when = self.offsetWhen( context )
         self.__latestCycleWhen = when
         cc = context.valueOf(self.colorCycle)
@@ -97,7 +97,7 @@ class Gauge( Pattern, NamedOutputTarget ):
     def set( self, value:ZeroToOne, context:EvaluationContext ):
         self.__value = value
 
-    def refresh( self, context:UpdateContext ):
+    def refresh( self, context:EvaluationContext ):
         level = withinZeroToOne( context.valueOf(self.__value) )
         target = self.target
         maxPxf = level * target.lightCount
@@ -136,7 +136,7 @@ class Blink( PatternGenerator ):
         self.intermediateRefresh = intermediateRefresh
         super().__init__(*args,**kwargs)
         
-    def regenerate(self, context:UpdateContext):
+    def regenerate(self, context:EvaluationContext):
         yield PatternGeneratorSharedStep( self.onTime, self.onValue, intermediateRefresh=self.intermediateRefresh )
         yield PatternGeneratorSharedStep( self.offTime, self.offValue, intermediateRefresh=self.intermediateRefresh )
 
@@ -155,7 +155,7 @@ class Random( PatternGenerator ):
         self.__brightness = brightness
         super().__init__(*args,**kwargs)
 
-    def _generateRandomValues(self, context:UpdateContext):
+    def _generateRandomValues(self, context:EvaluationContext):
         rChannelBrightness = int( 0xFF * self.__brightness )
         def rChannel(): return randint(0,rChannelBrightness)
         def randomRGB(): return rChannel() + (rChannel() << 8) + (rChannel() << 16) 
@@ -171,11 +171,11 @@ class Random( PatternGenerator ):
                 
         return values
     
-    def regenerate1(self, context:UpdateContext):
+    def regenerate1(self, context:EvaluationContext):
         
         yield PatternGeneratorSharedStep(  self.duration, LightValueNeoRGB.randomRGB(brightness=self.__brightness) )
         
-    def regenerate(self, context:UpdateContext):
+    def regenerate(self, context:EvaluationContext):
         startValues = self._generateRandomValues(context)
         endValues = self._generateRandomValues(context)
         
@@ -210,7 +210,7 @@ class Cylon2( PatternGenerator ):
         self.dbgOut( 'sweep changed to %r', sweep )
         self.__sweepTime = sweep
     
-    def regenerate(self, context:UpdateContext):
+    def regenerate(self, context:EvaluationContext):
         rv = []
         # with context for subframe doesn't play well with generators
         with context.subFrame( 'regenerate', self.name) as frame:
@@ -256,13 +256,13 @@ class CylonPatternStep(PatternGeneratorSharedStep):
         self._up = up
         
     
-    def startValue( self, index, context:UpdateContext ):
+    def startValue( self, index, context:EvaluationContext ):
         return context.valueOf( self._startValue if index == self._index else self._endValue )
     
-    def endValue( self, index, context:UpdateContext ):
+    def endValue( self, index, context:EvaluationContext ):
         return context.valueOf( self._startValue if index == self._index else self._endValue )
 
-    def intermediateValue( self, index, progression:ZeroToOne, context:UpdateContext ):
+    def intermediateValue( self, index, progression:ZeroToOne, context:EvaluationContext ):
         if index == self._index: return self.startValue(index,context)
         iOffset = self._index - index if self._up else index - self._index
         if iOffset > 0:
@@ -288,7 +288,7 @@ class Cylon( Pattern ):
         super().__init__(*args,**kwargs)
 
         
-    def refresh( self, context:UpdateContext ):
+    def refresh( self, context:EvaluationContext ):
         when = self.offsetWhen( context )
         self.__latestCycleWhen = when
         cc = context.valueOf(self.colorCycle)
@@ -307,7 +307,7 @@ class Cylon( Pattern ):
         for px in range(target.lightCount):
             target[px] = wheel1( A + (px * pxStep) )
 
-    def regenerate(self, context:UpdateContext):
+    def regenerate(self, context:EvaluationContext):
         lightCount = self.target.lightCount
         sweepStepTime = self.sweepTime / self.target.lightCount
         if( self.__movingUp ):
@@ -345,7 +345,7 @@ class Cylon( PatternGenerator ):
         super().__init__(*args,**kwargs)
 
         
-    def regenerate(self, context:UpdateContext):
+    def regenerate(self, context:EvaluationContext):
         lightCount = self.target.lightCount
         sweepStepTime = self.sweepTime / self.target.lightCount
         if( self.__movingUp ):

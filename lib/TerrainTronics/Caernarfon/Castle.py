@@ -49,7 +49,7 @@ class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
     def nliGetContainers(self) -> list["NamedLocalIdentifiableContainerMixin"]|None:
         return itertools.chain(  [ self.__pixelsContainer, self.__servoContainer ], super().nliGetContainers()) 
 
-    def doRefresh(self,context:UpdateContext):
+    def doRefresh(self,context:EvaluationContext):
         for pixels in self.__allPixels:
             pixels.refresh()
         

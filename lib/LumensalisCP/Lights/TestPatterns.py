@@ -34,7 +34,7 @@ class PatternRLTest( Pattern, OutputTarget ):
     def set( self, value:ZeroToOne, context:EvaluationContext ):
         self._value = value
 
-    def refresh( self, context:UpdateContext ):
+    def refresh( self, context:EvaluationContext ):
         level = withinZeroToOne( context.valueOf(self._value) )
         target = self.target
         maxPxf = level * target.lightCount
@@ -81,7 +81,7 @@ class Spinner( Pattern ):
     def set( self, value:ZeroToOne, context:EvaluationContext ):
         self._value = value
 
-    def refresh( self, context:UpdateContext ):
+    def refresh( self, context:EvaluationContext ):
         z2one = self.oscillator.getValue(context)
         target = self.target
 

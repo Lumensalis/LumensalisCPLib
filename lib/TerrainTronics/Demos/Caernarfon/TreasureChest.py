@@ -219,7 +219,7 @@ class TreasureChest( DemoBase ):
         
         frontLidStripPattern = Gauge(self.frontLidStrip, name="RangeGauge",  )
         red = LightValueRGB.RED
-        def gaugeOnValue( context:UpdateContext = None,**kwargs):
+        def gaugeOnValue( context:EvaluationContext = None,**kwargs):
             return red.fadeTowards(LightValueRGB.toRGB( wheel1( main.when/3.5)), frontLidStripPattern.value)
         frontLidStripPattern.onValue = gaugeOnValue
         

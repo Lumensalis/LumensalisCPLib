@@ -16,7 +16,7 @@ class PCA9685Output(I2COutputTarget):
     def pin(self): return self.__pin
     
     
-    def set( self, value:Any, context:UpdateContext ):
+    def set( self, value:Any, context:EvaluationContext ):
         v = withinZeroToOne( value )
         if self.__value != v:
             self.__value = v
