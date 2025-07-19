@@ -1,6 +1,13 @@
 
 import traceback, time
 
+
+try:
+    import typing
+    from typing import NoReturn
+except: pass    
+    
+
 class Debuggable( object ):
     
     @staticmethod
@@ -9,6 +16,12 @@ class Debuggable( object ):
     
     def __init__(self, enableDbgOut:bool = False):
         self.__dbgOutEnabled = enableDbgOut
+    
+    @staticmethod
+    def __formatArgs( fmtString, args ) -> str:
+        try: return fmtString % args 
+        except Exception as inst:
+            return f"could not format {fmtString:r}, {inst}"
         
     @property
     def _dbgName(self):
@@ -48,8 +61,13 @@ class Debuggable( object ):
     def SHOW_EXCEPTION( self,  inst:Exception, fmtString:str, *args, **kwds):
         print( self.__format("EXCEPTION", fmtString, args, kwds ) )
         print( f"{inst}\n{''.join(traceback.format_exception(inst))}" )
-        
-        
+
+    def raiseNotImplemented( self,  fmtString:str="", *args) -> None:
+        raise Exception( f"NotImplemented ON {self.__class__.__name__}{self._dbgName} : {self.__formatArgs(fmtString,args)}" )
+    
+    def raiseException( self,  fmtString:str, *args, excClass=Exception, **kwds) -> NoReturn:
+        raise excClass( f"{self.__formatArgs(fmtString,args)} ON {self._dbgName}" )
+
     def setEnableDebugWithChildren( self, setting:bool, *args, **kwds ):
         self.enableDbgOut = setting
         self._derivedSetEnableDebugWithChildren( setting, *args, **kwds )
