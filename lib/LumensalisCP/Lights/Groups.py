@@ -33,7 +33,7 @@ class LightGroup(NamedLocalIdentifiable):
 #############################################################################
 
 class LightGroupList(LightGroup):
-    def __init__(self, lights:List["Light.Light"] = [], name:str|None=None,**kwargs):
+    def __init__(self, lights:List["Light.Light"] = [], name:Optional[str]=None,**kwargs):
         super().__init__(name=name,**kwargs)
         self.__lights:List["Light.Light"] = lights
 

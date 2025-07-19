@@ -126,7 +126,7 @@ class Blink( PatternGenerator ):
                  offTime:TimeInSeconds = 1.0,
                  onValue:AnyLightValue = 1.0,
                  offValue:AnyLightValue = 0.0,
-                 intermediateRefresh:TimeInSeconds|None=None,
+                 intermediateRefresh:Optional[TimeInSeconds]=None,
                  **kwargs
             ):
         self.onTime = onTime

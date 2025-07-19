@@ -82,12 +82,12 @@ def getStatusInfo(self:BasicServer.BasicServer, request:Request ):
 
 class QueryConfig(object):
     fillParents:bool = False
-    recurseChildren:bool|None=None
+    recurseChildren:Optional[bool]=None
     includeName:bool = False
     includeId:bool = True
     includeType:bool = True
     
-def getQueryResult( target:NamedLocalIdentifiable, path:list[str], qConfig:QueryConfig|None=None ):
+def getQueryResult( target:NamedLocalIdentifiable, path:list[str], qConfig:Optional[QueryConfig]=None ):
     rv = None
     if qConfig is None: qConfig=QueryConfig()
     if len(path):

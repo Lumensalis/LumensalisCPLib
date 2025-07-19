@@ -24,16 +24,16 @@ class Door(Actor):
     def __init__(self, name:str|None = None, main:MainManager|None = None, **kwds):
         super().__init__(name, main, **kwds)
         
-    def open(self, speed:TimeInSeconds|None = None, context:EvaluationContext|None=None) -> Behavior:
+    def open(self, speed:TimeInSeconds|None = None, context:Optional[EvaluationContext]=None) -> Behavior:
         raise NotImplementedError("open method must be implemented in subclass")
 
-    def close(self, speed:TimeInSeconds|None = None, context:EvaluationContext|None=None) -> Behavior:
+    def close(self, speed:TimeInSeconds|None = None, context:Optional[EvaluationContext]=None) -> Behavior:
         raise NotImplementedError("open method must be implemented in subclass")
     
-    def setSpeed(self, speed:TimeInSeconds, context:EvaluationContext|None=None) -> Behavior:
+    def setSpeed(self, speed:TimeInSeconds, context:Optional[EvaluationContext]=None) -> Behavior:
         raise NotImplementedError("setSpeed method must be implemented in subclass")
 
-    def stop(self, context:EvaluationContext|None=None) -> Behavior:
+    def stop(self, context:Optional[EvaluationContext]=None) -> Behavior:
         raise NotImplementedError("stop method must be implemented in subclass")
 
 class ServoMovement(Motion):
@@ -53,7 +53,7 @@ class ServoMovement(Motion):
         self.reset( target=target, speed=speed)
         self.nextBehavior = None
         
-    def reset( self, target:Degrees|None=None, speed:DegreesPerSecond|None = None ):
+    def reset( self, target:Optional[Degrees]=None, speed:DegreesPerSecond|None = None ):
         """Reset the servo movement parameters."""
         if ( target is None or self.target == target) and (speed is None or speed == self.speed ): return
         if target is not None: self.target = target
@@ -62,7 +62,7 @@ class ServoMovement(Motion):
             self.actor._servo.moveTo( self.target, self.speed, UpdateContext.fetchCurrentContext(None) ) # type: ignore
         #    self.actor.setCurrentBehavior(self, reset=True)
 
-    def activate( self, target:Degrees|None=None, speed:DegreesPerSecond|None = None, context:EvaluationContext|None=None ) -> "ServoMovement":
+    def activate( self, target:Optional[Degrees]=None, speed:DegreesPerSecond|None = None, context:Optional[EvaluationContext]=None ) -> "ServoMovement":
         self.reset( target=target,speed=speed)
         if self.actor.currentBehavior is not self:
             self.actor.setCurrentBehavior(self)
@@ -151,19 +151,19 @@ class ServoDoor(Door):
         self.stopped.enableDbgOut = setting
         self._servo.enableDbgOut = setting
         
-    def open(self, speed:TimeInSeconds|None = None, context:EvaluationContext|None=None) -> Behavior:
+    def open(self, speed:TimeInSeconds|None = None, context:Optional[EvaluationContext]=None) -> Behavior:
         return self.opening.activate(speed=speed, target=self.openPosition, context=context)
         
-    def close(self, speed:TimeInSeconds|None = None, context:EvaluationContext|None=None) -> Behavior:
+    def close(self, speed:TimeInSeconds|None = None, context:Optional[EvaluationContext]=None) -> Behavior:
         return self.closing.activate(speed=speed, target=self.closedPosition, context=context)
 
-    def stop(self, context:EvaluationContext|None=None) -> Motion:
+    def stop(self, context:Optional[EvaluationContext]=None) -> Motion:
         return self.stopped.activate(target=self._servo.lastSetAngle, context=context)
 
-    def moveTo(self, target:Degrees, speed:TimeInSeconds|None = None, context:EvaluationContext|None=None) -> None:
+    def moveTo(self, target:Degrees, speed:TimeInSeconds|None = None, context:Optional[EvaluationContext]=None) -> None:
         self.moving.activate(speed=speed, target=target, context=context)
 
-    def jog(self, offset:Degrees, speed:TimeInSeconds|None = None, context:EvaluationContext|None=None) -> Motion:
+    def jog(self, offset:Degrees, speed:TimeInSeconds|None = None, context:Optional[EvaluationContext]=None) -> Motion:
         return self.moving.activate(speed=speed, target=self._servo.lastSetAngle + offset, context=context)
             
     def addOpenTrigger( self, Input): pass

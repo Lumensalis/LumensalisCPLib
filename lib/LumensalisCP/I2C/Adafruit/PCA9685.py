@@ -6,7 +6,7 @@ from ..I2CDevice import I2CDevice, I2CInputSource, I2COutputTarget, UpdateContex
 import adafruit_pca9685
 
 class PCA9685Output(I2COutputTarget):
-    def __init__( self, parent:"PCA9685", pin:int = None, name:str|None=None,  channel:adafruit_pca9685.PWMChannel = None, **kwargs ):
+    def __init__( self, parent:"PCA9685", pin:int = None, name:Optional[str]=None,  channel:adafruit_pca9685.PWMChannel = None, **kwargs ):
         name = name or f"{parent.name}_I{pin}"
         super().__init__(name=name,**kwargs)
         self.__channel = channel
@@ -44,7 +44,7 @@ class PCA9685(I2CDevice):
         self.pca9685.frequency = frequency
         self.__ios:List[PCA9685Output|None] = [None] * PCA9685.PCA9685_PINS
 
-    def addOutput(self, pin:int, name:str|None=None, **kwds ):
+    def addOutput(self, pin:int, name:Optional[str]=None, **kwds ):
         ensure( type(pin) is int and pin >= 0 and pin < PCA9685.PCA9685_PINS, "invalid pin %r", pin )
         ensure( self.__ios[pin] is None, "pin %r already used", pin )
         io = PCA9685Output( self, pin, name=name, channel = self.pca9685.channels[pin], **kwds  )

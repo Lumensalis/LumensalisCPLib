@@ -120,12 +120,12 @@ class UpdateContext(Debuggable):
         raise NotImplemented
         return self.__changedSources
     
-    def subFrame(self, name:str|None=None, name2:str|None=None) -> ProfileSubFrame:
+    def subFrame(self, name:Optional[str]=None, name2:Optional[str]=None) -> ProfileSubFrame:
         #rv = self.activeFrame.activeFrame().subFrame(self, name, name2)
         rv = self.activeFrame.subFrame(self, name, name2)
         return rv
     
-    def stubFrame(self, name:str|None=None, name2:str|None=None) -> ProfileStubFrame:
+    def stubFrame(self, name:Optional[str]=None, name2:Optional[str]=None) -> ProfileStubFrame:
         return UpdateContext._stubFrame
         
     def addChangedSource( self, changed:InputSource):

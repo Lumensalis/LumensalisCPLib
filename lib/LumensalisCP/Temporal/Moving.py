@@ -67,7 +67,7 @@ class Moving( NamedOutputTarget, Refreshable ):
             self.__lastSetAngle = angle
         self.__servo.angle = angle
         
-    def moveTo( self, value:ZeroToOne, speed:TimeInSeconds|None=None, context:EvaluationContext=None ):
+    def moveTo( self, value:ZeroToOne, speed:Optional[TimeInSeconds]=None, context:EvaluationContext=None ):
         assert value is not None
         span =  angle - self.__lastSetAngle
         if span == 0:

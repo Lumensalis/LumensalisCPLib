@@ -120,7 +120,7 @@ class ProfileSnapEntry(Releasable):
 
 
 
-    def subFrame(self, context, name:str|None=None, name2:str|None = None) -> 'ProfileSubFrame':
+    def subFrame(self, context, name:Optional[str]=None, name2:str|None = None) -> 'ProfileSubFrame':
         assert not self._nesting 
         self._nest = ProfileSubFrame.makeEntry(context,name, name2)
         self._nesting = True
@@ -306,7 +306,7 @@ class ProfileFrameBase(Releasable):
             return entry.nest.activeFrame()
         return self    
     
-    def subFrame(self, context, name:str|None=None, name2:str|None=None) -> 'ProfileSubFrame':
+    def subFrame(self, context, name:Optional[str]=None, name2:Optional[str]=None) -> 'ProfileSubFrame':
         if name is not None:
             #snap = self.activeFrame().snap(name, name2)
             snap = self.snap(name, name2)
@@ -443,7 +443,7 @@ class ProfileSubFrame(ProfileFrameBase):
     
     snapNames = IndexMap( 'snap', ['start','end' ] )
     
-    def __init__(self, context:'LumensalisCP.Main.Updates.UpdateContext', name:str|None=None, name2:str|None=None):
+    def __init__(self, context:'LumensalisCP.Main.Updates.UpdateContext', name:Optional[str]=None, name2:Optional[str]=None):
         super().__init__(context)
         #self.__context = context
         #self._name = name
@@ -451,13 +451,13 @@ class ProfileSubFrame(ProfileFrameBase):
         self._nextFree = None
         self.reset( context, name, name2 )
         
-    def reset(self, context:'LumensalisCP.Main.Updates.UpdateContext', name:str|None=None, name2:str|None=None):
+    def reset(self, context:'LumensalisCP.Main.Updates.UpdateContext', name:Optional[str]=None, name2:Optional[str]=None):
         super().reset(context)
         self._name = name
         self.name2 = name2
         
     @classmethod
-    def makeEntry(cls,  context:'LumensalisCP.Main.Updates.UpdateContext', name:str|None=None, name2:str|None=None ):
+    def makeEntry(cls,  context:'LumensalisCP.Main.Updates.UpdateContext', name:Optional[str]=None, name2:Optional[str]=None ):
         rp = cls.getReleasablePool()
         entry = cls._make_getFree( rp )
 
@@ -541,7 +541,7 @@ class ProfileStubFrameEntry(ProfileSnapEntry):
         super().__init__(tag="stub",when=0)
 
         self.__frame = frame
-    def subFrame(self, context, name:str|None=None, name2:str|None=None) -> 'ProfileFrameBase':
+    def subFrame(self, context, name:Optional[str]=None, name2:Optional[str]=None) -> 'ProfileFrameBase':
         return self.__frame 
 
     def writeOn(self,target,indent='',**kwds):
@@ -563,7 +563,7 @@ class ProfileStubFrame(ProfileFrame):
     def activeFrame(self) -> "ProfileFrameBase":
         return self
 
-    def subFrame(self, context, name:str|None=None, name2:str|None=None) -> 'ProfileSubFrame':
+    def subFrame(self, context, name:Optional[str]=None, name2:Optional[str]=None) -> 'ProfileSubFrame':
         return self
 
     def snap(self, tag, tag2=None ) -> ProfileSnapEntry:

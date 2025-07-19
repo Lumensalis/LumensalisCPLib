@@ -32,7 +32,7 @@ class RGB(object):
         #    [RGB.__class__.__name__, lambda v:v ]
         #])
     )
-    def __init__(self, r:ZeroToOne|tuple|"RGB"=0, g:ZeroToOne|None=None, b:ZeroToOne|None=None ):
+    def __init__(self, r:ZeroToOne|tuple|"RGB"=0, g:Optional[ZeroToOne]=None, b:Optional[ZeroToOne]=None ):
         super().__init__()
         if g is None:
             ensure( type(b) is None, "b must also be None" )

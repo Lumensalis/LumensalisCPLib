@@ -154,7 +154,7 @@ class GCTestRunConfig(object):
     #kwds:dict | None
     
     def __init__( self, 
-                 cycles:int|None=None, innerCycles:int|None=None, 
+                 cycles:Optional[int]=None, innerCycles:Optional[int]=None, 
                  #args=None, kwds=None,
                  optimizeArgs:bool = False
                  ):
@@ -483,7 +483,7 @@ class GCTestSet(object):
         pass
         self.testers = {}
         
-    def addTester(self, name:str, signature:Optional[GCTestSignature|list]=None, tests:Optional[List[Callable]] = None, baseline:Callable|None=None ):
+    def addTester(self, name:str, signature:Optional[GCTestSignature|list]=None, tests:Optional[List[Callable]] = None, baseline:Optional[Callable]=None ):
         tester = GCTester( signature=signature,baseline=baseline)
 
         if tests is not None: tester.addTests(*tests)

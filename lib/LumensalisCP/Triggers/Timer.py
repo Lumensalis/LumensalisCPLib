@@ -149,7 +149,7 @@ class PeriodicTimer( Trigger ):
         #self._nextFire = min( when, self._nextFire + self.__interval )
         self.manager._updateTimer(self)
 
-    def addTaskDef( self, name:str|None=None, autoStart=True):
+    def addTaskDef( self, name:Optional[str]=None, autoStart=True):
         def wrapper( callable:Callable  ):
             cb = KWCallback.make(callable,name=name)
             self.addAction( cb )
@@ -170,7 +170,7 @@ class PeriodicTimer( Trigger ):
             if self.__nextFire is not None:
                 self.restart(when=when)
 
-def addPeriodicTaskDef( name:str|None=None, period:TimeSpanInSeconds=1.1,main:LumensalisCP.Main.Manager.MainManager|None = None):
+def addPeriodicTaskDef( name:Optional[str]=None, period:TimeSpanInSeconds=1.1,main:LumensalisCP.Main.Manager.MainManager|None = None):
     def wrapper( callable:Callable  ):
         
         cb = KWCallback(callable,name=name)

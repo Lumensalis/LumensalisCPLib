@@ -43,7 +43,7 @@ class CilgerranLED( DimmableLight ):
 
 class CilgerranPixelSource( LightSource, NamedOutputTarget ):
 
-    def __init__( self, board:"CilgerranCastle", name:str|None=None, maxLeds = 8, **kwargs ):
+    def __init__( self, board:"CilgerranCastle", name:Optional[str]=None, maxLeds = 8, **kwargs ):
         self.__leds:List[CilgerranLED] = [None] * maxLeds
         self.__maxLeds = maxLeds
 

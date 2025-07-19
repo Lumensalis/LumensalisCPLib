@@ -45,10 +45,10 @@ class Pattern(NamedLocalIdentifiable):
     @running.setter
     def running(self, running:bool): self.setRunning(running)
 
-    def setSpeed(self, value:TimeInSeconds, context:EvaluationContext|None=None ):
+    def setSpeed(self, value:TimeInSeconds, context:Optional[EvaluationContext]=None ):
         self.__speed = value
 
-    def setRunning(self, value:bool, context:EvaluationContext|None=None ):
+    def setRunning(self, value:bool, context:Optional[EvaluationContext]=None ):
         self.__running = value
 
     def refresh( self, context:EvaluationContext ) -> None:
@@ -122,7 +122,7 @@ class MultiLightPatternStep(PatternGeneratorSharedStep):
 #############################################################################
 
 class PatternGenerator(Pattern):
-    def __init__(self, *args, intermediateRefresh:TimeInSeconds|None=None,  **kwargs ):
+    def __init__(self, *args, intermediateRefresh:Optional[TimeInSeconds]=None,  **kwargs ):
         super().__init__( *args, **kwargs )
         self.__nextStep = 0.0
         self.__nextRefresh = 0.0
@@ -180,7 +180,7 @@ class PatternGenerator(Pattern):
     def regenerate(self, context:EvaluationContext) -> Generator[PatternGeneratorSharedStep]:
         raise NotImplemented
 
-    def setRunning(self, value:bool, context:EvaluationContext|None=None ):
+    def setRunning(self, value:bool, context:Optional[EvaluationContext]=None ):
         super().setRunning(value, context)
 
 #############################################################################

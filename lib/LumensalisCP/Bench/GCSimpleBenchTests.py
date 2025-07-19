@@ -78,7 +78,7 @@ def ktBazK( **kwds ):
 
 from LumensalisCP.util.kwCallback import KWCallback
 
-def kwcWrap( name:str|None=None ):
+def kwcWrap( name:Optional[str]=None ):
     def wrapper( callable:Callable  ):
         cb = KWCallback(callable,name=name)
         try:

@@ -61,7 +61,7 @@ class WriteScope(object):
     }
     
     
-    def __init__(self, ts:WriteScope|None, mode=None,indentItems:bool|None=None
+    def __init__(self, ts:WriteScope|None, mode=None,indentItems:Optional[bool]=None
                  ):
         """_summary_
 
@@ -96,7 +96,7 @@ class WriteScope(object):
     def nestedTag( self, tag:str ) -> str|None:
         return None
     
-    def startDict(self,tag:str|None=None,indentItems:bool|None=None) -> "DictWriteScope":
+    def startDict(self,tag:Optional[str]=None,indentItems:Optional[bool]=None) -> "DictWriteScope":
         """start scope for writing tag/value dict
 
         Args:
@@ -109,14 +109,14 @@ class WriteScope(object):
         self._addTagBeforeItem(tag)
         return DictWriteScope( self,indentItems=indentItems)
     
-    def addDict(self, items:dict[str,Any], tag:str|None=None,indentItems:bool|None=None) -> DictWriteScope:
+    def addDict(self, items:dict[str,Any], tag:Optional[str]=None,indentItems:Optional[bool]=None) -> DictWriteScope:
         """write dict"""
         with self.startDict( tag,indentItems=indentItems ) as nested:
             nested.addTaggedEntries( items.items() )
         return nested
 
     
-    def startNamedType(self,instance,tag:str|None=None,indentItems:bool|None=None) -> NamedTypeWriteScope:
+    def startNamedType(self,instance,tag:Optional[str]=None,indentItems:Optional[bool]=None) -> NamedTypeWriteScope:
         """start scope for writing tag/value dict
 
         Args:
@@ -130,7 +130,7 @@ class WriteScope(object):
         return NamedTypeWriteScope( self, instance=instance, indentItems=indentItems)
 
     
-    def startList(self,tag:str|None=None,indentItems:bool|None=None) -> "ListWriteScope":
+    def startList(self,tag:Optional[str]=None,indentItems:Optional[bool]=None) -> "ListWriteScope":
         """open a ListWriteScope for writing a sequence of items
 
         Args:
@@ -143,7 +143,7 @@ class WriteScope(object):
         self._addTagBeforeItem(tag)
         return ListWriteScope( self, indentItems=indentItems )
 
-    def addList(self,items:list, tag:str|None=None,indentItems:bool|None=None):
+    def addList(self,items:list, tag:Optional[str]=None,indentItems:Optional[bool]=None):
         #assert self.mode is list
         with self.startList( tag,indentItems=indentItems ) as nested:
             for item in items:
@@ -184,7 +184,7 @@ class WriteScope(object):
         pass
 
 class ListWriteScope(WriteScope):
-    def __init__(self, ts:WriteScope|None, indentItems:bool|None=None
+    def __init__(self, ts:WriteScope|None, indentItems:Optional[bool]=None
                  ):
         super().__init__(ts=ts,mode=list,indentItems=indentItems)
     
@@ -201,7 +201,7 @@ class ListWriteScope(WriteScope):
         return self.addListItem(item)
     
 class DictWriteScope(WriteScope):
-    def __init__(self, ts:WriteScope|None, indentItems:bool|None=None
+    def __init__(self, ts:WriteScope|None, indentItems:Optional[bool]=None
                  ):
         super().__init__(ts=ts,mode=dict,indentItems=indentItems)
         self.__defaults = {}
@@ -264,7 +264,7 @@ class DictWriteScope(WriteScope):
             self.addTaggedItem(tag,val)
 
 class NamedTypeWriteScope(DictWriteScope):
-    def __init__(self, ts:WriteScope, instance:Any, indentItems:bool|None=None
+    def __init__(self, ts:WriteScope, instance:Any, indentItems:Optional[bool]=None
                  ):
         super().__init__(ts=ts,indentItems=indentItems)
         self.instance = instance

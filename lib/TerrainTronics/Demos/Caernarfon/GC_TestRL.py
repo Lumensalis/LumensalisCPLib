@@ -36,7 +36,7 @@ def reloadSelf():
     reload( ProfilerRL )
     reload( GC_TestRL )
     
-def usbCheck(  context:UpdateContext, when:TimeInSeconds|None=None ):
+def usbCheck(  context:UpdateContext, when:Optional[TimeInSeconds]=None ):
     available = supervisor.runtime.serial_bytes_available
     if available:
         print( f"stdin available = {available}...")
@@ -55,7 +55,7 @@ def usbCheck(  context:UpdateContext, when:TimeInSeconds|None=None ):
             print( f"supervisor.runtime.autoreload = {ar}")
 
 
-def runCollection( context:UpdateContext, when:TimeInSeconds|None=None,
+def runCollection( context:UpdateContext, when:Optional[TimeInSeconds]=None,
                   force:bool=False, show:bool=False):
 
     usbCheck( context, when )

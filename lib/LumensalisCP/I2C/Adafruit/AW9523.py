@@ -6,7 +6,7 @@ from ..I2CDevice import I2CDevice, I2CInputSource, UpdateContext
 import adafruit_aw9523
 
 class AW9523Input(I2CInputSource):
-    def __init__( self, parent:"AW9523", pin:int = None, name:str|None=None, **kwargs ):
+    def __init__( self, parent:"AW9523", pin:int = None, name:Optional[str]=None, **kwargs ):
         name = name or f"{parent.name}_I{pin}"
         super().__init__(parent,name=name,**kwargs)
         self.io = adafruit_aw9523.DigitalInOut( pin, parent.aw9523 )
@@ -50,7 +50,7 @@ class AW9523(I2CDevice):
         self.__changes = 0
 
 
-    def addInput(self, pin:int, name:str|None=None, **kwds ):
+    def addInput(self, pin:int, name:Optional[str]=None, **kwds ):
         ensure( type(pin) is int and pin >= 0 and pin < AW9523.AW9523_PINS, "invalid pin %r", pin )
         ensure( self.__ios[pin] is None, "pin %r already used", pin )
         io = AW9523Input( self, pin, name=name,**kwds )
