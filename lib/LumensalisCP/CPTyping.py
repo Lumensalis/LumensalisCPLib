@@ -141,6 +141,7 @@ except ImportError:
         Iterable = PseudoTypingTBType("Iterable")
         
         
+        Type = PseudoTypingModifier("Type")
         Union = PseudoTypingModifier("Union")
         ForwardRef = PseudoTypingModifier("ForwardRef")
         Required = PseudoTypingModifier("Required")

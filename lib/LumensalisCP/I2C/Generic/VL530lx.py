@@ -1,11 +1,12 @@
 
+import adafruit_vl53l0x
+import simpleio
+
 from LumensalisCP.CPTyping import *
 from LumensalisCP.Eval.Expressions import EvaluationContext
 from LumensalisCP.common import *
-from LumensalisCP.I2C.I2CDevice import  I2CDevice, I2CInputSource, UpdateContext
+from LumensalisCP.I2C.I2CDevice import  I2CDevice, I2CInputSource
 
-import adafruit_vl53l0x
-import simpleio
 
 class VL53L0XInput(I2CInputSource):
     def __init__( self, **kwargs ):

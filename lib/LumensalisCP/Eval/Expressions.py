@@ -1,20 +1,16 @@
 from __future__ import annotations
 
+
 #import LumensalisCP.Inputs
 import LumensalisCP.Main
-from LumensalisCP.Identity.Local import NamedLocalIdentifiable
-from LumensalisCP.CPTyping import Any, Callable, Generator, List, Mapping, Tuple
-from LumensalisCP.CPTyping  import override
-from LumensalisCP.common import *
-
-import LumensalisCP.Main.Updates
-from LumensalisCP.Main.Updates import UpdateContext, Evaluatable
-from LumensalisCP.Main.Profiler import Profiler, ProfileFrame
+from ._common import *
+from .Evaluatable import Evaluatable
 
 _simpleValueTypes = set([int,bool,float])
 
 if TYPE_CHECKING:
     from LumensalisCP.Inputs import InputSource
+    from LumensalisCP.Eval.Evaluatable import Evaluatable, DirectValue
     
 class EvaluationContext(UpdateContext):    
     
@@ -73,7 +69,7 @@ class ExpressionOperationException( Exception ):
 
 #############################################################################
 
-class ExpressionTerm(LumensalisCP.Main.Updates.Evaluatable): 
+class ExpressionTerm(Evaluatable): 
 
     def terms(self) -> Generator["ExpressionTerm"]:
         yield self
@@ -425,7 +421,7 @@ class CallbackSource( ExpressionTerm ):
 
 #############################################################################
 
-class Expression( LumensalisCP.Main.Updates.Evaluatable ):
+class Expression( Evaluatable ):
     def __init__( self, term:ExpressionTerm ):
         super().__init__()
         self.__root = ensureIsTerm(term)

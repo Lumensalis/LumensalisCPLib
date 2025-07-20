@@ -1,7 +1,6 @@
 
 import board, microcontroller
-from LumensalisCP.Main.Terms import *
-from LumensalisCP.IOContext import  InputSource, NamedOutputTarget, EvaluationContext
+from LumensalisCP.Eval.common import *
 from LumensalisCP.Scenes.Scene import addSceneTask
 from LumensalisCP.Triggers import Trigger, fireOnSet, fireOnTrue, fireOnRising
 from LumensalisCP.Temporal import Oscillator

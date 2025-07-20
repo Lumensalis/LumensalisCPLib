@@ -13,8 +13,9 @@ if TYPE_CHECKING:
     from  LumensalisCP.Eval.Expressions import EvaluationContext
     from LumensalisCP.Inputs import InputSource
     from LumensalisCP.Lights.Values import RGB
-    OptionalContextArg = Optional[EvaluationContext]
-    DirectValue = Type[ int|bool|float|RGB ]
+
+OptionalContextArg = Optional["EvaluationContext"]
+DirectValue = Type[ Union[int,bool,float,'RGB' ] ]
     
 # pylint: disable=protected-access
 
@@ -183,27 +184,3 @@ class Refreshable( object ):
 
 
 #############################################################################
-
-class Evaluatable(Debuggable):
-    def __init__(self):
-        super().__init__()
-        self.enableDbgEvaluate = False
-    
-    def getValue(self, context:OptionalContextArg) -> Any:
-        """ current value of term"""
-        raise NotImplementedError
-
-
-
-def evaluate( value:Evaluatable|DirectValue, context:OptionalContextArg = None ):
-    if isinstance( value, Evaluatable ):
-        context = UpdateContext.fetchCurrentContext(context)
-        if  context.debugEvaluate or value.enableDbgEvaluate:
-            with context.nestDebugEvaluate() as nde:
-                rv = value.getValue(context)
-                nde.say(value, "evaluate returning %r", rv)
-            return rv
-        else:
-            return value.getValue(context)
-    
-    return value

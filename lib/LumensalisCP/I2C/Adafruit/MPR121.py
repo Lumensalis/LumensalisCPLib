@@ -1,9 +1,8 @@
 
-from LumensalisCP.CPTyping import *
-from LumensalisCP.common import *
-from LumensalisCP.I2C.I2CDevice import  I2CDevice, I2CInputSource, UpdateContext
-
 import adafruit_mpr121
+
+from LumensalisCP.I2C.common import *
+
 
 class MPR121Input(I2CInputSource):
     def __init__( self, pin:int = None, **kwargs ):

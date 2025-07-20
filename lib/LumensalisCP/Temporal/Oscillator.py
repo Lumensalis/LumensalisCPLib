@@ -1,7 +1,7 @@
 from LumensalisCP.IOContext import *
 from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.Triggers.Timer import PeriodicTimer
-from LumensalisCP.Main.Terms import *
+from LumensalisCP.Eval.Terms import *
 import math
 
 class Oscillator( InputSource ):

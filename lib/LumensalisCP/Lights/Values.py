@@ -1,16 +1,15 @@
-from LumensalisCP.Main.Updates import Evaluatable
-from LumensalisCP.common import *
-
 import rainbowio
 from random import random as randomZeroToOne, randint
+from collections import namedtuple
+
+from LumensalisCP.common import *
+from LumensalisCP.Eval.Evaluatable import Evaluatable
+
 
 def wheel255( val:float ): return rainbowio.colorwheel(val)
 
 def wheel1( val:float ): return rainbowio.colorwheel(val*255.0)
 
-
-
-from collections import namedtuple
 AnyLightValue = Union[
         int, float, bool,
         Tuple[float,float,float],

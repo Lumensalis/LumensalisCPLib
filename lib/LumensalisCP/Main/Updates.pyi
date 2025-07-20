@@ -62,14 +62,6 @@ OptionalContextArg = Optional[EvaluationContext]
 
 #############################################################################
 
-#Type 
-
-class Evaluatable(Debuggable):
-    enableDbgEvaluate : bool
-    def getValue(self, context:Optional[EvaluationContext]=None) -> DirectValue: pass
-
-def evaluate( value:Evaluatable|DirectValue, context:EvaluationContext|None = None ) -> DirectValue: pass
-
 #############################################################################
             
 class RefreshCycle(object):

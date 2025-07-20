@@ -1,5 +1,5 @@
 from LumensalisCP.Demo.DemoCommon import *
-from LumensalisCP.Main.Terms import *
+from LumensalisCP.Eval.Terms import *
 from LumensalisCP.Scenes.Scene import addSceneTask
 from TerrainTronics.Caernarfon.Castle import onIRCode
 

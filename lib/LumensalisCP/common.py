@@ -1,9 +1,12 @@
 import traceback
 import json, math
 
-from LumensalisCP.CPTyping import *
-from LumensalisCP.Debug import Debuggable
+import adafruit_itertools as itertools  # type: ignore # pylint: disable=import-error
+
 import LumensalisCP
+from LumensalisCP.Debug import Debuggable
+from LumensalisCP.CPTyping import *
+
 import LumensalisCP.pyCp.weakref as weakref
 
 # Common types used throughout the library

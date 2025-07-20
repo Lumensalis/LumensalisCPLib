@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from LumensalisCP.Debug import Debuggable
 from LumensalisCP.IOContext import *
-from LumensalisCP.Main.Updates import evaluate
+
 from LumensalisCP.util import kwCallback
 
 if TYPE_CHECKING:

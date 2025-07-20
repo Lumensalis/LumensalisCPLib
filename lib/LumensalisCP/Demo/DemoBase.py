@@ -1,5 +1,5 @@
 from LumensalisCP.Main.Manager import MainManager
-from LumensalisCP.Main.Terms import *
+from LumensalisCP.Eval.Terms import *
 from LumensalisCP.CPTyping  import *
 from LumensalisCP.common import *
 from LumensalisCP.Demo.DemoMixin import DemoMixin
