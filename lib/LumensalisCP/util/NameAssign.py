@@ -1,7 +1,7 @@
+from LumensalisCP.CPTyping import Any
 import traceback
-import sys
-#import inspect
-#import trace
+
+
 
 def getName( name:str|None, instance:Any = None, depth:int=1):
     #frame = inspect.currentframe()

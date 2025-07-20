@@ -1,15 +1,17 @@
 
+
 class Bag(dict):
     
-    def __getattr__(self, name):
+    def __getattr__(self, name:str):
         try:
             return self[name]
         except:
             return super().__getattribute__(name)
         
-    def __setattr__(self, name, value):
+    def __setattr__(self, name:str, value):
         self[name] = value
-        
+
+#############################################################################
         
 class NamedList(object):
     def __init__(self ):
@@ -52,3 +54,5 @@ class NamedList(object):
             return self.__byName[name]
         except:
             raise AttributeError
+
+#############################################################################

@@ -31,7 +31,7 @@ class SceneTask(NamedLocalIdentifiable):
         self.task_callback(context=context)
 
 class SceneRule( NamedLocalIdentifiable, Expression,  ):
-    def __init__( self, target:OutputTarget, term:ExpressionTerm, name:Optional[str]=None ):
+    def __init__( self, target:NamedOutputTarget, term:ExpressionTerm, name:Optional[str]=None ):
         #super().__init__(term)
         Expression.__init__(self,term)
         NamedLocalIdentifiable.__init__(self,name=name)
@@ -60,7 +60,7 @@ class Scene(MainChild):
         self.__patternRefreshPeriod = 0.02
         self.__nextPatternsRefresh = 0
 
-    def nliGetContainers(self) -> list["NamedLocalIdentifiableContainerMixin"]|None:
+    def nliGetContainers(self) -> list[NamedLocalIdentifiableContainerMixin]|None:
         
         return [self.__rulesContainer, self.__tasksContainer, self.__patternsContainer]
     
@@ -81,7 +81,7 @@ class Scene(MainChild):
             pattern.nliSetContainer(self.__patternsContainer)
         
     
-    def addRule(self, target:OutputTarget, term:ExpressionTerm, name:Optional[str]=None ) ->SceneRule:
+    def addRule(self, target:NamedOutputTarget, term:ExpressionTerm, name:Optional[str]=None ) ->SceneRule:
             assert isinstance( term, ExpressionTerm )
             rule = SceneRule( target=target, term=term, name=name )
             #dictAddUnique( self.__rules, target.name, rule )
@@ -89,7 +89,7 @@ class Scene(MainChild):
             return rule
         
         
-    def findOutput( self, tag:str ) -> OutputTarget:
+    def findOutput( self, tag:str ) -> NamedOutputTarget:
         raise NotImplemented
                     
     def addRules(self, **kwargs:ExpressionTerm ):
@@ -104,14 +104,14 @@ class Scene(MainChild):
     
         return rv
 
-    def addTask( self, *args, **kwds:Unpack[SceneTaskKwargs]  ) -> SceneTask:
-        task = SceneTask( *args, **kwds )
-        self.__tasks.append( task )
-        task.nliSetContainer(self.__tasksContainer)
-        return task
+    def addTask( self, task:Callable, **kwds:Unpack[SceneTaskKwargs]  ) -> SceneTask:
+        sceneTask = SceneTask( task, **kwds )
+        self.__tasks.append( sceneTask )
+        sceneTask.nliSetContainer(self.__tasksContainer)
+        return sceneTask
     
     
-    def addTaskDef( self, **kwds:SceneTaskKwargs  )  -> Callable[..., Any]:
+    def addTaskDef( self, **kwds:Unpack[SceneTaskKwargs]  )  -> Callable[..., Any]:
 
         def addTask( callable ):
             self.addTask(callable, **kwds)
@@ -143,7 +143,7 @@ class Scene(MainChild):
                         SHOW_EXCEPTION( inst, "pattern %r refresh failed in %r", 
                                        getattr(pattern,'name',pattern), self )
 
-def addSceneTask( scene:Scene, **kwds:SceneTaskKwargs ):
+def addSceneTask( scene:Scene, **kwds:Unpack[SceneTaskKwargs] ):
     def addTask( callable ):
         scene.addTask(callable, **kwds)
         

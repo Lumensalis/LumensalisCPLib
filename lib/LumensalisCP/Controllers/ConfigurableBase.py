@@ -41,7 +41,7 @@ class ConfigurableBase(object):
         self.config = config
 
 
-    def asPin(self, pin ):
+    def asPin(self, pin ) -> microcontroller.Pin:
         if not isinstance( pin, microcontroller.Pin ):
             if hasattr( pin, 'actualPin' ):
                 pin = pin.actualPin

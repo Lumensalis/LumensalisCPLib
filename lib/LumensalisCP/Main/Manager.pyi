@@ -49,6 +49,9 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     @staticmethod
     def initOrGetManager()->MainManager: ...
 
+    @staticmethod
+    def getManager() -> "MainManager": ...
+
     def __init__(self, config = None, **kwds ): ...
  
     def makeRef(self)-> MainRef: pass

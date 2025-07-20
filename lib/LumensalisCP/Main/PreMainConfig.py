@@ -18,7 +18,16 @@ main = ProjectManager()
 
 MUST NOT IMPORT ANY OTHER LUMENSALIS FILES    
 """
-import supervisor, gc, sys, time
+from typing import TYPE_CHECKING
+import gc # type: ignore
+import sys
+import time
+import supervisor
+try:
+    import typing
+    if TYPE_CHECKING:
+        from LumensalisCP.Main.Manager import MainManager
+except ImportError: pass
 
 class _MainLoopControl(object):
     
@@ -41,6 +50,7 @@ class _MainLoopControl(object):
 
         
 class GCManager(object):
+    main:MainManager # type: ignore
     
     def __init__(self):
         self.priorCycle = 0
@@ -48,7 +58,7 @@ class GCManager(object):
         self.prior_mem_alloc = 0
         self.prior_mem_free = 0
         self.prior_collect_period = None
-        self.main = None
+        #self.main: = None
         
         self.min_delta_free = 32768
         self.__absoluteMinimumThreshold = 128000
@@ -72,7 +82,11 @@ class GCManager(object):
         self.__absoluteMinimumThreshold  = threshold
         self.__actualFreeThreshold = max( self.__actualFreeThreshold, self.__absoluteMinimumThreshold )
         
-    def runCollection(self, context=None, when=None, force = False, show=False):
+    def runCollection(self, 
+                      context=None, # [unused-argument]
+                      when=None, # [unused-argument]
+                      force = False, 
+                      show=False): 
         
         now = time.monotonic()
         mem_free_before = gc.mem_free()
@@ -84,7 +98,7 @@ class GCManager(object):
                 mem_alloc_before = gc.mem_alloc()
                 mem_alloc_before_elapsed = time.monotonic() - now
                 
-                timeBeforeCollect = self.main.newNow
+                timeBeforeCollect = self.main.getNewNow()
                 cycle = self.main.cycle
                 delta_cycles = max( 1, cycle - self.priorCycle )
                 currentMs = pmc_mainLoopControl.getMsSinceStart()
@@ -105,9 +119,9 @@ class GCManager(object):
             sys.stdout.write( f"{now:.3f} GC collect " )
         
         # run collection
-        timeBeforeCollect = self.main.newNow
+        timeBeforeCollect = self.main.getNewNow()
         gc.collect()
-        timeAfterCollect = self.main.newNow
+        timeAfterCollect = self.main.getNewNow()
         
         currentMs = pmc_mainLoopControl.getMsSinceStart()
         mem_alloc_after = gc.mem_alloc()

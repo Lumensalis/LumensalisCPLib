@@ -7,6 +7,7 @@ from LumensalisCP.Main.Dependents import SubManagerBase, ManagerRef
 import LumensalisCP.Main.Manager
 import LumensalisCP.Main.Manager
 import LumensalisCP.Main.Manager
+from LumensalisCP import Main
 from . import Trigger
 from LumensalisCP.util.kwCallback import KWCallback
 if TYPE_CHECKING:
@@ -87,6 +88,7 @@ class PeriodicTimer( Trigger ):
         self.__lastFire:TimeInSeconds = 0.0
         self.__nextFire:TimeInSeconds|None = None
         self.__oneShot:bool = oneShot
+        assert manager is not None
         self.__managerRef = ManagerRef(manager)
 
     @property
@@ -183,8 +185,9 @@ class PeriodicTimer( Trigger ):
 def addPeriodicTaskDef( name:Optional[str]=None, period:TimeSpanInSeconds=1.1,main:Optional[MainManager]=None):
     def wrapper( callable:Callable  ):
         
+        m = main or MainManager.getManager()
         cb = KWCallback(callable,name=name)
-        timer = PeriodicTimer( period, manager=main.timers, name=name,)
+        timer = PeriodicTimer( period, manager=m.timers, name=name,)
         timer.addAction( cb )
         timer.start()
         return cb

@@ -11,4 +11,4 @@ from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.util.bags import Bag
 from LumensalisCP.util.kwCallback import KWCallback
 import math
-import adafruit_itertools as itertools
+import adafruit_itertools as itertools  # type: ignore

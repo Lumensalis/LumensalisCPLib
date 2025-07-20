@@ -39,11 +39,17 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     _privateCurrentContext:EvaluationContext
     
     @staticmethod
-    def initOrGetManager():
+    def initOrGetManager() -> "MainManager":
         rv = MainManager.theManager
         if rv is None:
             rv = MainManager()
             assert MainManager.theManager is rv
+        return rv
+
+    @staticmethod
+    def getManager() -> "MainManager":
+        rv = MainManager.theManager
+        assert rv is not None
         return rv
     
     def __init__(self, config = None, **kwds ):
@@ -109,9 +115,9 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
         self._monitored = []
 
-        self._timers = PeriodicTimerManager(main=self)
+        self._timers = PeriodicTimerManager(main=self.__getMMSelf())
 
-        self._scenes: SceneManager = SceneManager(main=self)
+        self._scenes: SceneManager = SceneManager(main=self.__getMMSelf())
         self.__TerrainTronics = None
 
         if pmc_mainLoopControl.preMainVerbose: print( f"MainManager options = {self.config.options}" )
@@ -127,7 +133,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def TerrainTronics(self:'MainManager') -> TerrainTronicsFactory:
         if self.__TerrainTronics is None:
             from TerrainTronics.Factory import TerrainTronicsFactory
-            self.__TerrainTronics = TerrainTronicsFactory( self.getMMSelf() )
+            self.__TerrainTronics = TerrainTronicsFactory( self.__getMMSelf() )
         return self.__TerrainTronics
     
     @property
@@ -163,7 +169,10 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def getContext(self)->EvaluationContext: 
         return  self._privateCurrentContext
 
-    def getMMSelf(self) -> LumensalisCP.Main.Manager.MainManager:
+    def __getMMSelf(self) -> LumensalisCP.Main.Manager.MainManager:
+        """ hack to get around pyright getting confused by self ... ???
+        :rtype: LumensalisCP.Main.Manager.MainManager
+        """
         # TODO : why is pylance flagging this as wrong?
         return self # type: ignore
     
@@ -171,7 +180,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def dmx(self):
         if self.__dmx is None:
             import LumensalisCP.Lights.DMXManager
-            self.__dmx = LumensalisCP.Lights.DMXManager.DMXManager( self.getMMSelf() )
+            self.__dmx = LumensalisCP.Lights.DMXManager.DMXManager( self.__getMMSelf() )
             
             self.__asyncTaskCreators.append( self.__dmx.createAsyncTasks )
 
@@ -204,7 +213,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
             
     def addExitTask(self,task:ExitTask|Callable):
         if not isinstance( task, ExitTask ):
-            task = ExitTask( main=self.getMMSelf(),task=task)
+            task = ExitTask( main=self.__getMMSelf(),task=task)
             
         self.__shutdownTasks.append(task)
 
@@ -231,7 +240,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def addBasicWebServer( self, *args, **kwds ):
         from LumensalisCP.HTTP.BasicServer import BasicServer
         self.sayAtStartup( "addBasicWebServer %r, %r ", args, kwds )
-        server = BasicServer( *args, main=self.getMMSelf(), **kwds )
+        server = BasicServer( *args, main=self.__getMMSelf(), **kwds )
         self._webServer = server
 
         self.__asyncTaskCreators.append( server.createAsyncTasks )
@@ -248,11 +257,11 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         return server
 
     def monitor( self, *inputs:InputSource, **kwds ) -> None:
-        return ManagerRL.MainManager_monitor(self.getMMSelf(), *inputs, **kwds )
+        return ManagerRL.MainManager_monitor(self.__getMMSelf(), *inputs, **kwds )
 
 
     def handleWsChanges( self, changes:dict ):
-        return ManagerRL.MainManager_handleWsChanges(self.getMMSelf(), changes)
+        return ManagerRL.MainManager_handleWsChanges(self.__getMMSelf(), changes)
 
     async def msDelay( self, milliseconds ):
         await asyncio.sleep( milliseconds * 0.001 )
@@ -267,7 +276,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def addI2SAudio(self, *args, **kwds ) -> "LumensalisCP.Audio.Audio":
         from LumensalisCP.Audio import Audio
         assert self.__audio is None
-        self.__audio = Audio( main=self.getMMSelf(), *args,**kwds )
+        self.__audio = Audio( main=self.__getMMSelf(), *args,**kwds )
         return self.__audio
 
     def movingValue( self, min=0, max=100, duration:float =1.0 ):
@@ -290,7 +299,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
                 SHOW_EXCEPTION( inst, "exception on deferred task %r", task )
 
     def dumpLoopTimings( self, count, minE=None, minF=None, **kwds ):
-        return ManagerRL.MainManager_dumpLoopTimings(self.getMMSelf(), count, minE=minE, minF=minF, **kwds )
+        return ManagerRL.MainManager_dumpLoopTimings(self.__getMMSelf(), count, minE=minE, minF=minF, **kwds )
 
     def getNextFrame(self) ->ProfileFrameBase:
         return ManagerRL.MainManager_getNextFrame(self ) # type: ignore
@@ -302,10 +311,10 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         return ManagerRL.MainManager_nliGetChildren(self ) # type: ignore
 
     def launchProject(self, globals:Optional[dict]=None, verbose:bool = False ):
-        return ManagerRL.MainManager_launchProject(self.getMMSelf(), globals, verbose=verbose )
+        return ManagerRL.MainManager_launchProject(self.__getMMSelf(), globals, verbose=verbose )
 
     def renameIdentifiables(self, items:Optional[dict]=None, verbose:bool = False ):
-        return ManagerRL.MainManager_renameIdentifiables(self.getMMSelf(), items, verbose )
+        return ManagerRL.MainManager_renameIdentifiables(self.__getMMSelf(), items, verbose )
     
     async def taskLoop( self ):
         self.__priorSleepWhen = self.getNewNow()

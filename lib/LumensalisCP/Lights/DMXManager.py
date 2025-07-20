@@ -46,7 +46,7 @@ class DMXDimmerWatcher(DMXWatcher):
         return self.__dimmerValue
 
 
-class DMXRGBWatcher(DMXWatcher):
+class DMX_RGBWatcher(DMXWatcher):
     def __init__(self, name, manager:"DMXManager", c1):
         super().__init__(name, manager, c1, c1+3 )
         self.__rgbValue = RGB(0,0,0)
@@ -89,7 +89,7 @@ class DMXManager(MainChild):
 
 
     def addRGBInput( self, name, channel ):
-        rv = DMXRGBWatcher( name, self, channel )
+        rv = DMX_RGBWatcher( name, self, channel )
         self._watchers.append(rv)
         return rv
     

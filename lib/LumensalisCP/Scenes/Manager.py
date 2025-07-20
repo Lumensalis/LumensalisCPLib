@@ -1,6 +1,6 @@
 
 from LumensalisCP.Triggers import NamedLocalIdentifiable
-from LumensalisCP.Identity.Local import NamedLocalIdentifiableList
+from LumensalisCP.Identity.Local import NamedLocalIdentifiableContainerMixin, NamedLocalIdentifiableList
 from .Scene import Scene, SceneTask
 from LumensalisCP.Main.Expressions import EvaluationContext
 
@@ -13,7 +13,7 @@ class SceneManager(NamedLocalIdentifiable):
         super().__init__("SceneManager")
         self.main = main
         #self._scenes:Mapping[str,Scene] = {}
-        self._scenes:NamedLocalIdentifiableList[Scene] = NamedLocalIdentifiableList("scenes", parent=self)
+        self._scenes = NamedLocalIdentifiableList("scenes", parent=self)
         self.__currentScene:Scene|None = None
 
     def addScene( self, name:Optional[str]=None, *args, **kwds ) -> Scene:
@@ -30,7 +30,7 @@ class SceneManager(NamedLocalIdentifiable):
         
         self.__currentScene.runTasks(context)
 
-    def nliGetContainers(self) :
+    def nliGetContainers(self) -> list[NamedLocalIdentifiableContainerMixin]:
         return [self._scenes]
         
     @property

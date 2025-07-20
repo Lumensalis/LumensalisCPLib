@@ -1,6 +1,7 @@
 
 from LumensalisCP.Identity.Local import NamedLocalIdentifiableList
 from LumensalisCP.common import *
+from LumensalisCP.commonCP import *
 from LumensalisCP.CPTyping import *
 
 import busio
@@ -8,7 +9,7 @@ import board
 from LumensalisCP.I2C.I2CDevice import I2CDevice
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
-
+    from LumensalisCP.Debug import Debuggable
 
 class I2CProvider(Debuggable):
     def __init__(self,config, main:MainManager):
@@ -43,7 +44,8 @@ class I2CProvider(Debuggable):
                     SHOW_EXCEPTION( inst, f"I2C identity exception ")
 
 
-
+    def asPin(self, pin ) -> microcontroller.Pin: ...
+    
     @property
     def defaultI2C(self): return self.__defaultI2C or board.I2C()
             

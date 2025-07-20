@@ -26,7 +26,7 @@ class ColorSource(InputSource):
     #def __init__( self, name:Optional[str]=None ):
     
     def getColor(self, context:EvaluationContext ) -> RGB:
-        raise NotImplemented
+        raise NotImplementedError
     
     def getDerivedValue(self, context:EvaluationContext) -> RGB:
         return self.getColor(context)
