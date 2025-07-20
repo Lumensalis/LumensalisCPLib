@@ -11,7 +11,8 @@ class mutableObject(object):
 
 try:
     
-    from typing import List, Callable, TextIO, Any, Tuple, Mapping
+    from typing import List, Sequence, Tuple, Mapping
+    from typing import Callable, TextIO, Any,  Optional
     import weakref
     
     

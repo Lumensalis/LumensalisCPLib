@@ -15,7 +15,7 @@ from LumensalisCP.Controllers.ConfigurableBase import ConfigurableBase
 from LumensalisCP.Controllers.Identity import ControllerIdentity, ControllerNVM
 from LumensalisCP.Main.ControlVariables import ControlVariable, IntermediateVariable
 
-from LumensalisCP.Main.Expressions import EvaluationContext, UpdateContext
+from LumensalisCP.Eval.Expressions import EvaluationContext, UpdateContext
 from LumensalisCP.Debug import Debuggable 
 
 from LumensalisCP.Outputs import OutputTarget, NamedOutputTarget

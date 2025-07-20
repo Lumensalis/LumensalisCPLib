@@ -2,7 +2,7 @@ from LumensalisCP.IOContext import *
 
 import LumensalisCP.Main.Manager
 
-from LumensalisCP.Main.Expressions import Expression, ExpressionTerm
+from LumensalisCP.Eval.Expressions import Expression, ExpressionTerm
 from LumensalisCP.Main.Dependents import SubManagerBase, ManagerRef
 import LumensalisCP.Main.Manager
 import LumensalisCP.Main.Manager

@@ -1,9 +1,10 @@
+import traceback
+import json, math
+
 from LumensalisCP.CPTyping import *
 from LumensalisCP.Debug import Debuggable
-import traceback
 import LumensalisCP
 import LumensalisCP.pyCp.weakref as weakref
-import json, math
 
 # Common types used throughout the library
 # 
@@ -54,7 +55,7 @@ def updateKWDefaults( kwargs:Dict[str,Any], **updatedDefaults ) -> Dict[str,Any]
 def safeRepr( v ):
     try:
         return repr(v)
-    except Exception as inst:
+    except Exception as inst: # pylint: disable=broad-exception-caught
         return f"SAFEREPR( {type(v)}@{id(v)} : {inst} / {traceback.format_exception(inst)} )"
 
 def safeFmt( fmtStr:str, *args:Any ):
@@ -63,9 +64,9 @@ def safeFmt( fmtStr:str, *args:Any ):
     try:
         try:
             return fmtStr % args
-        except Exception as inst:
+        except Exception as inst: # pylint: disable=broad-exception-caught
             return "safeFmt( %r, ... ) failed : %s %r" % (fmtStr, inst, traceback.format_exception(inst) )
-    except:
+    except: # pylint: disable=bare-except
         return "safeFmt failed"
     
 class EnsureException(Exception):
@@ -74,10 +75,9 @@ class EnsureException(Exception):
     Args:
         Exception (_type_): _description_
     """
-    pass
     
     
-def ensure( condition:bool, fmtStr:str|None = None, *args:Any ):
+def ensure( condition:bool, fmtStr:str|None = None, *args:Any ):  # pylint: disable=keyword-arg-before-vararg
     """_summary_
     Throw an EnsureException if the condition is not met.
 
@@ -97,7 +97,7 @@ try:
     import typing
     if TYPE_CHECKING:
         import LumensalisCP.Inputs
-except:
+except ImportError:
     pass
 
 def toZeroToOne( value:Any ) -> float:
@@ -129,4 +129,6 @@ def SHOW_EXCEPTION( inst, fmt:str, *args ):
     print( "\n".join(traceback.format_exception(inst)) )
     
     
+def getMainManager():
+    raise NotImplementedError    
 #import LumensalisCP.Main.Expressions

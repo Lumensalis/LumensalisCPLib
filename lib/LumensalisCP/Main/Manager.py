@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import LumensalisCP.Audio
 import LumensalisCP.Main.Dependents
-import LumensalisCP.Main.Manager
 from LumensalisCP.commonPreManager import *
 from LumensalisCP.commonPreManager import pmc_mainLoopControl
 
@@ -27,7 +26,7 @@ import LumensalisCP.Main.Dependents
 
 if TYPE_CHECKING:
     from LumensalisCP.Lights.DMXManager import DMXManager
-    
+    import LumensalisCP.Main.Manager
     
 class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     
@@ -66,10 +65,10 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self.__startNow = time.monotonic()
         self._when:TimeInSeconds = self.getNewNow()
 
-        from LumensalisCP.Main.Dependents import MainRef
+        from LumensalisCP.Main.Dependents import MainRef  # pylint: disable=
         MainRef._theManager = self  # type: ignore
         
-        self._privateCurrentContext = EvaluationContext(self)
+        self._privateCurrentContext = EvaluationContext(self.__getMMSelf())
         UpdateContext._patch_fetchCurrentContext(self) # type: ignore
 
         self.profiler = Profiler(self._privateCurrentContext )
@@ -361,3 +360,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
             
         asyncio.run( main() )
         self.__runExitTasks()
+
+def getMainManager() -> MainManager:
+    assert MainManager.theManager
+    return MainManager.theManager

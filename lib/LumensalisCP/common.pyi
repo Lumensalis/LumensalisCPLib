@@ -1,9 +1,13 @@
+from __future__ import annotations
+import traceback
+import json, math
+import LumensalisCP
+
+# pylint: disable=unused-argument
+
 from LumensalisCP.CPTyping import *
 from LumensalisCP.Debug import Debuggable
-import traceback
-import LumensalisCP
 import LumensalisCP.pyCp.weakref as weakref
-import json, math
 
 # Common types used throughout the library
 # 
@@ -32,11 +36,13 @@ def safeFmt( fmtStr:str, *args:Any ) ->str: ...
     
 class EnsureException(Exception): ...
     
-def ensure( condition:bool, fmtStr:str|None = None, *args:Any ) -> None: ...
+def ensure( condition:bool, fmtStr:str|None = None, *args:Any ) -> None: ... # pylint: disable=keyword-arg-before-vararg
 
 def toZeroToOne( value:Any ) -> float: ...
     
 def withinZeroToOne( value:Any ) -> ZeroToOne: ...
 
 def SHOW_EXCEPTION( inst:Exception, fmt:str, *args )-> None: ...
+if TYPE_CHECKING:
+    from LumensalisCP.Main.Manager import MainManager, getMainManager
     

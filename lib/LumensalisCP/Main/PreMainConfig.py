@@ -19,16 +19,19 @@ main = ProjectManager()
 MUST NOT IMPORT ANY OTHER LUMENSALIS FILES    
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING
+
+try:
+    from typing import TYPE_CHECKING
+except ImportError:
+    TYPE_CHECKING = False
+    
 import gc # type: ignore
 import sys
 import time
 import supervisor
-try:
-    import typing
-    if TYPE_CHECKING:
-        from LumensalisCP.Main.Manager import MainManager
-except ImportError: pass
+
+if TYPE_CHECKING:
+    from LumensalisCP.Main.Manager import MainManager
 
 class _MainLoopControl(object):
     

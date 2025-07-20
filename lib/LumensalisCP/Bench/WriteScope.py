@@ -5,10 +5,8 @@ Allows classes to implement a writeOnScope method which can be used for
 a variety of output options including indented printing, json, ...
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING, Sequence, Optional
-from .simpleCommon import *
-if TYPE_CHECKING:
-    import weakref
+
+from LumensalisCP.Bench.simpleCommon import *
     
 #############################################################################
 
@@ -19,7 +17,6 @@ class WriteConfig(object):
     :type object: _type_
     """
     def __init__(self):
-        pass
         self.showScopes = False
         self.detailed = True
 
@@ -31,7 +28,7 @@ class WriteConfig(object):
             return
         
         if isinstance( value, (list,tuple)):
-            assert type(value) is not str
+            assert isinstance(value, str)
             with scope.startList( indentItems=scope.indentItems ) as nested:
                 for item in value:
                     nested.addListItem( item )
@@ -59,7 +56,6 @@ class WriteScope(object):
         tuple: ('(',')'),
         None: ('',''),
     }
-    
     
     def __init__(self, ts:WriteScope|None, mode=None,indentItems:Optional[bool]=None
                  ):
@@ -93,7 +89,7 @@ class WriteScope(object):
         if self.parent is None: return None
         return self.parent.getScopedDefault(tag)
         
-    def nestedTag( self, tag:str ) -> str|None:
+    def nestedTag( self, tag:str ) -> str|None: # pylint: disable=unused-argument
         return None
     
     def startDict(self,tag:Optional[str]=None,indentItems:Optional[bool]=None) -> "DictWriteScope":
@@ -181,7 +177,6 @@ class WriteScope(object):
     def __exit__(self,eT,eV,tb):
         if self.indentItems is not False: self.target.write( self.indent )
         self.target.write(self.wrappers[self.mode][1])
-        pass
 
 class ListWriteScope(WriteScope):
     def __init__(self, ts:WriteScope|None, indentItems:Optional[bool]=None
@@ -301,6 +296,8 @@ class TargetedWriteScope(WriteScope):
             return TargetedWriteScope(arg)
         
         assert False
-
-#############################################################################
+        
+    def addItem( self, item:Any ):
+        raise NotImplementedError
     
+#############################################################################

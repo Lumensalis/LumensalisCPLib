@@ -10,7 +10,7 @@ import LumensalisCP.Main.Releasable
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
     import LumensalisCP.Main.Manager 
-    from  LumensalisCP.Main.Expressions import EvaluationContext
+    from  LumensalisCP.Eval.Expressions import EvaluationContext
     from LumensalisCP.Inputs import InputSource
     from LumensalisCP.Lights.Values import RGB
     OptionalContextArg = Optional[EvaluationContext]

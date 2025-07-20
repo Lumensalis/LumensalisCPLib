@@ -2,7 +2,7 @@ from LumensalisCP.Audio import MainChild
 from LumensalisCP.Identity.Local import NamedLocalIdentifiableList, NamedLocalIdentifiableContainerMixin
 import LumensalisCP.Main
 from LumensalisCP.Inputs import InputSource
-from LumensalisCP.Main.Expressions import  EvaluationContext
+from LumensalisCP.Eval.Expressions import  EvaluationContext
  
 from LumensalisCP.Main.Updates import UpdateContext
 from LumensalisCP.Outputs import OutputTarget, NamedOutputTarget

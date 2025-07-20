@@ -3,7 +3,7 @@
 #from LumensalisCP.Inputs import InputSource
 
 from LumensalisCP.IOContext  import *
-from LumensalisCP.Main.Expressions import Expression, ExpressionTerm, rising
+from LumensalisCP.Eval.Expressions import Expression, ExpressionTerm, rising
 from .Trigger import Trigger
 #import functools
 

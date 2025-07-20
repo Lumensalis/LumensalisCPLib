@@ -13,7 +13,6 @@ from LumensalisCP.Main.Profiler import Profiler, ProfileFrame
 
 _simpleValueTypes = set([int,bool,float])
 
-
 if TYPE_CHECKING:
     from LumensalisCP.Inputs import InputSource
     
@@ -21,8 +20,6 @@ class EvaluationContext(UpdateContext):
     
     #def __init__( self, *args, **kwds ):
         #super().__init__( *args, **kwds)
-        #LumensalisCP.Main.Updates.UpdateContext.__init__(self,*args, **kwds)
-        #print( f"NEW EvaluationContext @{id(self):X}")
         #self.__changedTerms : List["ExpressionTerm"] = []
         
     fetchCurrentContext = UpdateContext.fetchCurrentContext
@@ -40,27 +37,11 @@ class EvaluationContext(UpdateContext):
         # self.__changedTerms.append( changed )
         
     def valueOf( self, value:Any ) -> Any:
-        #xm : 'LumensalisCP.Main.Expressions'
-        #xm = Expressions #LumensalisCP.Main.Expressions
         if type(value)  in _simpleValueTypes:
             return value
-        if type(value) is object:
-            if isinstance( value, ExpressionTerm ):
-                term = value
-                value = term.getValue( self )
-                print( f"valueOf term {term} = {value}")
-            elif isinstance( value, Expression ):
-                expression = value
-                value.updateValue( self )
-                value = value.value
-                print( f"valueOf Expression {expression} = {value}")
-            elif callable(value):
-                value = self.valueOf(value())
-        elif isinstance( value, ExpressionTerm ):
+        elif isinstance( value, Evaluatable ):
             term = value
             value = term.getValue( self )
-            #print( f"valueOf term ({type(term)}) {term} = {value}")
-        
         elif callable(value):
             value = self.valueOf( value() )
         return value        
@@ -92,13 +73,13 @@ class ExpressionOperationException( Exception ):
 
 #############################################################################
 
-class ExpressionTerm(LumensalisCP.Main.Updates.Evaluatable):
+class ExpressionTerm(LumensalisCP.Main.Updates.Evaluatable): 
 
     def terms(self) -> Generator["ExpressionTerm"]:
         yield self
         
     def expressionStrParts(self) -> Generator[str]:
-        self.raiseNotImplemented( 'expressionStrParts' )
+        raise NotImplementedError( 'expressionStrParts' )
         
     def expressionAsString(self) -> str:
         return ''.join( self.expressionStrParts())
@@ -149,7 +130,7 @@ def ensureIsTerm( term:ExpressionTerm ) -> ExpressionTerm:
     return term
 
 #############################################################################
-class ExpressionOperation(ExpressionTerm):
+class ExpressionOperation(ExpressionTerm): # pylint: disable=abstract-method
     pass
 
 #############################################################################
@@ -333,7 +314,7 @@ def makeUnaryOperation( term:ExpressionTerm, op:Callable[[EvaluationContext,Expr
 
 #############################################################################
 
-class EdgeTerm(ExpressionOperation):
+class EdgeTerm(ExpressionOperation): # pylint: disable=abstract-method
     def __init__(self, term:ExpressionTerm,
                  reset:Optional[ExpressionTerm]=None,
                  rising:bool = False,  # pylint: disable=redefined-outer-name
@@ -358,6 +339,23 @@ class EdgeTerm(ExpressionOperation):
         for child in self.term.terms():
             for t2 in child.terms():
                 yield t2
+                
+    def expressionStrParts(self) -> Generator[str]:
+        
+        yield 'Edge('
+        if self.name is not None:
+            yield 'name='
+            yield repr(self.name)
+        yield 'term='
+        yield self.term.expressionAsString()
+        yield ',rising='
+        yield repr(self.__onRising)
+        yield ',falling='
+        yield repr(self.__onFalling)
+        if self.__resetTerm is not None:
+            yield ',reset='
+            yield self.__resetTerm.expressionAsString()
+        yield ')'
 
     @override
     def getValue(self, context:Optional[EvaluationContext] = None ) -> Any:
@@ -408,12 +406,18 @@ def falling( term:Optional[ExpressionTerm]=None, **kwds )  -> EdgeTerm:
 
     
 class CallbackSource( ExpressionTerm ):
-    def __init__( self, name, callback  ): # pylint: disable=unused-argument
+    def __init__( self, name:str, callback  ): # pylint: disable=unused-argument
         super().__init__()
-        #self.__name = name
+        self.__name = name
         self.__callback = callback
         
-
+    def expressionStrParts(self) -> Generator[str]:
+        yield 'CallbackSource('
+        yield repr(self.__name)
+        yield ','
+        yield repr(self.__callback)
+        yield ')'
+        
     @override
     def getValue(self, context:Optional[EvaluationContext]=None) -> Any:
         return self.__callback()

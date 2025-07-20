@@ -14,9 +14,15 @@ from LumensalisCP.Main.PreMainConfig import *
 def ProjectManager( ) -> MainManager:
     return  MainManager.initOrGetManager()
 
-def getColor( v ) -> RGB:
-    return LightValueRGB.toRGB(v)
+def getColor( v:AnyLightValue ) -> RGB:
+    """ convert __v__ to an RGB value
 
+    :param v: value to be converted
+    :type v: AnyLightValue
+    :return: _description_
+    :rtype: RGB
+    """
+    return LightValueRGB.toRGB(v)
 
 def do( cb, *args, **kwds ):
     return Fireable.makeCallback( cb, *args, **kwds )

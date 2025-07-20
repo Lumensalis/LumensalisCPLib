@@ -8,7 +8,7 @@ from random import random as randomZeroToOne, randint
 #############################################################################
 
 #############################################################################
-import LumensalisCP.Main.Expressions as xm
+import LumensalisCP.Eval.Expressions as xm
 
 def prepRGBValue( value ):
     

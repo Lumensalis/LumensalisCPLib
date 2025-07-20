@@ -1,6 +1,6 @@
 
 from LumensalisCP.CPTyping import *
-from LumensalisCP.Main.Expressions import EvaluationContext
+from LumensalisCP.Eval.Expressions import EvaluationContext
 from LumensalisCP.common import *
 from LumensalisCP.I2C.I2CDevice import  I2CDevice, I2CInputSource, UpdateContext
 

@@ -1,14 +1,15 @@
 from __future__ import annotations
-from LumensalisCP.CPTyping import *
-from LumensalisCP.Identity.Local import NamedLocalIdentifiableContainerMixin, NamedLocalIdentifiableList
-from LumensalisCP.common import *
-from LumensalisCP.IOContext import EvaluationContext, InputSource, NamedOutputTarget, OutputTarget, UpdateContext, NamedLocalIdentifiable
+from LumensalisCP.commonCP import *
+
+#from LumensalisCP.IOContext import *
+from LumensalisCP.Eval.common import *
+from LumensalisCP.Identity.Local import NamedLocalIdentifiableContainerMixin, NamedLocalIdentifiableList, NamedLocalIdentifiable
 
 if TYPE_CHECKING:
     import LumensalisCP.Main.Manager
     from  LumensalisCP.Main.Manager import MainManager
-import busio
-#import weakref
+
+#############################################################################
 
 class I2CDeviceInitArgs(TypedDict):
     i2c: busio.I2C
@@ -29,7 +30,7 @@ class I2CDevice( NamedLocalIdentifiable ):
         self.__main = main
         self.__latestUpdateIndex:int = -1
         self.__address = address
-        self.__updates = 0
+        self.__updates = 0  
         self.__updateInterval = updateInterval
         self.__nextUpdate:float = main.when
         main._addI2CDevice(self)
@@ -49,9 +50,15 @@ class I2CDevice( NamedLocalIdentifiable ):
     @property
     def main(self): return self.__main
 
+    @property
+    def address(self) -> int|None: return self.__address
+    
+    @property
+    def updates(self) -> int: return self.__updates
+    
     
     def derivedUpdateTarget(self, context:EvaluationContext) -> None:
-        self.raiseNotImplemented( 'derivedUpdateTarget' )
+        raise NotImplementedError( 'derivedUpdateTarget' )
 
     def updateTarget(self, context:EvaluationContext) -> bool:
         if not self.__updateInterval: return False
@@ -62,7 +69,7 @@ class I2CDevice( NamedLocalIdentifiable ):
         if self.__latestUpdateIndex == context.updateIndex:
             return False
         with context.subFrame('updateTarget',self.name) as frame:
-            self.__updates += 1
+            self.__updates += 1  # pylint: disable=unused-private-member
             self.__latestUpdateIndex = context.updateIndex
             self.__nextUpdate = now + self.__updateInterval
             frame.snap("callDerived")
@@ -80,7 +87,7 @@ class I2CInputSource( InputSource ):
     def parentTarget(self): return self._wrTarget
     
     
-class I2COutputTarget( NamedOutputTarget ):
+class I2COutputTarget( NamedOutputTarget ): # pylint: disable=abstract-method
     def __init__(self, target:I2CDevice, **kwargs ):
         super().__init__(**kwargs)
         self._wrTarget = target # weakref.ref(target)

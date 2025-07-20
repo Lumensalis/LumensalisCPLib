@@ -2,7 +2,7 @@
 from LumensalisCP.Triggers import NamedLocalIdentifiable
 from LumensalisCP.Identity.Local import NamedLocalIdentifiableContainerMixin, NamedLocalIdentifiableList
 from .Scene import Scene, SceneTask
-from LumensalisCP.Main.Expressions import EvaluationContext
+from LumensalisCP.Eval.Expressions import EvaluationContext
 
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *

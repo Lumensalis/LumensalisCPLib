@@ -1,11 +1,21 @@
+from __future__ import annotations
+
+from random import random as randomZeroToOne, randint
+# pylint: disable=unused-argument
+
 from LumensalisCP.IOContext import *
 
-import rainbowio
-from random import random as randomZeroToOne, randint
+type RawOrEvaluatable[T] = Union[T, Evaluatable]
 
-def wheel255( val:float ): ...
+type _RGBTuple = tuple[float,float,float]
+type AnyRawLightValue = Union[
+        int, float, bool,
+        _RGBTuple,
+        # List [float],
+        str, RGB
+    ] 
 
-def wheel1( val:float ): ...
+type AnyLightValue = RawOrEvaluatable[ AnyRawLightValue]
 
 class RGB(object):
     
@@ -42,12 +52,6 @@ class RGB(object):
     def __repr__(self) -> str: ...
     def __str__(self) -> str: ...
 
-type AnyLightValue = Union[
-        int, float, bool,
-        Tuple[float,float,float],
-        List [float],
-    str, RGB, Evaluatable
-    ] 
 
 class LightValueBase(object):
     def __init__(self, *args, **kwds): pass
@@ -123,3 +127,6 @@ class LightValueNeoRGB(LightValueBase):
 
 
 #############################################################################
+def wheel255( val:float ): ...
+
+def wheel1( val:float ): ...

@@ -1,4 +1,4 @@
-from LumensalisCP.Main.Expressions import *
+from LumensalisCP.Eval.Expressions import *
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.common import safeFmt
 
