@@ -3,7 +3,6 @@ import busio
 from LumensalisCP.Controllers.ConfigurableBase import ControllerConfigurableChildBase
 
 from LumensalisCP.IOContext import NamedOutputTarget, EvaluationContext, InputSource, UpdateContext
-from LumensalisCP.Main.Updates import Refreshable
 
 from LumensalisCP.Shields.Pins import PinHolder, PinProxy
 from LumensalisCP.Shields.Base import ShieldBase, ShieldI2CBase
@@ -18,7 +17,7 @@ class D1MiniPinProxy(PinProxy):
     pass
   
     
-class D1MiniBoardBase(ShieldI2CBase):
+class D1MiniBoardBase(ShieldI2CBase): # pylint: disable=abstract-method
     def __init__(self, **kwds ):
         
         super().__init__( **kwds )

@@ -11,11 +11,11 @@ class LocalIdentifiable(object):
     __nextId = 1
     
     @staticmethod
-    def __getNextId( self2 ):
+    def __getNextId( self2 ): # pylint: disable=unused-argument
         # TODO : thread safe / groups
-        id = LocalIdentifiable.__nextId
+        nextId = LocalIdentifiable.__nextId
         LocalIdentifiable.__nextId += 1
-        return id
+        return nextId
 
     def __init__( self ):
         self.__localId = self.__getNextId(self)
@@ -28,7 +28,7 @@ class NamedLocalIdentifiableInterface:
     def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None: ...
 
     def nliGetContainers(self) -> Iterable[NamedLocalIdentifiableContainerMixin]|None: ...
-    def nliSetContainer(self, container:NamedLocalIdentifiableContainerMixin): ...
+    def nliSetContainer(self, container:NamedLocalIdentifiableContainerMixin): ...  # pylint: disable=unused-argument
             
 class NamedLocalIdentifiable(LocalIdentifiable,NamedLocalIdentifiableInterface,Debuggable):
     
@@ -57,23 +57,23 @@ class NamedLocalIdentifiable(LocalIdentifiable,NamedLocalIdentifiableInterface,D
     #########################################################################
 
     #__nliContainerRef:ReferenceType["NamedLocalIdentifiableContainerMixin"]
-    __nliContaining:list[ReferenceType['NamedLocalIdentifiableContainerMixin']]|None = None
+    __nliContaining:list[ReferenceType[NamedLocalIdentifiableContainerMixin]]|None = None
     __name:str|None
     
-    def nliGetContaining(self) -> Iterable["NamedLocalIdentifiableContainerMixin"]|None:
+    def nliGetContaining(self) -> Iterable[NamedLocalIdentifiableContainerMixin]|None:
         c = self.__nliContaining
         if c is None: return None
         for i in c:
             v = i()
             if v is not None: yield v
         
-    def nliGetChildren(self) -> Iterable['NamedLocalIdentifiable']|None:
+    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None:
         return None
 
-    def nliGetContainers(self) -> Iterable["NamedLocalIdentifiableContainerMixin"]|None:
+    def nliGetContainers(self) -> Iterable[NamedLocalIdentifiableContainerMixin]|None:
         return None
 
-    def nliSetContainer(self, container:"NamedLocalIdentifiableContainerMixin"):
+    def nliSetContainer(self, container:NamedLocalIdentifiableContainerMixin):
         assert container is not None
         #oldContainer = self.nliGetContaining()
         #if oldContainer is not None:
@@ -91,14 +91,14 @@ class NamedLocalIdentifiable(LocalIdentifiable,NamedLocalIdentifiableInterface,D
     def nliDynamicName(self) -> str:
         return self.__name or f"{self.__class__.__name__}@{id(self):X}"
 
-    def nliFind(self,name:str) -> "NamedLocalIdentifiable|NamedLocalIdentifiableContainerMixin| None":
-        containers = self.nliGetContainers()
+    def nliFind(self,name:str) -> NamedLocalIdentifiable|NamedLocalIdentifiableContainerMixin| None:
+        containers = self.nliGetContainers() # pylint: disable=assignment-from-none
         if containers is not None:
             for container in containers:
                 if container.containerName == name:
                     return container
                 
-        children = self.nliGetChildren()
+        children = self.nliGetChildren() # pylint: disable=assignment-from-none
         if children is not None:
             for child in children:
                 if child.name == name:

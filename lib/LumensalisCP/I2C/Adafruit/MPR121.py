@@ -127,13 +127,13 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
 
             
     def __updateUnusedPinMask(self):
-            unusedPinsMask = 0
-            usedPinsMask = 0
-            for pin in range(MPR121.MPR121_PINS):
-                if self.__inputs[pin] is None:
-                    unusedPinsMask |= ( 1 << pin )
-                else:
-                    usedPinsMask |= ( 1 << pin )
-            self.__unusedPinsMask = unusedPinsMask
-            self.__usedPinsMask = usedPinsMask
-            
+        unusedPinsMask = 0
+        usedPinsMask = 0
+        for pin in range(MPR121.MPR121_PINS):
+            if self.__inputs[pin] is None:
+                unusedPinsMask |= ( 1 << pin )
+            else:
+                usedPinsMask |= ( 1 << pin )
+        self.__unusedPinsMask = unusedPinsMask
+        self.__usedPinsMask = usedPinsMask
+        

@@ -1,5 +1,6 @@
 
 
+from __future__ import annotations
 import asyncio.lock  # type: ignore # pylint: disable=import-error,no-name-in-module
 
 from LumensalisCP.common import *
@@ -44,17 +45,17 @@ class Releasable(object):
         return entry # type: ignore
         
     @classmethod
-    def _make_getFree(cls, rp:ReleasablePool):
+    def _make_getFree(cls, rp:ReleasablePool) -> Self | None:
         if rp._freeHead is not None:
             entry = rp._freeHead
             rp._freeHead = entry._nextFree
             entry._nextFree = None
-            return entry
+            return entry # type: ignore
         rp._allocs += 1
         return None            
 
     @classmethod
-    def _makeFinish(cls, rp:ReleasablePool, entry ):
+    def _makeFinish(cls, rp:ReleasablePool, entry ) -> Self:
         assert entry._nextFree is None  and not entry._inUse
         entry._inUse = True
         entry._rIndex = rp._rIndex

@@ -1,21 +1,22 @@
 
-import LumensalisCP.Main.Manager
+from __future__ import annotations
+
 from LumensalisCP.commonPreManager import *
-
-from LumensalisCP.Main import Manager
-
 from .PreMainConfig import pmc_mainLoopControl, pmc_gcManager
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
 
 
+# pylint: disable=protected-access, bad-indentation, missing-function-docstring
+# pylint: disable=no-member, redefined-builtin, unused-argument
+
 mlc = pmc_mainLoopControl
     
 def MainManager_nliContainers(self:MainManager) -> Iterable[NamedLocalIdentifiableContainerMixin]|None:
     yield self.shields
-    yield self._i2cDevicesContainer
-    yield self.controllers
+    yield self.i2cDevicesContainer
+    yield self.controlPanels
 
 def MainManager_nliGetChildren(self:MainManager) -> Iterable[NamedLocalIdentifiable]|None:
     yield self._scenes
@@ -61,11 +62,12 @@ def MainManager_handleWsChanges( self:MainManager, changes:dict ):
         # print( f"handleWsChanges {changes}")
         key = changes['name']
         val = changes['value']
-        v = self._controlVariables.get(key,None)
+        defaultPanel = self.controlPanels[0]
+        v = defaultPanel.get(key,None)
         if v is not None:
             v.setFromWs( val )
         else:
-            self.warnOut( f"missing cv {key} in {self._controlVariables.keys()} for wsChanges {changes}")
+            self.warnOut( f"missing cv {key} in {defaultPanel.keys()} for wsChanges {changes}")
 
 def MainManager_singleLoop( self:MainManager ): #, activeFrame:ProfileFrameBase):
     with self.getNextFrame() as activeFrame:
@@ -74,7 +76,7 @@ def MainManager_singleLoop( self:MainManager ): #, activeFrame:ProfileFrameBase)
         activeFrame.snap( 'preTimers' )
         entry = ProfileSnapEntry.makeEntry( "foo", self.when, "bar" )
         entry.release()
-
+        
         activeFrame.snap( 'timers' )
         self._timers.update( context )
         if not mlc.MINIMUM_LOOP:
@@ -129,9 +131,10 @@ def MainManager_dumpLoopTimings( self:MainManager, count, minE=None, minF=None, 
             frame = self.profiler.timingForUpdate( i )
             
             if frame is not None:
-                frameData =  frame.jsonData(minE = minE, minF = minF, **kwds )
-                if frameData is not None:
-                    rv.append( frameData )
+                ##frameData =  frame.jsonData(minE = minE, minF = minF, **kwds )
+                #if frameData is not None:
+                #    rv.append( frameData )
+                pass
             i -= 1
         return rv
     
@@ -156,4 +159,3 @@ def MainManager_getNextFrame(self:MainManager) ->ProfileFrameBase:
         assert isinstance( newFrame, ProfileFrameBase )
         context.baseFrame  = context.activeFrame = newFrame
         return newFrame
-        

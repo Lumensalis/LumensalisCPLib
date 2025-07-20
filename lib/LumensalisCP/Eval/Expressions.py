@@ -20,7 +20,7 @@ class EvaluationContext(UpdateContext):
         
     fetchCurrentContext = UpdateContext.fetchCurrentContext
     
-    def reset( self, when:TimeInMS|None = None ):
+    def reset( self, when:TimeInSeconds|None = None ):
         UpdateContext.reset(self,when)
         #self.__changedTerms.clear()
     

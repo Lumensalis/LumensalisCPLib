@@ -1,27 +1,30 @@
 
-from LumensalisCP.Identity.Local import NamedLocalIdentifiableList
-from LumensalisCP.common import *
-from LumensalisCP.commonCP import *
-from LumensalisCP.CPTyping import *
 
 import busio
 import board
+
+from LumensalisCP.Eval.common import *
+from LumensalisCP.commonCP import *
+
 from LumensalisCP.I2C.I2CDevice import I2CDevice
+
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
     from LumensalisCP.Debug import Debuggable
 
 class I2CProvider(Debuggable):
-    def __init__(self,config, main:MainManager):
+    def __init__(self,config, main:'MainManager'):
+        super().__init__()
         
-        
-        self._i2cDevicesContainer = NamedLocalIdentifiableList(name='i2cDevices',parent=main)
+        self.i2cDevicesContainer = NamedLocalIdentifiableList(name='i2cDevices',parent=main)
         
         self.infoOut( "I2CProvider init %r, %r", config, main )
-        import LumensalisCP.I2C.I2CFactory
-        import LumensalisCP.I2C.Adafruit.AdafruitI2CFactory
-        self.adafruitFactory =  LumensalisCP.I2C.Adafruit.AdafruitI2CFactory.AdafruitFactory(main=main)
-        self.i2cFactory =  LumensalisCP.I2C.I2CFactory.I2CFactory(main=main)
+        # pylint: disable=import-outside-toplevel]
+        from LumensalisCP.I2C import I2CFactory 
+        from LumensalisCP.I2C.Adafruit import AdafruitI2CFactory
+        
+        self.adafruitFactory = AdafruitI2CFactory.AdafruitFactory(main=main)
+        self.i2cFactory = I2CFactory.I2CFactory(main=main)
         self.__i2cChannels:dict[tuple[int|str,int|str],busio.I2C] = {}
 
         self.__i2cDevices:List[I2CDevice] = []
@@ -40,20 +43,21 @@ class I2CProvider(Debuggable):
         #            if ENABLE_EEPROM_IDENTITY:
         #                eeprom = adafruit_24lc32.EEPROM_I2C(i2c_bus=i2c, max_size=1024)
         #                self.__identityI2C = ControllerNVM( eeprom )
-                except Exception as inst:
-                    SHOW_EXCEPTION( inst, f"I2C identity exception ")
+                except Exception as inst: # pylint: disable=broad-except
+                    SHOW_EXCEPTION( inst, "I2C identity exception ")
 
 
-    def asPin(self, pin ) -> microcontroller.Pin: ...
+    def asPin(self, pin ) -> microcontroller.Pin: 
+        raise NotImplementedError
     
     @property
-    def defaultI2C(self): return self.__defaultI2C or board.I2C()
+    def defaultI2C(self): return self.__defaultI2C or board.I2C() # pylint: disable=no-member
             
     def _addI2CDevice(self, target:I2CDevice ):
         self.__i2cDevices.append(target)
-        target.nliSetContainer(self._i2cDevicesContainer)
+        target.nliSetContainer(self.i2cDevicesContainer)
    
-    def _addBoardI2C( self, board, i2c:busio.I2C ):
+    def _addBoardI2C( self, board, i2c:busio.I2C ): # pylint: disable=unused-argument,redefined-outer-name
         if self.__defaultI2C is None:
             self.__defaultI2C = i2c
 

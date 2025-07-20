@@ -1,23 +1,30 @@
-from LumensalisCP.I2C.I2CDevice import I2CDevice
+from __future__ import annotations
+
+# pylint: disable=unused-argument,super-init-not-called,redefined-builtin,unused-private-member
+# # missing-class-docstring,missing-function-docstring
+
+import busio
+
 import LumensalisCP.Lights
-from LumensalisCP.commonPreManager import *
-
-from LumensalisCP.Main import PreMainConfig
-
 import LumensalisCP.I2C.I2CFactory
 import LumensalisCP.I2C.Adafruit.AdafruitI2CFactory
-import busio
+import LumensalisCP.Lights.DMXManager
+
+from LumensalisCP.commonPreManager import *
+from LumensalisCP.I2C.I2CDevice import I2CDevice
+
+from LumensalisCP.Main import PreMainConfig
+from LumensalisCP.Main.Dependents import MainRef
+from LumensalisCP.Main.ControlVariables import ControlPanel, ControlVariable 
+
 from LumensalisCP.Lights.DMXManager import DMXManager
 
 from LumensalisCP.Shields.Base import ShieldBase
-from LumensalisCP.Main.ControlVariables import Controller, ControlVariable 
 
 from LumensalisCP.HTTP.BasicServer import BasicServer
 from LumensalisCP.Audio import Audio
 from TerrainTronics.Factory import TerrainTronicsFactory
 
-from LumensalisCP.Main.Dependents import MainRef
-import LumensalisCP.Lights.DMXManager
 
 class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     
@@ -26,12 +33,17 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     socketPool : Any # SocketPool
     profiler: Profiler
     shields:NamedLocalIdentifiableList[ShieldBase]
-    defaultController:Controller
-    controllers:NamedLocalIdentifiableList[Controller]
+    defaultController:ControlPanel
+    controlPanels:NamedLocalIdentifiableList[ControlPanel]
     
+            
+    cyclesPerSecond:int
+    cycleDuration:TimeInSeconds
     
     __anonInputs : NamedLocalIdentifiableList[InputSource]
     __anonOutputs : NamedLocalIdentifiableList[NamedOutputTarget]
+    __cycle: int
+    __deferredTasks: collections.deque
     __latestSleepDuration:TimeSpanInSeconds
     _monitored:list[InputSource]
     _nextWait:TimeInSeconds
@@ -91,19 +103,19 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     
     def callLater( self, task ): pass
 
-    def launchProject(self, globals:Optional[dict]=None, verbose:bool = False ): ...
+    def launchProject(self, globals:Optional[dict]=None, verbose:bool = False ): ... 
             
     def addExitTask(self,task:ExitTask|Callable): pass
         
     def _addI2CDevice(self, target:I2CDevice ): pass
    
-   # TODO: mirror ControlVariable.__init__ 
+    # TODO: mirror ControlVariable.__init__ 
     def addControlVariable( self, *args, **kwds ) -> ControlVariable: pass
     
     # TODO: mirror IntermediateVariable.__init__ 
     def addIntermediateVariable( self, *args, **kwds ) -> IntermediateVariable: pass
         
-    def addScene( self, name:Optional[str]=None, *args, **kwds ) -> Scene: pass
+    def addScene( self, name:Optional[str]=None, *args, **kwds ) -> Scene: ... # pylint: disable=keyword-arg-before-vararg
     
     def addScenes( self, n:int ) -> list[Scene]: pass
     
@@ -139,4 +151,4 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
     def renameIdentifiables(self, d:dict[str,Any], verbose:bool = False ): ...
     
-def getMainManager() -> MainManager: ...
+    def __runDeferredTasks(self): ...

@@ -1,13 +1,19 @@
 from __future__ import annotations
+
 import traceback
-import json, math
-import LumensalisCP
+import json
+import math
+import adafruit_itertools as itertools  # type: ignore # pylint: disable=import-error
 
 # pylint: disable=unused-argument
+
+import LumensalisCP
 
 from LumensalisCP.CPTyping import *
 from LumensalisCP.Debug import Debuggable
 import LumensalisCP.pyCp.weakref as weakref
+from LumensalisCP.Main.Manager import MainManager
+import LumensalisCP.util.Singleton 
 
 # Common types used throughout the library
 # 
@@ -43,5 +49,5 @@ def toZeroToOne( value:Any ) -> float: ...
 def withinZeroToOne( value:Any ) -> ZeroToOne: ...
 
 def SHOW_EXCEPTION( inst:Exception, fmt:str, *args )-> None: ...
-if TYPE_CHECKING:
-    from LumensalisCP.Main.Manager import MainManager, getMainManager
+
+getMainManager: LumensalisCP.util.Singleton.Singleton[MainManager] 

@@ -1,28 +1,24 @@
 from __future__ import annotations
+
+from typing import TypeVar, Generic
 from LumensalisCP.common import *
 from LumensalisCP.Debug import Debuggable
 import LumensalisCP.pyCp.weakref as lcpWeakref
 from LumensalisCP.CPTyping import ReferenceType, Optional, Iterable
-from typing import TypeVar, Generic
+
+# pylint: disable=unused-argument, super-init-not-called, unused-private-member
 
 from LumensalisCP.pyCp.collections import UserList
 
 class LocalIdentifiable(object):
     
-    __nextId = 1
-    
-    @staticmethod
-    def __getNextId( self2 ) -> int: ...
-
     def __init__( self ): ...
         
     @property
     def localId(self) -> int: ...
     
     
-_NLIT_CO = TypeVar('_NLIT_CO',
-                   covariant=True, 
-                   bound=NamedLocalIdentifiable)
+
 
 class NamedLocalIdentifiableInterface:
     def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None: ...
@@ -33,6 +29,10 @@ class NamedLocalIdentifiableInterface:
     
     #def nliSetContainer(self, container:NamedLocalIdentifiableContainerMixin): ...
 
+_NLIT_co = TypeVar('_NLIT_co',
+                   covariant=True, 
+                   #contravariant=False,
+                   bound=NamedLocalIdentifiableInterface)
             
 class NamedLocalIdentifiable(LocalIdentifiable,NamedLocalIdentifiableInterface,Debuggable): 
     
@@ -67,16 +67,16 @@ class NamedLocalIdentifiable(LocalIdentifiable,NamedLocalIdentifiableInterface,D
     
 #############################################################################
 
-class NamedLocalIdentifiableContainerMixin[_NLIT_CO = NamedLocalIdentifiable]( NamedLocalIdentifiableInterface ):
+class NamedLocalIdentifiableContainerMixin[_NLIT_co]( NamedLocalIdentifiableInterface ):
     @property
     def containerName(self) -> str: ...
     @property
     def name(self) -> str: ...
     
-    def nliRenameChild( self, child:_NLIT_CO, name:str ): ...
-    def nliAddChild( self, child:_NLIT_CO ) -> None: ...
-    def nliRemoveChild( self, child:_NLIT_CO ) -> None: ...
-    def nliContainsChild( self, child:_NLIT_CO ) -> bool: ...
+    def nliRenameChild( self, child:_NLIT_co, name:str ): ...
+    def nliAddChild( self, child:_NLIT_co ) -> None: ...
+    def nliRemoveChild( self, child:_NLIT_co ) -> None: ...
+    def nliContainsChild( self, child:_NLIT_co ) -> bool: ...
 
     
 #############################################################################

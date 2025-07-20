@@ -1,14 +1,9 @@
-from LumensalisCP.Audio import MainChild
-from LumensalisCP.Identity.Local import NamedLocalIdentifiableList, NamedLocalIdentifiableContainerMixin
-import LumensalisCP.Main
-from LumensalisCP.Inputs import InputSource
-from LumensalisCP.Eval.Expressions import  EvaluationContext
- 
-from LumensalisCP.Main.Updates import UpdateContext
-from LumensalisCP.Outputs import OutputTarget, NamedOutputTarget
-from LumensalisCP.CPTyping  import *
-import LumensalisCP.Main
+from LumensalisCP.Eval.common import *
 
+from LumensalisCP.Main.Dependents import MainChild
+import LumensalisCP.Main.Manager
+
+# pylint: disable=redefined-builtin,unused-variable,unused-argument,broad-exception-caught
 class ControlVariable(InputSource):
     
     def __init__(self,  startingValue=None,
@@ -33,7 +28,7 @@ class ControlVariable(InputSource):
     
     def setFromWs( self, value ):
         if self.kind == 'RGB':
-            if type(value) == str:
+            if isinstance(value, str):
                 try:
                     rgb = ( int(value[1:3], 16), int(value[3:5], 16), int(value[5:7], 16) )
                     value = rgb
@@ -85,9 +80,9 @@ class IntermediateVariable( InputSource, OutputTarget ):
     
 #############################################################################
 
-class Controller( MainChild ):
+class ControlPanel( MainChild ):
     
-    def __init__( self, main:"LumensalisCP.Main.Manager.MainManager", name:Optional[str]=None ):
+    def __init__( self, main:'LumensalisCP.Main.Manager.MainManager', name:Optional[str]=None ): # type: ignore[no-untyped-def]
         super().__init__( main=main, name=name )
 
         self._controlVariables = NamedLocalIdentifiableList(name='controlVariables',parent=self)
@@ -108,4 +103,4 @@ class Controller( MainChild ):
     def nliGetContainers(self) -> Iterable[NamedLocalIdentifiableContainerMixin]|None:
         yield self._controlVariables
         
-__all__ = [ Controller, ControlVariable, IntermediateVariable ]
+__all__ = [ 'ControlPanel', 'ControlVariable', 'IntermediateVariable' ]

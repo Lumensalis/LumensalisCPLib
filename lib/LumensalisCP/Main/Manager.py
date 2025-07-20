@@ -1,24 +1,18 @@
 from __future__ import annotations
 
+import wifi, displayio
+
 import LumensalisCP.Audio
 import LumensalisCP.Main.Dependents
 from LumensalisCP.commonPreManager import *
-from LumensalisCP.commonPreManager import pmc_mainLoopControl
-
 from LumensalisCP.Main import PreMainConfig
 
 from TerrainTronics.Factory import TerrainTronicsFactory
-import wifi, displayio
 
-import LumensalisCP.Main.ProfilerRL
-LumensalisCP.Main.ProfilerRL._rl_setFixedOverheads()
 from LumensalisCP.Shields.Base import ShieldBase
 
-def _early_collect(tag:str):
-    PreMainConfig.pmc_gcManager.runCollection(force=True)
 
-
-from LumensalisCP.Main.ControlVariables import Controller, ControlVariable 
+from LumensalisCP.Main.ControlVariables import ControlPanel, ControlVariable 
 import LumensalisCP.Audio
 from LumensalisCP.Main import ManagerRL
 
@@ -28,13 +22,20 @@ if TYPE_CHECKING:
     from LumensalisCP.Lights.DMXManager import DMXManager
     import LumensalisCP.Main.Manager
     
+
+import LumensalisCP.Main.ProfilerRL
+LumensalisCP.Main.ProfilerRL._rl_setFixedOverheads()
+
+def _early_collect(tag:str):
+    PreMainConfig.pmc_gcManager.runCollection(force=True)
+
 class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     
     theManager : "MainManager|None" = None
     ENABLE_EEPROM_IDENTITY = False
     profiler: Profiler
     shields:NamedLocalIdentifiableList[ShieldBase]
-    controllers:NamedLocalIdentifiableList[Controller]
+    controlPanels:NamedLocalIdentifiableList[ControlPanel]
     _privateCurrentContext:EvaluationContext
     
     @staticmethod
@@ -64,6 +65,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         #self.__startNs = time.monotonic_ns()
         self.__startNow = time.monotonic()
         self._when:TimeInSeconds = self.getNewNow()
+        getMainManager.set(self.__getMMSelf())
 
         from LumensalisCP.Main.Dependents import MainRef  # pylint: disable=
         MainRef._theManager = self  # type: ignore
@@ -97,7 +99,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self.cycleDuration = 0.01
 
         self._webServer = None
-        self.__deferredTasks = collections.deque( [], 99, True ) # type: ignore
+        self.__deferredTasks = collections.deque( [], 99, True ) # type: ignore # pylint: disable=all
         self.__audio = None
         self.__dmx :DMXManager|None = None
 
@@ -108,9 +110,9 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
         self.__anonInputs = NamedLocalIdentifiableList(name='inputs',parent=self)
         self.__anonOutputs = NamedLocalIdentifiableList(name='outputs',parent=self)
-        self.controllers = NamedLocalIdentifiableList(name='controllers',parent=self)
-        self.defaultController = Controller(self)
-        self.defaultController.nliSetContainer(self.controllers)
+        self.controlPanels = NamedLocalIdentifiableList(name='controllers',parent=self)
+        self.defaultController = ControlPanel(self)
+        self.defaultController.nliSetContainer(self.controlPanels)
 
         self._monitored = []
 
@@ -361,6 +363,4 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         asyncio.run( main() )
         self.__runExitTasks()
 
-def getMainManager() -> MainManager:
-    assert MainManager.theManager
-    return MainManager.theManager
+

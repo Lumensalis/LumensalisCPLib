@@ -7,10 +7,10 @@ from LumensalisCP.IOContext import *
 
 type RawOrEvaluatable[T] = Union[T, Evaluatable]
 
-type _RGBTuple = tuple[float,float,float]
+type rgbTuple = tuple[float,float,float]
 type AnyRawLightValue = Union[
         int, float, bool,
-        _RGBTuple,
+        rgbTuple,
         # List [float],
         str, RGB
     ] 
@@ -42,7 +42,7 @@ class RGB(object):
         
     def _set(self, r:ZeroToOne, g:ZeroToOne,b:ZeroToOne): ... 
     
-    def _rgbTuple(self) -> Tuple[ZeroToOne,ZeroToOne,ZeroToOne]: ...
+    def rgbTuple(self) -> Tuple[ZeroToOne,ZeroToOne,ZeroToOne]: ...
         
     @staticmethod
     def fromNeoPixelInt( npi:int ) ->"RGB": ...

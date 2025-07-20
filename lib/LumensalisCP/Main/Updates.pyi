@@ -5,14 +5,14 @@ from LumensalisCP.common import *
 from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.Main.Dependents import MainRef
 from LumensalisCP.Inputs import InputSource
-from LumensalisCP.Main.Profiler import ProfileFrame, ProfileSubFrame, ProfileStubFrame
-from LumensalisCP.Main.Releasable import Releasable
+from LumensalisCP.Main.Profiler import ProfileFrame, ProfileFrameBase, ProfileSubFrame, ProfileStubFrame
+from LumensalisCP.util.Releasable import Releasable
 from LumensalisCP.Lights.Values import RGB
 from  LumensalisCP.Eval.Expressions import EvaluationContext
 
 type DirectValue = int|bool|float|RGB
 
-import LumensalisCP.Main.Releasable
+
 # pylint: disable=unused-argument,super-init-not-called
 class UpdateContextDebugManager(Releasable):
     prior_debugEvaluate:bool
@@ -38,8 +38,8 @@ class UpdateContext(Debuggable):
     when: TimeInSeconds 
     updateIndex: int
     #changedSources: List[InputSource]
-    activeFrame: ProfileFrame
-    baseFrame: ProfileFrame
+    activeFrame: ProfileFrameBase
+    baseFrame: ProfileFrameBase
     debugEvaluate:bool
     _debugIndent:int
     
@@ -56,23 +56,12 @@ class UpdateContext(Debuggable):
     
     def nestDebugEvaluate(self, debugEvaluate:bool|None = None ) -> UpdateContextDebugManager: ...
 
-    def reset( self, when:TimeInMS|None = None ): ...
+    def reset( self, when:TimeInSeconds|None = None ): ...
             
 OptionalContextArg = Optional[EvaluationContext]
 
 #############################################################################
 
-#############################################################################
-            
-class RefreshCycle(object):
-    def __init__(self, refreshRate:TimeInSeconds = 0.1): pass
 
-    def ready( self, context:EvaluationContext ) -> bool: pass
-
-class Refreshable( object ):
-    def __init__(self, refreshRate:TimeInSeconds = 0.1 ): pass
-    
-    @final
-    def refresh( self, context:EvaluationContext): pass
 
 #############################################################################

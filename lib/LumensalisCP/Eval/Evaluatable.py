@@ -1,10 +1,10 @@
 from LumensalisCP.common import *
+from LumensalisCP.Debug import Debuggable
 from LumensalisCP.Main.Updates import UpdateContext, OptionalContextArg, DirectValue
 if TYPE_CHECKING:
     from LumensalisCP.Eval.Expressions import EvaluationContext
 
 #############################################################################
-from LumensalisCP.Debug import Debuggable
 class Evaluatable(Debuggable):
     def __init__(self):
         super().__init__()

@@ -1,9 +1,12 @@
+from __future__ import annotations
 
-import LumensalisCP.Main.Updates
-import time, math, asyncio, traceback, os, gc, wifi, displayio
+
+import time, math, asyncio, traceback, os, collections
+import gc # type: ignore
+import wifi, displayio
 import busio, board
 
-import collections
+import LumensalisCP.Main.Updates
 
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
@@ -13,6 +16,7 @@ from LumensalisCP.common import SHOW_EXCEPTION
 import LumensalisCP.Main.Profiler
 
 from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
+# pylint: disable=unused-argument, redefined-outer-name, attribute-defined-outside-init,protected-access,bad-indentation
 
 def _rl_setFixedOverheads():
     LumensalisCP.Main.Profiler.ProfileSnapEntry.gcFixedOverhead = 0
@@ -51,7 +55,8 @@ def ProfileFrameBase_iterSnaps(self:LumensalisCP.Main.Profiler.ProfileFrameBase)
 
 def ProfileFrameBase_writeOn(self:LumensalisCP.Main.Profiler.ProfileFrameBase,config:"LumensalisCP.Main.Profiler.ProfileWriteConfig",indent=''):
     if self.e < config.minSubF and notEnoughMemUsed(self, config): return
-    config.target.write( f"   {_heading(self)}{indent}>{self._name or '??':.22s} {self.name2 or '??':.22s}@{id(self):X} {self.start:0.3f} {getattr(self,'usedGC',0)}b\r\n" )
+    #config.target.write( f"   {_heading(self)}{indent}>{self._name or '??':.22s} {self.name2 or '??':.22s}@{id(self):X} {self.start:0.3f} {getattr(self,'usedGC',0)}b\r\n" )
+    config.target.write( f"   {_heading(self)}{indent}>{self._name or '??':.22s}@{id(self):X} {self.start:0.3f} {getattr(self,'usedGC',0)}b\r\n" )
     indent = indent+" ^ "
     
     
@@ -83,7 +88,7 @@ def ProfileFrame_writeOn(self:LumensalisCP.Main.Profiler.ProfileFrame,config:"Lu
     for entry in self.iterSnaps():        
         ensure( isinstance( entry,  LumensalisCP.Main.Profiler.ProfileSnapEntry ), "entry (%r) is not ProfileSnapEntry", type(entry) )
         ensure( isinstance( config,  LumensalisCP.Main.Profiler.ProfileWriteConfig ) )
-        ensure( type(indent) is str )
+        ensure( isinstance(indent, str ) )
     
         #config.target.write( f" --- [{x}]\r\n");
         #ProfileFrameEntry_writeOn( entry, config, indent )

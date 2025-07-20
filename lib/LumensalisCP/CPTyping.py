@@ -13,6 +13,7 @@ try:
     from typing import Unpack, TypeAlias 
     from typing import Self 
     from typing import Type, TypeAlias, TypedDict, TypeVar
+    from typing import ClassVar
     from typing import NoReturn
     
     from typing import final, overload, override
@@ -141,6 +142,7 @@ except ImportError:
         Iterable = PseudoTypingTBType("Iterable")
         
         
+        ClassVar = PseudoTypingModifier("ClassVar")
         Type = PseudoTypingModifier("Type")
         Union = PseudoTypingModifier("Union")
         ForwardRef = PseudoTypingModifier("ForwardRef")

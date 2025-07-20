@@ -1,15 +1,12 @@
+from __future__ import annotations
 from LumensalisCP.IOContext import *
 
-import LumensalisCP.Main.Manager
+#import LumensalisCP.Main.Manager
 
-from LumensalisCP.Eval.Expressions import Expression, ExpressionTerm
+#from LumensalisCP.Eval.Expressions import Expression, ExpressionTerm
 from LumensalisCP.Main.Dependents import SubManagerBase, ManagerRef
-import LumensalisCP.Main.Manager
-import LumensalisCP.Main.Manager
-import LumensalisCP.Main.Manager
-from LumensalisCP import Main
 from . import Trigger
-from LumensalisCP.util.kwCallback import KWCallback
+#from LumensalisCP.util.kwCallback import KWCallback
 if TYPE_CHECKING:
     import LumensalisCP.Main.Manager
     from LumensalisCP.Main.Manager import MainManager
@@ -22,9 +19,10 @@ class PeriodicTimerManager( SubManagerBase ):
         self.__timerChanges = 0
         self.__updating = False
         self.__timerSorts = 0
+        self.__latestUpdateWhen:TimeInSeconds = 0.0
         
     def update(self, context: EvaluationContext ):
-        if len(self.__timers):
+        if len(self.__timers) > 0:
             #if self.main.cycle % 10 != 0: return
             self.__updating = True
             now = self.main.when
@@ -38,8 +36,8 @@ class PeriodicTimerManager( SubManagerBase ):
                 if t.nextFire <= now:
                     priorNf = t.nextFire
                     try:
-                        t._timerExpired( now, context=context )
-                    except Exception as inst:
+                        t._timerExpired( now, context=context ) # pylint: disable=protected-access
+                    except Exception as inst: # pylint: disable=broad-except
                         t.SHOW_EXCEPTION( inst, "timer expire exception" )
                     #self.enableDbgOut and 
                     if self.enableDbgOut: self.dbgOut( f"timer {t.name} expired, nf={t.nextFire} now={now:.3f} pnf={priorNf}" )
@@ -65,6 +63,9 @@ class PeriodicTimerManager( SubManagerBase ):
             
             self.__timerSorts += 1
 
+    @property
+    def timerSorts(self) -> int: return self.__timerSorts
+    
     def _addTimer( self, timer:"PeriodicTimer" ):
         assert timer not in self.__timers
         self.__timers.append( timer )
@@ -81,6 +82,7 @@ class PeriodicTimerManager( SubManagerBase ):
         
         
 class PeriodicTimer( Trigger ):
+    # pylint: disable=protected-access
     
     def __init__(self, interval:TimeSpanInSeconds=1.0, name:Optional[str] = None, oneShot:bool = False, manager:Optional[PeriodicTimerManager] = None ):
         super().__init__(name=name)
@@ -109,14 +111,11 @@ class PeriodicTimer( Trigger ):
         i = self.__interval
         if isinstance(i,(float,int)):
             return float(i)
-        if type(i) is float: return i # type: ignore
-        if type(i) is int:  return float(i) # type: ignore
-        
         i = i()
-        if type(i) is float: return i
-        if type(i) is int:  return float(i)
+        if isinstance(i,(float,int)):
+            return float(i)
 
-        ensure( type(i) is float )
+        assert isinstance( i, float )
         return i
         
     @property
@@ -134,12 +133,12 @@ class PeriodicTimer( Trigger ):
         """start or restart the time"""
         interval = interval or self.getInterval()
         self.startupOut( f"start {self.name} when = {self.manager.main.when} interval={interval} _nextFire={self.__nextFire}" )
-        next = self.manager.main.when + interval 
+        nextFire = self.manager.main.when + interval 
         if self.__nextFire is None:
-            self.__nextFire = next
+            self.__nextFire = nextFire
             self.manager._addTimer(self)
         else:
-            self.__nextFire = next
+            self.__nextFire = nextFire
             self.manager._updateTimer(self)
     
     @final
@@ -162,12 +161,12 @@ class PeriodicTimer( Trigger ):
         self.manager._updateTimer(self)
 
     def addTaskDef( self, name:Optional[str]=None, autoStart=True):
-        def wrapper( callable:Callable  ):
-            cb = KWCallback.make(callable,name=name)
-            self.addAction( cb )
+        def wrapper( cb:Callable  ):
+            wrapped = KWCallback.make(cb,name=name)
+            self.addAction( wrapped )
             if autoStart:
                 self.start()
-            return cb
+            return wrapped
 
         return wrapper
     #########################################################################
@@ -183,13 +182,13 @@ class PeriodicTimer( Trigger ):
                 self.restart(when=when)
 
 def addPeriodicTaskDef( name:Optional[str]=None, period:TimeSpanInSeconds=1.1,main:Optional[MainManager]=None):
-    def wrapper( callable:Callable  ):
+    def wrapper( cb:Callable  ):
         
-        m = main or MainManager.getManager()
-        cb = KWCallback(callable,name=name)
+        m = main or getMainManager()
+        kwCb = KWCallback(cb,name=name)
         timer = PeriodicTimer( period, manager=m.timers, name=name,)
-        timer.addAction( cb )
+        timer.addAction( kwCb )
         timer.start()
-        return cb
+        return kwCb
 
     return wrapper

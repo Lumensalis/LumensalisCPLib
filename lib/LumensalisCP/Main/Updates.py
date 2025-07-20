@@ -4,8 +4,8 @@ from LumensalisCP.Debug import Debuggable
 from LumensalisCP.common import *
 
 import LumensalisCP.Main
-from LumensalisCP.Main.Profiler import ProfileFrame, ProfileSubFrame, ProfileStubFrame
-import LumensalisCP.Main.Releasable
+from LumensalisCP.Main.Profiler import ProfileFrame, ProfileFrameBase, ProfileSubFrame, ProfileStubFrame
+from LumensalisCP.util.Releasable import Releasable
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
@@ -19,7 +19,7 @@ DirectValue = Type[ Union[int,bool,float,'RGB' ] ]
     
 # pylint: disable=protected-access
 
-class UpdateContextDebugManager(LumensalisCP.Main.Releasable.Releasable):
+class UpdateContextDebugManager(Releasable):
     context:EvaluationContext|None
     
     def __init__( self ):
@@ -71,9 +71,9 @@ class UpdateContextDebugManager(LumensalisCP.Main.Releasable.Releasable):
         self.context = None
         
 class UpdateContext(Debuggable):
-    activeFrame: ProfileFrame
+    activeFrame: ProfileFrameBase
     
-    _stubFrame = ProfileStubFrame( )
+    
     
     def __init__( self, main:MainManager ):
         super().__init__()
@@ -86,6 +86,7 @@ class UpdateContext(Debuggable):
         self.baseFrame = None
         self.debugEvaluate = False
         self._debugIndent = 0
+        self._stubFrame = ProfileStubFrame( self ) # type: ignore[assignment]
 
     @classmethod
     def _patch_fetchCurrentContext(cls, main:MainManager):
@@ -100,7 +101,7 @@ class UpdateContext(Debuggable):
         entry.prepare( self,debugEvaluate if debugEvaluate is not None else self.debugEvaluate)
         return entry
     
-    def reset( self, when:TimeInMS|None = None ):
+    def reset( self, when:TimeInSeconds|None = None ):
         try:
             self.__updateIndex += 1
             #self.__changedSources.clear()
@@ -131,7 +132,7 @@ class UpdateContext(Debuggable):
         return rv
     
     def stubFrame(self, name:Optional[str]=None, name2:Optional[str]=None) -> ProfileStubFrame: # pylint: disable=unused-argument
-        return UpdateContext._stubFrame
+        return self._stubFrame
         
     def addChangedSource( self, changed:InputSource):
         #self.__changedSources.append( changed )
@@ -157,29 +158,6 @@ class UpdateContext(Debuggable):
 #############################################################################
 
 
-#############################################################################
-class RefreshCycle(object):
-    def __init__(self, refreshRate:TimeInSeconds = 0.1): 
-        self.__refreshRate = refreshRate
-        self.__nextRefresh = 0
-        
-    def ready( self, context:EvaluationContext ) -> bool:
-        if self.__nextRefresh >= context.when: return False
-        
-        self.__nextRefresh = context.when + self.__refreshRate
-        return True
-
-class Refreshable( object ):
-    def __init__(self, refreshRate:TimeInSeconds = 0.1 ):
-        self.__refreshCycle = RefreshCycle( refreshRate=refreshRate )
-    
-    @final
-    def refresh( self, context:EvaluationContext):
-        if self.__refreshCycle.ready(context):
-            self.doRefresh(context)
-
-    def doRefresh(self,context:EvaluationContext) -> None:
-        raise NotImplementedError
 
 
 

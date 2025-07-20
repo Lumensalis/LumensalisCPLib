@@ -1,4 +1,4 @@
-import adafruit_motor.servo   # pyright: ignore[reportMissingImports]
+import adafruit_motor.servo   # pyright: ignore[reportMissingImports] # pylint: disable=import-error
 import pwmio
 from LumensalisCP.IOContext import *
 
@@ -7,7 +7,7 @@ from LumensalisCP.Main.Manager import MainManager
 
 from LumensalisCP.Triggers.Timer import PeriodicTimer
 #from LumensalisCP.CPTyping import *
-import math
+
 
 class LocalServo( 
                       #adafruit_motor.servo.Servo,

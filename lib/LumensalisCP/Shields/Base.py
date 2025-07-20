@@ -1,9 +1,9 @@
 
-thisModuleIsIShieldsBase = True
-#import busio
+from LumensalisCP.IOContext import *
+
 from LumensalisCP.Controllers.ConfigurableBase import ControllerConfigurableChildBase
 #from LumensalisCP.Inputs import InputSource
-from LumensalisCP.IOContext import NamedOutputTarget, EvaluationContext, Refreshable
+from LumensalisCP.Main.Refreshable import Refreshable
 
 #from LumensalisCP.Shields.Pins import PinHolder, PinProxy
 #from digitalio import DigitalInOut, Direction
@@ -12,7 +12,7 @@ from LumensalisCP.Inputs import NamedLocalIdentifiable
 from LumensalisCP.Main.I2CProvider import I2CProvider
 
 
-class ShieldBase(ControllerConfigurableChildBase,Refreshable):
+class ShieldBase(ControllerConfigurableChildBase,Refreshable): # pylint: disable=abstract-method
     def __init__(self, refreshRate=0.1, **kwds ):
         super().__init__( **kwds )
         Refreshable.__init__(self,refreshRate=refreshRate)
@@ -29,7 +29,8 @@ class ShieldBase(ControllerConfigurableChildBase,Refreshable):
         self.nliSetContainer( self.main.shields )
         
 
-class ShieldI2CBase(ShieldBase,I2CProvider):
+class ShieldI2CBase(ShieldBase,I2CProvider):  # pylint: disable=abstract-method
+    # pylint: disable=attribute-defined-outside-init
     def __init__(self, refreshRate=0.1, config=None, main=None, **kwds ):
         ShieldBase.__init__( self, refreshRate=refreshRate, config=config, main=main,**kwds )
         
@@ -46,7 +47,7 @@ class ShieldI2CBase(ShieldBase,I2CProvider):
             else:
                 self.infoOut( "initializing busio.I2C, scl=%s, sda=%s", sclPin, sdaPin )
                 i2c =  self.main.addI2C( sdaPin, sclPin ) 
-            assert( i2c is not None )        
+            assert i2c is not None
             
         if i2c is not None:
 
@@ -72,5 +73,3 @@ class ShieldI2CBase(ShieldBase,I2CProvider):
             self.i2c.unlock()
 
         print( "i2c scan complete\n")
-
-        

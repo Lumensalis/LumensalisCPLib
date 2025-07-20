@@ -1,6 +1,7 @@
-import rainbowio
+from __future__ import annotations
 from random import random as randomZeroToOne, randint
 from collections import namedtuple
+import rainbowio
 
 from LumensalisCP.common import *
 from LumensalisCP.Eval.Evaluatable import Evaluatable
@@ -17,27 +18,25 @@ AnyLightValue = Union[
     str
     ] 
 
+#############################################################################
+
 class RGB(object):
     # __slots__ = [ '_r', '_g', '_b' ]
     
-    CONVERTORS = dict(
-        int= lambda v:RGB.fromNeoPixelInt(v),
-        float= lambda v: RGB( v, v, v ),
-        bool= lambda v: RGB( 1,1,1 ) if v else RGB( 0, 0, 0 ),
-        tuple= lambda v: RGB(v[0], v[1], v[2]),
-        list= lambda v: RGB(v[0], v[1], v[2]),
-        str= lambda v: LightValueRGB.lookupColor(v),
-        #**dict([
-        #    [RGB.__class__.__name__, lambda v:v ]
-        #])
-    )
+    CONVERTORS:dict[Type, Callable[[Any],RGB]] = {
+        float : lambda v: RGB( v, v, v ),
+        bool : lambda v: RGB( 1,1,1 ) if v else RGB( 0, 0, 0 ),
+        tuple : lambda v: RGB(v[0], v[1], v[2]),
+        list : lambda v: RGB(v[0], v[1], v[2]),
+    }
+    
     def __init__(self, r:ZeroToOne|tuple|"RGB"=0, g:Optional[ZeroToOne]=None, b:Optional[ZeroToOne]=None ):
         super().__init__()
         if g is None:
-            ensure( type(b) is None, "b must also be None" )
+            assert isinstance( b, type(None)), "b must also be None"
             if r is None:
                 r,g,b = 0.0,0.0,0.0
-            elif type(r) is tuple:
+            elif isinstance(r, tuple):
                 r, b, g = r
             elif isinstance(r,RGB):
                 r, b, g = r.r, r.b, r.g
@@ -75,7 +74,7 @@ class RGB(object):
         self.g = g
         self.b = b
     
-    def _rgbTuple(self) -> Tuple[ZeroToOne,ZeroToOne,ZeroToOne]:
+    def rgbTuple(self) -> Tuple[ZeroToOne,ZeroToOne,ZeroToOne]:
         return (self.r, self.g, self.b)
         
     @staticmethod
@@ -105,12 +104,8 @@ class RGB(object):
     def __str__(self):
         return safeFmt( "(%.3f,%.3f,%.3f)", self.r, self.g, self.b)
     #Point = namedtuple('Point', ['x', 'y'])
-    
-    
-# RGB.CONVERTORS[RGB.__class__.__name__] = lambda v:v
-RGB.CONVERTORS['RGB'] = lambda v:v
 
-
+#############################################################################
 
 class LightValueBase(object):
     def __init__(self, *args, **kwds):
@@ -127,6 +122,8 @@ class LightValueBase(object):
 
     def setLight(self, value) ->None: raise NotImplementedError
 
+#############################################################################
+
 def registerToRGB( cf = lambda v:v):
     def r( cls ):
         # print( f"registerToRGB {cls.__name__}")
@@ -134,6 +131,8 @@ def registerToRGB( cf = lambda v:v):
         #RGB.CONVERTORS[cls.__name__] 
         return cls
     return r
+
+#############################################################################
 
 @registerToRGB( lambda v: v )
 class LightValueRGB(RGB, LightValueBase ):
@@ -156,7 +155,8 @@ class LightValueRGB(RGB, LightValueBase ):
     @staticmethod
     def toRGB( value:AnyLightValue )->RGB:
         
-        convertor = RGB.CONVERTORS.get(type(value).__name__,None)
+        #convertor = RGB.CONVERTORS.get(type(value).__name__,None)
+        convertor = RGB.CONVERTORS.get(type(value),None)
         assert convertor is not None, safeFmt( "cannot convert %r (%s) to RGB", value, type(value))
         return convertor(value)
         
@@ -172,7 +172,7 @@ class LightValueRGB(RGB, LightValueBase ):
         
     def setLight(self, value):
         v = LightValueRGB.toRGB( value )
-        self._set( *v._rgbTuple() )
+        self._set( *v.rgbTuple() )
 
     @staticmethod
     def randomRGB( brightness:ZeroToOne=1) -> RGB:
@@ -184,7 +184,9 @@ class LightValueRGB(RGB, LightValueBase ):
     
     @property
     def asRGB(self) -> RGB:
-        return RGB( self._rgbTuple() )
+        return RGB( self.rgbTuple() )
+
+#############################################################################
 
 @registerToRGB( lambda v: v )
 class LightValueNeoRGB(LightValueBase):
@@ -238,6 +240,8 @@ class LightValueNeoRGB(LightValueBase):
     def asRGB(self) -> RGB:
         return RGB.fromNeoPixelInt( self.__value )
 
-
-
 #############################################################################
+# RGB.CONVERTORS[RGB.__class__.__name__] = lambda v:v
+RGB.CONVERTORS[RGB] = lambda v:v
+RGB.CONVERTORS[int] = RGB.fromNeoPixelInt
+RGB.CONVERTORS[str] = LightValueRGB.lookupColor

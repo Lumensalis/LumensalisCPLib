@@ -1,23 +1,25 @@
+from __future__ import annotations
+
+import busio
+import board
 
 from LumensalisCP.Identity.Local import NamedLocalIdentifiableList
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
-
-import busio
-import board
 from LumensalisCP.I2C.I2CDevice import I2CDevice
 import LumensalisCP.I2C.I2CFactory
 import LumensalisCP.I2C.Adafruit.AdafruitI2CFactory
 
+# pylint: disable=unused-argument,redefined-outer-name
 class I2CProvider(object):
     def __init__(self,config = None, main=None): pass
         
         
-    _i2cDevicesContainer: NamedLocalIdentifiableList
+    i2cDevicesContainer: NamedLocalIdentifiableList[I2CDevice]
     adafruitFactory : LumensalisCP.I2C.Adafruit.AdafruitI2CFactory.AdafruitFactory
     i2cFactory: LumensalisCP.I2C.I2CFactory.I2CFactory
     __i2cChannels:Mapping[Tuple[int,int],busio.I2C]
-    __i2cDevices:List["LumensalisCP.I2C.I2CDevice.I2CDevice"]
+    __i2cDevices:List[I2CDevice]
     __defaultI2C:busio.I2C
     __identityI2C:Any
 

@@ -1,12 +1,13 @@
 import traceback
-import json, math
+import json
+import math
 
 import adafruit_itertools as itertools  # type: ignore # pylint: disable=import-error
 
 import LumensalisCP
 from LumensalisCP.Debug import Debuggable
 from LumensalisCP.CPTyping import *
-
+import LumensalisCP.util.Singleton 
 import LumensalisCP.pyCp.weakref as weakref
 
 # Common types used throughout the library
@@ -107,14 +108,14 @@ def toZeroToOne( value:Any ) -> float:
     """ Convert a value to a float. If the value is already a float, it is returned as is.
     
     """
-    if type(value) is float: return value
-    if type(value) is bool:
+    if isinstance(value, float): return value
+    if isinstance(value, bool):
         return 1.0 if value else 0.0
 
     try:
-        if type(value) is object:
-            if isinstance(value,LumensalisCP.Inputs.InputSource):
-                return float( value.value )  # type: ignore
+    
+        if isinstance(value,LumensalisCP.Inputs.InputSource):
+            return float( value.value )  # type: ignore
 
         return float(value) # type: ignore
     except Exception as inst:
@@ -132,6 +133,5 @@ def SHOW_EXCEPTION( inst, fmt:str, *args ):
     print( "\n".join(traceback.format_exception(inst)) )
     
     
-def getMainManager():
-    raise NotImplementedError    
+getMainManager = LumensalisCP.util.Singleton.Singleton("MainManager")
 #import LumensalisCP.Main.Expressions
