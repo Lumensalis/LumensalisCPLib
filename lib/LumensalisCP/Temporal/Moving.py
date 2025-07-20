@@ -19,7 +19,7 @@ class Moving( NamedOutputTarget, Refreshable ):
     @property
     def speed(self) -> TimeInSeconds|Evaluatable:
         # time required for full range move
-        raise NotImplemented
+        raise NotImplementedError
         
     def __init__(self, name:Optional[str]=None, 
                  speed:TimeInSeconds = 1.0,

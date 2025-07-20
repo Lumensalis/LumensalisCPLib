@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import supervisor, gc, time, sys
-
+import gc # type: ignore
+import time, sys
+import supervisor
 
 class mutableObject(object):
     def __init__(self,**kwds):
@@ -16,16 +17,16 @@ try:
     
     class PseudoTypingExpression(object): # type: ignore
         def __init__(self,*args,**kwds):
-            raise NotImplemented    
+            raise NotImplementedError    
     
     class PseudoTypingType(object):
         def __init__(self,*args,**kwds): 
-            raise NotImplemented
+            raise NotImplementedError
         
     def makeTypingExpression( a ):  # type: ignore
         return a
-        
-except:
+
+except ImportError:
     
     class PseudoTypingExpression(object):
         _typeCache = {}
@@ -36,8 +37,8 @@ except:
             cached = PseudoTypingExpression._typeCache.get(arg,None)
             if cached is not None:
                 return cached
-            atype = type(arg)
-            if atype is type(object):
+            aType = type(arg)
+            if aType is type(object):
                 #print( f"adding class {arg} to cache" )
                 wrapper = PseudoTypingClass(arg)
                 PseudoTypingExpression._typeCache[arg] = wrapper
@@ -51,8 +52,8 @@ except:
                 pt = PseudoTypingPOD( pod )
                 PseudoTypingExpression._typeCache[pod] = pt
                 
-        def __or__(self, next ):
-            return PseudoTypingUnion( self, next )
+        def __or__(self, nextValue ):
+            return PseudoTypingUnion( self, nextValue )
 
     
     class PseudoTypingUnion(PseudoTypingExpression):
@@ -118,7 +119,7 @@ except:
 
 try:
     import weakref
-except:
+except ImportError:
     class weakref_ref(object):
         def __init__(self, target:object ):
             self.__referenced = target
@@ -127,4 +128,3 @@ except:
             return self.__referenced
     
     weakref = mutableObject( ref = weakref_ref)
-    

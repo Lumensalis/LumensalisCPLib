@@ -52,7 +52,7 @@ class Pattern(NamedLocalIdentifiable):
         self.__running = value
 
     def refresh( self, context:EvaluationContext ) -> None:
-        raise NotImplemented
+        raise NotImplementedError
 
     def main(self):
         if Pattern._theManager is None:
@@ -162,7 +162,7 @@ class PatternGenerator(Pattern):
             #light.setValue( self.__step.startValue(lx,context), context=context )
 
     def regenerate(self, context:EvaluationContext) -> Iterator[PatternGeneratorStep]:
-        raise NotImplemented
+        raise NotImplementedError
 
     def setRunning(self, value:bool, context:Optional[EvaluationContext]=None ):
         super().setRunning(value, context)

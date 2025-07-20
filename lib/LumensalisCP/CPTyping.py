@@ -3,18 +3,20 @@ from __future__ import annotations
 try:
 	# imports used only for typing
     #import overrides
-    from typing import IO, List, Any, TextIO, Callable, Tuple, List
+    from typing import Any
+    from typing import List,  Tuple, Sequence
+    from typing import Generator, Iterable, Iterator
     from typing import Dict, Mapping, MutableMapping
-    from typing import Sequence, Generator, Iterable, Iterator
+    from typing import IO, TextIO
+    from typing import Callable
     from typing import Union, ForwardRef, Required, NotRequired, Optional
     from typing import Unpack, TypeAlias 
     from typing import Self 
     from typing import Type, TypeAlias, TypedDict, TypeVar
-    from typing import NoReturn, final
+    from typing import NoReturn
     
-    from typing import overload, override
+    from typing import final, overload, override
     
-    from typing import ByteString
     from functools import wraps
     
     
@@ -23,11 +25,11 @@ try:
     
     class PseudoTypingExpression(object): # type: ignore
         def __init__(self,*args,**kwds):
-            raise NotImplemented    
+            raise NotImplementedError    
     
     class PseudoTypingType(object):
         def __init__(self,*args,**kwds):
-            raise NotImplemented
+            raise NotImplementedError
         
     def makeTypingExpression( a ): # type: ignore
         return a
@@ -63,8 +65,8 @@ except ImportError:
                     pt = PseudoTypingPOD( pod )
                     PseudoTypingExpression._typeCache[pod] = pt
                     
-            def __or__(self, next ):
-                return PseudoTypingUnion( self, next )
+            def __or__(self, nextValue ):
+                return PseudoTypingUnion( self, nextValue )
 
         
         class PseudoTypingUnion(PseudoTypingExpression):
@@ -177,6 +179,4 @@ except ImportError:
 if LCPF_TYPING_IMPORTED:
     # this is _not_ within the initial try/except because we do
     # _not_ want to silently ignore errors
-    raise NotImplemented
-    import abc
-    
+    raise NotImplementedError

@@ -1,0 +1,12 @@
+[project]
+name = "LCPF_lint"
+where = "lib"
+
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = """
+    wildcard-import,
+    unused-wildcard-import,
+    invalid-name,
+    trailing-whitespace
+"""

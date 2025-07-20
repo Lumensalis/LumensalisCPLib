@@ -26,7 +26,7 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm):
         yield( self.name )
 
     def getDerivedValue(self, context:EvaluationContext) -> Any:
-        raise NotImplemented
+        raise NotImplementedError
     
     def onChange(self, cb:Callable):
         self.__onChangedList.append(cb)

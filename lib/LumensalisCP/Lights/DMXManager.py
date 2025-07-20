@@ -29,7 +29,7 @@ class DMXWatcher(InputSource):
             print( f" {self.name} data changed to {self.data}" )
             self.derivedUpdate()
             
-    def derivedUpdate(self) -> None: raise NotImplemented
+    def derivedUpdate(self) -> None: raise NotImplementedError
 
 class DMXDimmerWatcher(DMXWatcher):
     def __init__(self, name, manager:"DMXManager", c1):

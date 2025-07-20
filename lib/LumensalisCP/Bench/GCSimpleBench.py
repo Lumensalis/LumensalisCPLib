@@ -1,12 +1,11 @@
 from __future__ import annotations
-from typing import Optional
+import re
 
 #############################################################################
 
-from .simpleCommon import *
-
-
-from .WriteScope import *
+from LumensalisCP.CPTyping import Optional
+from LumensalisCP.Bench.simpleCommon import *
+from LumensalisCP.Bench.WriteScope import *
 
 #############################################################################
 
@@ -31,7 +30,7 @@ class GCTestAllocScopeSample(object):
 
     def writeOnScope(self, writeScope:WriteScope ):
         if self.mem_alloc == -self.mem_free:
-            writeScope.addDict( dict( used=self.mem_alloc, e=self.when), indentItems=False )
+            writeScope.addDict( dict( used=self.mem_alloc, e=self.when), indentItems=False ) 
         else:
             writeScope.addDict( dict( used=self.mem_alloc, f=self.mem_free, e=self.when), indentItems=False ) 
             
@@ -39,10 +38,10 @@ class GCTestAllocScopeSample(object):
         self.mem_alloc = 0
         self.mem_free = 0
         self.when = 0.0
-        
+
     def sample(self):
-        self.mem_alloc = gc.mem_alloc() # type: ignore
-        self.mem_free = gc.mem_free() # type: ignore
+        self.mem_alloc = gc.mem_alloc() # type: ignore # pylint: disable=no-member
+        self.mem_free = gc.mem_free() # type: ignore # pylint: disable=no-member
         self.when = time.monotonic()
         
     def __sub__(self, rhs:"GCTestAllocScopeSample" ):
@@ -137,9 +136,9 @@ class GCTestAllocScope(GCTestAllocScopeData):
 
 #############################################################################
 class GCTestTarget(object):
-    def __init__(self, name:str, callable:Callable ):
+    def __init__(self, name:str, cb:Callable ):
         self.name = name
-        self.target = callable
+        self.target = cb
     
     def invokeWithArgs( self, *args, **kwds ):
         return self.target(*args,**kwds)
@@ -187,7 +186,7 @@ class GCTestRunConfig(object):
         args = testArgs.args
         kwds = testArgs.kwds
         optimizeArgs = self.optimizeArgs if testArgs.optimizeArgs is None else testArgs.optimizeArgs 
-        callable = target.target
+        cb = target.target
         if args is None:
             if kwds is None:
                 return target.invoke()
@@ -198,12 +197,12 @@ class GCTestRunConfig(object):
                 if optimizeArgs: 
                     argCount = len(args)
                     if argCount == 1: 
-                        return callable( args[0] )
+                        return cb( args[0] )
                     elif argCount == 2: 
-                        return callable( args[0], args[1] )
+                        return cb( args[0], args[1] )
                     elif argCount == 3: 
-                        return callable( args[0], args[1], args[2] )
-                    return callable( *args )
+                        return cb( args[0], args[1], args[2] )
+                    return cb( *args )
                     
                 return target.invokeWithArgs( *args)
             else:
@@ -228,7 +227,7 @@ class GCTestRunResultScope(object):
         return rv
             
     def runInternal(self, config:GCTestRunConfig, args:GCTesterTestParameters ) -> None:
-        raise NotImplemented
+        raise NotImplementedError
 
 class GCTestRunResult(GCTestRunResultScope):
     target:GCTestTarget
@@ -238,7 +237,7 @@ class GCTestRunResult(GCTestRunResultScope):
         super().__init__(config)
         self.target = target
         self.exc = None
-        assert type(target.name) is str
+        assert isinstance(target.name, str)
         self.scopes = [GCTestAllocScope() for _ in range(config.cycles)]
         
     name = property( lambda self: self.target.name )
@@ -251,7 +250,7 @@ class GCTestRunResult(GCTestRunResultScope):
         else:
             for scope in self.scopes:
                 with scope:
-                    for x in range( config.innerCycles ):
+                    for _ in range( config.innerCycles ):
                         config.invoke(self.target, args)
 
     def writeOnScope(self, writeScope:WriteScope ):
@@ -295,7 +294,8 @@ class GCTestRunResults(GCTestRunResultScope):
         for result in self.results:
             try:
                 result.run(config, args)
-            except (Exception,TypeError) as inst:
+            except (Exception,TypeError) as inst: # pylint: disable=broad-exception-caught
+
                 result.exc = inst
                 #raise
 
@@ -307,7 +307,7 @@ class GCTestRunResults(GCTestRunResultScope):
             selfScope.addOrSkipDefaultTaggedItem( "signature", self.signature )
             selfScope.addOrSkipDefaultTaggedItem( "parameters", self.parameters )
             #selfScope.addTaggedItem( "rc", len(self.results)  )
-            if len(self.results):
+            if len(self.results) > 0:
                 selfScope.addOrSkipDefaultTaggedItem( "totalCycles", self.config.totalCycles )
             total = GCTestAllocScopeSample()
             with selfScope.startDict("results",indentItems=True) as resultScope:
@@ -327,7 +327,7 @@ class GCTestRunResults(GCTestRunResultScope):
 
         
 #############################################################################
-import re
+
 _fNameRe = re.compile( r'^<function (.*) at [0-9a-fA-FxX]+>$' ) 
 def _getName( f ):
     fn = getattr( f, '__name__', None )
@@ -342,13 +342,12 @@ def _getName( f ):
 
     fcn = getattr( fnClassName, '__name__', None )
     print( f"f is a {type(f)} : {f}  df={dir(f)} fcn={fcn} fn={fn}" )
-    raise Exception( f"unnamed type {type(f)} : {f}")
-    return fr
+    raise NameError( f"unnamed type {type(f)} : {f}")
 
 
 GCTArg_NO_DEFAULT = "NO_DEFAULT"
 class GCTestSignatureArg(object):
-    def __init__(self, name:str, kind:Any, default=GCTArg_NO_DEFAULT, **kwds ):
+    def __init__(self, name:str, kind:Any, default=GCTArg_NO_DEFAULT, **kwds ): # pylint: disable=unused-argument
         self.name = name
         self.required = default is GCTArg_NO_DEFAULT
         
@@ -391,8 +390,8 @@ class GCTester(object):
                  ):
         self.targets = [GCTestTarget("baseline", baseline or (lambda *args,**kwds:None) )]
         if not isinstance(signature,GCTestSignature):
-            # TODO : this is probably not right?
-            assert type(signature) is list
+            # TODO : this is probably not right? # pylint: disable=fixme
+            assert isinstance(signature, list)
             sigArgs = signature
             signature = GCTestSignature( "???", sigArgs )
             
@@ -409,17 +408,6 @@ class GCTester(object):
             #cycles:int|GCTestRunConfig|None = None, innerCycles:int|None = None,
             #config:GCTestRunConfig|None = None,  
              ) -> GCTestRunResults:
-        if False:
-            if isinstance(cycles,GCTestRunConfig):
-                assert( config is None )
-                config = cycles
-                cycles = None
-                
-            if config is None:
-                config = GCTestRunConfig( cycles=cycles, innerCycles=innerCycles )
-            else:
-                assert cycles is None
-                assert innerCycles is None
         results = GCTestRunResults( self, config, args )
         results.run(config, args)
         return results
@@ -480,7 +468,6 @@ class GCTestSet(object):
     testers: dict[str,GCTesterAndArgs]
     
     def __init__( self ):
-        pass
         self.testers = {}
         
     def addTester(self, name:str, signature:Optional[GCTestSignature|list]=None, tests:Optional[List[Callable]] = None, baseline:Optional[Callable]=None ):
@@ -496,7 +483,7 @@ class GCTestSet(object):
         outerWriteScope = TargetedWriteScope( sys.stdout )
         outerWriteScope.config.detailed = False
         config = GCTestRunConfig(cycles=5, innerCycles=1,optimizeArgs=True)
-        for tag,val in self.testers.items():
+        for _,val in self.testers.items():
             with outerWriteScope.startDict(indentItems=True) as testsScope:
                 result = val.run(config)
                 testsScope.addItem(result)
@@ -504,4 +491,3 @@ class GCTestSet(object):
         
 
 #############################################################################
-

@@ -43,5 +43,5 @@ class EZI2cDisplayIoBase(I2CDevice, EZDisplayBase):
         return label
     
         
-    def _initDisplayInstance(self): raise NotImplemented
+    def _initDisplayInstance(self): raise NotImplementedError
 

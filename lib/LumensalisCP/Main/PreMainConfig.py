@@ -18,6 +18,7 @@ main = ProjectManager()
 
 MUST NOT IMPORT ANY OTHER LUMENSALIS FILES    
 """
+from __future__ import annotations
 from typing import TYPE_CHECKING
 import gc # type: ignore
 import sys
@@ -50,7 +51,7 @@ class _MainLoopControl(object):
 
         
 class GCManager(object):
-    main:MainManager # type: ignore
+    main:MainManager # type: ignore   # pylint: disable=no-member 
     
     def __init__(self):
         self.priorCycle = 0
@@ -69,11 +70,14 @@ class GCManager(object):
         self.minCollectRatio = 0.0035
         
         self.verboseCollect = True
-        self.freeAfterLastCollection = gc.mem_free()
+        self.freeAfterLastCollection = gc.mem_free() # pylint: disable=no-member
         self.PROFILE_MEMORY = False
         self.PROFILE_MEMORY_NESTED = False
         self.PROFILE_MEMORY_ENTRIES = False
         self.SHOW_ZERO_ALLOC_ENTRIES = True
+        
+    def _setMain( self, main:MainManager ):
+        self.main = main
     
     def setFreeThreshold(self, threshold ):
         self.__actualFreeThreshold = max( threshold, self.__absoluteMinimumThreshold )
@@ -83,19 +87,19 @@ class GCManager(object):
         self.__actualFreeThreshold = max( self.__actualFreeThreshold, self.__absoluteMinimumThreshold )
         
     def runCollection(self, 
-                      context=None, # [unused-argument]
-                      when=None, # [unused-argument]
+                      context=None, # [unused-argument] # pylint: disable=unused-argument
+                      when=None, # [unused-argument] # pylint: disable=unused-argument
                       force = False, 
                       show=False): 
         
         now = time.monotonic()
-        mem_free_before = gc.mem_free()
+        mem_free_before = gc.mem_free()  # pylint: disable=no-member
         mem_free_before_elapsed = time.monotonic() - now
         if mem_free_before > self.__actualFreeThreshold and not force:
             # print( f"GC free = {mem_free_before}" )
             if show:
                 now = time.monotonic()
-                mem_alloc_before = gc.mem_alloc()
+                mem_alloc_before = gc.mem_alloc()  # pylint: disable=no-member
                 mem_alloc_before_elapsed = time.monotonic() - now
                 
                 timeBeforeCollect = self.main.getNewNow()
@@ -113,7 +117,7 @@ class GCManager(object):
             return
         
         now = time.monotonic()
-        mem_alloc_before = gc.mem_alloc()
+        mem_alloc_before = gc.mem_alloc()  # pylint: disable=no-member
         mem_alloc_before_elapsed = time.monotonic() - now
         if self.verboseCollect:
             sys.stdout.write( f"{now:.3f} GC collect " )
@@ -124,8 +128,8 @@ class GCManager(object):
         timeAfterCollect = self.main.getNewNow()
         
         currentMs = pmc_mainLoopControl.getMsSinceStart()
-        mem_alloc_after = gc.mem_alloc()
-        mem_free_after = gc.mem_free()
+        mem_alloc_after = gc.mem_alloc()  # pylint: disable=no-member
+        mem_free_after = gc.mem_free()  # pylint: disable=no-member
         
         # calculate elapsed / deltas
         collectElapsed = timeAfterCollect-timeBeforeCollect
@@ -146,7 +150,7 @@ class GCManager(object):
             
 
             newThreshold = self.__actualFreeThreshold
-            reason = ""
+            reason = "" # pylint: disable=unused-variable
             if - delta_free < self.min_delta_free:
                 reason, newThreshold = "min_delta_free", mem_free_before - self.min_delta_free
                 
@@ -172,14 +176,13 @@ class GCManager(object):
 
         #print( f"cycle {cycle}, {len(main.timers.timers)}")
         #print( f"GC collection at {timeBeforeCollect:0.3f} took {timeAfterCollect-timeBeforeCollect:.3f} of {elapsedSincePriorCollectMS/1000.0:.3f} for {delta_cycles} cycles freeing {delta_alloc} ( {delta_alloc/delta_cycles:.1f} per cycle) leaving {mem_alloc_after} used, {mem_free_after} free" )
-            
-            
+
 pmc_gcManager = GCManager()
 pmc_mainLoopControl = _MainLoopControl()
 
 def printElapsed(desc):
-    gcUsed = gc.mem_alloc()
-    gcFree = gc.mem_free()
+    gcUsed = gc.mem_alloc()  # pylint: disable=no-member
+    gcFree = gc.mem_free() # pylint: disable=no-member
     print( "%s : _mlc.getMsSinceStart()=%0.3f | %r used, %r free" % 
           (desc,pmc_mainLoopControl.getMsSinceStart()/1000.0, 
            gcUsed, gcFree

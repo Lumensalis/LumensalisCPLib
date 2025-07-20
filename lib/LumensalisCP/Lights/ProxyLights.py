@@ -17,7 +17,7 @@ class ProxyRGBLightsSource( LightSource ):
         return ProxyRGBLight( self, index, light )
 
     def recalculateForwardValue( self, light:"ProxyRGBLight", context: UpdateContext = None  ):
-        raise NotImplemented
+        raise NotImplementedError
 
 
 #############################################################################

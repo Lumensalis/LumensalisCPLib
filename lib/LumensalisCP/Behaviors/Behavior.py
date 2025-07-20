@@ -1,6 +1,6 @@
 from __future__ import annotations
 from LumensalisCP.Main.Manager import MainManager
-from LumensalisCP.Main.Expressions import EvaluationContext 
+from LumensalisCP.Main.Expressions import EvaluationContext, UpdateContext 
 
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
@@ -71,7 +71,7 @@ class Behavior(Debuggable):
     def setScene(self, scene:str|Scene|None):
         self.__scene = scene
         if scene is not None and self.isActive:
-            context = EvaluationContext.fetchCurrentContext(None)
+            context = UpdateContext.fetchCurrentContext(None)
             context.main.scenes.currentScene = scene
         
     def enter(self, context:EvaluationContext) -> None:
@@ -80,7 +80,7 @@ class Behavior(Debuggable):
         if self.__scene is not None:
             context.main.scenes.currentScene = self.__scene
     
-    def exit(self, context:EvaluationContext) -> None:
+    def exit(self, context:EvaluationContext) -> None: # pylint: disable=unused-argument
         """Exit the behavior. This is called when the behavior is deactivated."""
         if self.enableDbgOut: self.dbgOut("Exiting behavior %s", self.name)    
         

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from LumensalisCP.Debug import Debuggable
 from LumensalisCP.IOContext import *
 from LumensalisCP.Main.Updates import evaluate
@@ -23,13 +25,13 @@ class Fireable( Debuggable ):
         super().__init__()
     
     def fire(self, context:EvaluationContext) -> Any:
-        raise NotImplemented
+        raise NotImplementedError
     
     def unless( self, condition:FireCondition):
         return FireableUnless( condition, self )
     
     def __call__(self, context:Optional[EvaluationContext]=None) ->Any :
-        return self.fire(context=EvaluationContext.fetchCurrentContext(context))
+        return self.fire(context=UpdateContext.fetchCurrentContext(context))
         
 
 class FireableCB( Fireable ):
@@ -73,4 +75,3 @@ class FireableUnless( Fireable ):
             unless = evaluate(self._condition,context ) # type: ignore
             if not unless:
                 return self._action.fire( context )
-        

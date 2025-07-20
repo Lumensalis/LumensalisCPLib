@@ -117,13 +117,13 @@ class NamedLocalIdentifiableContainerMixin( NamedLocalIdentifiableInterface ):
     def nliRenameChild( self, child:NamedLocalIdentifiable, name:str ): pass
     
     def nliAddChild( self, child:NamedLocalIdentifiable ) -> None:
-        raise NotImplemented
+        raise NotImplementedError
     
     def nliRemoveChild( self, child:NamedLocalIdentifiable ) -> None:
-        raise NotImplemented
+        raise NotImplementedError
     
     def nliContainsChild( self, child:NamedLocalIdentifiable ) -> bool:
-        raise NotImplemented
+        raise NotImplementedError
     
 #############################################################################
     

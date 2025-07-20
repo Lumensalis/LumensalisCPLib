@@ -1,3 +1,4 @@
+import LumensalisCP.Main.Manager 
 from LumensalisCP.CPTyping import *
 from LumensalisCP.Debug import Debuggable
 from LumensalisCP.common import *
@@ -5,17 +6,15 @@ from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.Main.Dependents import MainRef
 from LumensalisCP.Inputs import InputSource
 from LumensalisCP.Main.Profiler import ProfileFrame, ProfileSubFrame, ProfileStubFrame
-
+from LumensalisCP.Main.Releasable import Releasable
 from LumensalisCP.Lights.Values import RGB
-from LumensalisCP.Main.Manager import MainManager
-import LumensalisCP.Main.Manager 
 from  LumensalisCP.Main.Expressions import EvaluationContext
-from LumensalisCP.Inputs import InputSource
+
 type DirectValue = int|bool|float|RGB
 
 import LumensalisCP.Main.Releasable
-
-class UpdateContextDebugManager(LumensalisCP.Main.Releasable.Releasable):
+# pylint: disable=unused-argument,super-init-not-called
+class UpdateContextDebugManager(Releasable):
     prior_debugEvaluate:bool
     prior_debugIndent:int
     context:EvaluationContext
@@ -38,7 +37,7 @@ class UpdateContext(Debuggable):
     main: MainManager
     when: TimeInSeconds 
     updateIndex: int
-    changedSources: List[InputSource]
+    #changedSources: List[InputSource]
     activeFrame: ProfileFrame
     baseFrame: ProfileFrame
     debugEvaluate:bool

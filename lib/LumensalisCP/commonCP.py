@@ -4,8 +4,7 @@ Intended to be uses as `from LumensalisCP.commonCP import *`
 
 Partly for convenience and DRY, but also to minimize missing import problem reports
 """
-
-import digitalio, analogio, pwmio
+import io
+import gc, neopixel # pyright: ignore[reportMissingImports,reportMissingModuleSource] # pylint: disable=import-error
+import digitalio, analogio, pwmio, busio
 import supervisor, board, microcontroller
-import neopixel # pyright: ignore[reportMissingImports]
-import io, gc

@@ -3,6 +3,8 @@
 Intended to be used as `from LumensalisCP.Simple import *`
 """
 
+import rainbowio
+
 from LumensalisCP.Demo.DemoCommon import *
 from LumensalisCP.Lights.Values import RGB
 from LumensalisCP.Main.Manager import MainManager
@@ -31,7 +33,6 @@ class ColorSource(InputSource):
     def getDerivedValue(self, context:EvaluationContext) -> RGB:
         return self.getColor(context)
 
-import rainbowio
 
 class ColorWheel(ColorSource):
     def __init__( self, spin:Evaluatable, **kwargs ):
@@ -46,23 +47,23 @@ class ColorWheel(ColorSource):
         return rv
 
 class PipeInputSource(InputSource):
-    def __init__( self, input:Evaluatable, **kwargs ):
+    def __init__( self, inputSource:Evaluatable, **kwargs ):
         super().__init__(**kwargs)
-        self.input = input
+        self.inputSource = inputSource
         
     def getPipedValue(self, context:EvaluationContext, v:Any ) -> Any:
-        raise NotImplemented
+        raise NotImplementedError
     
     def getDerivedValue(self, context:EvaluationContext) -> RGB:
-        v = context.valueOf(self.input)
+        v = context.valueOf(self.inputSource)
         return self.getPipedValue(context,v)
 
 class Z21Adapted(PipeInputSource):
-    def __init__( self, input:Evaluatable, min:Optional[Any]=None,max:Optional[Any]=None,**kwargs ):
-        super().__init__(input,**kwargs)
+    def __init__( self, inputSource:Evaluatable, min:Optional[Any]=None, max_value:Optional[Any]=None, **kwargs ): # pylint: disable=redefined-builtin
+        super().__init__(inputSource,**kwargs)
         self._min = min
-        self._max = max
-        self._span = None if min is None or max is None else max - min
+        self._max = max_value
+        self._span = None if min is None or max_value is None else max_value - min
         
         
     def getPipedValue(self, context:EvaluationContext, v:Any ) -> Any:

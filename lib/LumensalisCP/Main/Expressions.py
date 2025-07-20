@@ -17,15 +17,16 @@ _simpleValueTypes = set([int,bool,float])
 if TYPE_CHECKING:
     from LumensalisCP.Inputs import InputSource
     
-#class EvaluationContext(LumensalisCP.Main.Updates.UpdateContext):
 class EvaluationContext(UpdateContext):    
     
-    def __init__( self, *args, **kwds ):
-        super().__init__( *args, **kwds)
+    #def __init__( self, *args, **kwds ):
+        #super().__init__( *args, **kwds)
         #LumensalisCP.Main.Updates.UpdateContext.__init__(self,*args, **kwds)
         #print( f"NEW EvaluationContext @{id(self):X}")
-        self.__changedTerms : List["ExpressionTerm"] = []
+        #self.__changedTerms : List["ExpressionTerm"] = []
         
+    fetchCurrentContext = UpdateContext.fetchCurrentContext
+    
     def reset( self, when:TimeInMS|None = None ):
         UpdateContext.reset(self,when)
         #self.__changedTerms.clear()
@@ -64,24 +65,6 @@ class EvaluationContext(UpdateContext):
             value = self.valueOf( value() )
         return value        
 
-
-#############################################################################
-
-def makeExpressionConstant(value:Optional[Any]=None) -> "ExpressionTerm" :  # type: ignore
-    raise NotImplemented
-
-def makeBinaryOperation( term1:"ExpressionTerm"=None, term2:"ExpressionTerm"=None, op:Callable[[EvaluationContext,"ExpressionTerm","ExpressionTerm"]] =None ) -> "ExpressionTerm": # type: ignore
-    raise NotImplemented
-
-def makeUnaryOperation( term:"ExpressionTerm"=None, op:Callable[[EvaluationContext,"ExpressionTerm"]] =None)  -> "ExpressionTerm": # type: ignore
-    raise NotImplemented
-
-def TERM( value:Any ) -> "ExpressionTerm" : # type: ignore
-    raise NotImplemented
-
-def ensureIsTerm( term:"ExpressionTerm" ) -> "ExpressionTerm" : # type: ignore
-    raise NotImplemented
-
 #############################################################################
 
 class ExpressionOperationException( Exception ):
@@ -100,18 +83,16 @@ class ExpressionOperationException( Exception ):
             if inst is not None:
                 messageParts.append(" : ")
                 messageParts.append(str(inst))
-        except Exception as formatException:
+        except Exception as formatException: # pylint: disable=broad-exception-caught
             messageParts.append(" formatting exception:")
             messageParts.append(str(formatException))
-            pass
+
         self.fullMessage = message = ''.join(messageParts)
         super().__init__(message)
 
 #############################################################################
 
 class ExpressionTerm(LumensalisCP.Main.Updates.Evaluatable):
-    def __init__(self):
-        super().__init__()
 
     def terms(self) -> Generator["ExpressionTerm"]:
         yield self
@@ -161,7 +142,7 @@ class ExpressionTerm(LumensalisCP.Main.Updates.Evaluatable):
     @override
     def getValue(self, context:Optional[EvaluationContext]=None)  -> Any:
         """ current value of term"""
-        pass
+
 
 def ensureIsTerm( term:ExpressionTerm ) -> ExpressionTerm:
     assert isinstance( term, ExpressionTerm )
@@ -169,9 +150,7 @@ def ensureIsTerm( term:ExpressionTerm ) -> ExpressionTerm:
 
 #############################################################################
 class ExpressionOperation(ExpressionTerm):
-    
-    def __init__(self):
-        super().__init__()
+    pass
 
 #############################################################################
 
@@ -184,9 +163,9 @@ class UnaryOperationBase(ExpressionOperation):
     
     def expressionStrParts(self) -> Generator[str]:
         yield self.OP_STRING
-        yield('(')
+        yield '('
         for p in self.term.expressionStrParts(): yield p
-        yield(')')
+        yield ')'
 
     def terms(self) -> Generator["ExpressionTerm"]:
         for term in super().terms():
@@ -195,12 +174,12 @@ class UnaryOperationBase(ExpressionOperation):
             for t2 in child.terms():
                 yield t2
 
-    def calculate( self, context:EvaluationContext, a:Any ) ->Any:
-        self.raiseNotImplemented('calculate')
+    def calculate( self, context:EvaluationContext, a:Any ) ->Any: # pylint: disable=unused-argument
+        raise NotImplementedError
         
     @override
     def getValue(self, context:Optional[EvaluationContext]=None) -> Any:
-        context = EvaluationContext.fetchCurrentContext(context)
+        context = UpdateContext.fetchCurrentContext(context)
         if context.debugEvaluate:
             with context.nestDebugEvaluate() as nde:
                 v = self.term.getValue( context )
@@ -212,7 +191,8 @@ class UnaryOperationBase(ExpressionOperation):
             a = self.term.getValue( context )
             return  self.calculate( context, a ) 
         except Exception as inst:
-            raise ExpressionOperationException( self, "getValue", inst=inst)
+            raise ExpressionOperationException( self, "getValue", inst=inst) from inst
+        # pylint: disable=broad-exception-caught
 
 #############################################################################
 
@@ -245,20 +225,20 @@ class BinaryOperationBase(ExpressionOperation):
                 yield t2
 
     def expressionStrParts(self) -> Generator[str]:
-        yield('(')
+        yield '('
         for p in self.term1.expressionStrParts(): yield p
-        yield(')')
+        yield ')'
         yield self.OP_STRING
-        yield('(')
+        yield '('
         for p in self.term2.expressionStrParts(): yield p
-        yield(')')
+        yield ')'
 
-    def calculate( self, context:EvaluationContext, a:Any, b:Any ) ->Any:
-        self.raiseNotImplemented( 'calculate' )
+    def calculate( self, context:EvaluationContext, a:Any, b:Any ) ->Any:  # pylint: disable=unused-argument
+        raise NotImplementedError
 
     @override
     def getValue(self, context:Optional[EvaluationContext]=None) -> Any:
-        if context is None: context = EvaluationContext.fetchCurrentContext(context)
+        if context is None: context = UpdateContext.fetchCurrentContext(context)
         if context.debugEvaluate:
             with context.nestDebugEvaluate() as nde:
                 a = self.term1.getValue( context )
@@ -272,7 +252,7 @@ class BinaryOperationBase(ExpressionOperation):
             b = self.term2.getValue( context )
             return  self.calculate( context, a, b ) 
         except Exception as inst:
-            raise ExpressionOperationException( self, "getValue", inst=inst)
+            raise ExpressionOperationException( self, "getValue", inst=inst) from inst
             
             #self.op( context, self.term1.getValue( context ), self.term2.getValue( context ) )
 
@@ -321,7 +301,7 @@ class ExpressionConstant(ExpressionTerm):
         
     @override
     def getValue(self, context:Optional[EvaluationContext]=None) -> Any:
-        if context is None: context = EvaluationContext.fetchCurrentContext(context)
+        if context is None: context = UpdateContext.fetchCurrentContext(context)
         if context.debugEvaluate:
             self.infoOut( "(constant %r)", self.__constantValue)
         return self.__constantValue
@@ -356,8 +336,8 @@ def makeUnaryOperation( term:ExpressionTerm, op:Callable[[EvaluationContext,Expr
 class EdgeTerm(ExpressionOperation):
     def __init__(self, term:ExpressionTerm,
                  reset:Optional[ExpressionTerm]=None,
-                 rising:bool = False,
-                 falling:bool = False,
+                 rising:bool = False,  # pylint: disable=redefined-outer-name
+                 falling:bool = False, # pylint: disable=redefined-outer-name
                  name:Optional[str]=None
                  ):
         super().__init__()
@@ -383,7 +363,7 @@ class EdgeTerm(ExpressionOperation):
     def getValue(self, context:Optional[EvaluationContext] = None ) -> Any:
         assert context is not None
         if context is not None and self.__latestUpdateIndex != context.updateIndex:
-            priorUpdateIndex = self.__latestUpdateIndex
+            # priorUpdateIndex = self.__latestUpdateIndex
             self.__latestUpdateIndex = context.updateIndex
             
             #justReset = False
@@ -412,7 +392,7 @@ class EdgeTerm(ExpressionOperation):
                     
                 if self.enableDbgOut: self.dbgOut( "edge from %s to %s, value=%s at %s", prior, termValue, self.__value, self.__latestUpdateIndex  )
             else:
-                if self.__value != False:
+                if self.__value:
                     if self.enableDbgOut: self.dbgOut( "no edge term=%s at %s", termValue, self.__latestUpdateIndex  )
                 self.__value = False
         return self.__value
@@ -428,9 +408,9 @@ def falling( term:Optional[ExpressionTerm]=None, **kwds )  -> EdgeTerm:
 
     
 class CallbackSource( ExpressionTerm ):
-    def __init__( self, name, callback  ):
+    def __init__( self, name, callback  ): # pylint: disable=unused-argument
         super().__init__()
-        self.__name = name
+        #self.__name = name
         self.__callback = callback
         
 
@@ -490,7 +470,7 @@ class Expression( LumensalisCP.Main.Updates.Evaluatable ):
         return rv
     
     def getValue(self, context:Optional[EvaluationContext]=None ):
-        self.updateValue(EvaluationContext.fetchCurrentContext(context))
+        self.updateValue(UpdateContext.fetchCurrentContext(context))
         return self.__latestValue
     
     def updateValue(self, context:EvaluationContext ) -> bool:

@@ -16,13 +16,19 @@ if TYPE_CHECKING:
     OptionalContextArg = Optional[EvaluationContext]
     DirectValue = Type[ int|bool|float|RGB ]
     
+# pylint: disable=protected-access
+
 class UpdateContextDebugManager(LumensalisCP.Main.Releasable.Releasable):
     context:EvaluationContext|None
     
     def __init__( self ):
+        super().__init__()
         #self.context:EvaluationContext|None = None
         self.debugEvaluate = True
-    
+        self.prior_debugEvaluate = False
+        self.debugIndent = 0
+        self.prior_debugIndent = -0
+
     def prepare( self, context:UpdateContext, debugEvaluate = True ):
         self.context = context # type: ignore
         self.debugEvaluate = debugEvaluate
@@ -43,7 +49,7 @@ class UpdateContextDebugManager(LumensalisCP.Main.Releasable.Releasable):
 
     def say( self, instanceOrMessage:Debuggable|str, *args ) -> None:
         assert self.context is not None
-        if type(instanceOrMessage) is str:
+        if isinstance(instanceOrMessage, str):
             message = instanceOrMessage
             instance = None
         else:
@@ -51,10 +57,9 @@ class UpdateContextDebugManager(LumensalisCP.Main.Releasable.Releasable):
             assert isinstance( instance, Debuggable )
             assert len(args) > 0
             message = args[0]
-            assert type(message) is str
+            assert isinstance(message, str)
             args = args[1:]
-        pfx = "                       "[:self.debugIndent] + "nde| "
-        if len(args): message = safeFmt(message,*args)
+        if len(args)>0: message = safeFmt(message,*args)
             
         self.context.infoOut( "NDE %.32s %s %s",
                              "" if instance is None else instance._dbgName,
@@ -73,7 +78,7 @@ class UpdateContext(Debuggable):
         super().__init__()
         #print( f"NEW UpdateContext @{id(self):X}")
         self.__updateIndex = 0
-        self.__changedSources : list[InputSource] = []
+        #self.__changedSources : list[InputSource] = []
         self.__mainRef = main.makeRef()
         self.__when = main.when
         #self.activeFrame = None
@@ -115,17 +120,16 @@ class UpdateContext(Debuggable):
     @property
     def updateIndex(self) -> int: return self.__updateIndex
 
-    @property
-    def changedSources(self): 
-        raise NotImplemented
-        return self.__changedSources
+    #@property
+    #def changedSources(self): 
+    #    raise NotImplementedError
     
-    def subFrame(self, name:Optional[str]=None, name2:Optional[str]=None) -> ProfileSubFrame:
+    def subFrame(self, name:Optional[str]=None, name2:Optional[str]=None) -> ProfileSubFrame: # pylint: disable=unused-argument
         #rv = self.activeFrame.activeFrame().subFrame(self, name, name2)
         rv = self.activeFrame.subFrame(self, name, name2)
         return rv
     
-    def stubFrame(self, name:Optional[str]=None, name2:Optional[str]=None) -> ProfileStubFrame:
+    def stubFrame(self, name:Optional[str]=None, name2:Optional[str]=None) -> ProfileStubFrame: # pylint: disable=unused-argument
         return UpdateContext._stubFrame
         
     def addChangedSource( self, changed:InputSource):
@@ -133,7 +137,7 @@ class UpdateContext(Debuggable):
         pass
         
     def valueOf( self, value:Any ) -> Any:
-        raise NotImplemented
+        raise NotImplementedError
     
         
     @staticmethod
@@ -146,7 +150,7 @@ class UpdateContext(Debuggable):
         :return: the current context
         :rtype: UpdateContext
         """
-        raise NotImplemented
+        raise NotImplementedError
         
 
 #############################################################################
@@ -174,7 +178,7 @@ class Refreshable( object ):
             self.doRefresh(context)
 
     def doRefresh(self,context:EvaluationContext) -> None:
-        raise NotImplemented
+        raise NotImplementedError
 
 
 
@@ -187,7 +191,7 @@ class Evaluatable(Debuggable):
     
     def getValue(self, context:OptionalContextArg) -> Any:
         """ current value of term"""
-        raise NotImplemented
+        raise NotImplementedError
 
 
 
@@ -203,5 +207,3 @@ def evaluate( value:Evaluatable|DirectValue, context:OptionalContextArg = None )
             return value.getValue(context)
     
     return value
-
-     

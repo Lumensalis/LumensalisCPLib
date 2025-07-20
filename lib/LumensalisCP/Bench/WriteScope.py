@@ -166,7 +166,7 @@ class WriteScope(object):
         self.added += 1
         
     def addItem( self, item:Any ) -> None:
-        raise NotImplemented
+        raise NotImplementedError
     
     def write( self, item ):
         if self.mode is not None:

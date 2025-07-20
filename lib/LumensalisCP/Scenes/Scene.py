@@ -90,7 +90,7 @@ class Scene(MainChild):
         
         
     def findOutput( self, tag:str ) -> NamedOutputTarget:
-        raise NotImplemented
+        raise NotImplementedError
                     
     def addRules(self, **kwargs:ExpressionTerm ):
         for tag, val in kwargs.items():

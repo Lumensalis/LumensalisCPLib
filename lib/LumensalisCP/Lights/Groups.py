@@ -16,12 +16,12 @@ class LightGroup(NamedLocalIdentifiable):
         super().__init__(**kwargs)
 
     @property
-    def lightCount(self) -> int: raise NotImplemented
+    def lightCount(self) -> int: raise NotImplementedError
         
     @property
-    def lights(self) -> Iterable["Light.Light"] : raise NotImplemented
+    def lights(self) -> Iterable["Light.Light"] : raise NotImplementedError
     
-    def __getitem__(self, index:int) -> "Light.Light": raise NotImplemented
+    def __getitem__(self, index:int) -> "Light.Light": raise NotImplementedError
 
     def __setitem__(self, index:int, value:AnyLightValue ): 
         self[index].setValue(value)
@@ -114,7 +114,7 @@ class LightSource(LightGroupList):
     def single(self, name:Optional[str]=None, **kwargs ) ->NextNLights:
         return self._nextNLights( NextNLights, count=1, name=name, **kwargs )
 
-    def lightChanged(self,light:"Light.Light"): raise NotImplemented
+    def lightChanged(self,light:"Light.Light"): raise NotImplementedError
 
     
 #############################################################################

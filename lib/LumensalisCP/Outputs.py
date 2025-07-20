@@ -9,7 +9,7 @@ class OutputTarget(object):
         pass
         
     def set( self, value:Any, context:EvaluationContext ) -> None:
-        raise NotImplemented
+        raise NotImplementedError
     
     
 class NamedOutputTarget(NamedLocalIdentifiable,OutputTarget):
@@ -18,8 +18,9 @@ class NamedOutputTarget(NamedLocalIdentifiable,OutputTarget):
         NamedLocalIdentifiable.__init__(self, name=name)
         OutputTarget.__init__(self)
 
+    @override
     def set( self, value:Any, context:EvaluationContext ) -> None:
-        raise NotImplemented
+        raise NotImplementedError
 
     def path( self ): return None
     

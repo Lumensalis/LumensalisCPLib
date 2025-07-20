@@ -1,9 +1,9 @@
 
 
+import asyncio.lock  # type: ignore # pylint: disable=import-error,no-name-in-module
+
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
-import asyncio.lock  # type: ignore
-
 
 class ReleasablePool(object):
     
@@ -15,7 +15,7 @@ class ReleasablePool(object):
         self._releases = 0
         self._rIndex = 0
         self._cls = cls
-        self._lock = asyncio.lock.Lock()
+        self._lock = asyncio.lock.Lock() # pylint: disable=no-member
     
 class Releasable(object):
     """_summary_
@@ -25,6 +25,7 @@ class Releasable(object):
     :return: _description_
     :rtype: _type_
     """
+    # pylint: disable=protected-access
     
     @classmethod 
     def getReleasablePool(cls) -> ReleasablePool:

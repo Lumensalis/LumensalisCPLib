@@ -118,15 +118,15 @@ class LightValueBase(object):
         pass
 
     @property
-    def brightness(self)->float: raise NotImplemented
+    def brightness(self)->float: raise NotImplementedError
 
     @property
-    def asNeoPixelInt(self)->int: raise NotImplemented
+    def asNeoPixelInt(self)->int: raise NotImplementedError
     
     @property
-    def asRGB(self) -> RGB: raise NotImplemented
+    def asRGB(self) -> RGB: raise NotImplementedError
 
-    def setLight(self, value) ->None: raise NotImplemented
+    def setLight(self, value) ->None: raise NotImplementedError
 
 def registerToRGB( cf = lambda v:v):
     def r( cls ):
