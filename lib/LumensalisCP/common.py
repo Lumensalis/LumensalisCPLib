@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import traceback
-import json
+# pylint: disable=unused-import,import-error
+#   pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 import math
 
 import adafruit_itertools as itertools  # type: ignore # pylint: disable=import-error
@@ -16,8 +19,15 @@ TimeInNS:TypeAlias =  int # Time in nanoseconds
 TimeSpanInNS:TypeAlias  = int # Time span in nanoseconds
 TimeInMS:TypeAlias  = int # Time in milliseconds
 TimeSpanInMS:TypeAlias  = int # Time span in milliseconds
-TimeInSeconds:TypeAlias  = float # Time in seconds
+TimeInSeconds = NewType('TimeInSeconds', float ) # Time in seconds
 TimeSpanInSeconds:TypeAlias  = float #
+
+TimeInSecondsConfigArg:TypeAlias = Union[TimeInSeconds, int, float]
+def TimeInSecondsConfig( v:TimeInSecondsConfigArg|None, default:Optional[TimeInSecondsConfigArg] = None ) -> TimeInSeconds:
+    if v is None:
+        assert default is not None, "TimeInSecondsConfig requires a value or a default"
+        v = default
+    return v # type: ignore
 
 DegreesPerSecond:TypeAlias  = float # rotation speed  in degrees per second
 Degrees:TypeAlias  = float # angle in degrees
@@ -40,7 +50,8 @@ add a unique key/value pair to a dictionary, or assert that the key is already p
     else:
         d[key] = value
 
-def updateKWDefaults( kwargs:Dict[str,Any], **updatedDefaults ) -> Dict[str,Any]:
+def updateKWDefaults( kwargs:Any, #dict[str,Any], 
+                     **updatedDefaults:dict[str,Any]) -> dict[str,Any]:
     """_summary_
 
     Args:
@@ -56,7 +67,7 @@ def updateKWDefaults( kwargs:Dict[str,Any], **updatedDefaults ) -> Dict[str,Any]
             kwargs[tag] = val
     return kwargs
 
-def safeRepr( v ):
+def safeRepr( v:Any ):
     try:
         return repr(v)
     except Exception as inst: # pylint: disable=broad-exception-caught
@@ -104,7 +115,7 @@ try:
 except ImportError:
     pass
 
-def toZeroToOne( value:Any ) -> float:
+def toZeroToOne_( value:Any ) -> ZeroToOne:
     """ Convert a value to a float. If the value is already a float, it is returned as is.
     
     """
@@ -113,14 +124,26 @@ def toZeroToOne( value:Any ) -> float:
         return 1.0 if value else 0.0
 
     try:
-    
-        if isinstance(value,LumensalisCP.Inputs.InputSource):
-            return float( value.value )  # type: ignore
-
         return float(value) # type: ignore
     except Exception as inst:
         print( f"toZeroToOne exception {inst} for {value}/{getattr(value,'__name__',None)}" )
         raise
+
+
+def toZeroToOne( value:Any ) -> ZeroToOne:
+    """ Convert a value to a float. If the value is already a float, it is returned as is.
+    
+    """
+    if isinstance(value,LumensalisCP.Inputs.InputSource):
+        value = value.value  # type: ignore
+    return toZeroToOne_(value)
+
+
+def withinZeroToOne_( value:Any ) -> ZeroToOne:
+    """ __summary__ 
+    Convert a value to a float between 0.0 and 1.0 inclusive. If the value is already a float, it is clamped to the range.    
+    """
+    return max(0.0,min(1.0,toZeroToOne_(value)) )
 
 def withinZeroToOne( value:Any ) -> ZeroToOne:
     """ __summary__ 
@@ -128,10 +151,10 @@ def withinZeroToOne( value:Any ) -> ZeroToOne:
     """
     return max(0.0,min(1.0,toZeroToOne(value)) )
 
-def SHOW_EXCEPTION( inst, fmt:str, *args ):
+def SHOW_EXCEPTION( inst:Exception, fmt:str, *args:Any ):
     print( f"EXCEPTION {inst} : {safeFmt(fmt,*args)}" )
     print( "\n".join(traceback.format_exception(inst)) )
     
     
-getMainManager = LumensalisCP.util.Singleton.Singleton("MainManager")
+getMainManager = LumensalisCP.util.Singleton.Singleton("MainManager") # type: ignore
 #import LumensalisCP.Main.Expressions

@@ -11,8 +11,8 @@ from LumensalisCP.Gadgets.Servos import LocalServo
 
 class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
     
-    __servoContainer:NamedLocalIdentifiableList[LocalServo]
-    __pixelsContainer:NamedLocalIdentifiableList[NeoPixelSource]
+    __servoContainer:NliList[LocalServo]
+    __pixelsContainer:NliList[NeoPixelSource]
     
     def __init__(self, *args, name=None, **kwds ):
         name = name or "Caernarfon"
@@ -33,10 +33,10 @@ class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
         self.__pixels:NeoPixelSource = NeoPixelSource(
             c.neoPixelPin, pixelCount=c.neoPixelCount, main = self.main, refreshRate=0.05, brightness=c.neoPixelBrightness, auto_write=False, pixel_order=c.neoPixelOrder # type: ignore
         )
-        self.__servoContainer = NamedLocalIdentifiableList("servos", parent=self)
+        self.__servoContainer = NliList("servos", parent=self)
         self.__servos:list[LocalServo|None] = [ None, None, None ]
         self.__neoPixOnServos:list[NeoPixelSource|None] = [ None, None, None ]
-        self.__pixelsContainer  = NamedLocalIdentifiableList("pixels", parent=self)
+        self.__pixelsContainer  = NliList("pixels", parent=self)
         self.__allPixels: list[NeoPixelSource] = [self.__pixels]
         
         self.__pixels.nliSetContainer(self.__pixelsContainer)
@@ -46,7 +46,7 @@ class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
         #    return [ self._irRemote ]
         return None
     
-    def nliGetContainers(self) -> list["NamedLocalIdentifiableContainerMixin"]|None:
+    def nliGetContainers(self) -> list["NliContainerMixin"]|None:
         return itertools.chain(  [ self.__pixelsContainer, self.__servoContainer ], super().nliGetContainers()) 
 
     def doRefresh(self,context:EvaluationContext):

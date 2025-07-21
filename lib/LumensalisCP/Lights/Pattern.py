@@ -9,13 +9,18 @@ if TYPE_CHECKING:
 
 class Pattern(NamedLocalIdentifiable):
     
+    
     _theManager:MainManager
+    class KWDS(TypedDict):
+        name: NotRequired[str]
+        whenOffset: NotRequired[TimeInSecondsConfigArg]
+        startingSpeed: NotRequired[TimeInSecondsConfigArg]
     
     def __init__(self,  target:LightGroup, name:Optional[str]=None, 
-                 whenOffset:TimeInSeconds=0.0, startingSpeed:TimeInSeconds=1.0 ):
+                 whenOffset:TimeInSecondsConfigArg=0.0, startingSpeed:TimeInSecondsEvalArg=1.0 ):
         super().__init__(name=name)
         self.__running = False
-        self.__speed:TimeInSeconds = startingSpeed
+        self.__speed:TimeInSecondsEval = startingSpeed
         assert target is not None, f"target LightGroup must be provided when creating {self.__class__.__name__} Pattern"
         self.__target = target
         

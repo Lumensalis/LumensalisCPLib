@@ -23,7 +23,6 @@ class NamedOutputTarget(NamedLocalIdentifiable,OutputTarget):
         raise NotImplementedError
 
     def path( self ): return None
+
     
-    
-    
-__all__ = [ 'OutputTarget', 'NamedOutputTarget' ]
+__all__ = [ 'OutputTarget', 'NamedOutputTarget', 'KWDS_NamedOutputTarget' ]

@@ -32,16 +32,16 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
     socketPool : Any # SocketPool
     profiler: Profiler
-    shields:NamedLocalIdentifiableList[ShieldBase]
+    shields:NliList[ShieldBase]
     defaultController:ControlPanel
-    controlPanels:NamedLocalIdentifiableList[ControlPanel]
+    controlPanels:NliList[ControlPanel]
     
             
     cyclesPerSecond:int
     cycleDuration:TimeInSeconds
     
-    __anonInputs : NamedLocalIdentifiableList[InputSource]
-    __anonOutputs : NamedLocalIdentifiableList[NamedOutputTarget]
+    __anonInputs : NliList[InputSource]
+    __anonOutputs : NliList[NamedOutputTarget]
     __cycle: int
     __deferredTasks: collections.deque
     __latestSleepDuration:TimeSpanInSeconds

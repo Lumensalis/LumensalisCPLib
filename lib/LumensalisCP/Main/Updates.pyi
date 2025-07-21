@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import LumensalisCP.Main.Manager 
 from LumensalisCP.CPTyping import *
 from LumensalisCP.Debug import Debuggable
@@ -8,10 +10,9 @@ from LumensalisCP.Inputs import InputSource
 from LumensalisCP.Main.Profiler import ProfileFrame, ProfileFrameBase, ProfileSubFrame, ProfileStubFrame
 from LumensalisCP.util.Releasable import Releasable
 from LumensalisCP.Lights.Values import RGB
-from  LumensalisCP.Eval.Expressions import EvaluationContext
-
+from LumensalisCP.Eval.Expressions import EvaluationContext
 type DirectValue = int|bool|float|RGB
-
+    
 
 # pylint: disable=unused-argument,super-init-not-called
 class UpdateContextDebugManager(Releasable):
@@ -20,19 +21,19 @@ class UpdateContextDebugManager(Releasable):
     context:EvaluationContext
     debugEvaluate:bool
     
-    def __init__( self ): ...
-    def prepare( self, context:'UpdateContext', debugEvaluate = True ): ...
+    def __init__( self ) -> None: ...
+    def prepare( self, context:'UpdateContext', debugEvaluate:bool = True ) -> None: ...
     
-    def __enter__(self) -> 'UpdateContextDebugManager': ...
+    def __enter__(self) -> Self: ...
         
-    def __exit__(self, eT, eV, eTB ): ...
+    def __exit__(self, eT:Type[BaseException], eV:BaseException, eTB:Any) -> None: ...
 
     def releaseNested(self): ...
     
-    def say( self, message, *args, instance:Optional[Debuggable]=None ) -> None: ...
+    def say( self, instanceOrMessage:Debuggable|str, *args:Any ) -> None:...
         
 class UpdateContext(Debuggable):
-    def __init__( self, main:MainManager ): pass
+    def __init__( self, main:MainManager ) -> None: ...
     
     main: MainManager
     when: TimeInSeconds 
@@ -43,22 +44,20 @@ class UpdateContext(Debuggable):
     debugEvaluate:bool
     _debugIndent:int
     
-
-    def addChangedSource( self, changed:InputSource):pass
-        
-    def valueOf( self, value:Any ) -> Any: pass
+    def addChangedSource( self, changed:InputSource) -> None: ...
     
-    def subFrame(self, name:Optional[str]=None, name2:Optional[str]=None) -> ProfileSubFrame: pass
-    def stubFrame(self, name:Optional[str]=None, name2:Optional[str]=None) -> ProfileStubFrame: pass
+    def subFrame(self, name:Optional[str]=None, name2:Optional[str]=None) -> ProfileSubFrame: ...
+    def stubFrame(self, name:Optional[str]=None, name2:Optional[str]=None) -> ProfileStubFrame: ...
+    def valueOf( self, value:Any ) -> Any: ...
 
     @staticmethod
-    def fetchCurrentContext( context:Optional[EvaluationContext]|None ) -> EvaluationContext: pass
+    def fetchCurrentContext( context:Optional[EvaluationContext]|None ) -> EvaluationContext: ...
     
-    def nestDebugEvaluate(self, debugEvaluate:bool|None = None ) -> UpdateContextDebugManager: ...
+    def nestDebugEvaluate(self, debugEvaluate:Optional[bool] = None ) -> UpdateContextDebugManager: ...
 
-    def reset( self, when:TimeInSeconds|None = None ): ...
+    def reset( self, when:Optional[TimeInSeconds] = None ) -> None: ...
             
-OptionalContextArg = Optional[EvaluationContext]
+OptionalContextArg:TypeAlias = Optional[EvaluationContext]
 
 #############################################################################
 

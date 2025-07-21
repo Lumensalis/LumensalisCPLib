@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 mlc = pmc_mainLoopControl
     
-def MainManager_nliContainers(self:MainManager) -> Iterable[NamedLocalIdentifiableContainerMixin]|None:
+def MainManager_nliContainers(self:MainManager) -> Iterable[NliContainerMixin]|None:
     yield self.shields
     yield self.i2cDevicesContainer
     yield self.controlPanels
@@ -90,7 +90,7 @@ def MainManager_singleLoop( self:MainManager ): #, activeFrame:ProfileFrameBase)
             
             activeFrame.snap( 'i2c' )
             for target in self.__i2cDevices:
-                target.updateTarget(context)
+                target.updateDevice(context)
                 
             activeFrame.snap( 'tasks' )
             for task in self._tasks:

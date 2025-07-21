@@ -103,7 +103,7 @@ ls256 = lsZ21 * 256
 #ls256.enableDbgOut = True
 
 csWheel = ColorWheel( ls256 )
-csWheel.enableDbgOut = True
+# csWheel.enableDbgOut = True
 
 closedSpin = Spinner(angleGaugeLights,onValue=csWheel,period=3.49 )
 centerSpin = Spinner(centerStoneLights)

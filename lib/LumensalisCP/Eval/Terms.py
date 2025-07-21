@@ -1,8 +1,9 @@
 
 import LumensalisCP.Main
 from LumensalisCP.CPTyping import TYPE_CHECKING
-from LumensalisCP.Eval.Expressions import TERM, NOT, CallbackSource, Expression, MAX, MIN
-from LumensalisCP.Eval.Expressions import rising, falling
+from LumensalisCP.Eval.ExpressionTerm import TERM, NOT, CallbackSource, MAX, MIN
+from LumensalisCP.Eval.ExpressionTerm import rising, falling
+from LumensalisCP.Eval.Expressions import Expression
 
 # TODO: directly access theManager
 MILLIS = CallbackSource( "MILLIS", lambda: LumensalisCP.Main.MainManager.theManager.millis ) # type: ignore # pylint: disable=no-member

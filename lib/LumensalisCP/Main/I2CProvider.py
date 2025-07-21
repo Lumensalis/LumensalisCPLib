@@ -16,7 +16,7 @@ class I2CProvider(Debuggable):
     def __init__(self,config, main:'MainManager'):
         super().__init__()
         
-        self.i2cDevicesContainer = NamedLocalIdentifiableList(name='i2cDevices',parent=main)
+        self.i2cDevicesContainer = NliList(name='i2cDevices',parent=main)
         
         self.infoOut( "I2CProvider init %r, %r", config, main )
         # pylint: disable=import-outside-toplevel]

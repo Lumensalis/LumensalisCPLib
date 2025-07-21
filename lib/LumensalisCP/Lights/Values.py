@@ -30,7 +30,7 @@ class RGB(object):
         list : lambda v: RGB(v[0], v[1], v[2]),
     }
     
-    def __init__(self, r:ZeroToOne|tuple|"RGB"=0, g:Optional[ZeroToOne]=None, b:Optional[ZeroToOne]=None ):
+    def __init__(self, r:ZeroToOne|tuple|RGB=0, g:Optional[ZeroToOne]=None, b:Optional[ZeroToOne]=None ):
         super().__init__()
         if g is None:
             assert isinstance( b, type(None)), "b must also be None"
@@ -46,9 +46,9 @@ class RGB(object):
         #b = withinZeroToOne( b ) 
 
         #self.extend( (r,g,b) )
-        self._r =  withinZeroToOne( r )
-        self._g =  withinZeroToOne( g )
-        self._b =  withinZeroToOne( b )
+        self._r =  withinZeroToOne_( r )
+        self._g =  withinZeroToOne_( g )
+        self._b =  withinZeroToOne_( b )
         #ensure( len(self) == 3 )
         
     @property 

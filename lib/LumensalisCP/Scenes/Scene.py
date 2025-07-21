@@ -48,19 +48,19 @@ class Scene(MainChild):
     def __init__( self, *args, **kwargs ):
         super().__init__( *args, **kwargs )
 
-        self.__rulesContainer = NamedLocalIdentifiableList("rules",parent=self)
+        self.__rulesContainer = NliList("rules",parent=self)
         self.__rules: Mapping[str,SceneRule] = {}
         
-        self.__tasksContainer = NamedLocalIdentifiableList("tasks",parent=self)
+        self.__tasksContainer = NliList("tasks",parent=self)
         self.__tasks:List[SceneTask] = []
         
-        self.__patternsContainer = NamedLocalIdentifiableList("patterns",parent=self)
+        self.__patternsContainer = NliList("patterns",parent=self)
         self.__patterns:NamedList[Pattern] = NamedList()
         
         self.__patternRefreshPeriod = 0.02
         self.__nextPatternsRefresh = 0
 
-    def nliGetContainers(self) -> list[NamedLocalIdentifiableContainerMixin]|None:
+    def nliGetContainers(self) -> list[NliContainerMixin]|None:
         
         return [self.__rulesContainer, self.__tasksContainer, self.__patternsContainer]
     

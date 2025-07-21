@@ -20,22 +20,36 @@ class LocalIdentifiable(object):
     
 
 
-class NamedLocalIdentifiableInterface:
+class NliInterface:
     def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None: ...
 
-    def nliGetContainers(self) -> Iterable[NamedLocalIdentifiableContainerMixin]|None: ...
-    #@overload
-    def nliSetContainer(self, container:NamedLocalIdentifiableContainerMixin[Self]): ...
+    def nliGetContainers(self) -> Iterable[NliContainerBaseMixin]|None: ...
     
-    #def nliSetContainer(self, container:NamedLocalIdentifiableContainerMixin): ...
+    
+#############################################################################    
+class NliContainerBaseMixin:
+    @property
+    def containerName(self) -> str: ...
+    @property
+    def name(self) -> str: ...
+
+    def __getitem__(self, key:str|int) -> NamedLocalIdentifiable: ...
+    #def nliSetContainer(self, container:NliContainerMixin): ...
+
+#############################################################################    
 
 _NLIT_co = TypeVar('_NLIT_co',
                    covariant=True, 
                    #contravariant=False,
-                   bound=NamedLocalIdentifiableInterface)
-            
-class NamedLocalIdentifiable(LocalIdentifiable,NamedLocalIdentifiableInterface,Debuggable): 
+                   bound=NliInterface)
+
     
+class KWDS_NamedLocalIdentifiable(TypedDict):
+    name:Optional[str]
+                                
+class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable): 
+    KWDS = KWDS_NamedLocalIdentifiable
+     
     def __init__( self, name:Optional[str]=None ): ...
 
     @property
@@ -46,28 +60,30 @@ class NamedLocalIdentifiable(LocalIdentifiable,NamedLocalIdentifiableInterface,D
 
     #########################################################################
 
-    __nliContaining:list[ReferenceType[NamedLocalIdentifiableContainerMixin[Self]]]|None 
+    __nliContaining:list[ReferenceType[NliContainerMixin[Self]]]|None 
     __name:str|None
     
-    def nliGetContaining(self) -> Iterable[NamedLocalIdentifiableContainerMixin[Self]]|None: ...
+    def nliGetContaining(self) -> Iterable[NliContainerMixin[Self]]|None: ...
         
     def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None: ...
 
-    def nliGetContainers(self) -> Iterable[NamedLocalIdentifiableContainerMixin]|None: ...
+    def nliGetContainers(self) -> Iterable[NliContainerBaseMixin]|None: ...
 
-    def nliSetContainer(self, container:NamedLocalIdentifiableContainerMixin[Self]): ...
+    def nliSetContainer(self, container:NliContainerMixin): ...
 
     @property
     def nliIsNamed(self) -> bool: ...
 
     def nliDynamicName(self) -> str: ...
         
-    def nliFind(self,name:str) -> NamedLocalIdentifiable|NamedLocalIdentifiableContainerMixin| None: ...
+    def nliFind(self,name:str) -> NamedLocalIdentifiable|NliContainerBaseMixin| None: ...
         
     
 #############################################################################
 
-class NamedLocalIdentifiableContainerMixin[_NLIT_co]( NamedLocalIdentifiableInterface ):
+#class NliContainerMixin[_NLIT_co=NamedLocalIdentifiable]( NliInterface ,NliContainerBaseMixin):
+
+class NliContainerMixin[_NLIT_co]( NliInterface ,NliContainerBaseMixin):
     @property
     def containerName(self) -> str: ...
     @property
@@ -91,7 +107,7 @@ class NamedLocalIdentifiableWithParent( NamedLocalIdentifiable ):
 #############################################################################
 
     
-class NamedLocalIdentifiableList[T](NamedLocalIdentifiableWithParent, UserList, NamedLocalIdentifiableContainerMixin[T] ):
+class NliList[T](NamedLocalIdentifiableWithParent, UserList, NliContainerMixin[T] ):
     
     def __init__(self, name:Optional[str] = None, items:Optional[list[T]] = None, parent:Optional[NamedLocalIdentifiable]=None ): ...
 
@@ -111,4 +127,4 @@ class NamedLocalIdentifiableList[T](NamedLocalIdentifiableWithParent, UserList, 
     def nliFind(self,name:str) -> NamedLocalIdentifiable|None: ...
 
 __all__ = ['LocalIdentifiable','NamedLocalIdentifiable','NamedLocalIdentifiableWithParent',
-            'NamedLocalIdentifiableContainerMixin','NamedLocalIdentifiableList', 'NamedLocalIdentifiableInterface']
+            'NliContainerMixin','NliList', 'NliInterface','NliContainerBaseMixin']

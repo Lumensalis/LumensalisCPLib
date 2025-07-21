@@ -1,4 +1,4 @@
-from LumensalisCP.Eval.common import *
+from LumensalisCP.IOContext import *
 
 from LumensalisCP.Main.Dependents import MainChild
 import LumensalisCP.Main.Manager
@@ -85,7 +85,7 @@ class ControlPanel( MainChild ):
     def __init__( self, main:'LumensalisCP.Main.Manager.MainManager', name:Optional[str]=None ): # type: ignore[no-untyped-def]
         super().__init__( main=main, name=name )
 
-        self._controlVariables = NamedLocalIdentifiableList(name='controlVariables',parent=self)
+        self._controlVariables = NliList(name='controlVariables',parent=self)
         
     def addControlVariable( self, *args, **kwds ) -> ControlVariable:
         variable = ControlVariable( *args,**kwds )
@@ -100,7 +100,7 @@ class ControlPanel( MainChild ):
         variable.updateValue( self.main.getContext() )
         return variable
 
-    def nliGetContainers(self) -> Iterable[NamedLocalIdentifiableContainerMixin]|None:
+    def nliGetContainers(self) -> Iterable[NliContainerMixin]|None:
         yield self._controlVariables
         
 __all__ = [ 'ControlPanel', 'ControlVariable', 'IntermediateVariable' ]

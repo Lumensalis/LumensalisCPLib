@@ -1,11 +1,8 @@
-
 import adafruit_mpr121
-
 from LumensalisCP.I2C.common import *
 
-
 class MPR121Input(I2CInputSource):
-    def __init__( self, pin:int = None, **kwargs ):
+    def __init__( self, pin:int, **kwargs ):
         super().__init__(**kwargs)
         self.__pin = pin
         self.__mask = 1 << pin
@@ -14,7 +11,7 @@ class MPR121Input(I2CInputSource):
     @property 
     def pin(self): return self.__pin
     
-    def getDerivedValue(self, context:EvaluationContext) -> bool:
+    def getDerivedValue(self, context:EvaluationContext) -> bool: # pylint: disable=unused-argument
         return self._touched
     
     def _setTouched( self, allTouched, context:EvaluationContext):
@@ -23,15 +20,12 @@ class MPR121Input(I2CInputSource):
             self._touched = touched
             if self.enableDbgOut: self.dbgOut( "MPR121Input = %s", touched )
             self.updateValue( context )
-            
 
 class MPR121(I2CDevice,adafruit_mpr121.MPR121):
+    DEFAULT_UPDATE_INTERVAL = TimeInSeconds(0.1)  # type: ignore
     MPR121_PINS = 11
     
     def __init__(self, *args, **kwds ):
-        updateKWDefaults( kwds,
-            updateInterval = 0.1,
-        )
         
         I2CDevice.__init__( self, *args,**kwds )
         adafruit_mpr121.MPR121.__init__(self, self.i2c)
@@ -45,26 +39,23 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
         self.__onUnusedCB = None
         self.__latestUnused = 0
 
-        self.__updates = 0
-        self.__changes = 0
-
     @property
     def inputs(self): return list(filter( lambda i: i is not None, self.__inputs ))
     
     @property
     def lastTouched(self): return self.__lastTouched
         
-    def addInput( self, pin:Optional[int]=None, name:str = None ):
+    def addInput( self, pin:int, name:Optional[str] = None ):
         assert pin >= 0 and pin < len(self.__inputs)
-        input = self.__inputs[pin]
+        inputSource = self.__inputs[pin]
     
-        if input is not None:
-            ensure( name == input.name, "%r != %r", name, input.name )
+        if inputSource is not None:
+            ensure( name == inputSource.name, "%r != %r", name, inputSource.name )
         else:
-            input = MPR121Input( pin=pin, name=name, target=self)
-            self.__inputs[pin] = input
+            inputSource = MPR121Input( pin=pin, name=name, target=self)
+            self.__inputs[pin] = inputSource
             self.__updateUnusedPinMask()
-        return input
+        return inputSource
 
     def addInputs( self, *inArgs ) -> list[MPR121Input]:
         rv = []
@@ -79,7 +70,7 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
     
     @property 
     def touchedInputs( self ):
-        return filter( lambda input: input is not None and input, self.__inputs )
+        return filter( lambda inputSource: inputSource is not None and inputSource, self.__inputs )
 
     @property 
     def touchedPins( self ):
@@ -94,24 +85,23 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
     def onUnused( self, cb:Callable):
         self.__onUnusedCB = cb
                     
-    def derivedUpdateTarget(self, context:EvaluationContext):
-        with context.stubFrame('dUpdateTarget', self.name) as frame:
+    def derivedUpdateDevice(self, context:EvaluationContext):
+        with context.stubFrame('dUpdateDevice', self.name) as frame:
             frame.snap( "getTouched")
             allTouched = self.touched()
             frame.snap( "updateInternal")
-            self.__updates += 1
+
             if self.__lastTouched != allTouched:
                 used =  allTouched & self.__usedPinsMask
                 priorUsed = self.__lastTouched & self.__usedPinsMask
                 
                 self.__lastTouched = allTouched
-                self.__changes += 1
                 
                 if used != priorUsed:
                     frame.snap( "updateInputs")
-                    for input in self.__inputs:
-                        if input is not None:
-                            input._setTouched( allTouched, context )                    
+                    for inputSource in self.__inputs:
+                        if inputSource is not None:
+                            inputSource._setTouched( allTouched, context ) # pylint: disable=protected-access                    
                     
                 unused = allTouched & self.__unusedPinsMask
                 #self.dbgOut( "MPR121 = %X, unused=%X, upm=%X",  allTouched, unused, self.__unusedPinsMask )
@@ -121,6 +111,8 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
                     if self.__onUnusedCB is not None:
                         #self.dbgOut( "calling unusedCB( %r, %r)", unused, context )
                         self.__onUnusedCB( unused = unused, context = context )
+                
+                return True
                 
 
         

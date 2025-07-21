@@ -34,8 +34,8 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     theManager : "MainManager|None" = None
     ENABLE_EEPROM_IDENTITY = False
     profiler: Profiler
-    shields:NamedLocalIdentifiableList[ShieldBase]
-    controlPanels:NamedLocalIdentifiableList[ControlPanel]
+    shields:NliList[ShieldBase]
+    controlPanels:NliList[ControlPanel]
     _privateCurrentContext:EvaluationContext
     
     @staticmethod
@@ -105,12 +105,12 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
         self._tasks:List[Callable] = []
         self.__shutdownTasks:List[ExitTask] = []
-        self.shields = NamedLocalIdentifiableList(name='shields',parent=self)
+        self.shields = NliList(name='shields',parent=self)
 
 
-        self.__anonInputs = NamedLocalIdentifiableList(name='inputs',parent=self)
-        self.__anonOutputs = NamedLocalIdentifiableList(name='outputs',parent=self)
-        self.controlPanels = NamedLocalIdentifiableList(name='controllers',parent=self)
+        self.__anonInputs = NliList(name='inputs',parent=self)
+        self.__anonOutputs = NliList(name='outputs',parent=self)
+        self.controlPanels = NliList(name='controllers',parent=self)
         self.defaultController = ControlPanel(self)
         self.defaultController.nliSetContainer(self.controlPanels)
 
@@ -305,7 +305,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def getNextFrame(self) ->ProfileFrameBase:
         return ManagerRL.MainManager_getNextFrame(self ) # type: ignore
     
-    def nliGetContainers(self) -> Iterable[NamedLocalIdentifiableContainerMixin]|None:
+    def nliGetContainers(self) -> Iterable[NliContainerMixin]|None:
         return ManagerRL.MainManager_nliContainers(self ) # type: ignore
    
     def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None:

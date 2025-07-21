@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from LumensalisCP.common import *
 from LumensalisCP.Debug import Debuggable
 import LumensalisCP.pyCp.weakref as lcpWeakref
@@ -23,14 +24,32 @@ class LocalIdentifiable(object):
     @property
     def localId(self): return self.__localId
     
+#############################################################################    
     
-class NamedLocalIdentifiableInterface:
+class NliInterface:
     def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None: ...
 
-    def nliGetContainers(self) -> Iterable[NamedLocalIdentifiableContainerMixin]|None: ...
-    def nliSetContainer(self, container:NamedLocalIdentifiableContainerMixin): ...  # pylint: disable=unused-argument
-            
-class NamedLocalIdentifiable(LocalIdentifiable,NamedLocalIdentifiableInterface,Debuggable):
+    def nliGetContainers(self) -> Iterable[NliContainerBaseMixin]|None: ...
+    
+
+#############################################################################    
+class NliContainerBaseMixin:
+    @property
+    def containerName(self) -> str: ...
+    @property
+    def name(self) -> str: ...
+
+    def __getitem__(self, key:str|int) -> NamedLocalIdentifiable: ...
+    
+############################################################################# 
+
+                    
+                    
+class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
+
+    #KWDS = KWDS_NamedLocalIdentifiable
+    class KWDS(TypedDict):
+        name:NotRequired[str]
     
     def __init__( self, name:Optional[str]=None ):
         self.__name = name
@@ -56,11 +75,11 @@ class NamedLocalIdentifiable(LocalIdentifiable,NamedLocalIdentifiableInterface,D
 
     #########################################################################
 
-    #__nliContainerRef:ReferenceType["NamedLocalIdentifiableContainerMixin"]
-    __nliContaining:list[ReferenceType[NamedLocalIdentifiableContainerMixin]]|None = None
+    #__nliContainerRef:ReferenceType["NliContainerMixin"]
+    __nliContaining:list[ReferenceType[NliContainerBaseMixin]]|None = None
     __name:str|None
     
-    def nliGetContaining(self) -> Iterable[NamedLocalIdentifiableContainerMixin]|None:
+    def nliGetContaining(self) -> Iterable[NliContainerBaseMixin]|None:
         c = self.__nliContaining
         if c is None: return None
         for i in c:
@@ -70,15 +89,16 @@ class NamedLocalIdentifiable(LocalIdentifiable,NamedLocalIdentifiableInterface,D
     def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None:
         return None
 
-    def nliGetContainers(self) -> Iterable[NamedLocalIdentifiableContainerMixin]|None:
+    def nliGetContainers(self) -> Iterable[NliContainerBaseMixin]|None:
         return None
 
-    def nliSetContainer(self, container:NamedLocalIdentifiableContainerMixin):
+    def nliSetContainer(self, container:NliContainerMixin):
         assert container is not None
         #oldContainer = self.nliGetContaining()
         #if oldContainer is not None:
         #    oldContainer.nliRemoveChild(self)
         ensure( not container.nliContainsChild(self), "item %s already in %s", safeRepr(self), safeRepr(container) ) 
+        assert isinstance(container, NliContainerBaseMixin), "container must be a NliContainerBaseMixin"        
         if self.__nliContaining is None:
             self.__nliContaining = [ lcpWeakref.lcpfRef( container ) ]
         else:
@@ -91,7 +111,7 @@ class NamedLocalIdentifiable(LocalIdentifiable,NamedLocalIdentifiableInterface,D
     def nliDynamicName(self) -> str:
         return self.__name or f"{self.__class__.__name__}@{id(self):X}"
 
-    def nliFind(self,name:str) -> NamedLocalIdentifiable|NamedLocalIdentifiableContainerMixin| None:
+    def nliFind(self,name:str) -> NamedLocalIdentifiable|NliContainerBaseMixin| None:
         containers = self.nliGetContainers() # pylint: disable=assignment-from-none
         if containers is not None:
             for container in containers:
@@ -108,7 +128,8 @@ class NamedLocalIdentifiable(LocalIdentifiable,NamedLocalIdentifiableInterface,D
     
 #############################################################################
 
-class NamedLocalIdentifiableContainerMixin( NamedLocalIdentifiableInterface ):
+
+class NliContainerMixin( NliInterface, NliContainerBaseMixin ):
     @property
     def containerName(self) -> str: ...
     @property
@@ -140,7 +161,7 @@ class NamedLocalIdentifiableWithParent( NamedLocalIdentifiable ):
 
 #############################################################################
     
-class NamedLocalIdentifiableList(NamedLocalIdentifiableWithParent, UserList, NamedLocalIdentifiableContainerMixin ):
+class NliList(NamedLocalIdentifiableWithParent, UserList, NliContainerMixin ):
     
     def __init__(self, name:Optional[str] = None, items:Optional[list] = None, parent:Optional[NamedLocalIdentifiable]=None ):
         #self.__parent = parent and lcpWeakref.ref(parent)
@@ -182,5 +203,7 @@ class NamedLocalIdentifiableList(NamedLocalIdentifiableWithParent, UserList, Nam
                 return child
         return None
 
-__all__ = ['LocalIdentifiable','NamedLocalIdentifiable','NamedLocalIdentifiableWithParent',
-            'NamedLocalIdentifiableContainerMixin','NamedLocalIdentifiableList', 'NamedLocalIdentifiableInterface']
+__all__ = ['LocalIdentifiable',
+           'NamedLocalIdentifiable',
+           'NamedLocalIdentifiableWithParent',
+            'NliContainerMixin','NliList', 'NliInterface']

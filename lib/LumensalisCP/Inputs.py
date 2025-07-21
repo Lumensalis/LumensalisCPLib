@@ -1,13 +1,12 @@
-from LumensalisCP.Eval.Expressions import *
-from LumensalisCP.Identity.Local import NamedLocalIdentifiable
-from LumensalisCP.common import safeFmt
+from __future__ import annotations
 
-if TYPE_CHECKING:
-    pass
+
+#from LumensalisCP.common import *
+from LumensalisCP.Eval.common import *
 #############################################################################
 
 class InputSource(NamedLocalIdentifiable, ExpressionTerm):
-
+    
     def __init__(self, name:Optional[str] = None):
         NamedLocalIdentifiable.__init__(self,name=name)
         ExpressionTerm.__init__(self)
@@ -21,9 +20,9 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm):
         return safeFmt( "%s:%s = %r", self.__class__.__name__, self.name, self.value )
     
     def expressionStrParts(self) -> Generator[str]:
-        yield( self.__class__.__name__ )
-        yield(':')
-        yield( self.name )
+        yield self.__class__.__name__ 
+        yield ':'
+        yield self.name 
 
     def getDerivedValue(self, context:EvaluationContext) -> Any:
         raise NotImplementedError
@@ -31,12 +30,12 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm):
     def onChange(self, cb:Callable):
         self.__onChangedList.append(cb)
 
-    def __callOnChanged(self, context:EvaluationContext):
+    def __callOnChanged(self, context:EvaluationContext): # pylint: disable=unused-private-member
         context.addChangedSource( self )
         for cb in self.__onChangedList:
             try:
                 cb( source=self, context=context )
-            except Exception as inst:
+            except Exception as inst: # pylint: disable=broad-exception-caught
                 self.SHOW_EXCEPTION( inst, "onChanged callback %r failed", cb )
 
     def updateValue(self, context:EvaluationContext) -> bool:

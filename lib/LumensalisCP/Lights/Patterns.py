@@ -1,8 +1,9 @@
+from random import random as randomZeroToOne, randint
 from LumensalisCP.Lights.Light import *
 from LumensalisCP.IOContext import *
 #from LumensalisCP.Main.Expressions import NamedOutputTarget, EvaluationContext
 from LumensalisCP.Lights.Pattern import *
-from random import random as randomZeroToOne, randint
+
 
 #############################################################################
 #############################################################################
@@ -10,7 +11,7 @@ from random import random as randomZeroToOne, randint
 #############################################################################
 import LumensalisCP.Eval.Expressions as xm
 
-def prepRGBValue( value ):
+def prepRGBValue( value:RGBEvalArg ) -> RGBEval:
     
     if (
             isinstance( value, Evaluatable ) or
@@ -23,7 +24,7 @@ def prepRGBValue( value ):
 class Rainbow( Pattern ):
     def __init__(self,
                  *args,
-                 colorCycle:TimeInSeconds|Evaluatable = 1.0,
+                 colorCycle:TimeInSecondsEvalArg = 1.0,
                  spread:float|Evaluatable = 1,
                  **kwargs
             ):
@@ -190,7 +191,7 @@ class Random( PatternGenerator ):
 class Cylon2( PatternGenerator ):
     def __init__(self,
                  *args,
-                 sweepTime:TimeInSeconds = 1.0,
+                 sweepTime:TimeInSecondsEvalArg = 1.0,
                  onValue:AnyLightValue = 1.0,
                  offValue:AnyLightValue = 0.0,
                  intermediateRefresh:TimeInSeconds = 0.1,

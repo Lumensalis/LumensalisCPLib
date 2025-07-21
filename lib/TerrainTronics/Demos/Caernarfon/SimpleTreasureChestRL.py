@@ -1,14 +1,20 @@
-from LumensalisCP.Demo.DemoCommon import *
+import sys
+# pylint: disable=unused-import,protected-access,redefined-outer-name,unused-variable 
+# pylint: disable=import-self, no-member,unused-argument
+# pylint: disable=undefined-variable, import-outside-toplevel
+# type: ignore=reportOptionalMemberAccess,reportAttributeAccess
+# pyright: reportOptionalMemberAccess=false
+# pyright: reportAttributeAccessIssue=false
+# pyright: reportUndefinedVariable=false
 
+from LumensalisCP.Demo.DemoCommon import *
 from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
 from LumensalisCP.Main.Profiler import *
-import sys
 import LumensalisCP.pyCp.importlib
 
-from LumensalisCP.Triggers.Timer import PeriodicTimer, addPeriodicTaskDef
+#from LumensalisCP.Triggers.Timer import PeriodicTimer, addPeriodicTaskDef
 
 from . import SimpleTreasureChest
-import wifi
 
 printDumpInterval = 33
 collectionCheckInterval = 5.51

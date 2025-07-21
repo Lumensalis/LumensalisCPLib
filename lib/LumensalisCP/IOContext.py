@@ -1,5 +1,7 @@
 import math
 from LumensalisCP.Eval.common import *
+from LumensalisCP.Inputs import InputSource
+from LumensalisCP.Outputs import OutputTarget, NamedOutputTarget
 
 #from LumensalisCP.Identity.Local import *
 #from LumensalisCP.Eval.Expressions import EvaluationContext, Evaluatable, ExpressionTerm, Expression

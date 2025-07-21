@@ -90,21 +90,21 @@ class QueryConfig(object):
     includeId:bool = True
     includeType:bool = True
     
-def getQueryResult( target:NamedLocalIdentifiableInterface, path:list[str], qConfig:Optional[QueryConfig]=None ):
+def getQueryResult( target:NliInterface, path:list[str], qConfig:Optional[QueryConfig]=None ):
     rv = None
     if qConfig is None: qConfig=QueryConfig()
     if len(path):
         assert isinstance(target,NamedLocalIdentifiable)
         child = target.nliFind(path[0])
         if child is None: return { "missing child" : path[0]}
-        assert isinstance(child,NamedLocalIdentifiableContainerMixin)
+        assert isinstance(child,NliContainerMixin)
         rv = { child.containerName : getQueryResult( child, path[1:], qConfig )  }
         if not qConfig.fillParents: return rv
     else: 
         rv = {}
     name = getattr(target,"name",None)
     if qConfig.includeName and name is not None: rv['name'] = name
-    if qConfig.includeType and not isinstance(target,NamedLocalIdentifiableContainerMixin):  rv["type"] = type(target).__name__
+    if qConfig.includeType and not isinstance(target,NliContainerMixin):  rv["type"] = type(target).__name__
     if qConfig.includeId and hasattr(target,'localId'): rv["localId"] = target.localId # type: ignore
     oldRecurseChildren = qConfig.recurseChildren
     try:

@@ -1,10 +1,21 @@
 from __future__ import annotations
 
-import time, math, traceback, os, collections
+# pylint: disable=unused-import,import-error
+#   pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
+
+import time, collections
 import gc # type: ignore
 
-import asyncio, wifi, displayio
-import busio, board
+#import asyncio, wifi, displayio
+#import busio, board
+
+try:
+    from typing import TYPE_CHECKING
+    if TYPE_CHECKING:
+        pass
+        
+except ImportError:
+    pass
 
 import LumensalisCP.Main.Updates
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl

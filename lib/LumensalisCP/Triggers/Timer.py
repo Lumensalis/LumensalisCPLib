@@ -6,10 +6,6 @@ from LumensalisCP.IOContext import *
 #from LumensalisCP.Eval.Expressions import Expression, ExpressionTerm
 from LumensalisCP.Main.Dependents import SubManagerBase, ManagerRef
 from . import Trigger
-#from LumensalisCP.util.kwCallback import KWCallback
-if TYPE_CHECKING:
-    import LumensalisCP.Main.Manager
-    from LumensalisCP.Main.Manager import MainManager
     
 class PeriodicTimerManager( SubManagerBase ):
     

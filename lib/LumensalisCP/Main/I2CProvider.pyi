@@ -3,7 +3,7 @@ from __future__ import annotations
 import busio
 import board
 
-from LumensalisCP.Identity.Local import NamedLocalIdentifiableList
+from LumensalisCP.Identity.Local import NliList
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
 from LumensalisCP.I2C.I2CDevice import I2CDevice
@@ -15,7 +15,7 @@ class I2CProvider(object):
     def __init__(self,config = None, main=None): pass
         
         
-    i2cDevicesContainer: NamedLocalIdentifiableList[I2CDevice]
+    i2cDevicesContainer: NliList[I2CDevice]
     adafruitFactory : LumensalisCP.I2C.Adafruit.AdafruitI2CFactory.AdafruitFactory
     i2cFactory: LumensalisCP.I2C.I2CFactory.I2CFactory
     __i2cChannels:Mapping[Tuple[int,int],busio.I2C]

@@ -1,13 +1,17 @@
 
 # This is a factory for adding Adafruit Stemma/QT modules
 
+# TODO: tighten up type hints and linting
+
+# type: ignore
+
 from ..I2CFactory import I2CFactory, I2CFactoryAddArgs
 import LumensalisCP.I2C.Adafruit
 from LumensalisCP.common import *
 
 class AdafruitFactory(I2CFactory):
     
-    def addQTRotaryEncoder(self, *args, **kwds:I2CFactoryAddArgs ):
+    def addQTRotaryEncoder(self, *args:Any, **kwds ):
         updateKWDefaults( kwds, main=self.main )
         from .QTRotaryEncoder import QtRotary
         return QtRotary( *args, **kwds )

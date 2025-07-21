@@ -159,7 +159,7 @@ class HarlechXLCastle(I2CDevice, LightSource ):
         self._parse_openshort(self._ledDriver, "Short results")
 
 
-    def derivedUpdateTarget(self, context:EvaluationContext):
-        #self.infoOut( "derivedUpdateTarget changed=%r", self.__ledChanges )
+    def derivedUpdateDevice(self, context:EvaluationContext):
+        #self.infoOut( "derivedUpdateDevice changed=%r", self.__ledChanges )
         self.__ledChanges = 0
         self._ledDriver.update()

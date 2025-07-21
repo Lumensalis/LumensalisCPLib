@@ -1,7 +1,9 @@
 
+
 import adafruit_aw9523 # pylint: disable=import-error # type: ignore
 
 from LumensalisCP.I2C.common import *
+
 
 class AW9523Input(I2CInputSource):
     def __init__( self, parent:"AW9523", pin:int, name:Optional[str]=None, **kwargs ):
@@ -32,13 +34,15 @@ class AW9523Input(I2CInputSource):
 
 
 class AW9523(I2CDevice):
+    # pylint: disable=protected-access
     AW9523_PINS = 16
     
-    def __init__(self, **kwds ):
+    
+    def __init__(self, **kwds:Unpack[I2CDevice.KWDS] ):
         updateKWDefaults( kwds,
-            updateInterval = 0.1,
+            updateInterval = TimeInSeconds(0.1) # type: ignore
         )
-        super().__init__(name="AW9523",**kwds)
+        super().__init__(**kwds) # type: ignore
         self.aw9523 = adafruit_aw9523.AW9523( i2c_bus=self.i2c )
         
         self.__ios:List[AW9523Input|None] = [None] * AW9523.AW9523_PINS
@@ -61,14 +65,13 @@ class AW9523(I2CDevice):
     def lastInputs(self): return self.__lastInputs
 
 
-    def derivedUpdateTarget(self, context:EvaluationContext):
+    def derivedUpdateDevice(self, context:EvaluationContext):
         inputValues = self.aw9523.inputs
-        self.__updates += 1
         if self.__lastInputs != inputValues:
             self.__lastInputs = inputValues
-            self.__changes += 1
             if self.enableDbgOut: self.dbgOut( "AW9523 = %X",  inputValues )
             
             for inp in self.__ios:
                 if inp is not None:
                     inp._setFromInputs( inputValues, context )
+            return True

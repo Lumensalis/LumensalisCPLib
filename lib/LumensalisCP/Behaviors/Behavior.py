@@ -18,10 +18,13 @@ class Actor(Debuggable):
     """
     
     __currentBehavior:Behavior|None = None
-    
-    def __init__(self, name:str|None = None, main:MainManager|None = None, **kwds ):
+    class KWDS(TypedDict):
+        name: NotRequired[str]
+        main: NotRequired[MainManager]
         
-        super().__init__(**kwds)
+    def __init__(self, name:str|None = None, main:MainManager|None = None ):
+        
+        super().__init__()
         self.name = name if name else self.__class__.__name__
         main = main or MainManager.theManager
         assert main is not None

@@ -1,9 +1,9 @@
+from __future__ import annotations
 #from LumensalisCP.CPTyping import *
 #from LumensalisCP.common import Debuggable
 #from LumensalisCP.Inputs import InputSource
 
 from LumensalisCP.IOContext  import *
-from LumensalisCP.Eval.Expressions import Expression, ExpressionTerm, rising
 from .Trigger import Trigger
 #import functools
 

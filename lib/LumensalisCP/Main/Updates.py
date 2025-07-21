@@ -3,13 +3,12 @@ from LumensalisCP.CPTyping import *
 from LumensalisCP.Debug import Debuggable
 from LumensalisCP.common import *
 
-import LumensalisCP.Main
-from LumensalisCP.Main.Profiler import ProfileFrame, ProfileFrameBase, ProfileSubFrame, ProfileStubFrame
+from LumensalisCP.Main.Profiler import  ProfileFrameBase, ProfileSubFrame, ProfileStubFrame
 from LumensalisCP.util.Releasable import Releasable
 
 if TYPE_CHECKING:
+    #import LumensalisCP.Main.Manager 
     from LumensalisCP.Main.Manager import MainManager
-    import LumensalisCP.Main.Manager 
     from  LumensalisCP.Eval.Expressions import EvaluationContext
     from LumensalisCP.Inputs import InputSource
     from LumensalisCP.Lights.Values import RGB
@@ -30,7 +29,7 @@ class UpdateContextDebugManager(Releasable):
         self.debugIndent = 0
         self.prior_debugIndent = -0
 
-    def prepare( self, context:UpdateContext, debugEvaluate = True ):
+    def prepare( self, context:UpdateContext, debugEvaluate:bool = True ):
         self.context = context # type: ignore
         self.debugEvaluate = debugEvaluate
 
@@ -42,20 +41,20 @@ class UpdateContextDebugManager(Releasable):
         self.context._debugIndent = self.debugIndent = self.prior_debugIndent + 2
         return self
 
-    def __exit__(self, eT, eV, eTB ):
+    def __exit__(self, eT:Type[BaseException], eV:BaseException, eTB:Any):
         assert self.context is not None
         self.context.debugEvaluate = self.prior_debugEvaluate
         self.context._debugIndent = self.prior_debugIndent 
         self.context = None
 
-    def say( self, instanceOrMessage:Debuggable|str, *args ) -> None:
+    def say( self, instanceOrMessage:Debuggable|str, *args:Any ) -> None:
         assert self.context is not None
         if isinstance(instanceOrMessage, str):
             message = instanceOrMessage
             instance = None
         else:
+            assert isinstance( instanceOrMessage, Debuggable )
             instance = instanceOrMessage
-            assert isinstance( instance, Debuggable )
             assert len(args) > 0
             message = args[0]
             assert isinstance(message, str)
@@ -63,7 +62,7 @@ class UpdateContextDebugManager(Releasable):
         if len(args)>0: message = safeFmt(message,*args)
             
         self.context.infoOut( "NDE %.32s %s %s",
-                             "" if instance is None else instance._dbgName,
+                             "" if instance is None else instance.dbgName,
                               "                       "[:self.debugIndent],
                              message )
 
@@ -72,8 +71,6 @@ class UpdateContextDebugManager(Releasable):
         
 class UpdateContext(Debuggable):
     activeFrame: ProfileFrameBase
-    
-    
     
     def __init__( self, main:MainManager ):
         super().__init__()
@@ -96,12 +93,12 @@ class UpdateContext(Debuggable):
             return context or main._privateCurrentContext
         cls.fetchCurrentContext = patchedFetchCurrentContext
         
-    def nestDebugEvaluate(self, debugEvaluate:bool|None = True ) -> UpdateContextDebugManager:
+    def nestDebugEvaluate(self, debugEvaluate:Optional[bool] = True ) -> UpdateContextDebugManager:
         entry = UpdateContextDebugManager.releasableGetInstance()
         entry.prepare( self,debugEvaluate if debugEvaluate is not None else self.debugEvaluate)
         return entry
     
-    def reset( self, when:TimeInSeconds|None = None ):
+    def reset( self, when:Optional[TimeInSeconds] = None ):
         try:
             self.__updateIndex += 1
             #self.__changedSources.clear()
@@ -134,7 +131,7 @@ class UpdateContext(Debuggable):
     def stubFrame(self, name:Optional[str]=None, name2:Optional[str]=None) -> ProfileStubFrame: # pylint: disable=unused-argument
         return self._stubFrame
         
-    def addChangedSource( self, changed:InputSource):
+    def addChangedSource( self, changed:InputSource) -> None:
         #self.__changedSources.append( changed )
         pass
         

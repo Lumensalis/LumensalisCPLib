@@ -104,7 +104,7 @@ class VCNL4040(I2CDevice):
     proximity = VCNL4040ReadableDescriptor('proximity')
     white = VCNL4040ReadableDescriptor('white')
     
-    def derivedUpdateTarget(self, context:EvaluationContext):
+    def derivedUpdateDevice(self, context:EvaluationContext):
         if self.enableDbgOut: self.dbgOut( "reading %r ios", len(self.__ios))
         for input in self.__ios:
             input._setFromHW( context )
