@@ -39,7 +39,7 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm):
     def onChange(self, cb:_InputSourceChangedCallback) -> None:
         self.__onChangedList.append(cb)
 
-    def __callOnChanged(self, context:EvaluationContext): # pylint: disable=unused-private-member
+    def __callOnChanged(self, context:EvaluationContext): # pylint: disable=unused-private-member # type: ignore
         context.addChangedSource( self )
         for cb in self.__onChangedList:
             try:

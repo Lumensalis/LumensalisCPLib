@@ -10,11 +10,10 @@ sceneClosed, sceneOpen, sceneMoving= main.addScenes( 3 )
 # setup Control Inputs : http://lumensalis.com/ql/h2Controller
 rbCycle = main.panel.addControlVariable( startingValue=3.1, min=0.1, max=10.0, kind="TimeInSeconds" )
 rbs = main.panel.addControlVariable( startingValue=0.6, min=0.1, max=3.0, kind=float )
-handSafetyRange = main.panel.addControlVariable( 300, min=10, kind="Millimeters" )
+handSafetyRange = main.panel.addControlVariable(startingValue=300, min=10, kind="Millimeters" )
 
 #############################################################################
 # HARDWARE : http://lumensalis.com/ql/h2Hardware
-
 # setup the Caernarfon Castle : http://lumensalis.com/ql/h2Caernarfon
 caernarfon = main.TerrainTronics.addCaernarfon( neoPixelCount=45 )
 lidServo = caernarfon.initServo( 1, movePeriod=0.05 )

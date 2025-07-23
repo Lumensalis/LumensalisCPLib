@@ -3,10 +3,12 @@
 """ basic importlib for CircuitPython
 """
 
+import os
 import sys
+from typing import Any
 import supervisor
 
-def reload( module, verbose=False ) -> None:
+def reload( module:Any, verbose:bool=False, mpyAllowed:bool=False ) -> None:
     """CircuitPython specific implementation of [importlib.reload](https://docs.python.org/3/library/importlib.html#importlib.reload)
 
 This is intended to be functionally equivalent with **importlib.reload** 
@@ -62,7 +64,16 @@ than CPython's.
     #########################################################################
     # now we load and **exec** the source for the module
     if verbose: print( f"newAttrs : {newAttrs.keys()}")
-    with open(module.__file__,'r') as f:
+    sourceFile = module.__file__
+    assert sourceFile is not None, f"Module {name} has no source file"
+    if sourceFile.endswith('.mpy'):
+        sourceFile = sourceFile[:-4] + '.py'  # convert .mpy to .py
+        if not os.path.exists(sourceFile):
+            assert mpyAllowed, f"{sourceFile} required to reload {module.__file__}"
+            if verbose: print( f"skipping reload of {name}, {sourceFile} not found")
+            return
+    assert os.path.exists(sourceFile), f"Source file {sourceFile} does not exist for {name}"
+    with open(sourceFile,'r',encoding='utf-8') as f:
         source = f.read()
         exec( source, newAttrs, newAttrs )
 

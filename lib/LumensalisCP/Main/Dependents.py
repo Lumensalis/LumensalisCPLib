@@ -6,36 +6,36 @@ from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
 import LumensalisCP.pyCp.weakref as weakref
 
 if TYPE_CHECKING:
-    import LumensalisCP.Main.Manager
     from LumensalisCP.Main.Manager import MainManager
 
 #############################################################################
 class MainChild( NamedLocalIdentifiable ):
     
-    def __init__( self, main:LumensalisCP.Main.Manager.MainManager, name:Optional[str]=None ):
-        # type: (str, LumensalisCP.Main.Manager.MainManager ) -> None
+    def __init__( self, main:Optional[MainManager]=None, name:Optional[str]=None ):
         NamedLocalIdentifiable.__init__( self, name = name or self.__class__.__name__)
+        main = main or getMainManager()
         ensure( main is not None )
         self.__main = weakref.ref(main)
         # print( f"MainChild __init__( name={self.name}, main={main})")
 
     @property
-    def main(self) -> LumensalisCP.Main.Manager.MainManager:
+    def main(self) -> MainManager:
         return self.__main() # type: ignore
     
     def mcPostCreate(self): pass
+
 
 #############################################################################
 class FactoryBase( MainChild ):
     def __init__(self, main:MainManager):
         super().__init__( main, name=self.__class__.__name__ )
 
-    def makeChild( self, cls, **kwds ):
+    def makeChild( self, cls:type, **kwds:StrAnyDict ):
         instance = cls( main=self.main, **kwds )
         self.callPostCreate(instance)
         return instance
     
-    def callPostCreate(self, instance):
+    def callPostCreate(self, instance:Any):
         instance.mcPostCreate()
         
         

@@ -17,7 +17,6 @@ from LumensalisCP.I2C.I2CDevice import  I2CDevice
 
 # pylint: disable=unused-import,import-error,reimported,import-outside-toplevel,used-before-assignment
         
-        
 if TYPE_CHECKING:
     from LumensalisCP.I2C.Generic.Display_SSD1306 import Display_SSD1306
     from LumensalisCP.I2C.Generic.DisplayIO_SSD1306 import DisplayIO_SSD1306

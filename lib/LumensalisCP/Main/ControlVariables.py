@@ -1,14 +1,27 @@
 from LumensalisCP.IOContext import *
 
 from LumensalisCP.Main.Dependents import MainChild
-import LumensalisCP.Main.Manager
 
 # pylint: disable=redefined-builtin,unused-variable,unused-argument,broad-exception-caught
+
+#############################################################################
+
 class ControlVariable(InputSource):
-    
-    def __init__(self,  startingValue=None,
-                 min = None, max = None,
-                 name:Optional[str]=None, description:str="", kind:Optional[str]=None,
+    class KWDS(TypedDict):
+        startingValue: Required[Any]
+        min: NotRequired[Any]
+        max: NotRequired[Any]
+        name: NotRequired[str]
+        description: NotRequired[str]
+        kind: NotRequired[str|type]
+        
+    def __init__(self,  
+                 startingValue:Any,
+                 min:Optional[Any] = None,
+                 max:Optional[Any] = None,
+                 name:Optional[str]=None,
+                 description:str="",
+                 kind:Optional[str|type]=None,
                  ):
         super().__init__(name)
         self.description = description or name
@@ -26,7 +39,7 @@ class ControlVariable(InputSource):
 
     controlValue = property( lambda self: self._controlValue )
     
-    def setFromWs( self, value ):
+    def setFromWs( self, value: Any ):
         if self.kind == 'RGB':
             if isinstance(value, str):
                 try:
@@ -34,11 +47,11 @@ class ControlVariable(InputSource):
                     value = rgb
                     # print( f"rgb converted {value} to {rgb}" )
                 except Exception as inst:
-                    print( f"failed converting {value} to RGB" )
+                    print( f"failed converting {value} to RGB : {inst}" )
                 
         self.set( value )
         
-    def set( self, value ):
+    def set( self, value: Any ):
         if value != self._controlValue:
             if self._min is not None and value < self._min:
                 value = self._min
@@ -51,7 +64,7 @@ class ControlVariable(InputSource):
     def getDerivedValue(self, context:EvaluationContext) -> Any:
         return self._controlValue
         
-    def move( self, delta ):
+    def move( self, delta :Any):
         self.set( self._controlValue + delta )
 
 #############################################################################
@@ -87,8 +100,8 @@ class ControlPanel( MainChild ):
 
         self._controlVariables:NliList[ControlVariable] = NliList(name='controlVariables',parent=self)
         
-    def addControlVariable( self, *args, **kwds ) -> ControlVariable:
-        variable = ControlVariable( *args,**kwds )
+    def addControlVariable( self, **kwds:Unpack[ControlVariable.KWDS] ) -> ControlVariable:
+        variable = ControlVariable( **kwds )
         variable.nliSetContainer(self._controlVariables)
         self.infoOut( f"added ControlVariable {variable}")
         return variable

@@ -72,8 +72,9 @@ class NextNLights(LightGroupList):
     def __init__(self,count:int, source:"LightSource",**kwargs:Unpack[LightGroupList.KWDS] ):
         
         offset = source.startOfNextN(count)
-        lights = list( [source[offset + index] for index in range(count)] )
-        super().__init__(lights=lights,**kwargs)
+        assert "lights" not in kwargs, "cannot specify lights for NextNLights"
+        kwargs['lights'] = list( [source[offset + index] for index in range(count)] )
+        super().__init__(**kwargs)
         
 class Ring(NextNLights): pass
 
@@ -85,8 +86,9 @@ class Strip(NextNLights): pass
 
 class AdHocLightGroup(LightGroupList):
     def __init__(self,**kwargs:Unpack[LightGroupList.KWDS]):
-        self.__adHocLights:List[Light] = []
-        super().__init__(lights=self.__adHocLights,**kwargs)
+        self.__adHocLights:List[Light] = kwargs.get('lights', [])
+        kwargs['lights'] = self.__adHocLights
+        super().__init__(**kwargs)
         
     def append(self, light:Light|LightGroup):
         if isinstance(light, LightGroup):
@@ -100,6 +102,8 @@ class AdHocLightGroup(LightGroupList):
 
 class LightSource(LightGroupList):
     """ driver / hardware interface providing Lights"""
+    
+    KWDS = LightGroupList.KWDS
     
     def __init__(self, **kwargs:Unpack[LightGroupList.KWDS]):
         super().__init__(**kwargs)
