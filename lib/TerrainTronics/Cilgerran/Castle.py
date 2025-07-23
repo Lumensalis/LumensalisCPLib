@@ -22,7 +22,7 @@ class CilgerranLED( DimmableLight ):
         self.__output = pwmio.PWMOut(pin=board.asPin(pin), frequency= CilgerranLED.PWM_FREQUENCY,duty_cycle=0 ) 
         
 
-    def setValue(self,value:AnyLightValue, context: UpdateContext = None ):
+    def setValue(self,value:AnyRGBValue, context: UpdateContext = None ):
         context = context or self.__main.latestContext
         level = toZeroToOne(context.valueOf( value ) )
         self.__value = value
@@ -31,7 +31,7 @@ class CilgerranLED( DimmableLight ):
     def _brightnessChanged(self):
         self.__output.duty_cycle = int( self.__value * self.source.brightness * CilgerranLED.DUTY_CYCLE_RANGE )
 
-    def getValue(self, context: UpdateContext = None ) -> AnyLightValue:
+    def getValue(self, context: UpdateContext = None ) -> AnyRGBValue:
         return self.__value
     
     @property

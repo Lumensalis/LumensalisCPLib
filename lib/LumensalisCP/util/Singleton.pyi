@@ -1,6 +1,6 @@
 
 from __future__ import annotations
-from typing import Any, Optional, Generic, TypeVar
+from typing import Generic, TypeVar
 
 # pylint: disable=unused-argument
 
@@ -11,7 +11,7 @@ class Singleton(Generic[T]):
     A simple singleton class that can be used to create singleton instances.
     """
     
-    def __init__(self, name:str, i:T|None  = None): ... 
+    def __init__(self, name:str, i:T|None  = None) -> None: ... 
         
     def get(self)->T:...
     

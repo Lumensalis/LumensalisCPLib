@@ -8,9 +8,9 @@ main = ProjectManager() #  http://lumensalis.com/ql/h2Main
 sceneClosed, sceneOpen, sceneMoving= main.addScenes( 3 ) 
 
 # setup Control Inputs : http://lumensalis.com/ql/h2Controller
-rbCycle = main.addControlVariable( startingValue=3.1, min=0.1, max=10.0, kind="TimeInSeconds" )
-rbs = main.addControlVariable( startingValue=0.6, min=0.1, max=3.0, kind=float )
-handSafetyRange = main.addControlVariable( 300, min=10, kind="Millimeters" )
+rbCycle = main.panel.addControlVariable( startingValue=3.1, min=0.1, max=10.0, kind="TimeInSeconds" )
+rbs = main.panel.addControlVariable( startingValue=0.6, min=0.1, max=3.0, kind=float )
+handSafetyRange = main.panel.addControlVariable( 300, min=10, kind="Millimeters" )
 
 #############################################################################
 # HARDWARE : http://lumensalis.com/ql/h2Hardware
@@ -20,7 +20,7 @@ caernarfon = main.TerrainTronics.addCaernarfon( neoPixelCount=45 )
 lidServo = caernarfon.initServo( 1, movePeriod=0.05 )
 ir = caernarfon.addIrRemote(codenames="dvd_remote")     
 neoPixA = caernarfon.pixels 
-neoPixB = caernarfon.initNeoPixOnServo(3,neoPixelCount=35)
+neoPixB = caernarfon.initNeoPixOnServo(3,pixelCount=35)
 # setup neoPixel modules : http://lumensalis.com/ql/h2NeoPixels
 firstTwoOnPixA          = neoPixA.nextNLights(2)
 leftStoneLights         = neoPixA.ring(3)
@@ -96,14 +96,9 @@ rainbowLeft = Rainbow(leftStoneLights,colorCycle=rbCycle, spread=rbs )
 rainbowRight = Rainbow(rightStoneLights,colorCycle=1.1, spread=2.0 )
 aglSpinner = Spinner(angleGaugeLights, onValue=LightValueRGB.RED, tail=0.42,period=0.49)
 
-#lightSensor.enableDbgOut = True
 lsZ21 = Z21Adapted( lightSensor )
-#lsZ21.enableDbgOut = True
 ls256 = lsZ21 * 256
-#ls256.enableDbgOut = True
-
 csWheel = ColorWheel( ls256 )
-# csWheel.enableDbgOut = True
 
 closedSpin = Spinner(angleGaugeLights,onValue=csWheel,period=3.49 )
 centerSpin = Spinner(centerStoneLights)

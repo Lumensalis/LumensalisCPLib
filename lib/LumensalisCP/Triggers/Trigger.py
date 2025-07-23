@@ -4,7 +4,7 @@
 from LumensalisCP.IOContext import *
 from LumensalisCP.Eval.Expressions import  Expression, ExpressionTerm #, UpdateContext
 
-from LumensalisCP.util.kwCallback import KWCallback
+from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
 
 #############################################################################
 
@@ -25,6 +25,8 @@ class Trigger(Debuggable):
         if action is not None:
             self.addAction(action)
 
+    _onTrueExpression:Expression
+    
     @property
     def name(self): return self.__name
     
@@ -38,7 +40,7 @@ class Trigger(Debuggable):
         for action in self.__actions:
             try:
                 action( **kwds )
-            except Exception as inst:
+            except Exception as inst: # pylint: disable=broad-exception-caught
                 self.SHOW_EXCEPTION( inst, "firing action %s( %s )", action, kwds )
 
     def fireOnTrue( self, expression: Expression|ExpressionTerm ):
@@ -46,8 +48,8 @@ class Trigger(Debuggable):
             expression = Expression(expression)
 
         self._onTrueExpression = expression
-        def test(source:Optional[InputSource]=None, context:EvaluationContext = None, **kwargs):
-            
+        def test(source:Optional[InputSource]=None, context:Optional[EvaluationContext] = None, **kwargs):
+            context = UpdateContext.fetchCurrentContext(context)
             expression.updateValue(context)
             shouldFire = expression.value
             if self.enableDbgOut: self.dbgOut( "fireOnTrue shouldFire=%s", shouldFire)
@@ -65,9 +67,10 @@ class Trigger(Debuggable):
             self.fireOnSet( source )
 
     def fireOnSet( self, source:InputSource):
-        
-        def test(source:Optional[InputSource]=None, context:EvaluationContext = None, **kwargs):
-            
+
+        def test(source:Optional[InputSource]=None, context:Optional[EvaluationContext]=None, **kwargs):
+            context = UpdateContext.fetchCurrentContext(None)
+            assert source is not None
             if source.getValue(context):
                 if self.enableDbgOut: self.dbgOut( "firing on set of %s", source.name )
                 self.fire(source=source, context=context, **kwargs)
@@ -81,16 +84,16 @@ class Trigger(Debuggable):
     def fireOnSetDef( self, source:Optional[InputSource]=None ):
         assert source is not None
         self.fireOnSet( source )
-        def on2( callable ):
-            self.addAction(callable)
-            return callable
+        def on2( cb ):
+            self.addAction(cb)
+            return cb
         return on2        
     
     
-    def addActionDef( self, **kwds ):
-        def on2( callable ):
-            self.addAction(callable)
-            return callable
+    def addActionDef( self, **kwds ): # pylint: disable=unused-argument
+        def on2( cb ):
+            self.addAction(cb)
+            return cb
         return on2        
 
 #############################################################################

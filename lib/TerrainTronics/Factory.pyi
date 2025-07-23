@@ -1,9 +1,9 @@
 from LumensalisCP.Main.Dependents import FactoryBase
-from .Caernarfon import CaernarfonCastle
-from .Harlech import HarlechCastle
-from .Cilgerran import CilgerranCastle
-from .Caerphilly import CaerphillyCastle
-from .HarlechXL import HarlechXLCastle
+from TerrainTronics.Caernarfon import CaernarfonCastle
+from TerrainTronics.Harlech import HarlechCastle
+from TerrainTronics.Cilgerran import CilgerranCastle
+from TerrainTronics.Caerphilly import CaerphillyCastle
+from TerrainTronics.HarlechXL import HarlechXLCastle
 
 class TerrainTronicsFactory(FactoryBase):
     def addCaernarfon( self, config=None, **kwds ) -> CaernarfonCastle: pass

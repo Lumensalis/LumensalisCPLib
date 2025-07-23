@@ -8,7 +8,7 @@ class DemoBase( DemoMixin):
     pass
     main: MainManager
     
-    def __init__(self, *args,**kwds):
+    def __init__(self,):
         self.main = MainManager.initOrGetManager()
         
     def setup(self):
@@ -36,7 +36,7 @@ class DemoSubBase( DemoMixin):
     def setup(self):
         pass
     
-def demoMain(*args,**kwds):
+def demoMain():
     main = MainManager.initOrGetManager()
     main.addBasicWebServer()
     main.run()

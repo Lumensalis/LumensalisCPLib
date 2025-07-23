@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from ._common import *
-from .Evaluatable import Evaluatable
+from LumensalisCP.Lights.Values import RGB
+from LumensalisCP.Eval._common import *
+from LumensalisCP.Eval.Evaluatable import Evaluatable
 
-from .EvaluationContext import EvaluationContext
+from LumensalisCP.Eval.EvaluationContext import EvaluationContext
 
 if TYPE_CHECKING:
     #from LumensalisCP.Inputs import InputSource
-    from LumensalisCP.Eval.Evaluatable import Evaluatable, EVAL_VALUE_TYPES #, DirectValue
+    from LumensalisCP.Eval.Evaluatable import Evaluatable
     from LumensalisCP.Inputs import InputSource
     
 # TODO: tighten up type hints / lint
@@ -18,6 +19,8 @@ if TYPE_CHECKING:
 # pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false
 # pyright: reportOperatorIssue=false
 
+#############################################################################
+EVAL_VALUE_TYPES:TypeAlias  = Union[ int, float, bool, str, RGB]
 
 #############################################################################
 

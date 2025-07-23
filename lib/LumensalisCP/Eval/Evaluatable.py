@@ -1,12 +1,9 @@
-from LumensalisCP.common import *
-from LumensalisCP.Debug import Debuggable
-from LumensalisCP.Main.Updates import UpdateContext, OptionalContextArg, DirectValue
+from __future__ import annotations
 
-if TYPE_CHECKING:
-    #from LumensalisCP.Eval.Expressions import EvaluationContext
-    from LumensalisCP.Lights.Values import RGB
-    EVAL_VALUE_TYPES:TypeAlias  = Union[ int, float, bool, str, RGB]
-    
+from LumensalisCP.common import Debuggable,TypeVar, Generic, TYPE_CHECKING, Any
+#from LumensalisCP.Debug import Debuggable
+from LumensalisCP.Main.Updates import UpdateContext, OptionalContextArg, DirectValue
+   
     
 #############################################################################
 ET = TypeVar('ET' )
@@ -17,10 +14,23 @@ class Evaluatable(Debuggable, Generic[ET]):
         super().__init__()
         self.enableDbgEvaluate = False
     
+    def __class_getitem__(cls, item:Any): # type: ignore
+        return cls
+        
     def getValue(self, context:OptionalContextArg) -> ET:
         """ current value of term"""
         raise NotImplementedError
-
+    
+if TYPE_CHECKING:
+    EvaluatableT = Evaluatable
+else:
+    class _EvaluatableT:
+        def __class_getitem__(cls, item):
+            return Evaluatable
+        def __getitem__(self, item):
+            return Evaluatable        
+    EvaluatableT = _EvaluatableT()
+        
 def evaluate( value:Evaluatable|DirectValue, context:OptionalContextArg = None ):
     if isinstance( value, Evaluatable ):
         context = UpdateContext.fetchCurrentContext(context)

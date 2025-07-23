@@ -1,46 +1,98 @@
+from __future__ import annotations
+from math import pi
 
-
-import TerrainTronics.D1MiniBoardBase
 from LumensalisCP.IOContext import *
 from LumensalisCP.commonCP import *
 from LumensalisCP.Lights.NeoPixels import NeoPixelSource
 from LumensalisCP.Gadgets.IrRemote import LCP_IRrecv, onIRCode
 from LumensalisCP.Gadgets.Servos import LocalServo
 
+from TerrainTronics.D1MiniBoardBase import D1MiniBoardBase
 
-
-class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
+class CaernarfonCastle(D1MiniBoardBase):
     
     __servoContainer:NliList[LocalServo]
     __pixelsContainer:NliList[NeoPixelSource]
-    
-    def __init__(self, *args, name=None, **kwds ):
-        name = name or "Caernarfon"
-        super().__init__( *args, name=name, **kwds )
+    class KWDS(D1MiniBoardBase.KWDS):
+        neoPixelCount: NotRequired[int]
+        servos: NotRequired[int]
+        servo1pin: NotRequired[microcontroller.Pin|str]
+        servo2pin: NotRequired[microcontroller.Pin|str]
+        servo3pin: NotRequired[microcontroller.Pin|str]
+
+    def __init__(self,
+                neoPixelCount:int=0,
+                servos:int=0,
+                servo1pin: Optional[microcontroller.Pin] = None,
+                servo2pin: Optional[microcontroller.Pin] = None,
+                servo3pin: Optional[microcontroller.Pin] = None,
+                neoPixels: Optional[NeoPixelSource.KWDS] = None,
+                 **kwds:Unpack[D1MiniBoardBase.KWDS] 
+             ) -> None:
+        super().__init__( **kwds )
         c = self.config
-        c.updateDefaultOptions( 
-                neoPixelPin = c.D3,
-                neoPixelCount = 1,
-                neoPixelOrder = neopixel.GRB,
-                neoPixelBrightness = 0.2,
-                servos = 0,
-                servo1pin =  c.D6,
-                servo2pin =  c.D7,
-                servo3pin =  c.D8,
-            )
         self._irRemote = None
         self.initI2C()
-        self.__pixels:NeoPixelSource = NeoPixelSource(
-            c.neoPixelPin, pixelCount=c.neoPixelCount, main = self.main, refreshRate=0.05, brightness=c.neoPixelBrightness, auto_write=False, pixel_order=c.neoPixelOrder # type: ignore
-        )
+        
         self.__servoContainer = NliList("servos", parent=self)
         self.__servos:list[LocalServo|None] = [ None, None, None ]
         self.__neoPixOnServos:list[NeoPixelSource|None] = [ None, None, None ]
         self.__pixelsContainer  = NliList("pixels", parent=self)
-        self.__allPixels: list[NeoPixelSource] = [self.__pixels]
+        self.__allPixels: list[NeoPixelSource] = []
         
-        self.__pixels.nliSetContainer(self.__pixelsContainer)
+        self.servo1pin =  c.D6
+        self.servo2pin =  c.D7
+        self.servo3pin =  c.D8
+        self.neoPixelPin = c.D3
+        
+        if neoPixelCount > 0:
+            assert neoPixels is None
+            self.addNeoPixels( pixelCount = neoPixelCount )
+            
+            #self.__pixels:NeoPixelSource = NeoPixelSource(
+            #    c.neoPixelPin, pixelCount=c.neoPixelCount, main = self.main, refreshRate=0.05, 
+                #brightness=c.neoPixelBrightness, 
+             #   auto_write=False, pixel_order=c.neoPixelOrder # type: ignore
+            #)
+            #self.__pixels.nliSetContainer(self.__pixelsContainer)
     
+    def addNeoPixels(self,servoPin:Optional[int]=None, **kwds:Unpack[NeoPixelSource.KWDS]) -> NeoPixelSource:
+        pin = self.neoPixelPin if servoPin is None else getattr(self, f'servo{servoPin}pin')
+        assert isinstance(pin, microcontroller.Pin)
+        if servoPin is not None:
+            ensure( self.__neoPixOnServos[servoPin-1] is None, "servo position already in use by %r",  self.__neoPixOnServos[servoPin-1]  )
+        else:
+            ensure( getattr(self,'__pixels',None) is None, "pixels already initialized" )
+            
+        updateKWDefaults(kwds,
+                pixelCount = 1,
+                pixel_order = neopixel.GRB,
+                #neoPixelBrightness = 0.2,
+            )
+        
+        pixels = NeoPixelSource( pin,  main = self.main,  **kwds )
+        if servoPin is not None:
+            self.__neoPixOnServos[servoPin-1] = pixels
+        else:
+            self.__pixels = pixels
+            
+        pixels.nliSetContainer(self.__pixelsContainer)
+        self.__allPixels.append(pixels)
+        return pixels
+
+            #// refreshRate=0.05, brightness=neoPixelBrightness, auto_write=False, pixel_order=neoPixelOrder
+
+    def initNeoPixOnServo( self, servoN:int, **kwds:Unpack[NeoPixelSource.KWDS] ) -> NeoPixelSource:
+        assert( self.__servos[servoN-1] is None  and self.__neoPixOnServos[servoN-1] is None )
+        pin = getattr(self,f'servo{servoN}pin',None)
+        assert isinstance(pin, microcontroller.Pin), f"servo{servoN}pin is not a pin: {pin}"
+
+        pixels = NeoPixelSource( pin, main = self.main, **kwds )
+        self.__neoPixOnServos[servoN-1] = pixels
+        self.__allPixels.append(pixels)
+        return pixels
+    
+        
     def nliGetChildren(self) -> Iterable['NamedLocalIdentifiable']|None:
         #if self._irRemote is not None:
         #    return [ self._irRemote ]
@@ -83,24 +135,7 @@ class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
         assert self.__servos[2] is not None
         return  self.__servos[2]
     
-    def initNeoPixOnServo( self, servoN:int, 
-                neoPixelCount:int = 1,
-                name:Optional[str] = None, 
-                neoPixelOrder = neopixel.GRB,
-                neoPixelBrightness = 0.2,
-             ) -> NeoPixelSource:
-        assert( self.__servos[servoN-1] is None  and self.__neoPixOnServos[servoN-1] is None )
-        pin = self.config.option('servo{}pin'.format(servoN))
-        name = name or f"pixel{servoN}"
 
-        pixels = NeoPixelSource(
-            pin,  main = self.main, pixelCount=neoPixelCount, refreshRate=0.05,
-                brightness=neoPixelBrightness, auto_write=False, pixel_order=neoPixelOrder
-        )
-        self.__neoPixOnServos[servoN-1] = pixels
-        self.__allPixels.append(pixels)
-        return pixels
-    
 
     def addIrRemote(self, codenames:dict[str,int]|str|None = None) -> LCP_IRrecv:
         assert self._irRemote is None
@@ -124,7 +159,7 @@ class CaernarfonCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
     def initServo( self, servoN:int, name:Optional[str] = None, duty_cycle:int = 2 ** 15, frequency=50, **kwds) -> LocalServo:
         ensure( self.__servos[servoN-1] is None, "servo position already in use by %r",  self.__servos[servoN-1] )
         ensure( self.__neoPixOnServos[servoN-1] is None, "servo position already in use by %r",  self.__neoPixOnServos[servoN-1]  )
-        pin = self.config.option('servo{}pin'.format(servoN))
+        pin = getattr(self, 'servo{}pin'.format(servoN) )
         name = name or f"servo{servoN}"
         pwm = pwmio.PWMOut( pin, duty_cycle=duty_cycle, frequency=frequency)
         servo = LocalServo(pwm, main=self.main, name=name, **kwds)

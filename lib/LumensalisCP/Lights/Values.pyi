@@ -3,19 +3,11 @@ from __future__ import annotations
 from random import random as randomZeroToOne, randint
 # pylint: disable=unused-argument
 
-from LumensalisCP.IOContext import *
-
+from LumensalisCP.common import *
+from LumensalisCP.Eval.Evaluatable import Evaluatable
 type RawOrEvaluatable[T] = Union[T, Evaluatable]
 
 type rgbTuple = tuple[float,float,float]
-type AnyRawLightValue = Union[
-        int, float, bool,
-        rgbTuple,
-        # List [float],
-        str, RGB
-    ] 
-
-type AnyLightValue = RawOrEvaluatable[ AnyRawLightValue]
 
 class RGB(object):
     
@@ -38,19 +30,28 @@ class RGB(object):
     @b.setter
     def b(self,v): ... 
     
-    def toNeoPixelInt( self ) -> int: ... 
+    def toNeoPixelRGBInt( self ) -> int: ... 
         
     def _set(self, r:ZeroToOne, g:ZeroToOne,b:ZeroToOne): ... 
     
     def rgbTuple(self) -> Tuple[ZeroToOne,ZeroToOne,ZeroToOne]: ...
         
     @staticmethod
-    def fromNeoPixelInt( npi:int ) ->"RGB": ...
+    def fromNeoPixelRGBInt( npi:int ) ->"RGB": ...
     def fadeTowards(self, other:"RGB", ratio:ZeroToOne )->"RGB": ...
     @property
     def brightness(self)->float: ...
     def __repr__(self) -> str: ...
     def __str__(self) -> str: ...
+
+type AnyRawLightValue = Union[
+        int, float, bool,
+        rgbTuple,
+        # List [float],
+        str, RGB
+    ] 
+
+type AnyRGBValue = RawOrEvaluatable[ AnyRawLightValue]
 
 
 class LightValueBase(object):
@@ -60,7 +61,7 @@ class LightValueBase(object):
     def brightness(self)->float: pass
 
     @property
-    def asNeoPixelInt(self)->int: pass
+    def asNeoPixelRGBInt(self)->int: pass
     
     @property
     def asRGB(self) -> RGB: pass
@@ -82,18 +83,18 @@ class LightValueRGB(RGB, LightValueBase ):
     def lookupColor( color:str ) ->RGB: pass
 
     @staticmethod
-    def toRGB( value:AnyLightValue )->RGB:pass
+    def toRGB( value:AnyRGBValue )->RGB:pass
 
     @staticmethod
-    def prepRGBValue( value:AnyLightValue ) ->RGB: pass
+    def prepRGBValue( value:AnyRGBValue ) ->RGB: pass
         
-    def setLight(self, value:AnyLightValue): pass
+    def setLight(self, value:AnyRGBValue): pass
 
     @staticmethod
     def randomRGB( brightness:ZeroToOne=1) -> RGB: pass
 
     @property
-    def asNeoPixelInt(self)->int: pass
+    def asNeoPixelRGBInt(self)->int: pass
     
     @property
     def asRGB(self) -> RGB: pass
@@ -104,12 +105,12 @@ class LightValueNeoRGB(LightValueBase):
 
     
     @staticmethod
-    def toNeoPixelInt( value:AnyLightValue )->int: pass
+    def toNeoPixelRGBInt( value:AnyRGBValue )->int: pass
     
     @staticmethod
     def formatNeoRGBValues( values ) ->str: pass
     
-    def __init__(self,  value:AnyLightValue ): pass
+    def __init__(self,  value:AnyRGBValue ): pass
 
     @staticmethod
     def randomRGB( brightness:ZeroToOne=1) ->int: pass
@@ -117,10 +118,10 @@ class LightValueNeoRGB(LightValueBase):
     @property
     def brightness(self)->float: pass
     
-    def setLight(self, value:AnyLightValue): pass
+    def setLight(self, value:AnyRGBValue): pass
 
     @property
-    def asNeoPixelInt(self)->int: pass
+    def asNeoPixelRGBInt(self)->int: pass
     
     @property
     def asRGB(self) -> RGB: pass

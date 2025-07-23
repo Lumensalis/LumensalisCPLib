@@ -85,7 +85,7 @@ class ControlPanel( MainChild ):
     def __init__( self, main:'LumensalisCP.Main.Manager.MainManager', name:Optional[str]=None ): # type: ignore[no-untyped-def]
         super().__init__( main=main, name=name )
 
-        self._controlVariables = NliList(name='controlVariables',parent=self)
+        self._controlVariables:NliList[ControlVariable] = NliList(name='controlVariables',parent=self)
         
     def addControlVariable( self, *args, **kwds ) -> ControlVariable:
         variable = ControlVariable( *args,**kwds )

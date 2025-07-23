@@ -95,3 +95,5 @@ class KWCallback(object):
                 raise
         return self( *args,**kwds )
         
+        
+KWCallbackArg:TypeAlias = Callable[..., Any]  # type: ignore        

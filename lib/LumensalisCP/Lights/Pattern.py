@@ -1,48 +1,59 @@
-from LumensalisCP.Lights.Light import *
-from LumensalisCP.util.bags import Bag
-from LumensalisCP.CPTyping import *
-from random import random as randomZeroToOne, randint
+from __future__ import annotations
+
+
+#from LumensalisCP.common import *
+#from LumensalisCP.Eval.common import *
+from LumensalisCP.IOContext import *
+from LumensalisCP.Lights.RGB import RGB, AnyRGBValue
+from LumensalisCP.Lights.Light import Light, RGBLight
+from LumensalisCP.Lights.Groups import LightGroup
+
+from LumensalisCP.Eval.EvaluationContext import EvaluationContext
+from LumensalisCP.Eval.Evaluatable import evaluate, Evaluatable
+from LumensalisCP.Identity.Local import NamedLocalIdentifiable
+from LumensalisCP.common import *
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
-    
 #############################################################################
 
 class Pattern(NamedLocalIdentifiable):
-    
-    
-    _theManager:MainManager
+
     class KWDS(TypedDict):
         name: NotRequired[str]
         whenOffset: NotRequired[TimeInSecondsConfigArg]
         startingSpeed: NotRequired[TimeInSecondsConfigArg]
     
+    
     def __init__(self,  target:LightGroup, name:Optional[str]=None, 
                  whenOffset:TimeInSecondsConfigArg=0.0, startingSpeed:TimeInSecondsEvalArg=1.0 ):
         super().__init__(name=name)
         self.__running = False
-        self.__speed:TimeInSecondsEval = startingSpeed
+        self.__speed:TimeInSecondsEval =toTimeInSecondsEval( startingSpeed)
         assert target is not None, f"target LightGroup must be provided when creating {self.__class__.__name__} Pattern"
         self.__target = target
         
-        self.__whenOffset:TimeInSeconds = whenOffset
+        self.__whenOffset:TimeInSecondsEval =toTimeInSecondsEval( whenOffset )
 
     @property
-    def whenOffset(self) -> TimeInSeconds : return self.__whenOffset
+    def whenOffset(self) -> TimeInSecondsEval : return self.__whenOffset
     
     @whenOffset.setter
-    def whenOffset(self,offset:TimeInSeconds): self.__whenOffset = offset
+    def whenOffset(self,offset:TimeInSecondsEval): self.__whenOffset = offset
     
     def offsetWhen( self, context:EvaluationContext ) -> TimeInSeconds:
-        return  context.when + self.__whenOffset
+        return  context.when + self.__whenOffset # type: ignore
+
+    _theManager:MainManager
+
 
     @property
     def target(self) -> LightGroup : return  self.__target
     
     @property
-    def speed(self) -> TimeInSeconds: return self.__speed
+    def speed(self) -> TimeInSecondsEval: return self.__speed
     
     @speed.setter
-    def speed(self, value:TimeInSeconds): self.setSpeed(value)
+    def speed(self, value:TimeInSecondsEval): self.setSpeed(value)
     
     @property
     def running(self) -> bool: return self.__running
@@ -50,10 +61,10 @@ class Pattern(NamedLocalIdentifiable):
     @running.setter
     def running(self, running:bool): self.setRunning(running)
 
-    def setSpeed(self, value:TimeInSeconds, context:Optional[EvaluationContext]=None ):
+    def setSpeed(self, value:TimeInSecondsEval, context:Optional[EvaluationContext]=None ): # pylint: disable=unused-argument
         self.__speed = value
 
-    def setRunning(self, value:bool, context:Optional[EvaluationContext]=None ):
+    def setRunning(self, value:bool, context:Optional[EvaluationContext]=None ): # pylint: disable=unused-argument
         self.__running = value
 
     def refresh( self, context:EvaluationContext ) -> None:
@@ -68,22 +79,50 @@ class Pattern(NamedLocalIdentifiable):
     
 #############################################################################
 
+class OnOffPattern( Pattern ): # pylint: disable=abstract-method
+    
+    class KWDS(Pattern.KWDS):
+        onValue: NotRequired[RGBEvalArg]
+        offValue: NotRequired[RGBEvalArg]
+        
+    def __init__(self,
+                target:LightGroup, name:Optional[str]=None, 
+                onValue:RGBEvalArg =  RGB.WHITE,
+                offValue:RGBEvalArg = RGB.BLACK,
+                **kwargs
+            ):
+        """ base for patterns which vary between on and off colors
+
+        :param target: group to be controlled
+        :type target: LightGroup
+        :param name: name of the pattern, defaults to None
+        :type name: Optional[str], optional
+        :param onValue: value or Evaluatable convertible to RGB
+        :type onValue: RGBEvalArg, optional
+        """
+        self._onValue = onValue
+        self._offValue = offValue
+
+        super().__init__( target=target,name=name, **kwargs)
+
+#############################################################################
+        
 class PatternGeneratorStep(object):
     def __init__( self, 
-                 startValue: AnyLightValue, 
-                 endValue: Optional[AnyLightValue] =  None, 
-                 duration: TimeInSeconds=1.0,
+                 startValue: AnyRGBValue, 
+                 endValue: Optional[AnyRGBValue] =  None, 
+                 duration: TimeInSeconds=TimeInSeconds(1.0),
                  intermediateRefresh: TimeInSeconds|None = None,
             ):
         self._startValue = startValue
-        self._endValue:AnyLightValue = endValue or startValue
+        self._endValue:AnyRGBValue = endValue or startValue
         self.duration = duration
         self.intermediateRefresh = intermediateRefresh
     
-    def startValue( self, index:int, context:EvaluationContext ):
+    def startValue( self, index:int, context:EvaluationContext ): # pylint: disable=unused-argument
         return context.valueOf( self._startValue )
     
-    def endValue( self, index:int , context:EvaluationContext ):
+    def endValue( self, index:int , context:EvaluationContext ): # pylint: disable=unused-argument
         return context.valueOf( self._endValue )
 
     def intermediateValue( self, index, progression:ZeroToOne, context:EvaluationContext ):
@@ -93,7 +132,7 @@ class PatternGeneratorStep(object):
 #############################################################################
 
 class MultiLightPatternStep(PatternGeneratorStep):
-    def __init__(self, duration, starts:Sequence[AnyLightValue], ends:Sequence[AnyLightValue], **kwds ):
+    def __init__(self, duration, starts:Sequence[AnyRGBValue], ends:Sequence[AnyRGBValue], **kwds ):
         super().__init__(duration=duration, **kwds)
         self.__starts = starts
         self.__ends = ends
@@ -109,7 +148,10 @@ class MultiLightPatternStep(PatternGeneratorStep):
 #############################################################################
 
 class PatternGenerator(Pattern):
-    def __init__(self, *args, intermediateRefresh:Optional[TimeInSeconds]=None,  **kwargs ):
+    class KWDS(Pattern.KWDS):
+        intermediateRefresh: NotRequired[TimeInSecondsConfigArg]
+        
+    def __init__(self, *args, intermediateRefresh:Optional[TimeInSeconds]=None,  **kwargs ): # pylint: disable=unused-argument
         super().__init__( *args, **kwargs )
         self.__nextStep = 0.0
         self.__nextRefresh = 0.0
@@ -141,7 +183,7 @@ class PatternGenerator(Pattern):
                 self.__nextRefresh = min(  self.__nextStep,
                             when + self.__step.intermediateRefresh )
                 self.__intermediateCount += 1
-                for lx, light in enumerate(self.target.lights):
+                for lx, light in enumerate(self.target.lights): # pylint: disable=unused-variable
                     self.target[lx] = self.__step.intermediateValue(lx,progression,context)
                     #light.setValue( self.__step.intermediateValue(lx,progression,context), context=context )
     
@@ -162,15 +204,14 @@ class PatternGenerator(Pattern):
         else:
             self.__nextRefresh = self.__nextStep
 
-        for lx, light in enumerate(self.target.lights):
+        for lx, light in enumerate(self.target.lights):  # pylint: disable=unused-variable
             self.target[lx].set( self.__step.startValue(lx,context) , context )
             #light.setValue( self.__step.startValue(lx,context), context=context )
 
     def regenerate(self, context:EvaluationContext) -> Iterator[PatternGeneratorStep]:
         raise NotImplementedError
 
-    def setRunning(self, value:bool, context:Optional[EvaluationContext]=None ):
-        super().setRunning(value, context)
+    #def setRunning(self, value:bool, context:Optional[EvaluationContext]=None ):
+    #    super().setRunning(value, context)
 
 #############################################################################
-

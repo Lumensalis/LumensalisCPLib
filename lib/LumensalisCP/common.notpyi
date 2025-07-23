@@ -1,0 +1,47 @@
+from __future__ import annotations
+
+# pylint: disable=unused-import,import-error
+# pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
+
+import traceback
+import json
+import math
+import adafruit_itertools as itertools  # type: ignore # pylint: disable=import-error
+
+# pylint: disable=unused-argument
+
+import LumensalisCP
+
+from LumensalisCP.Debug import Debuggable
+from LumensalisCP.CPTyping import *
+from .Units import *
+
+
+if TYPE_CHECKING:
+    import LumensalisCP.util.Singleton
+    from LumensalisCP.Main.Manager import MainManager
+
+
+
+
+def dictAddUnique( d:dict[Any,Any], key:Any, value:Any ) -> None: ...
+
+def updateKWDefaults[T]( kwargs:T|Any,
+                     **updatedDefaults:dict[str,Any]) -> T: ... # type: ignore
+
+def safeRepr( v:Any ) -> str: ...
+def safeFmt( fmtStr:str, *args:Any ) ->str: ...
+    
+class EnsureException(Exception): ...
+    
+def ensure( condition:bool, fmtStr:str|None = None, *args:Any ) -> None: ... # pylint: disable=keyword-arg-before-vararg
+
+def toZeroToOne( value:Any ) -> float: ...
+def toZeroToOne_( value:Any ) -> float: ...
+    
+def withinZeroToOne( value:Any ) -> ZeroToOne: ...
+def withinZeroToOne_( value:Any ) -> ZeroToOne: ...
+
+def SHOW_EXCEPTION( inst:Exception, fmt:str, *args:Any )-> None: ...
+
+getMainManager: LumensalisCP.util.Singleton.Singleton[MainManager] 

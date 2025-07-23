@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from ._common import *
-from .Evaluatable import Evaluatable
-from .EvaluationContext import EvaluationContext
-from .ExpressionTerm import ExpressionTerm, ensureIsTerm
+from LumensalisCP.Eval._common import *
+from LumensalisCP.Eval.Evaluatable import Evaluatable
+from LumensalisCP.Eval.EvaluationContext import EvaluationContext
+from LumensalisCP.Eval.ExpressionTerm import ExpressionTerm, ensureIsTerm
 
 if TYPE_CHECKING:
     #from LumensalisCP.Inputs import InputSource
-    from LumensalisCP.Eval.Evaluatable import Evaluatable, EVAL_VALUE_TYPES #, DirectValue
+    from LumensalisCP.Eval.Evaluatable import Evaluatable
     from LumensalisCP.Inputs import InputSource
+    
     
 # TODO: tighten up type hints / lint
 # pylint: disable=unused-argument,super-init-not-called

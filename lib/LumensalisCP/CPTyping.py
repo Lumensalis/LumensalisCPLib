@@ -9,7 +9,7 @@ try:
     from typing import Generator, Iterable, Iterator
     from typing import Dict, Mapping, MutableMapping
     from typing import IO, TextIO
-    from typing import Callable
+    from typing import Callable, ParamSpec, Protocol
     from typing import Union, ForwardRef, Required, NotRequired, Optional
     from typing import Unpack
     from typing import TypeAlias, NewType
@@ -39,6 +39,8 @@ try:
     def makeTypingExpression( a:Any ) -> Any : # type: ignore
         return a
     
+    #def makeTypingExpression( a:Any ) -> Any : # type: ignore
+    #    return a
     from weakref import ReferenceType
 
 except ImportError:
@@ -51,3 +53,5 @@ if LCPF_TYPING_IMPORTED:
     # this is _not_ within the initial try/except because we do
     # _not_ want to silently ignore errors
     raise NotImplementedError
+
+StrAnyDict:TypeAlias = Dict[str,Any]

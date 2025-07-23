@@ -1,6 +1,6 @@
 # from .Manager import MainManager
 
-from ..Identity.Local import NamedLocalIdentifiable
+from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.common import *
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
 import LumensalisCP.pyCp.weakref as weakref

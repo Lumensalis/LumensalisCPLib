@@ -44,11 +44,11 @@ _NLIT_co = TypeVar('_NLIT_co',
                    bound=NliInterface)
 
     
-class KWDS_NamedLocalIdentifiable(TypedDict):
-    name:Optional[str]
+
                                 
 class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable): 
-    KWDS = KWDS_NamedLocalIdentifiable
+    class KWDS(TypedDict):
+        name:NotRequired[str]
      
     def __init__( self, name:Optional[str]=None ): ...
 
@@ -69,7 +69,7 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
 
     def nliGetContainers(self) -> Iterable[NliContainerBaseMixin]|None: ...
 
-    def nliSetContainer(self, container:NliContainerMixin): ...
+    def nliSetContainer(self, container:NliContainerMixin[Self]) -> None: ...
 
     @property
     def nliIsNamed(self) -> bool: ...

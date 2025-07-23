@@ -1,6 +1,9 @@
 import gc
 print( f"dir(gc)={dir(gc)}" )
 #gc.threshold( 16384 )
+
+# pylint: disable=wrong-import-position
+
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl,pmc_gcManager,printElapsed
 
 mlc = pmc_mainLoopControl
@@ -22,6 +25,7 @@ if 1:
     pmc_gcManager.PROFILE_MEMORY = False
     pmc_gcManager.PROFILE_MEMORY_NESTED = False
     pmc_gcManager.PROFILE_MEMORY_ENTRIES = False
+    
     
 from LumensalisCP.Demo.DemoCommon import *
 from LumensalisCP.Lights.ProxyLights import *
@@ -301,7 +305,7 @@ class TreasureChest( DemoBase ):
         frontLidStripPattern = Gauge(frontLidStrip, name="RangeGauge",  )
         red = LightValueRGB.RED
         def gaugeOnValue( context:EvaluationContext = None,**kwargs):
-            return red.fadeTowards(LightValueRGB.toRGB( wheel1( main.when/3.5)), frontLidStripPattern.value)
+            return red.fadeTowards(RGB.toRGB( wheel1( main.when/3.5)), frontLidStripPattern.value)
         frontLidStripPattern.onValue = gaugeOnValue
         
         

@@ -4,7 +4,7 @@ from __future__ import annotations
 #from LumensalisCP.Inputs import InputSource
 
 from LumensalisCP.IOContext  import *
-from .Trigger import Trigger
+from LumensalisCP.Triggers.Trigger import Trigger
 #import functools
 
 #############################################################################
@@ -13,34 +13,34 @@ from .Trigger import Trigger
 #############################################################################
 
 
-def fireOnSet( source:Optional[InputSource]=None, trigger:Optional[Trigger]=None ):
+def fireOnSet( source:Optional[InputSource]=None, trigger:Optional[Trigger]=None ): #type: ignore
     assert source is not None
     # assert trigger is not None
-    def on2( callable:Callable ):
-        cTrigger = trigger or Trigger( name=callable.__name__ )
+    def on2( cb:Callable ):
+        cTrigger = trigger or Trigger( name=cb.__name__ )
         #callable._trigger = cTrigger
         cTrigger.fireOnSet( source )
-        cTrigger.addAction( callable  )
-        return callable
+        cTrigger.addAction( cb  )
+        return cb
     return on2
 
 
 
-def fireOnTrue( expression:Expression|ExpressionTerm, target=None, trigger:Optional[Trigger]=None ):
+def fireOnTrue( expression:Expression|ExpressionTerm, target:Any, trigger:Optional[Trigger]=None ):
     # assert trigger is not None
-    def on2( callable:Callable, expression=expression, trigger=trigger ):
+    def on2( cb:Callable[..., Any], expression:Expression|ExpressionTerm=expression, trigger:Trigger|None=trigger ):
 
-        cTrigger = trigger or Trigger( name=callable.__name__ )
+        cTrigger = trigger or Trigger( name=cb.__name__ )
         # @functools.wraps(callable)
         def wrapped(*args,**kwargs):
         
-            result = callable(*args, **kwargs)
+            result = cb(*args, **kwargs)
 
             return result 
-        try: setattr(callable, 'trigger', cTrigger )
-        except: pass
-        try: setattr(callable,'expression', expression )
-        except: pass
+        try: setattr(cb, 'trigger', cTrigger )
+        except: pass # pylint: disable=bare-except
+        try: setattr(cb,'expression', expression )
+        except: pass # pylint: disable=bare-except
         setattr(wrapped, 'trigger', cTrigger )
         setattr(wrapped,'expression', expression )
         #setattr( wrapped, '__name__', callable.__name__ )
@@ -57,5 +57,5 @@ def fireOnTrue( expression:Expression|ExpressionTerm, target=None, trigger:Optio
 def fireOnClick( expression:Expression|ExpressionTerm, trigger:Optional[Trigger]=None ):
     return  fireOnTrue( expression=expression, trigger=trigger )
 
-def fireOnRising( expression:Expression|ExpressionTerm, target=None, trigger:Optional[Trigger]=None ):
+def fireOnRising( expression:ExpressionTerm, target:Any, trigger:Optional[Trigger]=None ):
     return  fireOnTrue( expression= rising( expression ), trigger=trigger, target=target )

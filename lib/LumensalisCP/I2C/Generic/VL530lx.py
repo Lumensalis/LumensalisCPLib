@@ -1,32 +1,31 @@
 
-import adafruit_vl53l0x
-import simpleio
+import adafruit_vl53l0x # type: ignore # pylint: disable=import-error
 
-from LumensalisCP.CPTyping import *
-from LumensalisCP.Eval.Expressions import EvaluationContext
-from LumensalisCP.common import *
-from LumensalisCP.I2C.I2CDevice import  I2CDevice, I2CInputSource
+from LumensalisCP.I2C.common import *
 
+#############################################################################
 
 class VL53L0XInput(I2CInputSource):
     def __init__( self, **kwargs ):
         super().__init__(**kwargs)
-        self._range = 8192
+        self._range:int = 8192
         
-    def getDerivedValue(self, context:EvaluationContext) -> bool:
+    def getDerivedValue(self, context:EvaluationContext) -> int:
         if context.debugEvaluate:
             self.infoOut( "getDerivedValue = %r", self._range )
         return self._range
     
-    def _setRange( self, range, context:EvaluationContext):
-        if self._range != range:
-            self._range = range
+    def _setRange( self, r:int, context:EvaluationContext) -> bool:
+        if self._range != r:
+            self._range = r
             #self.dbgOut( "MPR121Input = %s", touched )
             self.updateValue( context )
+            return True
+        return False
             
 
-                    
-                    
+#############################################################################
+
 class VL53L0X(I2CDevice):
     
     def __init__(self, *args, updateInterval=0.1, **kwds ):
@@ -44,7 +43,9 @@ class VL53L0X(I2CDevice):
             self.__readMode = "measuring"
         elif self.__readMode == "measuring":
             if self._sensor.data_ready:
-                range = self._sensor.range
+                r = self._sensor.range
                 self.__readMode = "startMeasurement"
                 #self.dbgOut( "ranger range = %s", range )
-                self.__range._setRange(range, context=context)
+                return self.__range._setRange(r, context=context) # pylint: disable=protected-access
+
+        return False

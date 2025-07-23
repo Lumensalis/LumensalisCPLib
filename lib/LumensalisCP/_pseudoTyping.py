@@ -1,6 +1,6 @@
 from __future__ import annotations
-# pylint: disable=unused-import,import-error
-#   pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
+# pylint: disable=unused-import,import-error, unused-argument
+# pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 
 LCPF_TYPING_IMPORTED = False # type: ignore
 TYPE_CHECKING = False
@@ -107,6 +107,7 @@ Iterable = PseudoTypingTBType("Iterable")
 
 ClassVar = PseudoTypingModifier("ClassVar")
 Type = PseudoTypingModifier("Type")
+TypeAlias = PseudoTypingModifier("TypeAlias")
 Union = PseudoTypingModifier("Union")
 ForwardRef = PseudoTypingModifier("ForwardRef")
 Required = PseudoTypingModifier("Required")
@@ -114,6 +115,7 @@ NotRequired = PseudoTypingModifier("NotRequired")
 Optional = PseudoTypingModifier("Optional")
 ReferenceType = PseudoTypingModifier("ReferenceType")
 Unpack = PseudoTypingModifier("Unpack")
+
 
 class GenericBase(object): pass
 
@@ -126,6 +128,8 @@ Generic = _GenericMaker()
 
 def TypeVar(tag:str): 
     return GenericBase
+
+def ParamSpec(tag:str): return tag
 
 def NewType(name, type_):
     """Create a new type with the given name and type."""
@@ -153,10 +157,10 @@ class __TDM(object):
 class TypedDict(object):
     pass
 
+class Protocol:
+    pass
 
 def overload( f ): return f
 def override( f ): return f
 def final( f ): return f
 def wraps( f ): return f
-
-

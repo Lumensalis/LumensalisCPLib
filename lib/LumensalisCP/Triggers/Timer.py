@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from LumensalisCP.IOContext import *
 
 #import LumensalisCP.Main.Manager
@@ -6,6 +7,7 @@ from LumensalisCP.IOContext import *
 #from LumensalisCP.Eval.Expressions import Expression, ExpressionTerm
 from LumensalisCP.Main.Dependents import SubManagerBase, ManagerRef
 from . import Trigger
+    
     
 class PeriodicTimerManager( SubManagerBase ):
     
@@ -15,7 +17,7 @@ class PeriodicTimerManager( SubManagerBase ):
         self.__timerChanges = 0
         self.__updating = False
         self.__timerSorts = 0
-        self.__latestUpdateWhen:TimeInSeconds = 0.0
+        self.__latestUpdateWhen:TimeInSeconds = TimeInSeconds(0.0)
         
     def update(self, context: EvaluationContext ):
         if len(self.__timers) > 0:
@@ -83,7 +85,7 @@ class PeriodicTimer( Trigger ):
     def __init__(self, interval:TimeSpanInSeconds=1.0, name:Optional[str] = None, oneShot:bool = False, manager:Optional[PeriodicTimerManager] = None ):
         super().__init__(name=name)
         self.__interval:TimeSpanInSeconds|Callable = interval
-        self.__lastFire:TimeInSeconds = 0.0
+        self.__lastFire:TimeInSeconds = TimeInSeconds(0.0)
         self.__nextFire:TimeInSeconds|None = None
         self.__oneShot:bool = oneShot
         assert manager is not None
@@ -131,10 +133,10 @@ class PeriodicTimer( Trigger ):
         self.startupOut( f"start {self.name} when = {self.manager.main.when} interval={interval} _nextFire={self.__nextFire}" )
         nextFire = self.manager.main.when + interval 
         if self.__nextFire is None:
-            self.__nextFire = nextFire
+            self.__nextFire = nextFire # type: ignore
             self.manager._addTimer(self)
         else:
-            self.__nextFire = nextFire
+            self.__nextFire = nextFire # type: ignore
             self.manager._updateTimer(self)
     
     @final
@@ -151,10 +153,11 @@ class PeriodicTimer( Trigger ):
         if interval is not None:
             self.__interval = interval
         interval = self.getInterval()
-        self.__nextFire = when + interval
+        self.__nextFire = when + interval # type: ignore
         if self.enableDbgOut: self.dbgOut( "restart at %.3fs i=%.3fs nf=%.3fs", when, interval, self.__nextFire)
         #self._nextFire = min( when, self._nextFire + self.__interval )
         self.manager._updateTimer(self)
+
 
     def addTaskDef( self, name:Optional[str]=None, autoStart=True):
         def wrapper( cb:Callable  ):
@@ -165,9 +168,10 @@ class PeriodicTimer( Trigger ):
             return wrapped
 
         return wrapper
+    
     #########################################################################
     # ONLY FOR USE BY PeriodicTimerManager
-    def _timerExpired(self, when:float, context: EvaluationContext ):
+    def _timerExpired(self, when:TimeInSeconds, context: EvaluationContext ):
         
         self.fire(when=when, context=context)
         self.__lastFire = when

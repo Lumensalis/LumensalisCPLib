@@ -3,7 +3,7 @@ import traceback
 from LumensalisCP.IOContext import *
 from LumensalisCP.commonCPWifi import *
 from LumensalisCP.pyCp.importlib import reload
-from . import BasicServer
+from LumensalisCP.HTTP import BasicServer
 import traceback
 
 #print()
@@ -161,7 +161,7 @@ def BSR_query(self:BasicServer.BasicServer, request:Request, name:str):
 
 def _reloadAll( ):
     from LumensalisCP.Main import ManagerRL
-    from . import BasicServerRL            
+    from LumensalisCP.HTTP import BasicServerRL            
     modules = [ ManagerRL, BasicServerRL ]
     for m in modules:
         reload( m )

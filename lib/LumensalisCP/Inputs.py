@@ -2,9 +2,18 @@ from __future__ import annotations
 
 
 #from LumensalisCP.common import *
-from LumensalisCP.Eval.common import *
-#############################################################################
+from LumensalisCP.common import *
+from LumensalisCP.Identity.Local import NamedLocalIdentifiable
+from LumensalisCP.Main.Updates import UpdateContext
 
+from LumensalisCP.Eval.Expressions import ExpressionTerm    
+from LumensalisCP.Eval.EvaluationContext import EvaluationContext
+from LumensalisCP.CPTyping import Protocol
+#############################################################################
+class _InputSourceChangedCallback(Protocol):
+    def __call__(self, source:InputSource, context:EvaluationContext) -> None:
+        pass
+    
 class InputSource(NamedLocalIdentifiable, ExpressionTerm):
     
     def __init__(self, name:Optional[str] = None):
@@ -14,7 +23,7 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm):
         self.__latestValue = None
         self.__latestUpdateIndex:int = -1
         self.__latestChangeIndex:int = -1
-        self.__onChangedList = []
+        self.__onChangedList:list[_InputSourceChangedCallback] = []
 
     def __repr__( self ):
         return safeFmt( "%s:%s = %r", self.__class__.__name__, self.name, self.value )
@@ -27,7 +36,7 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm):
     def getDerivedValue(self, context:EvaluationContext) -> Any:
         raise NotImplementedError
     
-    def onChange(self, cb:Callable):
+    def onChange(self, cb:_InputSourceChangedCallback) -> None:
         self.__onChangedList.append(cb)
 
     def __callOnChanged(self, context:EvaluationContext): # pylint: disable=unused-private-member

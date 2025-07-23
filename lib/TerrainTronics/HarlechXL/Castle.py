@@ -26,7 +26,7 @@ class HarlechXL_LED( DimmableLight ):
         v255 =  int(max(0,min(raw,255)))
         return v255
     
-    def setValue(self,value:AnyLightValue, context: UpdateContext = None ):
+    def setValue(self,value:AnyRGBValue, context: UpdateContext = None ):
         level = toZeroToOne(context.valueOf( value ) )
         self.__value = value
         
@@ -36,7 +36,7 @@ class HarlechXL_LED( DimmableLight ):
     def _brightnessChanged(self):
         self.__driver.br( self.__index, self._driverValue )
 
-    def getValue(self, context: UpdateContext = None ) -> AnyLightValue:
+    def getValue(self, context: UpdateContext = None ) -> AnyRGBValue:
         return self.__value
     
     def __repr__(self):

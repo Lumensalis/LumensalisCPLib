@@ -1,5 +1,10 @@
+from __future__ import annotations
+
+# pylint: disable=unused-import,import-error,unused-argument
+# pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 
 import board, microcontroller
+from LumensalisCP.common import *
 from LumensalisCP.Eval.common import *
 from LumensalisCP.Scenes.Scene import addSceneTask
 from LumensalisCP.Triggers import Trigger, fireOnSet, fireOnTrue, fireOnRising

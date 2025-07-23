@@ -42,9 +42,9 @@ class I2CSimpleInput(I2CInputSource):
 class TLV493D(I2CDevice,adafruit_tlv493d.TLV493D):
     DEFAULT_UPDATE_INTERVAL = TimeInSeconds(0.1)
     
-    def __init__(self, **kwds:Unpack[I2CDevice.KWDS] ):
+    def __init__(self, main, **kwds:Unpack[I2CDevice.KWDS] ):
                 
-        I2CDevice.__init__( self, **kwds ) 
+        I2CDevice.__init__( self, main, **kwds ) 
         adafruit_tlv493d.TLV493D.__init__(self, self.i2c)
         self.__lastReading:Tuple[int,int,int]  = (0,0,0)
         

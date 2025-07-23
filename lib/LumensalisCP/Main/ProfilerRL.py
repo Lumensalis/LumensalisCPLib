@@ -10,7 +10,7 @@ import LumensalisCP.Main.Updates
 
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
-from LumensalisCP.util.kwCallback import KWCallback
+from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
 from LumensalisCP.util.bags import Bag
 from LumensalisCP.common import SHOW_EXCEPTION
 import LumensalisCP.Main.Profiler

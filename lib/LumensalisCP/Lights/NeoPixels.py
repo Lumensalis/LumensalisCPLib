@@ -1,15 +1,10 @@
 from __future__ import annotations
-from LumensalisCP.Lights.Light import *
-import LumensalisCP.Main.Manager
-import neopixel # type: ignore
 
-from LumensalisCP.util.bags import Bag
+import neopixel # type: ignore # pylint: disable=import-error
 
-#import adafruit_led_animation.animation.blink
-#import adafruit_led_animation.helper
+from LumensalisCP.Lights._common import *
 
-if TYPE_CHECKING:
-    from LumensalisCP.Main.Manager import MainManager
+from LumensalisCP.Lights.Groups import LightSource
     
 class NeoPixelLight( RGBLight ):
 
@@ -17,32 +12,57 @@ class NeoPixelLight( RGBLight ):
         super().__init__(source=source, index=index)
         self.__npiv = 0
         
-    def setValue(self,value:AnyLightValue, context: Optional[EvaluationContext] = None ) ->None:
+
+    def setValue(self,value:AnyRGBValue, context: Optional[EvaluationContext] = None ) ->None:
         if context is not None:
             value = context.valueOf(value)
-        v = LightValueNeoRGB.toNeoPixelInt(value)
+        v = LightValueNeoRGB.toNeoPixelRGBInt(value)
         if v != self.__npiv:
             self.__npiv = v
             source:NeoPixelSource = self.source # type: ignore
             source.neopix[self.sourceIndex] = v
             source.lightChanged(self)
 
-    def getValue(self, context: Optional[EvaluationContext] = None ) -> AnyLightValue:
+    def getValue(self, context: Optional[EvaluationContext] = None ) -> AnyRGBValue:
         return self.__npiv
     
     def getLightValue( self ):
         return LightValueNeoRGB( self.__npiv )
     
 class NeoPixelSource( LightSource ):
-    def __init__(self, pin, main:MainManager, pixelCount:int, name:Optional[str]=None, 
-                 refreshRate:float|None = 0.1,
-                 **kwds):
+    
+    class KWDS( LightSource.KWDS ):
+        pixelCount: NotRequired[int] = 1
+        brightness: NotRequired[float] = 0.2
+        pixel_order: NotRequired[neopixel.PixelOrder] = neopixel.GRB
+        #auto_write: NotRequired[bool] = False
+        
+    def __init__(self, 
+            pin:microcontroller.Pin, 
+            main:MainManager,
+            pixelCount:int=1,
+            name:Optional[str]=None, 
+            refreshRate:float|None = 0.1,
+            pixel_order:  str = neopixel.GRB,
+            brightness:float = 1.0,
+            #auto_write= False,
+            bpp:int = 3,
+            **kwds:Unpack[LightSource.KWDS] 
+        ) -> None:
+
         self.__npLights:List[NeoPixelLight] = []
-        super().__init__( lights = self.__npLights, name=name or f"{self.__class__.__name__}_{pin}" )
-        self.neopix = neopixel.NeoPixel( pin, pixelCount,**kwds)
+        super().__init__( lights = self.__npLights, **kwds )
+        self.neopix = neopixel.NeoPixel( pin, pixelCount,
+                        pixel_order=pixel_order, brightness=brightness,
+                        # auto_write = False
+                ) #**kwds)
+        
         for index in range(pixelCount):
             self.__npLights.append( NeoPixelLight( self, index) )
         assert main is not None
+        assert len(self.__npLights) == pixelCount
+        assert self.lightCount == pixelCount
+        
         self._main = main
         self._changesSinceRefresh = 0
         self._refreshRate = refreshRate

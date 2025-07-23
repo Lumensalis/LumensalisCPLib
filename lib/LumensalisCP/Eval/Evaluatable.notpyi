@@ -7,10 +7,9 @@ from __future__ import annotations
 from LumensalisCP.common import *
 from LumensalisCP.Debug import Debuggable
 from LumensalisCP.Main.Updates import UpdateContext, OptionalContextArg, DirectValue
-if TYPE_CHECKING:
+#if TYPE_CHECKING:
     #from LumensalisCP.Eval.Expressions import EvaluationContext
-    from LumensalisCP.Lights.Values import RGB
-    EVAL_VALUE_TYPES:TypeAlias  = Union[ int, float, bool, str, RGB]
+    
     #class 
     #EvaluatableArg = TypeAlias  = Union[Evaluatable, DirectValue, EVAL_VALUE_TYPES]
     

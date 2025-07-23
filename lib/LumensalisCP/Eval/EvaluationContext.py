@@ -1,8 +1,8 @@
 
 from __future__ import annotations
 
-from ._common import *
-from .Evaluatable import Evaluatable
+from LumensalisCP.Eval._common import *
+from LumensalisCP.Eval.Evaluatable import Evaluatable
 
 if TYPE_CHECKING:
     #from LumensalisCP.Inputs import InputSource

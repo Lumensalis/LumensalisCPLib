@@ -1,7 +1,7 @@
 # from .Manager import MainManager
 
 from token import OP
-from ..Identity.Local import NamedLocalIdentifiable
+from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.CPTyping import ForwardRef
 from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.common import *

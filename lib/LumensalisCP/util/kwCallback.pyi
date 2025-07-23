@@ -1,6 +1,8 @@
+from __future__ import annotations
 from LumensalisCP.CPTyping import *
-import re
 
+# pylint: disable=unused-import,import-error,unused-argument
+# pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 class KWCallback(object):
     """Wrapper for callback/closure
     
@@ -10,7 +12,7 @@ class KWCallback(object):
     to remove the arguments for future calls.
     
     
->>> from LumensalisCP.util.kwCallback import KWCallback
+>>> from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
 >>> def foo( bar = 2 ):
     print( f"bar = {bar}" )
     
@@ -30,8 +32,11 @@ bar = 2
     requiredKwds = None
     
     @classmethod
-    def make( cls, cb:Callable, **kwds ) -> KWCallback: ...
+    def make( cls, cb:Callable[..., Any], **kwds:dict[str,Any] ) -> KWCallback: ...
         
-    def __init__( self, cb:Callable, name:str|None = None, requiredKwds:List[str]|None = None ): ...
+    def __init__( self, cb:Callable[..., Any], name:Optional[str]=None, requiredKwds:Optional[List[str]] = None ) -> None: ...
         
-    def __call__( self, *args, **kwds ): ...
+    def __call__( self, *args:Any, **kwds:dict[str,Any] ) -> Any: ...
+
+        
+KWCallbackArg:TypeAlias = Callable[..., Any]  # type: ignore        

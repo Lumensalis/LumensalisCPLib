@@ -1,8 +1,9 @@
-from  LumensalisCP.IOContext import *
+from LumensalisCP.common import *
+from LumensalisCP.IOContext import *
 from LumensalisCP.Main.Dependents import MainChild
 
 from LumensalisCP.util.bags import NamedList
-from ..Lights.Patterns import Pattern
+from LumensalisCP.Lights.Patterns import Pattern
 from LumensalisCP.Main.Profiler import ProfileFrameBase
 
 class Setter(object):

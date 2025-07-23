@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from ._common import *
-from .Behavior import Behavior, Actor
-from ..Gadgets.Servos import LocalServo
+from LumensalisCP.Behaviors._common import *
+from LumensalisCP.Behaviors.Behavior import Behavior, Actor
+from LumensalisCP.Gadgets.Servos import LocalServo
 
 class Motion(Behavior):
     """
@@ -24,7 +24,7 @@ class Door(Actor):
     def close(self, speed:TimeInSeconds|None = None, context:Optional[EvaluationContext]=None) -> Behavior:
         raise NotImplementedError("open method must be implemented in subclass")
     
-    def setSpeed(self, speed:TimeInSeconds, context:Optional[EvaluationContext]=None) -> Behavior:
+    def setSpeed(self, speed:TimeInSeconds, context:Optional[EvaluationContext]=None) -> None:
         raise NotImplementedError("setSpeed method must be implemented in subclass")
 
     def stop(self, context:Optional[EvaluationContext]=None) -> Behavior:
@@ -81,6 +81,7 @@ class ServoMovement(Motion):
     def exit(self, context):
         self.actor._servo.onMoveComplete( None )  # type: ignore
         super().exit(context)
+        
 
 class ServoDoor(Door):
     """ Door driven by servo
@@ -136,6 +137,9 @@ class ServoDoor(Door):
     
     def convertSpeed(self, speed:TimeInSeconds) -> DegreesPerSecond:
         return speed/self.span
+    
+    def setSpeed(self, speed:TimeInSeconds, context:Optional[EvaluationContext]=None) -> None:
+        raise NotImplementedError("setSpeed method must be implemented in subclass")
     
     @property
     def openRatio(self):

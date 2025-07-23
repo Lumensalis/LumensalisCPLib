@@ -1,7 +1,7 @@
 
 from LumensalisCP.Triggers import NamedLocalIdentifiable
 from LumensalisCP.Identity.Local import NliContainerMixin, NliList
-from .Scene import Scene, SceneTask
+from LumensalisCP.Scenes.Scene import Scene, SceneTask
 from LumensalisCP.Eval.Expressions import EvaluationContext
 
 from LumensalisCP.CPTyping import *

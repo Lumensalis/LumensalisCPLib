@@ -36,7 +36,7 @@ class ProxyRGBLight( RGBLight ):
     @property
     def value(self): return self.getValue()
     
-    def getValue(self, context: UpdateContext = None ) -> AnyLightValue:
+    def getValue(self, context: UpdateContext = None ) -> AnyRGBValue:
         return self.__value
     
     def getLightValue(self)-> LightValueBase: 
@@ -48,10 +48,10 @@ class ProxyRGBLight( RGBLight ):
     def recalculateForwardValue( self, context: UpdateContext = None  ):
         return self.source.recalculateForwardValue( self, context  )
         
-    def setValue(self,value:AnyLightValue, context: UpdateContext = None ):
+    def setValue(self,value:AnyRGBValue, context: UpdateContext = None ):
         if context is not None:
             value = context.valueOf(value)
-        v = LightValueRGB.toRGB(value)
+        v = RGB.toRGB(value)
         if v != self.__value:
             self.__value = v
             fv = self.recalculateForwardValue( context )

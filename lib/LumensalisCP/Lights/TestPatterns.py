@@ -1,19 +1,20 @@
-from LumensalisCP.Lights.Light import *
+from __future__ import annotations
+from math import log
+from LumensalisCP.Lights._common import *
 from LumensalisCP.IOContext import *
 #from LumensalisCP.Main.Expressions import NamedOutputTarget, EvaluationContext
 from LumensalisCP.Lights.Pattern import *
-from random import random as randomZeroToOne, randint
+
 from LumensalisCP.Temporal.Oscillator import Sawtooth
 
 #############################################################################
-from . import TestPatternsRL
-from math import log
+from LumensalisCP.Lights import TestPatternsRL
 
 class PatternRLTest( Pattern, OutputTarget ):
     def __init__(self,
                 target:LightGroup, name:Optional[str]=None, 
-                a:AnyLightValue|Evaluatable = 1.0,
-                b:AnyLightValue|Evaluatable = 0.0,
+                a:AnyRGBValue|Evaluatable = 1.0,
+                b:AnyRGBValue|Evaluatable = 0.0,
                 value:ZeroToOne|Evaluatable = 0.0,
                 **kwargs
             ):
@@ -41,8 +42,8 @@ class PatternRLTest( Pattern, OutputTarget ):
         maxPx = int(maxPxf)
         pxR = maxPxf - maxPx
         
-        a = LightValueRGB.toRGB( context.valueOf(self._onValue) )
-        b = LightValueRGB.toRGB( context.valueOf(self._offValue) )
+        a = RGB.toRGB( context.valueOf(self._onValue) )
+        b = RGB.toRGB( context.valueOf(self._offValue) )
         
         
         for px in range(target.lightCount):
@@ -56,20 +57,32 @@ class PatternRLTest( Pattern, OutputTarget ):
 
 ABFade = PatternRLTest
 
-
-class Spinner( Pattern ):
+class Spinner( OnOffPattern ):
+    """ a spinning pattern that wraps around the end of the LightGroup
+    """
     def __init__(self,
-                target:Optional[LightGroup]=None, name:Optional[str]=None, 
-                onValue:AnyLightValue = 1.0,
-                offValue:AnyLightValue = 0.0,
-                period:TimeSpanInSeconds = 0.5,
+                target:LightGroup, name:Optional[str]=None, 
+                period:TimeInSecondsEval = 0.5,
                 tail:ZeroToOne = 0.35,
-                **kwargs
+                **kwargs:Unpack[OnOffPattern]
             ):
-        self._onValue = onValue
-        self._offValue = offValue
+        """ a spinning pattern that wraps around the end of the LightGroup
+
+        :param target: group to be controlled
+        :type target: LightGroup
+        :param name: name of the pattern, defaults to None
+        :type name: Optional[str], optional
+        :param onValue: value or Evaluatable convertible to RGB
+        :type onValue: RGBEvalArg, optional
+        :param period: duration of single spin
+        :type period: TimeInSecondsEval, optional
+        :param tail: length of tail
+          
+            **0**=no tail, **1.0**=full tail
+        :type tail: ZeroToOne, optional
+        """
         self._tail = tail
-        super().__init__( target=target,name=name, **kwargs)
+        super().__init__( target=target, **kwargs)
         self.oscillator = Sawtooth( name, period=period )
         
 
@@ -84,9 +97,9 @@ class Spinner( Pattern ):
     def refresh( self, context:EvaluationContext ):
         z2one = self.oscillator.getValue(context)
         target = self.target
-
-        onValue = LightValueRGB.toRGB( context.valueOf(self._onValue) )
-        offValue = LightValueRGB.toRGB( context.valueOf(self._offValue) )
+        
+        onValue = RGB.toRGB( context.valueOf(self._onValue) )
+        offValue = RGB.toRGB( context.valueOf(self._offValue) )
         
         rotation = z2one * target.lightCount
         tail = target.lightCount * context.valueOf( self._tail )

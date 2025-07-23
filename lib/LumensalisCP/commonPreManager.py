@@ -2,7 +2,9 @@ from __future__ import annotations
 import time, math, asyncio, traceback, os,  collections
 import gc # type: ignore
 
-
+# pylint: disable=wrong-import-position, unused-import, import-error, unused-argument
+# pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
+# pylint: disable=import-error,unused-import,unused-argument
 
 import LumensalisCP.Debug
 import LumensalisCP.Main
@@ -13,7 +15,7 @@ from LumensalisCP.common import *
 
 from LumensalisCP.Identity.Local import NliContainerMixin, NliList,NamedLocalIdentifiable, NliInterface
 
-from LumensalisCP.util.kwCallback import KWCallback
+from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
 from LumensalisCP.util.bags import Bag
 
 

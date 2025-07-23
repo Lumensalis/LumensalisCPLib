@@ -21,9 +21,10 @@ MUST NOT IMPORT ANY OTHER LUMENSALIS FILES
 from __future__ import annotations
 
 try:
-    from typing import TYPE_CHECKING
+    from typing import TYPE_CHECKING, Any,Optional
 except ImportError:
-    TYPE_CHECKING = False
+    
+    TYPE_CHECKING = False # type: ignore
     
 import gc # type: ignore
 import sys
@@ -65,11 +66,11 @@ class GCManager(object):
         #self.main: = None
         
         self.min_delta_free = 32768
-        self.__absoluteMinimumThreshold = 128000
-        self.__actualFreeThreshold = 128000
+        self.__absoluteMinimumThreshold:int = 128000
+        self.__actualFreeThreshold:int = 128000
         
         self.freeBuffer = None
-        self.targetCollectPeriod = 0.15
+        self.targetCollectPeriod:float|None = 0.15
         self.minCollectRatio = 0.0035
         
         self.verboseCollect = True
@@ -82,18 +83,18 @@ class GCManager(object):
     def _setMain( self, main:MainManager ):
         self.main = main
     
-    def setFreeThreshold(self, threshold ):
+    def setFreeThreshold(self, threshold:int ):
         self.__actualFreeThreshold = max( threshold, self.__absoluteMinimumThreshold )
         
-    def setMinimumThreshold(self, threshold ):
+    def setMinimumThreshold(self, threshold:int ):
         self.__absoluteMinimumThreshold  = threshold
         self.__actualFreeThreshold = max( self.__actualFreeThreshold, self.__absoluteMinimumThreshold )
         
     def runCollection(self, 
-                      context=None, # [unused-argument] # pylint: disable=unused-argument
-                      when=None, # [unused-argument] # pylint: disable=unused-argument
-                      force = False, 
-                      show=False): 
+                      context:Optional[Any]=None,     # [unused-argument] # pylint: disable=unused-argument
+                      when:Optional[float]=None, # [unused-argument] # pylint: disable=unused-argument
+                      force:bool = False, 
+                      show:bool = False): 
         
         now = time.monotonic()
         mem_free_before = gc.mem_free()  # pylint: disable=no-member
@@ -153,7 +154,7 @@ class GCManager(object):
             
 
             newThreshold = self.__actualFreeThreshold
-            reason = "" # pylint: disable=unused-variable
+            reason = "" # pylint: disable=unused-variable # type: ignore
             if - delta_free < self.min_delta_free:
                 reason, newThreshold = "min_delta_free", mem_free_before - self.min_delta_free
                 
@@ -166,7 +167,11 @@ class GCManager(object):
                 
             newThreshold = int( max( self.__absoluteMinimumThreshold, newThreshold ) )
             if  newThreshold != self.__actualFreeThreshold:
-                #print( f"  (threshold changing {newThreshold - self.__actualFreeThreshold } from {self.__actualFreeThreshold} to {newThreshold} for {reason} df={delta_free}, cr={collectRatio})")
+                try:
+                    if self.main.enableDbgOut:
+                        self.main.dbgOut( f"  (threshold changing {newThreshold - self.__actualFreeThreshold } from {self.__actualFreeThreshold} to {newThreshold} for {reason} df={delta_free}, cr={collectRatio})")
+                except: pass # pylint: disable=bare-except
+                
                 self.__actualFreeThreshold = newThreshold
 
 
@@ -183,7 +188,7 @@ class GCManager(object):
 pmc_gcManager = GCManager()
 pmc_mainLoopControl = _MainLoopControl()
 
-def printElapsed(desc):
+def printElapsed(desc:str):
     gcUsed = gc.mem_alloc()  # pylint: disable=no-member
     gcFree = gc.mem_free() # pylint: disable=no-member
     print( "%s : _mlc.getMsSinceStart()=%0.3f | %r used, %r free" % 

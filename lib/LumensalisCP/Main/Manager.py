@@ -12,11 +12,9 @@ from TerrainTronics.Factory import TerrainTronicsFactory
 from LumensalisCP.Shields.Base import ShieldBase
 
 
-from LumensalisCP.Main.ControlVariables import ControlPanel, ControlVariable 
-import LumensalisCP.Audio
-from LumensalisCP.Main import ManagerRL
+from LumensalisCP.Main.ControlVariables import ControlPanel
 
-import LumensalisCP.Main.Dependents
+from LumensalisCP.Main import ManagerRL
 
 if TYPE_CHECKING:
     from LumensalisCP.Lights.DMXManager import DMXManager
@@ -24,7 +22,7 @@ if TYPE_CHECKING:
     
 
 import LumensalisCP.Main.ProfilerRL
-LumensalisCP.Main.ProfilerRL._rl_setFixedOverheads()
+LumensalisCP.Main.ProfilerRL._rl_setFixedOverheads() # type: ignore
 
 def _early_collect(tag:str):
     PreMainConfig.pmc_gcManager.runCollection(force=True)
@@ -103,13 +101,13 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self.__audio = None
         self.__dmx :DMXManager|None = None
 
-        self._tasks:List[Callable] = []
+        self._tasks:List[KWCallback] = []
         self.__shutdownTasks:List[ExitTask] = []
         self.shields = NliList(name='shields',parent=self)
 
 
-        self.__anonInputs = NliList(name='inputs',parent=self)
-        self.__anonOutputs = NliList(name='outputs',parent=self)
+        self.__anonInputs:NliList[InputSource] = NliList(name='inputs',parent=self)
+        self.__anonOutputs:NliList[NamedOutputTarget] = NliList(name='outputs',parent=self)
         self.controlPanels = NliList(name='controllers',parent=self)
         self.defaultController = ControlPanel(self)
         self.defaultController.nliSetContainer(self.controlPanels)
@@ -178,6 +176,11 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         return self # type: ignore
     
     @property
+    def panel(self) -> ControlPanel:
+        """ the default control panel """
+        return self.defaultController
+    
+    @property
     def dmx(self):
         if self.__dmx is None:
             import LumensalisCP.Lights.DMXManager
@@ -204,7 +207,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
             self.__socketPool = pool
         return self.__socketPool
         
-    def callLater( self, task ):
+    def callLater( self, task:KWCallbackArg ):
         self.__deferredTasks.append( KWCallback.make( task ) )
 
     def __runExitTasks(self):
@@ -218,8 +221,8 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
             
         self.__shutdownTasks.append(task)
 
-    def addControlVariable( self, *args, **kwds ) -> ControlVariable:
-        return self.defaultController.addControlVariable( *args, **kwds )
+    #def addControlVariable( self, *args, **kwds ) -> ControlVariable:
+    #    return self.defaultController.addControlVariable( *args, **kwds )
 
     def addIntermediateVariable( self,  *args, **kwds ) -> IntermediateVariable:
         return self.defaultController.addIntermediateVariable( *args, **kwds )
@@ -287,7 +290,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         value = ((max - min)*spanRatio) + min
         return value
 
-    def addTask( self, task ):
+    def addTask( self, task:KWCallbackArg ):
         self._tasks.append( KWCallback.make( task ) )
         
     def __runDeferredTasks(self):

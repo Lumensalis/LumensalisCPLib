@@ -1,47 +1,52 @@
-
+from __future__ import annotations
 # This is a factory for adding Adafruit Stemma/QT modules
 
 # TODO: tighten up type hints and linting
 
 # type: ignore
 
-from ..I2CFactory import I2CFactory, I2CFactoryAddArgs
-import LumensalisCP.I2C.Adafruit
+#import LumensalisCP.I2C.Adafruit
 from LumensalisCP.common import *
+from LumensalisCP.I2C.I2CFactory import I2CFactory
 
+# pylint: disable=unused-import,import-error,reimported,import-outside-toplevel
+
+if TYPE_CHECKING:
+    from LumensalisCP.I2C.Adafruit.QTRotaryEncoder import QtRotary
+    from LumensalisCP.I2C.Adafruit.Nunchuk import Nunchuk
+    from LumensalisCP.I2C.Adafruit.MPR121 import MPR121
+    from LumensalisCP.I2C.Adafruit.VCNL4040 import VCNL4040
+    from LumensalisCP.I2C.Adafruit.Magnetic import TLV493D
+    from LumensalisCP.I2C.Adafruit.AW9523 import AW9523
+    from LumensalisCP.I2C.Adafruit.PCA9685 import PCA9685
+    
+    
 class AdafruitFactory(I2CFactory):
     
-    def addQTRotaryEncoder(self, *args:Any, **kwds ):
-        updateKWDefaults( kwds, main=self.main )
-        from .QTRotaryEncoder import QtRotary
-        return QtRotary( *args, **kwds )
+    def addQTRotaryEncoder(self, **kwds:Unpack[QtRotary.KWDS] ) -> QtRotary:
+        from LumensalisCP.I2C.Adafruit.QTRotaryEncoder import QtRotary
+        return QtRotary( main=self.main, **kwds )
 
-    def addNunchuk( self, *args, **kwds ):
-        updateKWDefaults( kwds, main=self.main )
-        from .Nunchuk import Nunchuk
-        return Nunchuk( *args, **kwds )
+    def addNunchuk( self, **kwds:Unpack[Nunchuk.KWDS] ) -> Nunchuk:
+        from LumensalisCP.I2C.Adafruit.Nunchuk import Nunchuk
+        return Nunchuk( main=self.main, **kwds )
 
-    def addMPR121( self, *args, **kwds ) -> "LumensalisCP.I2C.Adafruit.MPR121.MPR121":
-        updateKWDefaults( kwds, main=self.main )
-        from .MPR121 import MPR121
-        return MPR121( *args, **kwds )
+    def addMPR121( self, **kwds:Unpack[MPR121.KWDS] ) -> MPR121:
+        from LumensalisCP.I2C.Adafruit.MPR121 import MPR121
+        return MPR121(  main=self.main, **kwds )
+
+    def addVCNL4040( self, **kwds:Unpack[VCNL4040.KWDS] ) -> VCNL4040:
+        from LumensalisCP.I2C.Adafruit.VCNL4040 import VCNL4040
+        return VCNL4040(  main=self.main, **kwds )
+
+    def addTLV493D( self, **kwds:Unpack[TLV493D.KWDS] ) -> TLV493D:
+        from LumensalisCP.I2C.Adafruit.Magnetic import TLV493D
+        return TLV493D(  main=self.main, **kwds )
     
-    def addVCNL4040( self, *args, **kwds ) -> "LumensalisCP.I2C.Adafruit.VCNL4040.VCNL4040":
-        updateKWDefaults( kwds, main=self.main )
-        from .VCNL4040 import VCNL4040
-        return VCNL4040( *args, **kwds )
-    
-    def addTLV493D( self, *args, **kwds ):
-        updateKWDefaults( kwds, main=self.main )
-        from .Magnetic import TLV493D
-        return TLV493D( *args, **kwds )
-    
-    def addAW9523( self, *args, **kwds ):
-        updateKWDefaults( kwds, main=self.main )
-        from .AW9523 import AW9523
-        return AW9523( *args, **kwds )
-    
-    def addPCA9685( self, *args, **kwds ):
-        updateKWDefaults( kwds, main=self.main )
-        from .PCA9685 import PCA9685
-        return PCA9685( *args, **kwds )    
+    def addAW9523( self, **kwds :Unpack[AW9523.KWDS] ) -> AW9523:
+        from LumensalisCP.I2C.Adafruit.AW9523 import AW9523
+        return AW9523(  main=self.main, **kwds )
+
+    def addPCA9685( self, **kwds:Unpack[PCA9685.KWDS] ) -> PCA9685:
+        from LumensalisCP.I2C.Adafruit.PCA9685 import PCA9685
+        return PCA9685(  main=self.main, **kwds )

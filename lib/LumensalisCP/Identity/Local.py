@@ -47,7 +47,6 @@ class NliContainerBaseMixin:
                     
 class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
 
-    #KWDS = KWDS_NamedLocalIdentifiable
     class KWDS(TypedDict):
         name:NotRequired[str]
     

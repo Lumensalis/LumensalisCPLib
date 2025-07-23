@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from LumensalisCP.commonPreManager import *
-from .PreMainConfig import pmc_mainLoopControl, pmc_gcManager
+from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl, pmc_gcManager
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager

@@ -1,45 +1,82 @@
+from __future__ import annotations
+
+import math
+
 from LumensalisCP.IOContext import *
 from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.Triggers.Timer import PeriodicTimer
 from LumensalisCP.Eval.Terms import *
-import math
+#from lumensaliscplib.lib.LumensalisCP import Eval
 
-class Oscillator( InputSource ):
+class EvalDescriptorHolder:
+    def onDescriptorSet(self, name:str, value:Evaluatable|EVAL_VALUE_TYPES):
+        """Called when a descriptor is set on this object"""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement onDescriptorSet")
+        
+_EDT = TypeVar('_EDT' )
+
+class EvalDescriptorMetaclass(type):
+    pass
+    def __getitem__(cls, v:Any) -> Any:
+        """Get an EvalDescriptor for the given name"""
+        return v
+
+class EvalDescriptor(Generic[_EDT]):
+    def __init__(self, name:str, default:_EDT|None = None):
+        self.name = name
+        self.attrName = f"_d_{name}"
+        self.default = default
+        
+        
+    def __get__(self, instance:EvalDescriptorHolder, owner=None) -> _EDT|Evaluatable[_EDT]:
+        rv = getattr( instance, self.attrName,None )
+        if rv is None: rv = self.default
+        return rv # type: ignore
+    
+    def __set__(self, instance:EvalDescriptorHolder, value:_EDT|Evaluatable[_EDT]) -> None:
+        assert instance is not None,  f"Cannot set {self.name} "
+        setattr( instance, self.attrName, value )
+
+class Oscillator( InputSource, EvalDescriptorHolder ):
     """_summary_
         Provides an input which changes over time in a repeating pattern
     """
     
-    frequency:Hertz|Evaluatable 
-    low:float|Evaluatable 
-    high:float|Evaluatable # destination value
-    
+    frequency:EvalDescriptor[Hertz]=EvalDescriptor('frequency', 1.0)
+    low:EvalDescriptor[float]=EvalDescriptor('low', 0.0)
+    high:EvalDescriptor[float]=EvalDescriptor('high', 1.0)
 
-    def __init__(self, name:Optional[str]=None, 
-                 frequency:Hertz|Evaluatable = None,
-                 period:TimeInSeconds|Evaluatable|None  = None,
+    def __init__(self, 
+                 frequency:Optional[Hertz|Evaluatable[Hertz]] = None,
+                 period:Optional[TimeInSeconds] = None,
+                 low:Optional[float|Evaluatable[float]] = 0.0,
+                 high:Optional[float|Evaluatable[float]] = 1.0,
                  
-                 low:float|Evaluatable = 0.0,
-                 high:float|Evaluatable = 1.0,
-                 
-                **kwds ):
-        InputSource.__init__(self, name=name)
+                **kwds:Unpack[InputSource.KWDS] ):
+        InputSource.__init__( self, **kwds )
         self.low = low
         self.high = high
-        if frequency is not None:
-            ensure( period is None, "cannot use both frequency and period" )
-            self.frequency = frequency
+        if frequency is None:
+            assert period is not None, "cannot use both frequency and period"
+            frequency = period
         else:
-            if period is not None:
-                self.period = period
-            else:
-                self.frequency = frequency
+            assert period is None, "cannot use both frequency and period"
+        
+        self.frequency = frequency
         
         self._lastFz21 = 0
-        self._lastFz21Time:TimeInSeconds = 0.0
+        self._lastFz21Time:TimeInSeconds = TimeInSeconds(0.0)
         
-    @property 
-    def period(self) -> float|Evaluatable : return 1.0 / self.frequency
-    
+    def onDescriptorSet(self, name:str, value:Evaluatable|EVAL_VALUE_TYPES):
+        """Called when a descriptor is set on this object"""
+
+        
+    @property
+    def period(self) -> TimeInSeconds:
+        f = evaluate(self.frequency)
+        return 1.0 / f # type: ignore
+
     @period.setter
     def period(self, v:float|Evaluatable  ): 
         self.frequency = TERM(1.0) / v

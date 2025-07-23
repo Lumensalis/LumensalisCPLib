@@ -1,11 +1,12 @@
 
 import busio
-from LumensalisCP.Controllers.ConfigurableBase import ControllerConfigurableChildBase
 
-from LumensalisCP.IOContext import NamedOutputTarget, EvaluationContext, InputSource, UpdateContext
+from LumensalisCP.CPTyping import Unpack
+#from LumensalisCP.Controllers.ConfigurableBase import ControllerConfigurableChildBase
+#from LumensalisCP.IOContext import NamedOutputTarget, EvaluationContext, InputSource, UpdateContext
 
-from LumensalisCP.Shields.Pins import PinHolder, PinProxy
-from LumensalisCP.Shields.Base import ShieldBase, ShieldI2CBase
+from LumensalisCP.Shields.Pins import PinProxy
+from LumensalisCP.Shields.Base import ShieldI2CBase
 #from digitalio import DigitalInOut, Direction
 #from analogio import AnalogIn
 #import microcontroller
@@ -18,8 +19,7 @@ class D1MiniPinProxy(PinProxy):
   
     
 class D1MiniBoardBase(ShieldI2CBase): # pylint: disable=abstract-method
-    def __init__(self, **kwds ):
-        
+    def __init__(self, **kwds:Unpack[ShieldI2CBase.KWDS] ):
         super().__init__( **kwds )
         
         #print( f"D1MiniBoardBase.__init__( {kwds})")

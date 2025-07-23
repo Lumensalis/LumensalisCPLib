@@ -22,12 +22,12 @@ from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
 
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
-from LumensalisCP.util.kwCallback import KWCallback
+from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
 from LumensalisCP.util.bags import Bag
 from LumensalisCP.util.Releasable import Releasable
-from . import ProfilerRL
+from LumensalisCP.Main import ProfilerRL
 
-from .PreMainConfig import pmc_gcManager, pmc_mainLoopControl
+from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
 
 # pylint: disable=unused-argument, redefined-outer-name, attribute-defined-outside-init
 # pylint: disable=protected-access, pointless-string-statement

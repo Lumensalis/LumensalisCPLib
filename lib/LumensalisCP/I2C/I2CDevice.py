@@ -1,30 +1,22 @@
 from __future__ import annotations
+
 from LumensalisCP.commonCP import *
+from LumensalisCP.IOContext import *
 
-#from LumensalisCP.IOContext import *
-from LumensalisCP.Eval.common import *
-from LumensalisCP.Inputs import InputSource
-from LumensalisCP.Outputs import OutputTarget, NamedOutputTarget
-
-from LumensalisCP.Identity.Local import NliContainerMixin, NliList, NamedLocalIdentifiable
-
-if TYPE_CHECKING:
-    #import LumensalisCP.Main.Manager
-    from  LumensalisCP.Main.Manager import MainManager
 
 #############################################################################
 
-class I2CDeviceInitArgs(NamedLocalIdentifiable.KWDS):
-    main: Required[MainManager]
-    i2c: NotRequired[busio.I2C]
-    address: NotRequired[int]
-    updateInterval:NotRequired[TimeInSecondsConfigArg]
 
 class I2CDevice( NamedLocalIdentifiable ):
+    """Base class for I2C devices."""
+    
     DEFAULT_UPDATE_INTERVAL:ClassVar[TimeInSeconds] = TimeInSeconds(0.1)
 
-    """Base class for I2C devices."""
-    KWDS = I2CDeviceInitArgs
+    class KWDS(NamedLocalIdentifiable.KWDS):
+        #main: Required[MainManager]
+        i2c: NotRequired[busio.I2C]
+        address: NotRequired[int]
+        updateInterval:NotRequired[TimeInSecondsConfigArg]
     
     def __init__(self:'I2CDevice', main:MainManager, i2c:Optional[busio.I2C]=None, 
                  address:int|None = None, updateInterval:Optional[TimeInSecondsConfigArg] = None,
@@ -72,6 +64,7 @@ class I2CDevice( NamedLocalIdentifiable ):
     
     @property
     def changes(self) -> int: return self.__derivedUpdateChanges
+    
 
     def derivedUpdateDevice(self, context:EvaluationContext) -> bool|None:
         """Override this method to implement the device update logic.
@@ -100,7 +93,7 @@ class I2CDevice( NamedLocalIdentifiable ):
         return True
         
         
-class I2CInputSource( InputSource ):
+class I2CInputSource( InputSource ): # pylint: disable=abstract-method
     
     class KWDS(TypedDict):
         name: NotRequired[str]

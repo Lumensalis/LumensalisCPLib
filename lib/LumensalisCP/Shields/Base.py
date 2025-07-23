@@ -13,10 +13,13 @@ from LumensalisCP.Main.I2CProvider import I2CProvider
 
 
 class ShieldBase(ControllerConfigurableChildBase,Refreshable): # pylint: disable=abstract-method
-    def __init__(self, refreshRate=0.1, **kwds ):
-        super().__init__( **kwds )
-        Refreshable.__init__(self,refreshRate=refreshRate)
-        self.__componentsContainer = NliList("components", parent=self)
+    class KWDS(ControllerConfigurableChildBase.KWDS):
+        refreshRate: NotRequired[float] 
+        
+    def __init__(self, refreshRate=0.1, **kwds:Unpack[ControllerConfigurableChildBase.KWDS] ):
+        ControllerConfigurableChildBase.__init__(self, **kwds )
+        Refreshable.__init__(self,refreshRate=refreshRate) # type: ignore
+        self.__componentsContainer:NliList = NliList("components", parent=self)
         
     def nliGetContainers(self) -> Iterable[NliContainerMixin]:
         return [ self.__componentsContainer ]
@@ -31,15 +34,17 @@ class ShieldBase(ControllerConfigurableChildBase,Refreshable): # pylint: disable
 
 class ShieldI2CBase(ShieldBase,I2CProvider):  # pylint: disable=abstract-method
     # pylint: disable=attribute-defined-outside-init
-    def __init__(self, refreshRate=0.1, config=None, main=None, **kwds ):
-        ShieldBase.__init__( self, refreshRate=refreshRate, config=config, main=main,**kwds )
+    
         
-        I2CProvider.__init__( self, config=self.config, main=main )
+    def __init__(self, **kwds:Unpack[ShieldBase.KWDS] ):
+        ShieldBase.__init__( self, **kwds )
+        
+        I2CProvider.__init__( self, config=self.config, main=self.main )
 
     def initI2C(self): 
         i2c = self.config.option('i2c')
         sdaPin = self.config.SDA
-        sclPin = self.config.SCL
+        sclPin = self.config.SCL    
         
         if i2c is None :
             if sdaPin is None and sclPin is None:

@@ -1,0 +1,83 @@
+
+[tool.pyright]
+include = [
+]
+exclude = [
+    #"src/pyright/dist",
+]
+extraPaths = [
+    "../../lib",
+    "../../typings",
+    # "CircuitPyDependencies/lib",
+    "~/.vscode/extensions/wmerkens.vscode-circuitpython-v2-0.3.3/boards/0x303A/0x80C3",
+    "~/.vscode/extensions/wmerkens.vscode-circuitpython-v2-0.3.3/stubs"
+]
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = """
+    wildcard-import,
+    unused-wildcard-import,
+    unused-import,
+    multiple-imports,
+    invalid-name,
+    trailing-whitespace,
+    missing-function-docstring,
+    missing-class-docstring,
+    missing-module-docstring,
+    multiple-statements,
+    line-too-long,
+    consider-using-f-string,
+    fixme
+"""
+
+[tool.pylint.MAIN]
+init-hook = """
+import sys, os, os.path, json
+
+sys.path.append('lumensaliscplib/lib')
+sys.path.append('typings')
+sys.path.append('CircuitPyDependencies')
+
+cpStubsBase = os.path.expanduser('~/.vscode/extensions/wmerkens.vscode-circuitpython-v2-0.3.3')
+
+if  os.path.exists(cpStubsBase):
+    cpStubs = [ (stub,os.path.realpath( f"{cpStubsBase}/{stub}" )) for stub in [
+        "boards/0x303A/0x80C3",
+        "stubs"
+    ]]
+    projectFolder = os.path.realpath( "../.." )
+    
+    cpStubs.extend( [
+         (stub, os.path.realpath(os.path.join(projectFolder,stub))) 
+            for stub in ['typings', 'lib'] ] )
+
+    def say( msg ):
+        #sys.stderr.write( f"# {msg}\\r\\n" )
+        #print( f"# {msg}" )
+        pass
+
+    def sayError( msg ):
+        print( json.dumps( dict(ERROR=msg) ) )
+
+    for stub, stubPath in cpStubs:
+        if stubPath not in sys.path:
+            assert os.path.exists( stubPath ), f"stub {stub} not at {stubPath}" 
+            if not os.path.exists( stubPath ):
+                sayError( f"stub {stub} not at {stubPath}" )
+    
+            sys.path.append( stubPath )
+    say( f"cpStubs={cpStubs}" )
+    say( f"sys.path={sys.path}" )
+else:
+    print( f"WARNING: CircuitPython stubs not found at {cpStubsBase}" )
+"""
+
+#[project]
+#name = "LCPF"
+#where = "lumensaliscplib/lib"
+
+#dependencies = [
+#  "sphinx>=3.0.0",
+#  "sphinx-markdown-builder>=0.6.8",
+#  "sphinx-autodoc2>=0.2.0"
+#]

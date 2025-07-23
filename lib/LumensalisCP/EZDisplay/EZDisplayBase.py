@@ -1,11 +1,13 @@
-from ..I2C.I2CDevice import I2CDevice
+from __future__ import annotations
 
-import displayio, terminalio
-from i2cdisplaybus import I2CDisplayBus
-import adafruit_display_text.label  # pyright: ignore[reportMissingImports]
+import displayio, terminalio # type: ignore
+from i2cdisplaybus import I2CDisplayBus # type: ignore
+import adafruit_display_text.label  # pyright: ignore[reportMissingImports] # pylint: disable=import-error
+
+from LumensalisCP.I2C.common import *
 
 class EZDisplayBase(object):
-    def __init__(self, displayWidth = 128, displayHeight = 64, **kwds ):
+    def __init__(self, displayWidth = 128, displayHeight = 64 ):
         self.displayWidth = displayWidth or 128
         self.displayHeight = displayHeight or 64
 
@@ -44,4 +46,3 @@ class EZI2cDisplayIoBase(I2CDevice, EZDisplayBase):
     
         
     def _initDisplayInstance(self): raise NotImplementedError
-

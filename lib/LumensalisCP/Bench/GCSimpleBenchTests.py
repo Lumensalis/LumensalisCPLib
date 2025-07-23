@@ -76,7 +76,7 @@ def ktBazA( *args, **kwds ):
 def ktBazK( **kwds ):
     pass
 
-from LumensalisCP.util.kwCallback import KWCallback
+from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
 
 def kwcWrap( name:Optional[str]=None ):
     def wrapper( callable:Callable  ):

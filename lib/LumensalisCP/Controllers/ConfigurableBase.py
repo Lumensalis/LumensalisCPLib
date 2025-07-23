@@ -1,17 +1,21 @@
 
-import LumensalisCP.Main
-from LumensalisCP.common import *
-from  .Config import ControllerConfig
-from  .Configs.Core import getConfig
-import LumensalisCP.Main
-from  LumensalisCP.Main.Dependents import MainChild
+
 import os, board, microcontroller
+
+from LumensalisCP.Main.Dependents import MainChild
+from LumensalisCP.common import *
+from LumensalisCP.Controllers.Config import ControllerConfig
+from LumensalisCP.Controllers.Configs.Core import getConfig
+
 if TYPE_CHECKING:
-    import LumensalisCP.Main.Manager
+    from LumensalisCP.Main.Manager import MainManager
     
 class ConfigurableBase(object):
-    
-    def __init__(self, config=None, defaults:Optional[dict]=None, **kwds ):
+    class KWDS( TypedDict ):
+        config: NotRequired[ControllerConfig|str]
+        defaults: NotRequired[dict[str, Any]]
+        
+    def __init__(self, config:Optional[ControllerConfig|str]=None, defaults:Optional[StrAnyDict]=None, **kwds:StrAnyDict ):
         if configSecondary := config == "secondary":
             config = None
             
@@ -24,7 +28,7 @@ class ConfigurableBase(object):
             ensure( config is not None, "auto config lookup failed" )
             config = config + "_secondary"
             
-        if type(config) is str:
+        if isinstance(config, str):
             configForName = getConfig(config)
             assert configForName is not None, f"no configuration exists for {config}"
             config = configForName.copy()
@@ -38,22 +42,30 @@ class ConfigurableBase(object):
                 kwds.setdefault(tag,val)
 
         config.bake( **kwds )
-        self.config = config
+        self.config:ControllerConfig = config
 
 
-    def asPin(self, pin ) -> microcontroller.Pin:
+    def asPin(self, pin:Union[microcontroller.Pin,str]) -> microcontroller.Pin:
         if not isinstance( pin, microcontroller.Pin ):
-            if hasattr( pin, 'actualPin' ):
-                pin = pin.actualPin
-            if type(pin) is str:
+
+            if isinstance(pin, str):
                 assert self.config.pins is not None
                 pin =  self.config.pins.lookupPin(pin) 
+            elif hasattr( pin, 'actualPin' ):
+                assert isinstance( pin.actualPin, microcontroller.Pin )
+                pin = pin.actualPin
             
         assert isinstance( pin, microcontroller.Pin )
         return pin
     
 class ControllerConfigurableChildBase(ConfigurableBase,MainChild):
-    def __init__( self, main:LumensalisCP.Main.Manager.MainManager, name:Optional[str]=None, **kwargs ):
+    class KWDS( ConfigurableBase.KWDS ):
+        name: NotRequired[ControllerConfig]
+        main: NotRequired[MainManager]
+        
+    def __init__( self, main:Optional[MainManager]=None, name:Optional[str]=None, **kwargs:Unpack[ConfigurableBase.KWDS] ):
+        if main is None:
+            main = getMainManager()
         MainChild.__init__(self, main=main, name=name )
         ConfigurableBase.__init__( self, **kwargs )
         #print( f"ControllerConfigurableChildBase.__init__( name={name} kwargs={kwargs})")

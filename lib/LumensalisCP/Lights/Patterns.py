@@ -1,15 +1,13 @@
-from random import random as randomZeroToOne, randint
-from LumensalisCP.Lights.Light import *
-from LumensalisCP.IOContext import *
-#from LumensalisCP.Main.Expressions import NamedOutputTarget, EvaluationContext
-from LumensalisCP.Lights.Pattern import *
+from __future__ import annotations
+
+from LumensalisCP.Lights._common import *
 
 
 #############################################################################
 #############################################################################
 
 #############################################################################
-import LumensalisCP.Eval.Expressions as xm
+#import LumensalisCP.Eval.Expressions as xm
 
 def prepRGBValue( value:RGBEvalArg ) -> RGBEval:
     
@@ -17,8 +15,8 @@ def prepRGBValue( value:RGBEvalArg ) -> RGBEval:
             isinstance( value, Evaluatable ) or
             callable(value)
     ):
-        return value
-    return LightValueRGB.toRGB( value )
+        return value # type: ignore
+    return RGB.toRGB( value ) # type: ignore
 
 #############################################################################
 class Rainbow( Pattern ):
@@ -76,16 +74,17 @@ class Rainbow( Pattern ):
 #############################################################################
 class Gauge( Pattern, NamedOutputTarget ):
     def __init__(self,
-                target:LightGroup, name:Optional[str]=None, 
-                onValue:AnyLightValue = 1.0,
-                offValue:AnyLightValue = 0.0,
+                target:LightGroup, 
+                onValue:RGBEvalArg = 1.0,
+                offValue:RGBEvalArg = 0.0,
                 value:ZeroToOne|Evaluatable = 0.0,
-                **kwargs
+                **kwargs:Unpack[Pattern.KWDS]
             ):
         self.__onValue = prepRGBValue(onValue)
         self.__offValue = prepRGBValue(offValue)
         self.__value = value
-        super().__init__( target=target,name=name, **kwargs)
+        name = kwargs.get('name', None)
+        Pattern.__init__( self, target , **kwargs)
         NamedOutputTarget.__init__(self, name=name )
 
     @property
@@ -106,8 +105,8 @@ class Gauge( Pattern, NamedOutputTarget ):
         maxPx = int(maxPxf)
         pxR = maxPxf - maxPx
         
-        onValue = LightValueRGB.toRGB( context.valueOf(self.__onValue) )
-        offValue = LightValueRGB.toRGB( context.valueOf(self.__offValue) )
+        onValue = RGB.toRGB( context.valueOf(self.__onValue) )
+        offValue = RGB.toRGB( context.valueOf(self.__offValue) )
         
         
         for px in range(target.lightCount):
@@ -117,17 +116,17 @@ class Gauge( Pattern, NamedOutputTarget ):
                 v = offValue 
             else:
                 v = offValue.fadeTowards(onValue, pxR)
-            target[px] = v
+            target[px] = v # type: ignore[assignment]
 
 #############################################################################
 
 class Blink( PatternGenerator ):
     def __init__(self,
                  *args,
-                 onTime:TimeInSeconds = 1.0,
-                 offTime:TimeInSeconds = 1.0,
-                 onValue:AnyLightValue = 1.0,
-                 offValue:AnyLightValue = 0.0,
+                 onTime:TimeInSecondsEvalArg = 1.0,
+                 offTime:TimeInSecondsEvalArg = 1.0,
+                 onValue:AnyRGBValue = 1.0,
+                 offValue:AnyRGBValue = 0.0,
                  intermediateRefresh:Optional[TimeInSeconds]=None,
                  **kwargs
             ):
@@ -192,13 +191,13 @@ class Cylon2( PatternGenerator ):
     def __init__(self,
                  *args,
                  sweepTime:TimeInSecondsEvalArg = 1.0,
-                 onValue:AnyLightValue = 1.0,
-                 offValue:AnyLightValue = 0.0,
+                 onValue:AnyRGBValue = 1.0,
+                 offValue:AnyRGBValue = 0.0,
                  intermediateRefresh:TimeInSeconds = 0.1,
                  dimRatio:ZeroToOne = 0.7,
                  **kwargs
             ):
-        self.__sweepTime = sweepTime
+        self.__sweepTime = toTimeInSecondsEval(sweepTime)
         self.onValue = prepRGBValue( onValue )
         self.offValue = prepRGBValue( offValue )
         self.__dimRatio = dimRatio
@@ -206,12 +205,12 @@ class Cylon2( PatternGenerator ):
         super().__init__(*args,**kwargs)
 
     @property
-    def sweepTime(self) ->TimeInSeconds: return self.__sweepTime
+    def sweepTime(self) ->TimeInSecondsEval: return self.__sweepTime
     
     @sweepTime.setter
-    def sweepTime(self,sweep:TimeInSeconds):
+    def sweepTime(self,sweep:TimeInSecondsEvalArg):
         self.dbgOut( 'sweep changed to %r', sweep )
-        self.__sweepTime = sweep
+        self.__sweepTime = toTimeInSecondsEval(sweep)
     
     def regenerate(self, context:EvaluationContext) -> Iterator[PatternGeneratorStep]:
         rv = []
@@ -223,16 +222,16 @@ class Cylon2( PatternGenerator ):
             
             prior = [ context.valueOf(light.value) for light in self.target.lights ]
             #print( f"prior = { LightValueNeoRGB.formatNeoRGBValues( prior)}" )
-            offRGB = LightValueRGB.toRGB( context.valueOf( self.offValue ) )
+            offRGB = RGB.toRGB( context.valueOf( self.offValue ) )
             def dimmed(index):
                 #return self.offValue
-                was = LightValueRGB.toRGB(prior[index])
+                was = RGB.toRGB(prior[index])
                 faded = was.fadeTowards(offRGB, self.__dimRatio )
-                return  faded.toNeoPixelInt()
+                return  faded.toNeoPixelRGBInt()
             
             frame.snap("back")
             for index in range( self.target.lightCount ):
-                onValue = LightValueRGB.toRGB(context.valueOf(self.onValue))
+                onValue = RGB.toRGB(context.valueOf(self.onValue))
                 startValues = [(onValue if i2 == index else dimmed(i2)) for i2 in range(self.target.lightCount) ]
                 endValues =startValues
                 prior = startValues
@@ -259,10 +258,10 @@ class CylonPatternStep(PatternGeneratorStep):
         self._up = up
         
     
-    def startValue( self, index, context:EvaluationContext )->AnyLightValue:
+    def startValue( self, index, context:EvaluationContext )->AnyRGBValue:
         return context.valueOf( self._startValue if index == self._index else self._endValue )
     
-    def endValue( self, index, context:EvaluationContext )->AnyLightValue:
+    def endValue( self, index, context:EvaluationContext )->AnyRGBValue:
         return context.valueOf( self._startValue if index == self._index else self._endValue )
 
     def intermediateValue( self, index, progression:ZeroToOne, context:EvaluationContext ):
@@ -279,8 +278,8 @@ class Cylon( PatternGenerator ):
     def __init__(self,
                  *args,
                  sweepTime:TimeInSeconds = 1.0,
-                 onValue:AnyLightValue = 1.0,
-                 offValue:AnyLightValue = 0.0,
+                 onValue:AnyRGBValue = 1.0,
+                 offValue:AnyRGBValue = 0.0,
                  intermediateRefresh:TimeInSeconds = 0.1,
                  **kwargs
             ):

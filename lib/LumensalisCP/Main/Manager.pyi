@@ -64,7 +64,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     @staticmethod
     def getManager() -> "MainManager": ...
 
-    def __init__(self, config = None, **kwds ): ...
+    def __init__(self, config:Any = None, **kwds :dict[str,Any]) -> None: ...
  
     def makeRef(self)-> MainRef: pass
 
@@ -101,16 +101,19 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def dmx(self) -> LumensalisCP.Lights.DMXManager.DMXManager: ...
     __dmx: LumensalisCP.Lights.DMXManager.DMXManager
     
-    def callLater( self, task ): pass
-
-    def launchProject(self, globals:Optional[dict]=None, verbose:bool = False ): ... 
-            
-    def addExitTask(self,task:ExitTask|Callable): pass
+    @property
+    def panel(self) -> ControlPanel: ...
         
-    def _addI2CDevice(self, target:I2CDevice ): pass
+    def callLater( self, task:KWCallbackArg ) -> None: pass
+
+    def launchProject(self, globals:Optional[dict[str,Any]]=None, verbose:bool = False )-> None: ... 
+            
+    def addExitTask(self,task:ExitTask|Callable[[],None])-> None: pass
+        
+    def _addI2CDevice(self, target:I2CDevice )-> None: pass
    
     # TODO: mirror ControlVariable.__init__ 
-    def addControlVariable( self, *args, **kwds ) -> ControlVariable: pass
+    def addControlVariable( self, *args, **kwds:StrAnyDict ) -> ControlVariable: pass
     
     # TODO: mirror IntermediateVariable.__init__ 
     def addIntermediateVariable( self, *args, **kwds ) -> IntermediateVariable: pass

@@ -3,17 +3,18 @@
 import busio
 import board
 
-from LumensalisCP.Eval.common import *
 from LumensalisCP.commonCP import *
+from LumensalisCP.Eval.common import *
 
 from LumensalisCP.I2C.I2CDevice import I2CDevice
+from LumensalisCP.Controllers.Config import ControllerConfig
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
     from LumensalisCP.Debug import Debuggable
 
 class I2CProvider(Debuggable):
-    def __init__(self,config, main:'MainManager'):
+    def __init__(self,config:ControllerConfig, main:'MainManager'):
         super().__init__()
         
         self.i2cDevicesContainer = NliList(name='i2cDevices',parent=main)

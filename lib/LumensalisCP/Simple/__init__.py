@@ -14,15 +14,15 @@ from LumensalisCP.Main.PreMainConfig import *
 def ProjectManager( ) -> MainManager:
     return  MainManager.initOrGetManager()
 
-def getColor( v:AnyLightValue ) -> RGB:
+def getColor( v:AnyRGBValue ) -> RGB:
     """ convert __v__ to an RGB value
 
     :param v: value to be converted
-    :type v: AnyLightValue
+    :type v: AnyRGBValue
     :return: _description_
     :rtype: RGB
     """
-    return LightValueRGB.toRGB(v)
+    return RGB.toRGB(v)
 
 def do( cb, *args, **kwds ):
     return Fireable.makeCallback( cb, *args, **kwds )
@@ -48,7 +48,7 @@ class ColorWheel(ColorSource):
     def getColor(self, context:EvaluationContext ) -> RGB:
         spinValue = context.valueOf( self.spin )
         wheelValue = rainbowio.colorwheel( spinValue )
-        rv = RGB.fromNeoPixelInt( wheelValue )
+        rv = RGB.fromNeoPixelRGBInt( wheelValue )
         if self.enableDbgOut:  self.dbgOut( 'getColor rv=%r,  spin=%r, wheel=%X', rv, spinValue, wheelValue )
         return rv
 

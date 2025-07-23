@@ -1,41 +1,22 @@
 from __future__ import annotations
 
-import traceback
 # pylint: disable=unused-import,import-error
-#   pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
-import math
+# pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 
+import traceback
+import json
+import math
 import adafruit_itertools as itertools  # type: ignore # pylint: disable=import-error
 
 import LumensalisCP
 from LumensalisCP.Debug import Debuggable
 from LumensalisCP.CPTyping import *
-import LumensalisCP.util.Singleton 
+
 import LumensalisCP.pyCp.weakref as weakref
 
-# Common types used throughout the library
-# 
-TimeInNS:TypeAlias =  int # Time in nanoseconds
-TimeSpanInNS:TypeAlias  = int # Time span in nanoseconds
-TimeInMS:TypeAlias  = int # Time in milliseconds
-TimeSpanInMS:TypeAlias  = int # Time span in milliseconds
-TimeInSeconds = NewType('TimeInSeconds', float ) # Time in seconds
-TimeSpanInSeconds:TypeAlias  = float #
+from LumensalisCP.Units import *
 
-TimeInSecondsConfigArg:TypeAlias = Union[TimeInSeconds, int, float]
-def TimeInSecondsConfig( v:TimeInSecondsConfigArg|None, default:Optional[TimeInSecondsConfigArg] = None ) -> TimeInSeconds:
-    if v is None:
-        assert default is not None, "TimeInSecondsConfig requires a value or a default"
-        v = default
-    return v # type: ignore
-
-DegreesPerSecond:TypeAlias  = float # rotation speed  in degrees per second
-Degrees:TypeAlias  = float # angle in degrees
-ZeroToOne:TypeAlias  = float # a value between 0.0 and 1.0 inclusive
-PlusMinusOne:TypeAlias  = float # a value between -1.0 and 1.0 inclusive
-Volts:TypeAlias  = float   # voltage in volts
-Hertz:TypeAlias  = float   # frequency in cycles per second
-
+from LumensalisCP.Main.GetManager import getMainManager
 
 def dictAddUnique( d:Dict[Any,Any], key:Any, value:Any ) -> None:
     """_summary_
@@ -156,5 +137,3 @@ def SHOW_EXCEPTION( inst:Exception, fmt:str, *args:Any ):
     print( "\n".join(traceback.format_exception(inst)) )
     
     
-getMainManager = LumensalisCP.util.Singleton.Singleton("MainManager") # type: ignore
-#import LumensalisCP.Main.Expressions

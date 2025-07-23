@@ -1,6 +1,11 @@
-from LumensalisCP.Lights.Groups import *
+from __future__ import annotations
 
+from LumensalisCP.common import Optional, Any
+from LumensalisCP.Lights.Groups import LightSource
+from LumensalisCP.Lights.RGB import RGB, AnyRGBValue
+from LumensalisCP.Lights.Values import LightValueBase
 from LumensalisCP.Outputs import OutputTarget
+from LumensalisCP.Eval.EvaluationContext import EvaluationContext
 
 #############################################################################
 
@@ -26,7 +31,7 @@ class Light(OutputTarget):
     @property
     def sourceIndex(self)->int: return self.__sourceIndex
     
-    def setValue(self,value:AnyLightValue, context: Optional[EvaluationContext] = None ) -> None:
+    def setValue(self,value:AnyRGBValue, context: Optional[EvaluationContext] = None ) -> None:
         raise NotImplementedError
 
     def set( self, value:Any, context:EvaluationContext ):
@@ -35,7 +40,7 @@ class Light(OutputTarget):
     @property
     def value(self): return self.getValue()
     
-    def getValue(self, context: Optional[EvaluationContext] = None ) -> AnyLightValue:
+    def getValue(self, context: Optional[EvaluationContext] = None ) -> AnyRGBValue:
         raise NotImplementedError
     
     def getLightValue(self)-> LightValueBase: raise NotImplementedError  
@@ -47,22 +52,32 @@ class Light(OutputTarget):
     def lightType(self)->int: raise NotImplementedError  
 
 #############################################################################
-class SolidLight(Light):
+class SolidLight(Light): # pylint: disable=abstract-method
     """ for regular single color LEDs"""
     
     @property
     def lightType(self): return LightType.LT_SINGLE_SOLID
 
 #############################################################################
-class DimmableLight(Light):
+class DimmableLight(Light): # pylint: disable=abstract-method
     """ for regular single color LEDs"""
     
     @property
     def lightType(self): return LightType.LT_SINGLE_DIMMABLE
     
 #############################################################################
-class RGBLight(Light):
+class RGBLight(Light): # pylint: disable=abstract-method
     @property
     def lightType(self): return LightType.LT_RGB
 
 #############################################################################
+
+__all__ = [
+    "LightType",
+    "Light",
+    "SolidLight",
+    "DimmableLight",
+    "RGBLight", 
+    "AnyRGBValue",
+    "RGB",  
+]
