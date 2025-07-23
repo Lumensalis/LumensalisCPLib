@@ -49,7 +49,7 @@ class AW9523(I2CDevice):
         self.__lastInputs = 0
 
 
-    def addInput(self, pin:int, name:Optional[str]=None, **kwds ):
+    def addInput(self, pin:int, name:Optional[str]=None, **kwds:StrAnyDict ) -> AW9523Input:
         ensure( isinstance(pin, int) and pin >= 0 and pin < AW9523.AW9523_PINS, "invalid pin %r", pin )
         ensure( self.__ios[pin] is None, "pin %r already used", pin )
         io = AW9523Input( self, pin, name=name,**kwds )

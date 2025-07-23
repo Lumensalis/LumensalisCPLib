@@ -2,11 +2,16 @@
 # SPDX-License-Identifier: MIT
 """ basic importlib for CircuitPython
 """
+from __future__ import annotations
 
 import os
 import sys
-from typing import Any
 import supervisor
+
+try:
+    from typing import Any
+except ImportError:
+    pass
 
 def reload( module:Any, verbose:bool=False, mpyAllowed:bool=False ) -> None:
     """CircuitPython specific implementation of [importlib.reload](https://docs.python.org/3/library/importlib.html#importlib.reload)
@@ -54,8 +59,8 @@ than CPython's.
     # detecting what actually changes. Preloading **newAttrs** also
     # preserves **import.reload** functionality when module code checks
     # its own globals to avoid "overwriting" things like singleton instances
-    newAttrs = {}
-    priorAttrs = {}
+    newAttrs:dict[str, Any] = {}
+    priorAttrs:dict[str, Any] = {}
     for key in dir(existingModule):
         val = getattr( existingModule, key )
         newAttrs[key] = val
@@ -75,7 +80,7 @@ than CPython's.
     assert os.path.exists(sourceFile), f"Source file {sourceFile} does not exist for {name}"
     with open(sourceFile,'r',encoding='utf-8') as f:
         source = f.read()
-        exec( source, newAttrs, newAttrs )
+        exec( source, newAttrs, newAttrs ) # pylint: disable=exec-used
 
     #########################################################################
     # since **newAttrs** was used for globals in the `exec(...)` call

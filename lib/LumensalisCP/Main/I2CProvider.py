@@ -17,7 +17,7 @@ class I2CProvider(Debuggable):
     def __init__(self,config:ControllerConfig, main:'MainManager'):
         super().__init__()
         
-        self.i2cDevicesContainer = NliList(name='i2cDevices',parent=main)
+        self.i2cDevicesContainer:NliList[I2CDevice] = NliList(name='i2cDevices',parent=main)
         
         self.infoOut( "I2CProvider init %r, %r", config, main )
         # pylint: disable=import-outside-toplevel]
@@ -48,7 +48,7 @@ class I2CProvider(Debuggable):
                     SHOW_EXCEPTION( inst, "I2C identity exception ")
 
 
-    def asPin(self, pin ) -> microcontroller.Pin: 
+    def asPin(self, pin:Any ) -> microcontroller.Pin: 
         raise NotImplementedError
     
     @property
@@ -58,14 +58,14 @@ class I2CProvider(Debuggable):
         self.__i2cDevices.append(target)
         target.nliSetContainer(self.i2cDevicesContainer)
    
-    def _addBoardI2C( self, board, i2c:busio.I2C ): # pylint: disable=unused-argument,redefined-outer-name
+    def _addBoardI2C( self, board:Any, i2c:busio.I2C ): # pylint: disable=unused-argument,redefined-outer-name # type: ignore
         if self.__defaultI2C is None:
             self.__defaultI2C = i2c
 
     @property
     def identityI2C(self): return self.__identityI2C
 
-    def addI2C(self, sdaPin, sclPin):
+    def addI2C(self, sdaPin:Any, sclPin:Any):
         sdaPin = self.asPin(sdaPin)
         sclPin = self.asPin(sclPin)
         sdaPinName = repr(sdaPin)

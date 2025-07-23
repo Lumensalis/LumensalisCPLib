@@ -29,6 +29,12 @@ class NeoPixelLight( RGBLight ):
     def getLightValue( self ):
         return LightValueNeoRGB( self.__npiv )
     
+class  NeoPixelSourceKwds(TypedDict):
+    pixelCount: NotRequired[int]
+    brightness: NotRequired[float]
+    pixel_order: NotRequired[str]
+    #auto_write: NotRequired[bool] = False
+
 class NeoPixelSource( LightSource ):
     
     class KWDS( LightSource.KWDS ):

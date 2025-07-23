@@ -25,13 +25,13 @@ if TYPE_CHECKING:
     EvaluatableT = Evaluatable
 else:
     class _EvaluatableT:
-        def __class_getitem__(cls, item):
+        def __class_getitem__(cls, item): # pylint: disable=unused-argument
             return Evaluatable
-        def __getitem__(self, item):
+        def __getitem__(self, item): # pylint: disable=unused-argument
             return Evaluatable        
     EvaluatableT = _EvaluatableT()
         
-def evaluate( value:Evaluatable|DirectValue, context:OptionalContextArg = None ):
+def evaluate( value:Evaluatable[DirectValue]|DirectValue, context:OptionalContextArg = None ):
     if isinstance( value, Evaluatable ):
         context = UpdateContext.fetchCurrentContext(context)
         if  context.debugEvaluate or value.enableDbgEvaluate:

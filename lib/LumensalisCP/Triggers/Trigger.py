@@ -4,9 +4,11 @@
 from LumensalisCP.IOContext import *
 from LumensalisCP.Eval.Expressions import  Expression, ExpressionTerm #, UpdateContext
 
-from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
+from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg # type: ignore
 
 #############################################################################
+
+TriggerActionType:TypeAlias = Callable[..., Any] | KWCallbackArg
 
 class Trigger(Debuggable):
     """Triggers represent a set of actions that can be "fired" upon a condition being met
@@ -15,13 +17,13 @@ class Trigger(Debuggable):
         object (_type_): _description_
     """
     
-    def __init__( self, name:str|None = None, action:Callable|None = None ):
+    def __init__( self, name:str|None = None, action:Optional[TriggerActionType] = None ):
         super().__init__()
         
         if name is None and action is not None:
             name = action.__name__
         self.__name = name
-        self.__actions = []
+        self.__actions:list[TriggerActionType] = []
         if action is not None:
             self.addAction(action)
 
@@ -30,12 +32,12 @@ class Trigger(Debuggable):
     @property
     def name(self): return self.__name
     
-    def addAction( self, action:Callable ):
+    def addAction( self, action:TriggerActionType ) -> None:
         if self.enableDbgOut: self.dbgOut( "addAction( %r )", action )
         self.__actions.append( KWCallback.make( action ) )
 
 
-    def fire(self, **kwds ):
+    def fire(self, source:Optional[InputSource]=None, context:Optional[EvaluationContext]=None, **kwds:StrAnyDict ) -> None:
         if self.enableDbgOut: self.dbgOut( f"firing timer {self.name}[{len(self.__actions)}]")
         for action in self.__actions:
             try:
@@ -48,7 +50,7 @@ class Trigger(Debuggable):
             expression = Expression(expression)
 
         self._onTrueExpression = expression
-        def test(source:Optional[InputSource]=None, context:Optional[EvaluationContext] = None, **kwargs):
+        def test(source:Optional[InputSource]=None, context:Optional[EvaluationContext] = None, **kwargs:StrAnyDict):
             context = UpdateContext.fetchCurrentContext(context)
             expression.updateValue(context)
             shouldFire = expression.value
@@ -68,7 +70,7 @@ class Trigger(Debuggable):
 
     def fireOnSet( self, source:InputSource):
 
-        def test(source:Optional[InputSource]=None, context:Optional[EvaluationContext]=None, **kwargs):
+        def test(source:Optional[InputSource]=None, context:Optional[EvaluationContext]=None, **kwargs:StrAnyDict): #
             context = UpdateContext.fetchCurrentContext(None)
             assert source is not None
             if source.getValue(context):
@@ -81,17 +83,17 @@ class Trigger(Debuggable):
         source.onChange( test )
         return self
 
-    def fireOnSetDef( self, source:Optional[InputSource]=None ):
+    def fireOnSetDef( self, source:Optional[InputSource]=None ):# -> Callable[..., Any]:
         assert source is not None
         self.fireOnSet( source )
-        def on2( cb ):
+        def on2( cb:TriggerActionType):# -> Any:
             self.addAction(cb)
             return cb
         return on2        
     
     
-    def addActionDef( self, **kwds ): # pylint: disable=unused-argument
-        def on2( cb ):
+    def addActionDef( self, **kwds:StrAnyDict ): # pylint: disable=unused-argument
+        def on2( cb:TriggerActionType ):
             self.addAction(cb)
             return cb
         return on2        

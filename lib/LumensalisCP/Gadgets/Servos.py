@@ -9,22 +9,29 @@ from LumensalisCP.Triggers.Timer import PeriodicTimer
 #from LumensalisCP.CPTyping import *
 
 
-class LocalServo( 
-                      #adafruit_motor.servo.Servo,
-                      NamedOutputTarget ):
-    def __init__(self, pwm:pwmio.PWMOut, 
-                 main:MainManager,
-                 name:Optional[str]=None, 
-                 movePeriod:TimeInSeconds = 0.05,
-                 moveSpeed:DegreesPerSecond = 60.0,
-                 angleMin:Degrees = 10,
-                 angleMax:Degrees = 135,
-                 
-                 **kwds ):
-        #adafruit_motor.servo.Servo.__init__(self, pwm, **kwds)
-        NamedOutputTarget.__init__(self, name=name)
+LocalServoCallback:TypeAlias = Callable[..., None] | KWCallbackArg
 
-        self.__servo = adafruit_motor.servo.Servo( pwm, **kwds)
+class LocalServo( NamedOutputTarget ):
+    
+    class KWDS( NamedOutputTarget.KWDS ):
+        name: NotRequired[str]
+        movePeriod: NotRequired[TimeInSecondsConfigArg]
+        moveSpeed: NotRequired[DegreesPerSecond]
+        angleMin: NotRequired[Degrees]
+        angleMax: NotRequired[Degrees]
+    
+    def __init__(self, 
+                 pwm:pwmio.PWMOut, 
+                main:MainManager,
+                movePeriod:TimeInSecondsConfigArg = 0.05,
+                moveSpeed:DegreesPerSecond = 60.0,
+                angleMin:Degrees = 10,
+                angleMax:Degrees = 135,
+                 **kwds:Unpack[NamedOutputTarget.KWDS] ):
+        #adafruit_motor.servo.Servo.__init__(self, pwm, **kwds)
+        NamedOutputTarget.__init__(self, **kwds)
+
+        self.__servo:adafruit_motor.servo.Servo = adafruit_motor.servo.Servo( pwm ) #, **kwds) # type: ignore
         self.__moveTimer = PeriodicTimer( movePeriod, manager=main.timers, name=f"{self.name}_timer" )
         self.__moveTimer.addAction( self._updateMove )
         self.__moveSpeed:DegreesPerSecond = moveSpeed
@@ -32,12 +39,12 @@ class LocalServo(
         self.__moveTimeAtStart:TimeInSeconds|None = None
         self.__moveAngleStart:Degrees|None = None
         self.__moveSpan:Degrees|None = None
-        self.__moveCompleteCB:Callable|None = None
-        self.__onStopCB:Callable|None = None
+        self.__moveCompleteCB:LocalServoCallback|None = None
+        self.__onStopCB:LocalServoCallback|None = None
         self.__moving = False
         self.__angleMin = angleMin
         self.__angleMax = angleMax
-        self.__lastSetAngle = self.rangedAngle( self.__servo.angle or 90.0 )
+        self.__lastSetAngle = self.rangedAngle( self.__servo.angle or 90.0 ) # type: ignore
 
     @property
     def _moveTimer(self) -> PeriodicTimer: return self.__moveTimer
@@ -51,7 +58,7 @@ class LocalServo(
         return angle
         
         
-    def stop(self, turnOff = True ):
+    def stop(self, turnOff:bool = True ):
         if self.__moving:
             self.__moveTarget = None
             self.__moveSpan = None
@@ -59,19 +66,19 @@ class LocalServo(
             self.__moveAngleStart = None
             self.__moveTimer.stop()
         if turnOff:
-            self.__servo.angle = None
+            self.__servo.angle = None # type: ignore
     
     
-    def set( self, value:Degrees|None, context:Optional[EvaluationContext]=None ):
+    def set( self, value:Degrees|None, context:Optional[EvaluationContext]=None ) -> None:
         if self.__moving:
             self.stop(turnOff=False)
         self.__set( value, context )
 
-    def __set( self, angle:Degrees|None, context:Optional[EvaluationContext]=None ):
+    def __set( self, angle:Degrees|None, context:Optional[EvaluationContext]=None ) -> None: # pylint: disable=unused-argument
         if angle is not None:
             angle = self.rangedAngle( angle )
             self.__lastSetAngle = angle
-        self.__servo.angle = angle
+        self.__servo.angle = angle # type: ignore
         
     def moveTo( self, angle:Degrees, speed:Optional[DegreesPerSecond]|None=None, context:Optional[EvaluationContext]=None ):
         assert angle is not None
@@ -94,11 +101,11 @@ class LocalServo(
         if self.enableDbgOut:self.dbgOut( f"moveTo {self.__moveTarget}d from {self.__moveAngleStart}d / {self.__moveTimeAtStart :0.3f}s at {self.__moveSpeed}dPs, span {self.__moveSpan}" )
         self.__moveTimer.start()
 
-    def onStop( self, callable:Callable ):
-        self.__onStopCB = callable
+    def onStop( self, callback:LocalServoCallback ):
+        self.__onStopCB = callback
 
-    def onMoveComplete( self, callable:Callable ):
-        self.__moveCompleteCB = callable
+    def onMoveComplete( self, callback:LocalServoCallback ):
+        self.__moveCompleteCB = callback
 
     def _updateMove(self, when:TimeInSeconds, context:EvaluationContext):
         assert when is not None

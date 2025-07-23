@@ -1,16 +1,21 @@
+from __future__ import annotations
 
+import json
 
+import pulseio
+import adafruit_irremote    # pylint: disable=import-error # type: ignore
 
 from LumensalisCP.IOContext  import * # NamedOutputTarget, EvaluationContext, UpdateContext, InputSource
 from LumensalisCP.commonCP import *
 from LumensalisCP.Main.Manager import MainManager
 
 from LumensalisCP.Triggers.Timer import PeriodicTimer
-from  LumensalisCP.Main.Dependents import MainChild
+from LumensalisCP.Main.Dependents import MainChild
 
-import adafruit_irremote   # pyright: ignore[reportMissingImports]
-import json
-import pulseio
+if TYPE_CHECKING:
+
+    IRUnhandledCallbackType:TypeAlias = Callable[[int, list[int]], None]
+    IRCallbackType:TypeAlias = Callable[[], None]
 
 class LCP_IRrecv(MainChild):
     REMOTES_CATALOG_FILENAME = '/remotes.json'
@@ -50,12 +55,21 @@ class LCP_IRrecv(MainChild):
          # 0xacd3354a
     }
     
+    class KWDS( MainChild.KWDS ):
+        name: NotRequired[str]
+        updateInterval: NotRequired[TimeInSecondsConfigArg]
+        showUnhandled: NotRequired[bool]
+        codenames: NotRequired[dict[str,int]|str|None]
+        
     showUnhandled:bool
     codenames:dict[str,int]
     
-    def __init__(self, pin, main:MainManager,  codenames:dict[str,int]|str|None = {},
-                 name:str|None = None, updateInterval = 0.1,
-                 showUnhandled = False ):
+    def __init__(self, pin:microcontroller.Pin,
+                 main:MainManager,
+                 codenames:dict[str,int]|str|None = {},
+                 name:str|None = None,
+                 updateInterval:TimeInSecondsConfigArg = 0.1,
+                 showUnhandled:bool = False ) -> None:
         super().__init__( main=main, name=name )
         maxLen = 128
         self.showUnhandled = showUnhandled 
@@ -65,14 +79,14 @@ class LCP_IRrecv(MainChild):
             SHOW_EXCEPTION( inst, f"failed initializing pulseio.PulseIn({pin}, maxlen={maxLen}, idle_state=True)")
             raise
         
-        self.decoder = adafruit_irremote.GenericDecode()
-        self.__callbacksByCode:dict[int,Callable] = {}
-        self.__unhandledCallback = None
+        self.decoder = adafruit_irremote.GenericDecode() # type: ignore
+        self.__callbacksByCode:dict[int,IRCallbackType] = {}
+        self.__unhandledCallback:IRUnhandledCallbackType|None = None
         self.__updateInterval = updateInterval
         self.__jsonCatalog = None
-        
-        if type(codenames) is str:
-            builtinCodes = LCP_IRrecv.RemoteCatalog.get(codenames,None)
+
+        if isinstance(codenames, str):
+            builtinCodes = LCP_IRrecv.RemoteCatalog.get(codenames, None)
             if builtinCodes is not None:
                 codenames = builtinCodes
             else:
@@ -83,12 +97,12 @@ class LCP_IRrecv(MainChild):
         elif codenames is None:
             self.codenames = {}
         else:
-            assert type(codenames) is not str
+            assert not isinstance(codenames, str)
             self.codenames = codenames # type: ignore
 
         self._checkTimer = PeriodicTimer( updateInterval , manager=main.timers, name=f"{self.name}Check" )
         
-        def checkPulse(**kwds):
+        def checkPulse(**kwds: StrAnyDict):
             # print( "HKA check pulse...")
             self.check(**kwds)
             
@@ -107,24 +121,22 @@ class LCP_IRrecv(MainChild):
         if self.__jsonCatalog is None:
             remotes:dict[str,dict[str,int]] = {}
             try:
-                with open( self.REMOTES_CATALOG_FILENAME, 'r') as f:
+                with open( self.REMOTES_CATALOG_FILENAME, 'r', encoding='utf-8') as f:
                     remotes = json.load(f)
                     assert remotes is not None
-            except Exception as inst:
+            except Exception as inst: # pylint: disable=broad-except
                 print( f"failed to load {self.REMOTES_CATALOG_FILENAME} : {inst}")
                 remotes = {}
                 
             self.__jsonCatalog = remotes
         return self.__jsonCatalog
     
-    def handleRawCode(self, rawCode ):
+    def handleRawCode(self, rawCode:list[int] ):
         code = 0
         if self.enableDbgOut: self.dbgOut( f"handleRawCode {rawCode}" )
         for byte in rawCode:
             code = (code *256) + byte
             
-        
-        
         cb = self.__callbacksByCode.get(code,None) # self.__unhandledCallback)
         if cb is not None:
             if self.enableDbgOut: self.dbgOut( f"calling callback for code {code}, cb={cb}" )
@@ -132,66 +144,68 @@ class LCP_IRrecv(MainChild):
         else:
             self._unhandled(code, rawCode)
         
-    def _unhandled(self, code, rawCode ):
+    def _unhandled(self, code:int, rawCode:list[int] ):
         
         if self.__unhandledCallback is not None:
             try:
-                self.__unhandledCallback( code=code, rawCode=rawCode)
-            except Exception as inst:
+                self.__unhandledCallback( code=code, rawCode=rawCode) # type: ignore
+            except Exception as inst: # pylint: disable=broad-exception-caught
                 self.SHOW_EXCEPTION( inst, "unhandledCallback failed for %x from %r", code, rawCode )
         #else:
         #    if self.enableDbgOut: self.dbgOut( f"unhandled remote code: 0x{'%x'%code} from {rawCode}" )
         if self.showUnhandled: 
             self.infoOut( f"unhandled remote code: 0x{'%x'%code} from {rawCode}" )
 
-    def setUnhandledCallback( self, cb:Callable ):
+    def setUnhandledCallback( self, cb:IRUnhandledCallbackType ) -> None:
         self.__unhandledCallback = cb
 
     def onUnhandledDef( self ):
-        def on2( callable ):
-            self.setUnhandledCallback( callable )
-            return callable
+        def on2( callback:IRUnhandledCallbackType ) -> IRUnhandledCallbackType:
+            self.setUnhandledCallback( callback )
+            return callback
         
         return on2
 
-    def addCallbackForCode(self, code:int|str, cb:Callable ):
-        if type(code) is str:
+    def addCallbackForCode(self, code:int|str, cb:IRCallbackType ):
+        if isinstance(code, str):
             code = self.codenames[code]
 
         dictAddUnique(self.__callbacksByCode, code, cb )
 
     def onCodeDef( self, code:int|str ):
         
-        def on2( callable ):
-            self.addCallbackForCode( code, callable )
-            return callable
+        def on2( callback:IRCallbackType ) -> IRCallbackType:
+            self.addCallbackForCode( code, callback )
+            return callback
         return on2
 
-    def onCode( self, code:int|str, action:Callable  ):
+    def onCode( self, code:int|str, action:IRCallbackType  ) -> None:
         assert code is not None
         assert action is not None
         self.addCallbackForCode( code, action )
         
-    def check( self, **kwds ):
-        pulses = self.decoder.read_pulses(self.pulseIn, blocking=False)
-        if pulses is None or len(pulses) == 0: return
+    def check( self, **kwds:StrAnyDict ):
+        # type: ignore
+        pulses:list[int]|None = self.decoder.read_pulses(self.pulseIn, blocking=False)  # type: ignore
+        if pulses is None or len(pulses) == 0: return # type: ignore
         # print("Heard", len(pulses), "Pulses:", pulses)
         try:
-            code = self.decoder.decode_bits(pulses)
+            code = self.decoder.decode_bits(pulses) # type: ignore
             
-            self.handleRawCode( code )
-        except adafruit_irremote.IRNECRepeatException:  # unusual short code!
+            self.handleRawCode( code )# type: ignore
+        except adafruit_irremote.IRNECRepeatException:  # unusual short code! # type: ignore
             if self.enableDbgOut: self.dbgOut("NEC repeat!")
         except (
-            adafruit_irremote.IRDecodeException,
-            adafruit_irremote.FailedToDecode,
-        ) as e:  # failed to decode
-            if self.enableDbgOut: self.dbgOut("Failed to decode: %r /  %s %r", pulses, e.args, e )
+            adafruit_irremote.IRDecodeException, # type: ignore
+            adafruit_irremote.FailedToDecode, # type: ignore
+        ) as e:  # failed to decode # type: ignore
+            if self.enableDbgOut: self.dbgOut("Failed to decode: %r /  %s %r", pulses, e.args, e ) # type: ignore
 
     
 def onIRCode( ir: LCP_IRrecv, code:int|str ):
         
-    def on2( callable ):
-        ir.addCallbackForCode( code, callable )
-        return callable
+    def on2( callback:IRCallbackType ):
+        ir.addCallbackForCode( code, callback )
+        return callback
+        
     return on2

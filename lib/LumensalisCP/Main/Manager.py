@@ -1,4 +1,5 @@
 from __future__ import annotations
+from asyncio import Task
 
 import wifi, displayio
 
@@ -10,7 +11,7 @@ from LumensalisCP.Main import PreMainConfig
 from TerrainTronics.Factory import TerrainTronicsFactory
 
 from LumensalisCP.Shields.Base import ShieldBase
-
+from LumensalisCP.Main.I2CProvider import I2CProvider
 
 from LumensalisCP.Main.ControlVariables import ControlPanel
 
@@ -19,7 +20,7 @@ from LumensalisCP.Main import ManagerRL
 if TYPE_CHECKING:
     from LumensalisCP.Lights.DMXManager import DMXManager
     import LumensalisCP.Main.Manager
-    
+    # from LumensalisCP.Controllers.Config import ControllerConfigArg
 
 import LumensalisCP.Main.ProfilerRL
 LumensalisCP.Main.ProfilerRL._rl_setFixedOverheads() # type: ignore
@@ -28,6 +29,9 @@ def _early_collect(tag:str):
     PreMainConfig.pmc_gcManager.runCollection(force=True)
 
 class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
+    
+    class KWDS(ConfigurableBase.KWDS): # type: ignore
+        pass
     
     theManager : "MainManager|None" = None
     ENABLE_EEPROM_IDENTITY = False
@@ -49,8 +53,8 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         rv = MainManager.theManager
         assert rv is not None
         return rv
-    
-    def __init__(self, config = None, **kwds ):
+
+    def __init__(self, **kwds:Unpack[ConfigurableBase.KWDS] ) -> None:
         assert MainManager.theManager is None
         NamedLocalIdentifiable.__init__(self,"main")
         
@@ -72,10 +76,10 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         UpdateContext._patch_fetchCurrentContext(self) # type: ignore
 
         self.profiler = Profiler(self._privateCurrentContext )
-        
-        self.__asyncTaskCreators = []
-        self.__preFirstRunCallbacks:List[Callable] = []
-        self.__socketPool = None
+
+        self.__asyncTaskCreators: list[Callable[[], list[Task[None]]]] = []
+        self.__preFirstRunCallbacks: list[Callable[[], None]] = []
+        self.__socketPool:Any = None
         
         Debuggable._getNewNow = self.getNewNow
         mainConfigDefaults = dict(
@@ -83,7 +87,8 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         )
         displayio.release_displays()
         
-        ConfigurableBase.__init__(self,  config, defaults=mainConfigDefaults, **kwds )
+        kwds.setdefault("defaults", mainConfigDefaults)
+        ConfigurableBase.__init__(self, **kwds ) # type: ignore
 
         
         _early_collect("mid manager init")
@@ -97,7 +102,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self.cycleDuration = 0.01
 
         self._webServer = None
-        self.__deferredTasks = collections.deque( [], 99, True ) # type: ignore # pylint: disable=all
+        self.__deferredTasks: collections.deque[Callable[[], None]] = collections.deque( [], 99, True ) # type: ignore # pylint: disable=all
         self.__audio = None
         self.__dmx :DMXManager|None = None
 
@@ -112,7 +117,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self.defaultController = ControlPanel(self)
         self.defaultController.nliSetContainer(self.controlPanels)
 
-        self._monitored = []
+        self._monitored:list[InputSource] = []
 
         self._timers = PeriodicTimerManager(main=self.__getMMSelf())
 
@@ -150,7 +155,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         #ns = time.monotonic_ns()
         #return (ns - self.__startNs) * 0.000000001
         now = time.monotonic()
-        return now - self.__startNow
+        return now - self.__startNow # type: ignore # pylint: disable=all
 
 
     @property
@@ -191,21 +196,22 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         return self.__dmx
     
     @property
-    def socketPool(self):
+    def socketPool(self) -> Any:
         if self.__socketPool is None:
             
             import adafruit_connection_manager # type: ignore
             if not wifi.radio.connected:
                 ssid = os.getenv("CIRCUITPY_WIFI_SSID")
                 self.sayAtStartup("Connecting to %r", ssid)
-                wifi.radio.connect(ssid, os.getenv("CIRCUITPY_WIFI_PASSWORD"))
+                wifi.radio.connect(ssid, os.getenv("CIRCUITPY_WIFI_PASSWORD")) # type: ignore
             #import socketpool
             #self.__socketPool = socketpool.SocketPool(wifi.radio)
             #self.sayAtStartup( "wifi.radio.start_dhcp()" )
             #wifi.radio.start_dhcp()
-            pool = adafruit_connection_manager.get_radio_socketpool(wifi.radio)
+            pool = adafruit_connection_manager.get_radio_socketpool(wifi.radio) # type: ignore
             self.__socketPool = pool
-        return self.__socketPool
+            
+        return self.__socketPool # type: ignore
         
     def callLater( self, task:KWCallbackArg ):
         self.__deferredTasks.append( KWCallback.make( task ) )
@@ -215,7 +221,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         for task in self.__shutdownTasks:
             task.shutdown()
             
-    def addExitTask(self,task:ExitTask|Callable):
+    def addExitTask(self,task:ExitTask|Callable[[], None]|KWCallbackArg):
         if not isinstance( task, ExitTask ):
             task = ExitTask( main=self.__getMMSelf(),task=task)
             
@@ -224,11 +230,11 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     #def addControlVariable( self, *args, **kwds ) -> ControlVariable:
     #    return self.defaultController.addControlVariable( *args, **kwds )
 
-    def addIntermediateVariable( self,  *args, **kwds ) -> IntermediateVariable:
-        return self.defaultController.addIntermediateVariable( *args, **kwds )
+    #def addIntermediateVariable( self,  *args, **kwds ) -> IntermediateVariable:
+    #    return self.defaultController.addIntermediateVariable( *args, **kwds )
 
-    def addScene( self, name:Optional[str]=None, *args, **kwds ) -> Scene:
-        scene = self._scenes.addScene( name, *args, **kwds )
+    def addScene( self, **kwds:Unpack[Scene.KWDS] ) -> Scene:
+        scene = self._scenes.addScene( **kwds )
         return scene
     
     def addScenes( self, n:int ):
@@ -236,12 +242,12 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         return [self.addScene() for _ in range(n)]
         return [self.addScene(name) for name in names]
     
-    def sayAtStartup( self, fmt, *args ):
+    def sayAtStartup( self, fmt:str, *args:Any ):
         if pmc_mainLoopControl.startupVerbose:
             print( "-----" )
             print( f"{self.getNewNow():0.3f} STARTUP : {safeFmt(fmt,*args)}" )
             
-    def addBasicWebServer( self, *args, **kwds ):
+    def addBasicWebServer( self, *args:Any, **kwds:StrAnyDict ):
         from LumensalisCP.HTTP.BasicServer import BasicServer
         self.sayAtStartup( "addBasicWebServer %r, %r ", args, kwds )
         server = BasicServer( *args, main=self.__getMMSelf(), **kwds )
@@ -260,7 +266,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self.__preFirstRunCallbacks.append( startWebServer )
         return server
 
-    def monitor( self, *inputs:InputSource, **kwds ) -> None:
+    def monitor( self, *inputs:InputSource, **kwds:StrAnyDict ) -> None:
         return ManagerRL.MainManager_monitor(self.__getMMSelf(), *inputs, **kwds )
 
 
@@ -317,7 +323,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def launchProject(self, globals:Optional[dict]=None, verbose:bool = False ):
         return ManagerRL.MainManager_launchProject(self.__getMMSelf(), globals, verbose=verbose )
 
-    def renameIdentifiables(self, items:Optional[dict]=None, verbose:bool = False ):
+    def renameIdentifiables(self, items:Optional[dict[str,NamedLocalIdentifiable]]=None, verbose:bool = False ):
         return ManagerRL.MainManager_renameIdentifiables(self.__getMMSelf(), items, verbose )
     
     async def taskLoop( self ):
@@ -367,3 +373,4 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self.__runExitTasks()
 
 
+    _renameIdentifiablesItems :dict[str,NamedLocalIdentifiable]

@@ -69,6 +69,13 @@ class LightGroupList(LightGroup):
 #############################################################################
 
 class NextNLights(LightGroupList):
+    class KWDS( LightGroupList.KWDS ):
+        count: Required[int] 
+        source: Required[LightSource]
+        
+    class KWDS_LIGHTSOURCE( LightGroupList.KWDS ):
+        pass
+                
     def __init__(self,count:int, source:"LightSource",**kwargs:Unpack[LightGroupList.KWDS] ):
         
         offset = source.startOfNextN(count)
@@ -103,8 +110,6 @@ class AdHocLightGroup(LightGroupList):
 class LightSource(LightGroupList):
     """ driver / hardware interface providing Lights"""
     
-    KWDS = LightGroupList.KWDS
-    
     def __init__(self, **kwargs:Unpack[LightGroupList.KWDS]):
         super().__init__(**kwargs)
         self.__nextGroupStartIndex = 0
@@ -123,20 +128,20 @@ class LightSource(LightGroupList):
                            #name=name or f"{desc}({self.name} [{self.__nextGroupStartIndex}:{self.__nextGroupStartIndex+count-1}])", 
                            source=self,**kwargs )
     
-    def nextNLights(self, count:int, **kwargs:dict[str,Any] ) ->NextNLights:
-        return self._nextNLights( NextNLights, count=count,  **kwargs )
+    def nextNLights(self, count:int, **kwargs:Unpack[NextNLights.KWDS_LIGHTSOURCE] ) ->NextNLights:
+        return self._nextNLights( NextNLights, count=count,  **kwargs ) # type: ignore
     
-    def ring(self, count:int, **kwargs:StrAnyDict ) -> Ring:
-        return self._nextNLights( Ring, count=count, **kwargs )
+    def ring(self, count:int, **kwargs:Unpack[Ring.KWDS_LIGHTSOURCE] ) -> Ring:
+        return self._nextNLights( Ring, count=count, **kwargs ) # type: ignore
 
-    def stick(self, count:int,  **kwargs:StrAnyDict ) -> Stick:
-        return self._nextNLights( Stick, count=count, **kwargs )
+    def stick(self, count:int,  **kwargs:Unpack[Stick.KWDS_LIGHTSOURCE] ) -> Stick:
+        return self._nextNLights( Stick, count=count, **kwargs ) # type: ignore
 
-    def strip(self, count:int,  **kwargs:StrAnyDict ) -> Strip:
-        return self._nextNLights( Strip, count=count, **kwargs )
+    def strip(self, count:int,  **kwargs:Unpack[Strip.KWDS_LIGHTSOURCE] ) -> Strip:
+        return self._nextNLights( Strip, count=count, **kwargs ) # type: ignore
 
-    def single(self,  **kwargs:StrAnyDict  ) ->NextNLights:
-        return self._nextNLights( NextNLights, count=1, **kwargs )
+    def single(self,  **kwargs:Unpack[NextNLights.KWDS_LIGHTSOURCE]  ) ->NextNLights:
+        return self._nextNLights( NextNLights, count=1, **kwargs )  # type: ignore
 
     def lightChanged(self,light:Light) -> None: 
         raise NotImplementedError

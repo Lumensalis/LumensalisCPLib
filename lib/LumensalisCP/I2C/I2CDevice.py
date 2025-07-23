@@ -96,7 +96,7 @@ class I2CDevice( NamedLocalIdentifiable ):
 class I2CInputSource( InputSource ): # pylint: disable=abstract-method
     
     class KWDS(TypedDict):
-        name: NotRequired[str]
+        name: NotRequired[str|None]
 
     def __init__(self, target:I2CDevice,  **kwds:Unpack[InputSource.KWDS] ):
         super().__init__(**kwds)

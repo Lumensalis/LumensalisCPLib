@@ -15,10 +15,11 @@ handSafetyRange = main.panel.addControlVariable(startingValue=300, min=10, kind=
 #############################################################################
 # HARDWARE : http://lumensalis.com/ql/h2Hardware
 # setup the Caernarfon Castle : http://lumensalis.com/ql/h2Caernarfon
-caernarfon = main.TerrainTronics.addCaernarfon( neoPixelCount=45 )
+caernarfon = main.TerrainTronics.addCaernarfon( )
+
 lidServo = caernarfon.initServo( 1, movePeriod=0.05 )
 ir = caernarfon.addIrRemote(codenames="dvd_remote")     
-neoPixA = caernarfon.pixels 
+neoPixA = caernarfon.addNeoPixels(pixelCount=45) 
 neoPixB = caernarfon.initNeoPixOnServo(3,pixelCount=35)
 # setup neoPixel modules : http://lumensalis.com/ql/h2NeoPixels
 firstTwoOnPixA          = neoPixA.nextNLights(2)

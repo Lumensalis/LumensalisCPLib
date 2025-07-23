@@ -1,9 +1,8 @@
 from __future__ import annotations
-from math import pi
 
 from LumensalisCP.IOContext import *
 from LumensalisCP.commonCP import *
-from LumensalisCP.Lights.NeoPixels import NeoPixelSource
+from LumensalisCP.Lights.NeoPixels import NeoPixelSource, NeoPixelSourceKwds
 from LumensalisCP.Gadgets.IrRemote import LCP_IRrecv, onIRCode
 from LumensalisCP.Gadgets.Servos import LocalServo
 
@@ -56,7 +55,10 @@ class CaernarfonCastle(D1MiniBoardBase):
             #)
             #self.__pixels.nliSetContainer(self.__pixelsContainer)
     
-    def addNeoPixels(self,servoPin:Optional[int]=None, **kwds:Unpack[NeoPixelSource.KWDS]) -> NeoPixelSource:
+    def addNeoPixels(self,
+                    servoPin:Optional[int]=None, 
+                    **kwds:Unpack[NeoPixelSourceKwds]
+            ) -> NeoPixelSource:
         pin = self.neoPixelPin if servoPin is None else getattr(self, f'servo{servoPin}pin')
         assert isinstance(pin, microcontroller.Pin)
         if servoPin is not None:
@@ -64,12 +66,9 @@ class CaernarfonCastle(D1MiniBoardBase):
         else:
             ensure( getattr(self,'__pixels',None) is None, "pixels already initialized" )
             
-        updateKWDefaults(kwds,
-                pixelCount = 1,
-                pixel_order = neopixel.GRB,
-                #neoPixelBrightness = 0.2,
-            )
-        
+        kwds.setdefault( 'pixelCount', 1 )
+        kwds.setdefault( 'pixel_order', neopixel.GRB )
+
         pixels = NeoPixelSource( pin,  main = self.main,  **kwds )
         if servoPin is not None:
             self.__neoPixOnServos[servoPin-1] = pixels
@@ -82,7 +81,7 @@ class CaernarfonCastle(D1MiniBoardBase):
 
             #// refreshRate=0.05, brightness=neoPixelBrightness, auto_write=False, pixel_order=neoPixelOrder
 
-    def initNeoPixOnServo( self, servoN:int, **kwds:Unpack[NeoPixelSource.KWDS] ) -> NeoPixelSource:
+    def initNeoPixOnServo( self, servoN:int, **kwds:Unpack[NeoPixelSourceKwds] ) -> NeoPixelSource:
         assert( self.__servos[servoN-1] is None  and self.__neoPixOnServos[servoN-1] is None )
         pin = getattr(self,f'servo{servoN}pin',None)
         assert isinstance(pin, microcontroller.Pin), f"servo{servoN}pin is not a pin: {pin}"
@@ -98,8 +97,8 @@ class CaernarfonCastle(D1MiniBoardBase):
         #    return [ self._irRemote ]
         return None
     
-    def nliGetContainers(self) -> list["NliContainerMixin"]|None:
-        return itertools.chain(  [ self.__pixelsContainer, self.__servoContainer ], super().nliGetContainers()) 
+    def nliGetContainers(self) -> list["NliContainerMixin"]|None: # type: ignore
+        return itertools.chain(  [ self.__pixelsContainer, self.__servoContainer ], super().nliGetContainers())  #type: ignore
 
     def doRefresh(self,context:EvaluationContext):
         for pixels in self.__allPixels:
@@ -153,16 +152,21 @@ class CaernarfonCastle(D1MiniBoardBase):
         self.nliAddComponent(self._irRemote)
         return self._irRemote
     
-    def analogInput( self, name, pin ):
+    def analogInput( self, name:str, pin:Any ):
         return self.main.addInput( name, pin )
     
-    def initServo( self, servoN:int, name:Optional[str] = None, duty_cycle:int = 2 ** 15, frequency=50, **kwds) -> LocalServo:
+    def initServo( self, servoN:int, 
+                  #//name:Optional[str] = None, 
+                  duty_cycle:int = 2 ** 15,
+                  frequency:int=50, 
+                  **kwds:Unpack[LocalServo.KWDS]
+                  ) -> LocalServo:
         ensure( self.__servos[servoN-1] is None, "servo position already in use by %r",  self.__servos[servoN-1] )
         ensure( self.__neoPixOnServos[servoN-1] is None, "servo position already in use by %r",  self.__neoPixOnServos[servoN-1]  )
         pin = getattr(self, 'servo{}pin'.format(servoN) )
-        name = name or f"servo{servoN}"
+        kwds.setdefault('name', f"servo{servoN}")
         pwm = pwmio.PWMOut( pin, duty_cycle=duty_cycle, frequency=frequency)
-        servo = LocalServo(pwm, main=self.main, name=name, **kwds)
+        servo = LocalServo(pwm, main=self.main, **kwds)
         servo.nliSetContainer(self.__servoContainer)
         self.__servos[servoN-1] = servo
         return servo

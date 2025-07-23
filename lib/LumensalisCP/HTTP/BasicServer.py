@@ -3,7 +3,8 @@
 #
 # SPDX-License-Identifier: Unlicense
 
-from asyncio import create_task, gather, run, sleep as async_sleep
+from __future__ import annotations
+from asyncio import create_task, gather, run, sleep as async_sleep, Task
 from adafruit_httpserver.methods import POST, PUT, GET   # type: ignore # pylint: disable=import-error,no-name-in-module
 from adafruit_httpserver import Server, Request, Response, Websocket, Route, JSONResponse  # pylint: disable=import-error,no-name-in-module # type: ignore
 
@@ -224,7 +225,7 @@ class BasicServer(Server,Debuggable):
         except Exception  as error:
             SHOW_EXCEPTION( error, 'send_websocket_messages error' )
 
-    def createAsyncTasks( self ):
+    def createAsyncTasks( self ) -> list[Task[None]]:
         self.dbgOut( "createAsyncTasks... " )
 
         return [

@@ -1,23 +1,28 @@
 
+from __future__ import annotations
+
 from LumensalisCP.Triggers import NamedLocalIdentifiable
 from LumensalisCP.Identity.Local import NliContainerMixin, NliList
-from LumensalisCP.Scenes.Scene import Scene, SceneTask
+from LumensalisCP.Scenes.Scene import Scene
 from LumensalisCP.Eval.Expressions import EvaluationContext
 
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
-from LumensalisCP.Main.Profiler import Profiler
 
+if TYPE_CHECKING:
+    from LumensalisCP.Main.Manager import MainManager
+    
 class SceneManager(NamedLocalIdentifiable):
-    def __init__(self, main ) -> None:
+    def __init__(self, main: MainManager) -> None:
         super().__init__("SceneManager")
         self.main = main
         #self._scenes:Mapping[str,Scene] = {}
-        self._scenes = NliList("scenes", parent=self)
+        self._scenes:NliList[Scene] = NliList("scenes", parent=self)
         self.__currentScene:Scene|None = None
 
-    def addScene( self, name:Optional[str]=None, *args, **kwds ) -> Scene:
-        scene = Scene( *args, name=name, main=self.main, **kwds )
+    def addScene( self, **kwds:Unpack[Scene.KWDS] ) -> Scene:
+        kwds.setdefault("main", self.main)
+        scene = Scene( **kwds )
         scene.nliSetContainer(self._scenes)
         if self.__currentScene is None:
             self.__currentScene = scene
@@ -30,7 +35,7 @@ class SceneManager(NamedLocalIdentifiable):
         
         self.__currentScene.runTasks(context)
 
-    def nliGetContainers(self) -> list[NliContainerMixin]:
+    def nliGetContainers(self) -> list[NliContainerMixin[Any]]:
         return [self._scenes]
         
     @property

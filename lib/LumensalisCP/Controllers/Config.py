@@ -1,7 +1,8 @@
+from __future__ import annotations
 import microcontroller, board # type: ignore # pylint: disable=all
 
 
-from LumensalisCP.common import Any, Optional
+from LumensalisCP.common import Any, Optional, TypeAlias, Union, StrAnyDict
 # Map from specific controllers actual pins to D1 Mini pin names
 class ControllerPins(object):
     
@@ -97,3 +98,5 @@ class ControllerConfig(object):
         for tag,val in kwds.items():
             if tag not in self.options:
                 self.setOption( tag, val)
+
+ControllerConfigArg: TypeAlias = Union[ControllerConfig , str , StrAnyDict ]

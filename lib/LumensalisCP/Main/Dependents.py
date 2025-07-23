@@ -11,10 +11,13 @@ if TYPE_CHECKING:
 #############################################################################
 class MainChild( NamedLocalIdentifiable ):
     
+    class KWDS( NamedLocalIdentifiable.KWDS ):
+        main: NotRequired[MainManager]
+        
     def __init__( self, main:Optional[MainManager]=None, name:Optional[str]=None ):
         NamedLocalIdentifiable.__init__( self, name = name or self.__class__.__name__)
         main = main or getMainManager()
-        ensure( main is not None )
+        assert main is not None
         self.__main = weakref.ref(main)
         # print( f"MainChild __init__( name={self.name}, main={main})")
 

@@ -46,8 +46,9 @@ class SceneRule( NamedLocalIdentifiable, Expression,  ):
             self.target.set(self.value,context=context)
 
 class Scene(MainChild):
-    def __init__( self, *args, **kwargs ):
-        super().__init__( *args, **kwargs )
+    
+    def __init__( self, **kwargs:Unpack[MainChild.KWDS] ):
+        super().__init__( **kwargs )
 
         self.__rulesContainer = NliList("rules",parent=self)
         self.__rules: Mapping[str,SceneRule] = {}

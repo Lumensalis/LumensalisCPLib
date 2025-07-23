@@ -11,7 +11,7 @@ from .LCP_StupidArtnetServer import StupidArtnetASIOServer
 import time
 
 import asyncio
-from asyncio import create_task, gather, run, sleep as async_sleep
+from asyncio import create_task, gather, run, sleep as async_sleep, Task
 
 class DMXWatcher(InputSource):
     def __init__(self, name, manager:"DMXManager", c1, cN=None):
@@ -107,7 +107,7 @@ class DMXManager(MainChild):
         for watcher in self._watchers:
             watcher.update( )
         
-    def createAsyncTasks(self):
+    def createAsyncTasks(self) -> list[Task[None]]:
         return [
             #create_task(self._runNode()),
             create_task(self._sasServer._listenLoop()),
