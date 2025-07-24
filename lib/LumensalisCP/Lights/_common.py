@@ -5,9 +5,9 @@ from __future__ import annotations
 
 from LumensalisCP.common import *
 from LumensalisCP.Eval.common import *
+from LumensalisCP.Lights.RGB import *
 from LumensalisCP.Eval.EvaluationContext import EvaluationContext
 from LumensalisCP.Eval.Evaluatable import evaluate, Evaluatable
-from LumensalisCP.Lights.RGB import RGB, AnyRGBValue
 from LumensalisCP.Lights.Light import Light, RGBLight
 from LumensalisCP.Lights.Groups import LightGroup, LightSource
 from LumensalisCP.Lights.Values import LightValueBase, LightValueRGB, LightValueNeoRGB, wheel1, wheel255

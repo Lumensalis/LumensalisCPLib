@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from LumensalisCP.common import Optional, Any
 from LumensalisCP.Lights.Groups import LightSource
-from LumensalisCP.Lights.RGB import RGB, AnyRGBValue
+from LumensalisCP.Lights.RGB import *
+
 from LumensalisCP.Lights.Values import LightValueBase
 from LumensalisCP.Outputs import OutputTarget
 from LumensalisCP.Eval.EvaluationContext import EvaluationContext

@@ -1,58 +1,67 @@
-from collections import *
+from __future__ import annotations
 
 try:
-    from collections import UserList
-except:
+    from collections import * # pylint: disable=unused-wildcard-import # type: ignore
+except ImportError:
+    pass
 
-    class UserList(object):
-        """A minimally complete user-defined wrapper around list objects."""
+from LumensalisCP.CPTyping import Generic,TypeVar,Optional, GenericT, Any # pyright: ignore[unused-import] # type: ignore
 
-        def __init__(self, initList=None):
-            self.data = []
-            if initList is not None:
-                # XXX should this accept an arbitrary sequence?
-                if type(initList) == type(self.data):
-                    self.data[:] = initList
-                elif isinstance(initList, UserList):
-                    self.data[:] = initList.data[:]
-                else:
-                    self.data = list(initList)
+_ULT = TypeVar('_ULT',)
 
-        def __repr__(self):
-            return repr(self.data)
+class GenericList(Generic[_ULT]): # type:  ignore # pylint: disable=function-redefined
+    """A minimally complete user-defined wrapper around list objects."""
 
-        def __contains__(self, item):
-            return item in self.data
-
-        def __len__(self):
-            return len(self.data)
-
-        def __getitem__(self, i):
-            if isinstance(i, slice):
-                return self.__class__(self.data[i])
+    def __init__(self, initList:Optional[list[_ULT]|GenericList[_ULT]]=None):
+        self.data:list[_ULT] = []
+        if initList is not None:
+            # XXX should this accept an arbitrary sequence?
+            #if type(initList) == type(self.data):
+            if isinstance(initList, list):
+                self.data[:] = initList
+            elif isinstance(initList, GenericList):
+                self.data[:] = initList.data[:]
             else:
-                return self.data[i]
+                self.data = list(initList)
 
-        def __setitem__(self, i, item):
-            self.data[i] = item
+    def __repr__(self):
+        return repr(self.data)
 
-        def __delitem__(self, i):
-            del self.data[i]
+    def __contains__(self, item:_ULT):
+        return item in self.data
 
-        def __copy__(self):
-            inst = self.__class__.__new__(self.__class__)
-            inst.__dict__.update(self.__dict__)
-            # Create a copy and avoid triggering descriptors
-            inst.__dict__["data"] = self.__dict__["data"][:]
-            return inst
+    def __len__(self):
+        return len(self.data)
 
-        def append(self, item):
-            self.data.append(item)
+    def __getitem__(self, i:int|slice):
+        if isinstance(i, slice):
+            return self.__class__(self.data[i])
+        else:
+            return self.data[i]
+
+    def __setitem__(self, i:int, item:_ULT):
+        self.data[i] = item
+
+    def __delitem__(self, i:int):
+        del self.data[i]
+
+    def __copy__(self):
+        inst = self.__class__.__new__(self.__class__)
+        inst.__dict__.update(self.__dict__)
+        # Create a copy and avoid triggering descriptors
+        inst.__dict__["data"] = self.__dict__["data"][:]
+        return inst
+
+    def append(self, item:_ULT):
+        self.data.append(item)
 
 
-        def remove(self, item):
-            self.data.remove(item)
+    def remove(self, item:_ULT):
+        self.data.remove(item)
 
-        def clear(self):
-            self.data.clear()
+    def clear(self):
+        self.data.clear()
 
+
+
+GenericListT = GenericT(GenericList)

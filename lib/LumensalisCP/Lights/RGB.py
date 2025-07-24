@@ -1,13 +1,16 @@
 from __future__ import annotations
 
-
 #############################################################################
 
-from random import random as randomZeroToOne, randint
+from random import random as randomZeroToOne, randint # pyright: ignore[reportUnusedImport]
 import re
 
-from LumensalisCP.common import TypeAlias, ZeroToOne,Union, Type, Callable, Optional,  Any, Tuple, NewType, ClassVar
-from LumensalisCP.common import withinZeroToOne_, safeFmt
+#from LumensalisCP.CPTyping import TypeAlias, ZeroToOne,Union, Type, Callable, Optional,  Any, Tuple, NewType, ClassVar
+#from LumensalisCP.CPTyping import Generic, TypeVar
+from LumensalisCP.CPTyping import *
+
+from LumensalisCP.common import withinZeroToOne_, safeFmt, ZeroToOne
+from LumensalisCP.util.Convertor import Convertor
 #from LumensalisCP.Eval.Evaluatable import Evaluatable, evaluate
 
 #from LumensalisCP.CPTyping import *
@@ -20,12 +23,17 @@ RGBTuple:TypeAlias = Tuple[RGBChannel,RGBChannel,RGBChannel]
 #############################################################################
 NeoPixelRGBInt = NewType('NeoPixelRGBInt', int)
 
-class RGB(object):
-    # __slots__ = [ '_r', '_g', '_b' ]
-    
+AnyRGBValue:TypeAlias = Union[ 'RGB',
+        int, float, bool,
+        RGBTuple,
+        # List [float],
+        str, 
+    ] 
 
+
+class RGB(object):
     
-    def __init__(self, r:RGBChannel|tuple|RGB=0.0, g:Optional[RGBChannel]=None, b:Optional[RGBChannel]=None ):
+    def __init__(self, r:RGBChannel|tuple[float,float,float]|str|RGB=0.0, g:Optional[RGBChannel]=None, b:Optional[RGBChannel]=None ):
         super().__init__()
         if g is None:
             assert isinstance( b, type(None)), "b must also be None"
@@ -61,7 +69,7 @@ class RGB(object):
     @b.setter
     def b(self,v:RGBChannel): self._b = max(0.0, min(1.0,v) )
     
-    def toNeoPixelRGBInt( self ) -> NeoPixelRGBInt:
+    def asNeoPixelRGBInt( self ) -> NeoPixelRGBInt:
         return (int(255*self._r) << 16) + (int(255*self._g) << 8) + (int(255*self._b)) # type: ignore
     
     def _set(self, r:RGBChannel, g:RGBChannel,b:RGBChannel):
@@ -103,70 +111,79 @@ class RGB(object):
     __colorRegex = re.compile( r"^#([0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])$" )
     @staticmethod
     def lookupColor( color:str ):
-        rv = getattr(RGB,color,None )
-        if rv is None:
-            m = RGB.__colorRegex.match( color )
-            if m:
-                hexColor = m.group(1)
-                rv = RGB.fromNeoPixelRGBInt( int(hexColor, 16) ) # type: ignore
-                return rv
-            raise KeyError( safeFmt("unknown color %r",color) )
-        if rv is None:
-            return RGB.BLACK # type: ignore
-        return rv
+        try:
+            return getattr(Colors,color)
+        except (NameError,AttributeError): pass
 
+        m = RGB.__colorRegex.match( color )
+        if m:
+            hexColor = m.group(1)
+            rv = RGB.fromNeoPixelRGBInt( int(hexColor, 16) ) # type: ignore
+            return rv
+        raise KeyError( safeFmt("unknown color %r",color) )
+        
     @staticmethod
     def toRGB( value:AnyRGBValue )->RGB:
 
-        #convertor = RGB.CONVERTORS.get(type(value).__name__,None)
-        convertor = RGB.CONVERTORS.get(type(value),None)
-        assert convertor is not None, safeFmt( "cannot convert %r (%s) to RGB", value, type(value))
-        return convertor(value)
+        #convertor = Colors.Convertors.get(type(value).__name__,None)
+        return RGB.Convertors(value)
         
     #########################################################################
-    CONVERTORS:dict[type, Callable[[Any],RGB]] = {
-        float : lambda v: RGB( v, v, v ),
-        bool : lambda v: RGB( 1,1,1 ) if v else RGB( 0, 0, 0 ),
-        tuple : lambda v: RGB(v[0], v[1], v[2]),
-        list : lambda v: RGB(v[0], v[1], v[2]),
-    }
+    Convertors:ClassVar[Convertor[AnyRGBValue,RGB]] 
+    Convertors = Convertor()
 
-    BLACK:ClassVar[RGB]
-    WHITE:ClassVar[RGB]
-    
-RGB.RED = RGB( "#FF0000" ) # type: ignore
-RGB.BLUE = RGB( "#0000FF" ) # type: ignore
-RGB.GREEN = RGB( "#00FF00" ) # type: ignore
-RGB.BLACK = RGB( "#000000" ) # type: ignore
-RGB.WHITE = RGB( "#FFFFFF" ) # type: ignore
-RGB.YELLOW = RGB( "#FFFF00" ) # type: ignore
-RGB.CYAN = RGB( "#00FFFF" ) # type: ignore
+class Colors:
+    BLACK = RGB("#000000")
+    WHITE = RGB("#FFFFFF")
+    RED = RGB("#FF0000")
+    BLUE = RGB("#0000FF")
+    GREEN = RGB("#00FF00")
+    YELLOW = RGB("#FFFF00")
+    CYAN = RGB("#00FFFF")
+    MAGENTA = RGB("#FF00FF")
+    ORANGE = RGB("#FFA500")
+    PURPLE = RGB("#800080")
+    PINK = RGB("#FFC0CB")
+    GRAY = RGB("#808080")
+    LIGHT_GRAY = RGB("#D3D3D3")
+    DARK_GRAY = RGB("#A9A9A9")
+    LIGHT_BLUE = RGB("#ADD8E6")
+    LIGHT_GREEN = RGB("#90EE90")
+
+
+#############################################################################
+
+
+
 
 #############################################################################
 
 
 
-AnyRGBValue:TypeAlias = Union[ RGB,
-        int, float, bool,
-        RGBTuple,
-        # List [float],
-        str, 
-        
-    ] 
 
 #############################################################################
+# Colors.Convertors[RGB.__class__.__name__] = lambda v:v
+@RGB.Convertors.defineRegisterConvertor( float ) 
+def floatToRGB( v:float ) -> RGB: return RGB( v, v, v )
 
-def registerToRGB( cf = lambda v:v):
-    def r( cls:Type ):
-        # print( f"registerToRGB {cls.__name__}")
-        RGB.CONVERTORS[cls.__name__] = cf
-        RGB.CONVERTORS[cls] = cf
-        #RGB.CONVERTORS[cls.__name__] 
-        return cls
-    return r
+@RGB.Convertors.defineRegisterConvertor( bool )
+def boolToRGB( v:bool ) -> RGB: return RGB( 1,1,1 ) if v else RGB( 0, 0, 0 )
 
-#############################################################################
-# RGB.CONVERTORS[RGB.__class__.__name__] = lambda v:v
-RGB.CONVERTORS[RGB] = lambda v:v
-RGB.CONVERTORS[int] = RGB.fromNeoPixelRGBInt
-RGB.CONVERTORS[str] = RGB.lookupColor
+@RGB.Convertors.defineRegisterConvertor( tuple )
+def tupleToRGB( v:tuple[float,float,float] ) -> RGB: return RGB( v[0], v[1], v[2] )
+
+@RGB.Convertors.defineRegisterConvertor( list )
+def listToRGB( v:list[float] ) -> RGB: return RGB( v[0], v[1], v[2] )
+
+@RGB.Convertors.defineRegisterConvertor( RGB )
+def rgbToRGB( v:RGB ) -> RGB: return v
+
+@RGB.Convertors.defineRegisterConvertor( int )
+def intToRGB( v:int ) -> RGB: return RGB.fromNeoPixelRGBInt( v ) # pyright: ignore[reportArgumentType]
+
+@RGB.Convertors.defineRegisterConvertor( str )
+def strToRGB( v:str ) -> RGB: return RGB.lookupColor( v )
+
+__all__ = [
+    'RGB', 'Colors', 'RGBChannel', 'RGBTuple', 'NeoPixelRGBInt', 'AnyRGBValue',
+]

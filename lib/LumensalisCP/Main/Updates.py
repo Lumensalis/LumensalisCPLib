@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
     from  LumensalisCP.Eval.Expressions import EvaluationContext
     from LumensalisCP.Inputs import InputSource
-    from LumensalisCP.Lights.Values import RGB
+    from LumensalisCP.Lights.RGB import *
 
 OptionalContextArg = Optional["EvaluationContext"]
 DirectValue = Type[ Union[int,bool,float,'RGB' ] ]

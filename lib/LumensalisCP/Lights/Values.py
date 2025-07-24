@@ -1,12 +1,12 @@
 from __future__ import annotations
 from random import random as randomZeroToOne, randint
-from collections import namedtuple
 import rainbowio 
 
 from LumensalisCP.common import *
-from LumensalisCP.Eval.Evaluatable import Evaluatable
-from LumensalisCP.Lights.RGB import RGB, AnyRGBValue, registerToRGB
+from LumensalisCP.Lights.RGB import *
 
+from LumensalisCP.Eval.Evaluatable import Evaluatable
+from LumensalisCP.util.Convertor import Convertor
 
 def wheel255( val:float ): return rainbowio.colorwheel(val)
 
@@ -17,48 +17,49 @@ def wheel1( val:float ): return rainbowio.colorwheel(val*255.0)
 #############################################################################
 
 class LightValueBase(object):
-    def __init__(self, *args, **kwds):
+    def __init__(self):
         pass
 
     @property
     def brightness(self)->float: raise NotImplementedError
 
-    @property
-    def asNeoPixelRGBInt(self)->int: raise NotImplementedError
+    #@property
+    #def asNeoPixelRGBInt(self)->int: raise NotImplementedError
     
     @property
     def asRGB(self) -> RGB: raise NotImplementedError
 
-    def setLight(self, value) ->None: raise NotImplementedError
+    def setLight(self, value:AnyRGBValue) ->None: 
+        raise NotImplementedError
 
 
 #############################################################################
 
-@registerToRGB( lambda v: v )
+@RGB.Convertors.registerChildClass()
 class LightValueRGB(RGB, LightValueBase ):
 
 
     @staticmethod
-    def prepRGBValue( value ):
+    def prepRGBValue( value:AnyRGBValue |Evaluatable[RGB]) -> RGB|Evaluatable[RGB]:
         if (
                 isinstance( value, Evaluatable ) or
                 callable(value)
         ):
-            return value
-        
+            return value # type: ignore
+
         return RGB.toRGB( value )
         
-    def setLight(self, value):
+    def setLight(self, value:AnyRGBValue) -> None:
         v = RGB.toRGB( value )
-        self._set( *v.rgbTuple() )
+        self._set( *v.rgbTuple() ) # pyright: ignore[reportPrivateUsage]
 
     @staticmethod
     def randomRGB( brightness:ZeroToOne=1) -> RGB:
         return RGB( randomZeroToOne() * brightness,  randomZeroToOne() * brightness,  randomZeroToOne() * brightness )
 
-    @property
-    def asNeoPixelRGBInt(self)->int: 
-        return self.toNeoPixelRGBInt()
+    #@property
+    #def asNeoPixelRGBInt(self)->int: 
+    #    return self.toNeoPixelRGBInt()
     
     @property
     def asRGB(self) -> RGB:
@@ -66,38 +67,36 @@ class LightValueRGB(RGB, LightValueBase ):
 
 #############################################################################
 
-@registerToRGB( lambda v: v )
+#@RGB.Convertors.registerChildClass()
 class LightValueNeoRGB(LightValueBase):
-    __slots__ = "_LightValueNeoRGB__brightness", "_LightValueNeoRGB__value"
 
-    NP_INT_CONVERTORS = dict(
-        int= lambda v:v & 0xFFFFFF,
-        float= lambda v: ( b255 := max(0,min(255,int(v * 255))), b255 + (b255 << 8) + (b255 << 16) )[1],
-        bool= lambda v: 0xFFFFFF if v else 0,
-        tuple= lambda v: (max(0,min(255,int(v[0]))) << 16) + (max(0,min(255,int(v[1]))) << 8) + (max(0,min(255,int(v[2])))),
-        list= lambda v: (max(0,min(255,int(v[0]))) << 16) + (max(0,min(255,int(v[1]))) << 8) + (max(0,min(255,int(v[2])))),
-        
-    )
+
+    NeoPixelIntConvertors:ClassVar[Convertor[AnyRGBValue,NeoPixelRGBInt]] 
+    NeoPixelIntConvertors = Convertor()
+    
     @staticmethod
-    def toNeoPixelRGBInt( value:AnyRGBValue )->int:
-        convertor = LightValueNeoRGB.NP_INT_CONVERTORS.get(type(value).__name__,None)
+    def toNeoPixelRGBInt( value:AnyRGBValue )->NeoPixelRGBInt:
+        return LightValueNeoRGB.NeoPixelIntConvertors(value) # type: ignore
+    
+        convertor = LightValueNeoRGB.NeoPixelIntConvertors.get(type(value).__name__,None)
         if convertor is not None:
             return convertor(value)
 
         if isinstance( value, LightValueBase):
             return value.asNeoPixelRGBInt
         elif isinstance( value, RGB ):
-            return value.toNeoPixelRGBInt()
+            return value.asNeoPixelRGBInt()
         
         assert False,  safeFmt("cannot convert %r (%s) to NeoRGB", value, type(value))
     
     
     @staticmethod
-    def formatNeoRGBValues( values ):
-        return '|'.join( [('%6.6X'%LightValueNeoRGB.toNeoPixelRGBInt(v)) for v in values])
+    def formatNeoRGBValues( values:list[AnyRGBValue] ) ->str:
+        asRGBInts = [LightValueNeoRGB.toNeoPixelRGBInt(v) for v in values]
+        return '|'.join( [('%6.6X'%v) for v in asRGBInts])
     
     def __init__(self,  value:AnyRGBValue ):
-        self.__value = LightValueNeoRGB.toNeoPixelRGBInt( value )
+        self.__value = self.toNeoPixelRGBInt( value )
         self.__brightness = 1.0
 
     @staticmethod
@@ -108,18 +107,63 @@ class LightValueNeoRGB(LightValueBase):
     @property
     def brightness(self)->float: return self.__brightness
     
-    def setLight(self, value):
-        self.__value = LightValueNeoRGB.toNeoPixelRGBInt( value )
+    def setLight(self, value:AnyRGBValue) -> None:
+        self.__value = self.toNeoPixelRGBInt( value )
 
-    @property
-    def asNeoPixelRGBInt(self)->int: return self.__value
+    #@property
+    #def asNeoPixelRGBInt(self)->int: return self.__value
     
     @property
     def asRGB(self) -> RGB:
         return RGB.fromNeoPixelRGBInt( self.__value )
 
 #############################################################################
-# RGB.CONVERTORS[RGB.__class__.__name__] = lambda v:v
-RGB.CONVERTORS[RGB] = lambda v:v
-RGB.CONVERTORS[int] = RGB.fromNeoPixelRGBInt
-RGB.CONVERTORS[str] = LightValueRGB.lookupColor
+# Colors.CONVERTORS[RGB.__class__.__name__] = lambda v:v
+#Colors.CONVERTORS[RGB] = lambda v:v
+#Colors.CONVERTORS[int] = RGB.fromNeoPixelRGBInt
+#Colors.CONVERTORS[str] = LightValueRGB.lookupColor
+
+@LightValueNeoRGB.NeoPixelIntConvertors.defineRegisterConvertor( int )
+def intToNeoRGBInt( v:int ) -> NeoPixelRGBInt: 
+    return  NeoPixelRGBInt(v & 0xFFFFFF)
+
+@LightValueNeoRGB.NeoPixelIntConvertors.defineRegisterConvertor( float ) 
+def floatToNeoRGBInt( v:float ) -> NeoPixelRGBInt:
+    b255 = max(0, min(255, int(v * 255)))
+    return NeoPixelRGBInt(b255 + (b255 << 8) + (b255 << 16))
+
+@LightValueNeoRGB.NeoPixelIntConvertors.defineRegisterConvertor( bool )
+def boolToNeoRGBInt( v:bool ) -> NeoPixelRGBInt:
+    return NeoPixelRGBInt(0xFFFFFF if v else 0)
+
+@LightValueNeoRGB.NeoPixelIntConvertors.defineRegisterConvertor( tuple )
+def tupleToNeoRGBInt( v:tuple[float,float,float] ) -> NeoPixelRGBInt:
+    return NeoPixelRGBInt(  (max(0, min(255, int(v[0]))) << 16) +
+                            (max(0, min(255, int(v[1]))) << 8) +
+                            (max(0, min(255, int(v[2])))) ) 
+
+@LightValueNeoRGB.NeoPixelIntConvertors.defineRegisterConvertor( list )
+def listToNeoRGBInt( v:list[float] ) -> NeoPixelRGBInt:
+    return NeoPixelRGBInt(  (max(0, min(255, int(v[0]))) << 16) +
+                            (max(0, min(255, int(v[1]))) << 8) +
+                            (max(0, min(255, int(v[2])))) )     
+
+@LightValueNeoRGB.NeoPixelIntConvertors.defineRegisterConvertor( RGB )
+def _( v:RGB ) -> NeoPixelRGBInt:
+    return v.asNeoPixelRGBInt()
+
+#        {
+            #int: lambda v:v & 0xFFFFFF,
+#            float: lambda v: ( b255 := max(0,min(255,int(v * 255))), b255 + (b255 << 8) + (b255 << 16) )[1],
+#            bool= lambda v: 0xFFFFFF if v else 0,
+#            tuple= lambda v: (max(0,min(255,int(v[0]))) << 16) + (max(0,min(255,int(v[1]))) << 8) + (max(0,min(255,int(v[2])))),
+#            list= lambda v: (max(0,min(255,int(v[0]))) << 16) + (max(0,min(255,int(v[1]))) << 8) + (max(0,min(255,int(v[2])))),
+#        }
+#    )
+
+__all__ = [
+    'LightValueBase',
+    'LightValueNeoRGB',
+    'wheel255',
+    'wheel1',
+]

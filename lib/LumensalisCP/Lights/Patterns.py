@@ -189,20 +189,20 @@ class Random( PatternGenerator ):
         
 class Cylon2( PatternGenerator ):
     def __init__(self,
-                 *args,
+                 target:LightGroup, 
                  sweepTime:TimeInSecondsEvalArg = 1.0,
-                 onValue:AnyRGBValue = 1.0,
-                 offValue:AnyRGBValue = 0.0,
-                 intermediateRefresh:TimeInSeconds = 0.1,
+                 onValue:RGBEvalArg = 1.0,
+                 offValue:RGBEvalArg = 0.0,
+                 intermediateRefresh:TimeInSecondsConfigArg = 0.1,
                  dimRatio:ZeroToOne = 0.7,
-                 **kwargs
+                 **kwargs:Unpack[Pattern.KWDS]
             ):
         self.__sweepTime = toTimeInSecondsEval(sweepTime)
         self.onValue = prepRGBValue( onValue )
         self.offValue = prepRGBValue( offValue )
         self.__dimRatio = dimRatio
         self.intermediateRefresh:TimeInSeconds = intermediateRefresh
-        super().__init__(*args,**kwargs)
+        super().__init__(target, **kwargs)
 
     @property
     def sweepTime(self) ->TimeInSecondsEval: return self.__sweepTime
@@ -227,7 +227,7 @@ class Cylon2( PatternGenerator ):
                 #return self.offValue
                 was = RGB.toRGB(prior[index])
                 faded = was.fadeTowards(offRGB, self.__dimRatio )
-                return  faded.toNeoPixelRGBInt()
+                return  faded.asNeoPixelRGBInt()
             
             frame.snap("back")
             for index in range( self.target.lightCount ):

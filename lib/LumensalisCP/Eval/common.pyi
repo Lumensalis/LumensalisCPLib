@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from LumensalisCP.common import *
 from LumensalisCP.Identity.Local import *
+from LumensalisCP.Lights.RGB import *
 from LumensalisCP.Eval.Terms import *
 from LumensalisCP.Main.Refreshable import Refreshable
 from LumensalisCP.Main.Updates import UpdateContext
@@ -12,7 +13,7 @@ from LumensalisCP.Eval.Expressions import Expression
 from LumensalisCP.Eval.ExpressionTerm import ExpressionTerm, rising
 from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
 
-from LumensalisCP.Lights.Values import RGB, AnyRGBValue, LightValueRGB
+from LumensalisCP.Lights.Values import LightValueRGB
 from LumensalisCP.util.bags import Bag
 
 _EvaluatableTimeInSecondsConfigArg:TypeAlias = Evaluatable[TimeInSecondsConfigArg]

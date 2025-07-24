@@ -4,7 +4,7 @@ from __future__ import annotations
 #from LumensalisCP.common import *
 #from LumensalisCP.Eval.common import *
 from LumensalisCP.IOContext import *
-from LumensalisCP.Lights.RGB import RGB, AnyRGBValue
+from LumensalisCP.Lights.RGB import *
 from LumensalisCP.Lights.Light import Light, RGBLight
 from LumensalisCP.Lights.Groups import LightGroup
 
@@ -87,8 +87,8 @@ class OnOffPattern( Pattern ): # pylint: disable=abstract-method
         
     def __init__(self,
                 target:LightGroup, name:Optional[str]=None, 
-                onValue:RGBEvalArg =  RGB.WHITE,
-                offValue:RGBEvalArg = RGB.BLACK,
+                onValue:RGBEvalArg =  Colors.WHITE,
+                offValue:RGBEvalArg = Colors.BLACK,
                 **kwargs
             ):
         """ base for patterns which vary between on and off colors
@@ -151,8 +151,8 @@ class PatternGenerator(Pattern):
     class KWDS(Pattern.KWDS):
         intermediateRefresh: NotRequired[TimeInSecondsConfigArg]
         
-    def __init__(self, *args, intermediateRefresh:Optional[TimeInSeconds]=None,  **kwargs ): # pylint: disable=unused-argument
-        super().__init__( *args, **kwargs )
+    def __init__(self, target:LightGroup, intermediateRefresh:Optional[TimeInSeconds]=None,  **kwargs ): # pylint: disable=unused-argument
+        super().__init__( target, **kwargs )
         self.__nextStep = 0.0
         self.__nextRefresh = 0.0
         self.__step:PatternGeneratorStep|None = None

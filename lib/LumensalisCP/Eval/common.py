@@ -16,7 +16,7 @@ from LumensalisCP.Eval.Evaluatable import evaluate, EvaluatableT, Evaluatable
 from LumensalisCP.Eval.Expressions import Expression
 from LumensalisCP.Eval.ExpressionTerm import ExpressionTerm, rising, EVAL_VALUE_TYPES
 from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
-from LumensalisCP.Lights.RGB import RGB, AnyRGBValue
+from LumensalisCP.Lights.RGB import *
 
 #_EvaluatableTimeInSecondsConfigArg:TypeAlias = Evaluatable
 

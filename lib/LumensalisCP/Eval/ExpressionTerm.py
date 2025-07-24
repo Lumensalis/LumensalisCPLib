@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from LumensalisCP.Lights.Values import RGB
+from LumensalisCP.Lights.RGB import *
 from LumensalisCP.Eval._common import *
 from LumensalisCP.Eval.Evaluatable import Evaluatable
 

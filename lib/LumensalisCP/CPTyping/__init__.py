@@ -4,6 +4,8 @@ from __future__ import annotations
 try:
 	# imports used only for typing
     #import overrides
+    from typing import TYPE_CHECKING
+    from functools import wraps
     from typing import Any
     from typing import List,  Tuple, Sequence
     from typing import Generator, Iterable, Iterator
@@ -12,17 +14,15 @@ try:
     from typing import Callable, ParamSpec, Protocol
     from typing import Union, ForwardRef, Required, NotRequired, Optional
     from typing import Unpack
-    from typing import TypeAlias, NewType
+    from typing import TypeAlias, NewType, Type
     from typing import Self 
     from typing import Type, TypeAlias, TypedDict, TypeVar
     from typing import ClassVar, Generic, Generator
     from typing import NoReturn
-    
     from typing import final, overload, override
     
-    from functools import wraps
-
     
+
     
     # any imports below this won't happen if the error gets raised
     LCPF_TYPING_IMPORTED = True
@@ -45,7 +45,7 @@ try:
 
 except ImportError:
     LCPF_TYPING_IMPORTED = False # type: ignore
-    TYPE_CHECKING = False
+    TYPE_CHECKING = False # type: ignore
     if not TYPE_CHECKING:
         from LumensalisCP._pseudoTyping import *
         
@@ -55,3 +55,17 @@ if LCPF_TYPING_IMPORTED:
     raise NotImplementedError
 
 StrAnyDict:TypeAlias = Dict[str,Any]
+
+
+if TYPE_CHECKING:
+    from .GenericT import GenericT
+
+else: 
+    class _GenericT:
+        def __init__(self, cls:type) -> None: 
+            self._cls = cls
+        def __getitem__(self, item:Any): # pylint: disable=unused-argument
+            return self._cls
+    
+    def GenericT(cls:type) ->type: 
+        return _GenericT(cls) # type: ignore # pylint: disable=invalid-name

@@ -7,7 +7,7 @@ from LumensalisCP.util import kwCallback
 
 if TYPE_CHECKING:
     FireableCBArg = Union[Callable,'Fireable',KWCallback]
-    FireCondition = Union[bool,Callable,Evaluatable]
+    FireCondition = Union[bool,Callable[...,bool],Evaluatable[bool]]
 
 class Fireable( Debuggable ):
 

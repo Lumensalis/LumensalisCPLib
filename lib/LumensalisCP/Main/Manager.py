@@ -137,7 +137,8 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def TerrainTronics(self:'MainManager') -> TerrainTronicsFactory:
         if self.__TerrainTronics is None:
             from TerrainTronics.Factory import TerrainTronicsFactory
-            self.__TerrainTronics = TerrainTronicsFactory( self.__getMMSelf() )
+            #self.__TerrainTronics = TerrainTronicsFactory( self.__getMMSelf() )
+            self.__TerrainTronics = TerrainTronicsFactory( self )
         return self.__TerrainTronics
     
     @property
@@ -320,7 +321,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None:
         return ManagerRL.MainManager_nliGetChildren(self ) # type: ignore
 
-    def launchProject(self, globals:Optional[dict]=None, verbose:bool = False ):
+    def launchProject(self, globals:Optional[dict[str,Any]]=None, verbose:bool = False ):
         return ManagerRL.MainManager_launchProject(self.__getMMSelf(), globals, verbose=verbose )
 
     def renameIdentifiables(self, items:Optional[dict[str,NamedLocalIdentifiable]]=None, verbose:bool = False ):

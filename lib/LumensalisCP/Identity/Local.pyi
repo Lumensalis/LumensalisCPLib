@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-
-from typing import TypeVar # , Generic
 from LumensalisCP.common import *
 from LumensalisCP.Debug import Debuggable
 import LumensalisCP.pyCp.weakref as lcpWeakref
-from LumensalisCP.CPTyping import ReferenceType, Optional, Iterable
+from LumensalisCP.CPTyping import ReferenceType, Optional, Iterable, TypeVar
 
 # pylint: disable=unused-argument, super-init-not-called, unused-private-member
 
-from LumensalisCP.pyCp.collections import UserList
+from LumensalisCP.pyCp.collections import GenericList
 
 class LocalIdentifiable(object):
     
@@ -108,7 +106,7 @@ class NamedLocalIdentifiableWithParent( NamedLocalIdentifiable ):
 #############################################################################
 
     
-class NliList[T](NamedLocalIdentifiableWithParent, UserList[T], NliContainerMixin[T] ):
+class NliList[T](NamedLocalIdentifiableWithParent, GenericList[T], NliContainerMixin[T] ):
     
     def __init__(self, name:Optional[str] = None, items:Optional[list[T]] = None, parent:Optional[NamedLocalIdentifiable]=None ) -> None: ...
 

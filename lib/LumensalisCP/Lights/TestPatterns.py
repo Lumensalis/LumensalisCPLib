@@ -12,20 +12,20 @@ from LumensalisCP.Lights import TestPatternsRL
 
 class PatternRLTest( Pattern, OutputTarget ):
     def __init__(self,
-                target:LightGroup, name:Optional[str]=None, 
-                a:AnyRGBValue|Evaluatable = 1.0,
-                b:AnyRGBValue|Evaluatable = 0.0,
-                value:ZeroToOne|Evaluatable = 0.0,
-                **kwargs
+                target:LightGroup, 
+                a:RGBEvalArg = 1.0,
+                b:RGBEvalArg = 0.0,
+                value:ZeroToOne|Evaluatable[ZeroToOne] = 0.0,
+                **kwargs:Unpack[Pattern.KWDS]
             ):
         self._onValue = a
         self._offValue = b
         self._value = value
-        Pattern.__init__( self, target=target,name=name, **kwargs)
+        Pattern.__init__( self, target=target,**kwargs)
         OutputTarget.__init__(self )
 
     @property
-    def value(self)->ZeroToOne|Evaluatable: return self._value
+    def value(self)->ZeroToOne|Evaluatable[float]: return self._value
     
     @property
     def a(self): return  self._onValue

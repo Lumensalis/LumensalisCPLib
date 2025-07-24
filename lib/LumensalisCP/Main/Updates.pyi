@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import LumensalisCP.Main.Manager 
 from LumensalisCP.CPTyping import *
+from LumensalisCP.Lights.RGB import *
 from LumensalisCP.Debug import Debuggable
 from LumensalisCP.common import *
 from LumensalisCP.Main.Manager import MainManager
@@ -9,7 +10,6 @@ from LumensalisCP.Main.Dependents import MainRef
 from LumensalisCP.Inputs import InputSource
 from LumensalisCP.Main.Profiler import ProfileFrame, ProfileFrameBase, ProfileSubFrame, ProfileStubFrame
 from LumensalisCP.util.Releasable import Releasable
-from LumensalisCP.Lights.Values import RGB
 from LumensalisCP.Eval.Expressions import EvaluationContext
 type DirectValue = int|bool|float|RGB
     

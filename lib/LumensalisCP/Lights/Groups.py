@@ -4,9 +4,10 @@ from __future__ import annotations
 
 #from LumensalisCP.common import Optional, Any, Iterable, List, TYPE_CHECKING, ensure
 from LumensalisCP.common import *
+from LumensalisCP.Lights.RGB import *
+
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.Main.Updates import UpdateContext
-from LumensalisCP.Lights.RGB import RGB, AnyRGBValue
 from LumensalisCP.Lights.Values import LightValueBase
 from LumensalisCP.Outputs import OutputTarget
 from LumensalisCP.Eval.EvaluationContext import EvaluationContext

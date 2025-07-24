@@ -3,26 +3,26 @@ from __future__ import annotations
 from LumensalisCP.common import *
 from LumensalisCP.Debug import Debuggable
 import LumensalisCP.pyCp.weakref as lcpWeakref
-from LumensalisCP.CPTyping import ReferenceType, Optional, Iterable
-
-from LumensalisCP.pyCp.collections import UserList
+from LumensalisCP.CPTyping import ReferenceType, Optional, Iterable #, Generic, TypeVar, GenericT
+from LumensalisCP.pyCp.collections import GenericList, GenericListT
 
 class LocalIdentifiable(object):
     
     __nextId = 1
-    
+    __localId:int
+
     @staticmethod
-    def __getNextId( self2 ): # pylint: disable=unused-argument
-        # TODO : thread safe / groups
+    def __getNextId(  ): # pylint: disable=unused-argument
+        # TODO : thread safe / groups 
         nextId = LocalIdentifiable.__nextId
         LocalIdentifiable.__nextId += 1
         return nextId
 
-    def __init__( self ):
-        self.__localId = self.__getNextId(self)
+    def __init__( self ) -> None:
+        self.__localId = self.__getNextId()
         
     @property
-    def localId(self): return self.__localId
+    def localId(self) -> int: return self.__localId
     
 #############################################################################    
     
@@ -159,13 +159,13 @@ class NamedLocalIdentifiableWithParent( NamedLocalIdentifiable ):
         return self.__parent() 
 
 #############################################################################
+#_NLIListT = TypeVar('_NLIListT', bound='NamedLocalIdentifiable')    
+class NliList(NamedLocalIdentifiableWithParent, GenericListT[NamedLocalIdentifiable], NliContainerMixin ):
     
-class NliList(NamedLocalIdentifiableWithParent, UserList, NliContainerMixin ):
-    
-    def __init__(self, name:Optional[str] = None, items:Optional[list] = None, parent:Optional[NamedLocalIdentifiable]=None ):
+    def __init__(self, name:Optional[str] = None, items:Optional[list[NamedLocalIdentifiable]] = None, parent:Optional[NamedLocalIdentifiable]=None ):
         #self.__parent = parent and lcpWeakref.ref(parent)
         NamedLocalIdentifiableWithParent.__init__(self,name=name,parent=parent)
-        UserList.__init__(self,items)
+        GenericList.__init__(self,items) # type: ignore
 
     def keys(self):
         return [v.name for v in self]
@@ -194,7 +194,7 @@ class NliList(NamedLocalIdentifiableWithParent, UserList, NliContainerMixin ):
         self.remove( child )
 
     def nliGetChildren(self) -> Iterable['NamedLocalIdentifiable']|None:
-        return self
+        return None
             
     def nliFind(self,name:str) -> "NamedLocalIdentifiable|None":
         for child in self:

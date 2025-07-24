@@ -90,11 +90,11 @@ oscillator = Oscillator.Oscillator(  low = 0, high = 10, frequency = oscillator2
 # setup LED patterns : http://lumensalis.com/ql/h2Patterns
 frontLidBlink = PatternTemplate( Blink, frontLidStrip, onTime=0.25, offTime=0.25 )
 
-frontLidStripPattern = Cylon2(frontLidStrip,sweepTime=0.5, dimRatio=0.9, onValue=LightValueRGB.RED )
-centerPattern = ABFade( centerStoneLights, value=oscillator/20, a =LightValueRGB.RED, b=LightValueRGB.BLUE )
+frontLidStripPattern = Cylon2(frontLidStrip,sweepTime=0.5, dimRatio=0.9, onValue=Colors.RED )
+centerPattern = ABFade( centerStoneLights, value=oscillator/20, a =Colors.RED, b=Colors.BLUE )
 rainbowLeft = Rainbow(leftStoneLights,colorCycle=rbCycle, spread=rbs )
 rainbowRight = Rainbow(rightStoneLights,colorCycle=1.1, spread=2.0 )
-aglSpinner = Spinner(angleGaugeLights, onValue=LightValueRGB.RED, tail=0.42,period=0.49)
+aglSpinner = Spinner(angleGaugeLights, onValue=Colors.RED, tail=0.42,period=0.49)
 
 lsZ21 = Z21Adapted( lightSensor )
 ls256 = lsZ21 * 256

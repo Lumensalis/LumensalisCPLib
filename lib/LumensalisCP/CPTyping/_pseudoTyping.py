@@ -1,6 +1,17 @@
 from __future__ import annotations
+
+
+# have to disable just about everything for pyright/pylint, as these are
+# the hacks to keep the CircuitPython parser happy
+
 # pylint: disable=unused-import,import-error, unused-argument
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
+# pyright: reportUnknownParameterType=false, reportUnknownMemberType=false
+# pyright: reportUnknownArgumentType=false,  reportUnknownVariableType=false
+# pyright: reportMissingParameterType=false
+# pyright: reportUnusedClass=false
+
+
 
 LCPF_TYPING_IMPORTED = False # type: ignore
 TYPE_CHECKING = False
@@ -8,7 +19,7 @@ TYPE_CHECKING = False
 class PseudoTypingExpression(object):
     _typeCache = {}
     @staticmethod
-    def makeExpression( arg ):
+    def makeExpression( arg ): 
         if isinstance( arg, PseudoTypingExpression ):
             return arg
         cached = PseudoTypingExpression._typeCache.get(arg,None)
@@ -104,7 +115,6 @@ Mapping = PseudoTypingTBType("Mapping")
 Generator =  PseudoTypingTBType("Generator")
 Iterable = PseudoTypingTBType("Iterable")
 
-
 ClassVar = PseudoTypingModifier("ClassVar")
 Type = PseudoTypingModifier("Type")
 TypeAlias = PseudoTypingModifier("TypeAlias")
@@ -116,32 +126,27 @@ Optional = PseudoTypingModifier("Optional")
 ReferenceType = PseudoTypingModifier("ReferenceType")
 Unpack = PseudoTypingModifier("Unpack")
 
-
 class GenericBase(object): pass
 
 class _GenericMaker:
     def __getitem__(self, args) -> type[GenericBase]:
         return GenericBase
-        
 
 Generic = _GenericMaker()
 
-def TypeVar(tag:str): 
-    return GenericBase
+#def TypeVar(tag:str,bound=None): 
+#    return GenericBase
 
 def ParamSpec(tag:str): return tag
-
-def NewType(name, type_):
+ 
+def NewType(name:str, type_:type) : # type: ignore
     """Create a new type with the given name and type."""
-    def convert(value):
+    def convert(value): # type: ignore
         return type_(value)
-    return convert
+    return convert # type: ignore
 
 def makeTypingExpression(a) -> PseudoTypingExpression:
     return PseudoTypingExpression.makeExpression(a)
-
-
-
 
 class __TDM(object):
     def __new__(cls, name, bases, ns, total=True):

@@ -1,7 +1,7 @@
 from __future__ import annotations
 # Common types used throughout the library
 
-from LumensalisCP.CPTyping import TypeAlias, NewType,Union,Optional
+from LumensalisCP.CPTyping import TypeAlias, NewType, Union,Optional
 
 ZeroToOne:TypeAlias  = float # a value between 0.0 and 1.0 inclusive
 PlusMinusOne:TypeAlias  = float # a value between -1.0 and 1.0 inclusive

@@ -6,7 +6,7 @@ Intended to be used as `from LumensalisCP.Simple import *`
 import rainbowio
 
 from LumensalisCP.Demo.DemoCommon import *
-from LumensalisCP.Lights.Values import RGB
+from LumensalisCP.Lights.RGB import *
 from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.Triggers.Fireable import Fireable
 from LumensalisCP.Main.PreMainConfig import *
