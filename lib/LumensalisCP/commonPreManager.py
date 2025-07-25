@@ -33,7 +33,7 @@ from LumensalisCP.Scenes.Manager import SceneManager, Scene
 from LumensalisCP.Triggers.Timer import PeriodicTimerManager
 
 from LumensalisCP.Main.Profiler import Profiler, ProfileFrameBase, ProfileSnapEntry
-from LumensalisCP.Main.ControlVariables import ControlVariable, IntermediateVariable
+from LumensalisCP.Main.Panel import PanelControl, PanelMonitor
 from LumensalisCP.Main.Shutdown import ExitTask
 from LumensalisCP.Main.I2CProvider import I2CProvider
 

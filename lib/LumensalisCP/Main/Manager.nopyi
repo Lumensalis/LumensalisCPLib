@@ -113,7 +113,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def _addI2CDevice(self, target:I2CDevice )-> None: pass
    
     # TODO: mirror ControlVariable.__init__ 
-    def addControlVariable( self, *args, **kwds:StrAnyDict ) -> ControlVariable: pass
+    def addVariable( self, *args, **kwds:StrAnyDict ) -> ControlVariable: pass
     
     # TODO: mirror IntermediateVariable.__init__ 
     def addIntermediateVariable( self, *args, **kwds ) -> IntermediateVariable: pass

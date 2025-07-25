@@ -27,7 +27,7 @@ class LocalServo( NamedOutputTarget ):
                 moveSpeed:DegreesPerSecond = 60.0,
                 angleMin:Degrees = 10,
                 angleMax:Degrees = 135,
-                 **kwds:Unpack[NamedOutputTarget.KWDS] ):
+                 **kwds:Unpack[NamedOutputTarget.KWDS] ) -> None:
         #adafruit_motor.servo.Servo.__init__(self, pwm, **kwds)
         NamedOutputTarget.__init__(self, **kwds)
 

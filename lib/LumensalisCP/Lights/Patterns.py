@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 from LumensalisCP.Lights._common import *
 
 
@@ -20,23 +21,26 @@ def prepRGBValue( value:RGBEvalArg ) -> RGBEval:
 
 #############################################################################
 class Rainbow( Pattern ):
+    """A rainbow color pattern.
+    """
     def __init__(self,
-                 *args,
+                 target:LightGroup,
                  colorCycle:TimeInSecondsEvalArg = 1.0,
-                 spread:float|Evaluatable = 1,
-                 **kwargs
+                 spread:float|Evaluatable[float] = 1,
+                 **kwargs:Unpack[Pattern.KWDS]
             ):
-        self.__colorCycle = colorCycle
-        self.__colorCycleWhenOffset = 0
+        self.__colorCycle:TimeInSecondsEval = toTimeInSecondsEval(colorCycle)
+        self.__colorCycleWhenOffset:TimeInSeconds = TimeInSeconds(0.0)
         self.__latestCycleWhen = 0
         self.spread = spread
-        super().__init__(*args,**kwargs)
+        super().__init__(target, **kwargs)
 
     @property
-    def colorCycle(self): return self.__colorCycle
+    def colorCycle(self): 
+        return self.__colorCycle
     
     @colorCycle.setter
-    def colorCycle( self, newCycle ):
+    def colorCycle( self, newCycle:TimeInSecondsEvalArg ):
         priorOffset = self.__colorCycleWhenOffset
         priorCycle = self.__latestCycleValue
         newWhen = priorWhen = self.__latestCycleWhen
@@ -48,8 +52,13 @@ class Rainbow( Pattern ):
         newOffset+newWhen = ((priorWhen+priorOffset) / priorCycle) * newCycle
         newOffset = (((priorWhen+priorOffset) / priorCycle) * newCycle) - newWhen
         '''
-        self.__colorCycleWhenOffset = (((priorWhen+priorOffset) / priorCycle) * newCycle) - newWhen
-        self.__colorCycle = newCycle
+        newCycleSetting = toTimeInSecondsEval(newCycle)
+        if isinstance(newCycleSetting, float):
+            newCycleCurrent = newCycleSetting
+        else:
+            newCycleCurrent = UpdateContext.fetchCurrentContext(None).valueOf(newCycleSetting)
+        self.__colorCycleWhenOffset = TimeInSeconds( (((priorWhen+priorOffset) / priorCycle) * newCycleCurrent) - newWhen)
+        self.__colorCycle = newCycleSetting
     
     def refresh( self, context:EvaluationContext ):
         when = self.offsetWhen( context )
@@ -72,29 +81,19 @@ class Rainbow( Pattern ):
             target[px] = wheel1( A + (px * pxStep) )
 
 #############################################################################
-class Gauge( Pattern, NamedOutputTarget ):
+class Gauge( OnOffPattern, NamedOutputTarget ):
     def __init__(self,
                 target:LightGroup, 
-                onValue:RGBEvalArg = 1.0,
-                offValue:RGBEvalArg = 0.0,
-                value:ZeroToOne|Evaluatable = 0.0,
-                **kwargs:Unpack[Pattern.KWDS]
+                value:ZeroToOne|Evaluatable[ZeroToOne] = 0.0,
+                **kwargs:Unpack[OnOffPattern.KWDS]
             ):
-        self.__onValue = prepRGBValue(onValue)
-        self.__offValue = prepRGBValue(offValue)
         self.__value = value
-        name = kwargs.get('name', None)
         Pattern.__init__( self, target , **kwargs)
-        NamedOutputTarget.__init__(self, name=name )
+        NamedOutputTarget.__init__(self, name=kwargs.get('name',None))
 
     @property
-    def value(self)->ZeroToOne|Evaluatable: return self.__value
-    
-    @property
-    def onValue(self): return  self.__onValue
-    @onValue.setter
-    def onValue(self,v):  self.__onValue = v
-    
+    def value(self)->ZeroToOne|Evaluatable[ZeroToOne]: return self.__value
+
     def set( self, value:ZeroToOne, context:EvaluationContext ):
         self.__value = value
 
@@ -105,7 +104,7 @@ class Gauge( Pattern, NamedOutputTarget ):
         maxPx = int(maxPxf)
         pxR = maxPxf - maxPx
         
-        onValue = RGB.toRGB( context.valueOf(self.__onValue) )
+        onValue = self._onValue
         offValue = RGB.toRGB( context.valueOf(self.__offValue) )
         
         

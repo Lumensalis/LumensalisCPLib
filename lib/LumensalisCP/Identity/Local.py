@@ -3,7 +3,7 @@ from __future__ import annotations
 from LumensalisCP.common import *
 from LumensalisCP.Debug import Debuggable
 import LumensalisCP.pyCp.weakref as lcpWeakref
-from LumensalisCP.CPTyping import ReferenceType, Optional, Iterable #, Generic, TypeVar, GenericT
+from LumensalisCP.CPTyping import ReferenceType, Optional, Iterable , Generic, TypeVar, GenericT
 from LumensalisCP.pyCp.collections import GenericList, GenericListT
 
 class LocalIdentifiable(object):
@@ -144,7 +144,7 @@ class NliContainerMixin( NliInterface, NliContainerBaseMixin ):
     
     def nliContainsChild( self, child:NamedLocalIdentifiable ) -> bool:
         raise NotImplementedError
-    
+
 #############################################################################
     
 class NamedLocalIdentifiableWithParent( NamedLocalIdentifiable ):
@@ -159,26 +159,38 @@ class NamedLocalIdentifiableWithParent( NamedLocalIdentifiable ):
         return self.__parent() 
 
 #############################################################################
-#_NLIListT = TypeVar('_NLIListT', bound='NamedLocalIdentifiable')    
-class NliList(NamedLocalIdentifiableWithParent, GenericListT[NamedLocalIdentifiable], NliContainerMixin ):
+_NLIListT = TypeVar('_NLIListT', bound='NamedLocalIdentifiable')    
+class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliContainerMixin ):
     
     def __init__(self, name:Optional[str] = None, items:Optional[list[NamedLocalIdentifiable]] = None, parent:Optional[NamedLocalIdentifiable]=None ):
         #self.__parent = parent and lcpWeakref.ref(parent)
         NamedLocalIdentifiableWithParent.__init__(self,name=name,parent=parent)
         GenericList.__init__(self,items) # type: ignore
 
-    def keys(self):
-        return [v.name for v in self]
+    
+    def __iter__(self) -> Iterable[_NLIListT]:
+        return iter(self.data)
+    
+    def __next__(self) -> Generator[_NLIListT]:
+        for item in self.data:
+            yield item
+    
+    def keys(self) -> list[str]:
+        return [v.name for v in self] # type: ignore[return-value]
+    
     @property
     def containerName(self): return self.name
+
     
-    def values(self):
+
+    def values(self) -> list[_NLIListT]:
         return self.data
 
-    def get(self, key:str, default:Optional[Any]=None):
+    def get(self, key:str, default:Optional[_NLIListT]=None) -> _NLIListT:
         for v in self:
             if v.name == key:
                 return v
+        assert default is not None, "default must be provided if key not found"
         return default
 
     def nliContainsChild( self, child:NamedLocalIdentifiable ) -> bool:
@@ -187,16 +199,16 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[NamedLocalIdentifia
         return False
 
     
-    def nliAddChild( self, child:NamedLocalIdentifiable ):
+    def nliAddChild( self, child:_NLIListT ):
         self.append( child )
     
-    def nliRemoveChild( self, child:NamedLocalIdentifiable ):
+    def nliRemoveChild( self, child:_NLIListT ):
         self.remove( child )
 
-    def nliGetChildren(self) -> Iterable['NamedLocalIdentifiable']|None:
+    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None:
         return None
             
-    def nliFind(self,name:str) -> "NamedLocalIdentifiable|None":
+    def nliFind(self,name:str) -> NamedLocalIdentifiable|None:
         for child in self:
             if child.name == name:
                 return child

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-import neopixel # type: ignore # pylint: disable=import-error
+import neopixel 
+
+import microcontroller
 
 from LumensalisCP.Lights._common import *
 
@@ -20,7 +22,7 @@ class NeoPixelLight( RGBLight ):
         if v != self.__npiv:
             self.__npiv = v
             source:NeoPixelSource = self.source # type: ignore
-            source.neopix[self.sourceIndex] = v
+            source.neopix[self.sourceIndex] = v # type: ignore
             source.lightChanged(self)
 
     def getValue(self, context: Optional[EvaluationContext] = None ) -> AnyRGBValue:
@@ -36,18 +38,18 @@ class  NeoPixelSourceKwds(TypedDict):
     #auto_write: NotRequired[bool] = False
 
 class NeoPixelSource( LightSource ):
+    """A chain of NeoPixels as a LightSource"""
     
     class KWDS( LightSource.KWDS ):
-        pixelCount: NotRequired[int] = 1
-        brightness: NotRequired[float] = 0.2
-        pixel_order: NotRequired[neopixel.PixelOrder] = neopixel.GRB
+        pixelCount: NotRequired[int]
+        brightness: NotRequired[float]
+        pixel_order: NotRequired[str] # [neopixel.PixelOrder]
         #auto_write: NotRequired[bool] = False
         
     def __init__(self, 
             pin:microcontroller.Pin, 
             main:MainManager,
             pixelCount:int=1,
-            name:Optional[str]=None, 
             refreshRate:float|None = 0.1,
             pixel_order:  str = neopixel.GRB,
             brightness:float = 1.0,
@@ -57,8 +59,9 @@ class NeoPixelSource( LightSource ):
         ) -> None:
 
         self.__npLights:List[NeoPixelLight] = []
-        super().__init__( lights = self.__npLights, **kwds )
-        self.neopix = neopixel.NeoPixel( pin, pixelCount,
+        kwds['lights'] = self.__npLights # type: ignore
+        super().__init__( **kwds )
+        self.neopix = neopixel.NeoPixel( pin, pixelCount, # type: ignore
                         pixel_order=pixel_order, brightness=brightness,
                         # auto_write = False
                 ) #**kwds)
@@ -95,7 +98,7 @@ class NeoPixelSource( LightSource ):
     def show(self):
         #super().show()
         
-        self.neopix.show()
+        self.neopix.show() # type: ignore
         self._showings += 1
         self._changesSinceRefresh = 0
         self._latestRefresh = self._main.when

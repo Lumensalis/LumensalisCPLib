@@ -5,12 +5,12 @@ from LumensalisCP.Simple import * # http://lumensalis.com/ql/h2Start
 main = ProjectManager() #  http://lumensalis.com/ql/h2Main
 
 # setup three different scenes : http://lumensalis.com/ql/h2Scenes
-sceneClosed, sceneOpen, sceneMoving= main.addScenes( 3 ) 
+sceneClosed, sceneOpen, sceneMoving = main.addScenes( 3 ) 
 
 # setup Control Inputs : http://lumensalis.com/ql/h2Controller
-rbCycle = main.panel.addControlVariable( startingValue=3.1, min=0.1, max=10.0, kind="TimeInSeconds" )
-rbs = main.panel.addControlVariable( startingValue=0.6, min=0.1, max=3.0, kind=float )
-handSafetyRange = main.panel.addControlVariable(startingValue=300, min=10, kind="Millimeters" )
+rbCycle = main.panel.addSeconds( startingValue=3.1, min=0.1, max=10.0 )
+rbs = main.panel.addFloat( startingValue=0.6, min=0.1, max=3.0 )
+handSafetyRange = main.panel.addMillimeters(startingValue=300, min=10 )
 
 #############################################################################
 # HARDWARE : http://lumensalis.com/ql/h2Hardware
@@ -20,7 +20,7 @@ caernarfon = main.TerrainTronics.addCaernarfon( )
 lidServo = caernarfon.initServo( 1, movePeriod=0.05 )
 ir = caernarfon.addIrRemote(codenames="dvd_remote")     
 neoPixA = caernarfon.addNeoPixels(pixelCount=45) 
-neoPixB = caernarfon.initNeoPixOnServo(3,pixelCount=35)
+neoPixB = caernarfon.addNeoPixels(servoPin=3,pixelCount=35)
 # setup neoPixel modules : http://lumensalis.com/ql/h2NeoPixels
 firstTwoOnPixA          = neoPixA.nextNLights(2)
 leftStoneLights         = neoPixA.ring(3)
@@ -30,7 +30,6 @@ frontLidStrip           = neoPixA.stick(8)
 sceneIndicatorLights    = neoPixB.stick(8)
 angleGaugeLights        = neoPixB.ring(12)
 
-
 # StemmaQT modules
 timeOfFlightSensor = main.i2cFactory.addVL530lx(updateInterval=0.25)
 vcnl4040 = main.adafruitFactory.addVCNL4040()
@@ -39,7 +38,8 @@ lightSensor = vcnl4040.light
 proximitySensor = vcnl4040.proximity
 vcnl4040.light_integration_time = 2
 vcnl4040.proximity_integration_time = 2
-main.monitor( lightSensor, proximitySensor, ) # enableDbgOut = True )
+main.panel.monitor( lightSensor )
+main.panel.monitor( proximitySensor )
 
 
 # setup touch inputs : http://lumensalis.com/ql/h2Touch
@@ -99,6 +99,7 @@ aglSpinner = Spinner(angleGaugeLights, onValue=Colors.RED, tail=0.42,period=0.49
 lsZ21 = Z21Adapted( lightSensor )
 ls256 = lsZ21 * 256
 csWheel = ColorWheel( ls256 )
+csWheel.enableDbgOut = True
 
 closedSpin = Spinner(angleGaugeLights,onValue=csWheel,period=3.49 )
 centerSpin = Spinner(centerStoneLights)

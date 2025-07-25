@@ -1,19 +1,22 @@
 
+from __future__ import annotations
+
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
 from LumensalisCP.I2C.I2CDevice import  I2CDevice, I2CInputSource, EvaluationContext
 
-import adafruit_vcnl4040 # type: ignore
+import adafruit_vcnl4040
+
 
 
 class VCNL4040ConfigDescriptor:
     def __init__(self, name:str='???'):
         self.attrName = name
-    def __set_name__(self, owner, name):
-        print( f"{self.__class__.__name__}.__set_name__ {name}" )
-        self.attrName = name
+    #def __set_name__(self, owner, name):
+    #    print( f"{self.__class__.__name__}.__set_name__ {name}" )
+    #    self.attrName = name
 
-    def __get__(self, obj:'VCNL4040', objType=None):
+    def __get__(self, obj:VCNL4040, objType=None):
         value = getattr(obj.vcnl4040, self.attrName)
         #logging.info('Accessing %r giving %r', self.public_name, value)
         return value
@@ -75,7 +78,7 @@ class VCNL4040(I2CDevice):
             updateInterval = 0.1,
         )
         super().__init__(**kwds)
-        self.vcnl4040 = adafruit_vcnl4040.VCNL4040( i2c=self.i2c )
+        self.vcnl4040:adafruit_vcnl4040.VCNL4040 = adafruit_vcnl4040.VCNL4040( i2c=self.i2c )
         
         self.__ios:List[VCNL4040Input] = []
         self.__lastInputs = 0
@@ -99,11 +102,18 @@ class VCNL4040(I2CDevice):
         self.__ios.append(io)
         return io
     
-    light = VCNL4040ReadableDescriptor('light')
-    lux = VCNL4040ReadableDescriptor('lux')
-    proximity = VCNL4040ReadableDescriptor('proximity')
+    light:VCNL4040Input = VCNL4040ReadableDescriptor('light')
+    """ ambient light sensor value, 0-65535 """
+
+    lux:VCNL4040Input = VCNL4040ReadableDescriptor('lux')
+    """ lux value, 0-65535 """
+
+    proximity:VCNL4040Input = VCNL4040ReadableDescriptor('proximity')
+    """  proximity sensor value, 0-65535 """
+
     white = VCNL4040ReadableDescriptor('white')
-    
+    """ white light sensor value, 0-65535 """
+
     def derivedUpdateDevice(self, context:EvaluationContext):
         if self.enableDbgOut: self.dbgOut( "reading %r ios", len(self.__ios))
         for input in self.__ios:

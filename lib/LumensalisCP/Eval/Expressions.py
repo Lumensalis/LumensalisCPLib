@@ -64,7 +64,7 @@ class Expression( Evaluatable ):
         self.__otherwise = condition
         return self
     
-    def sources( self ) -> Mapping[str,InputSource]:
+    def sources( self ) -> dict[str,InputSource]:
         rv = {}
         for term in self.terms():
             if isinstance(term,LumensalisCP.Inputs.InputSource): # type: ignore

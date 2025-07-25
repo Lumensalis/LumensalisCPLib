@@ -17,8 +17,10 @@ OptionalContextArg = Optional["EvaluationContext"]
 DirectValue = Type[ Union[int,bool,float,'RGB' ] ]
     
 # pylint: disable=protected-access
+# pyright: ignore[reportPrivateUsage]
 
 class UpdateContextDebugManager(Releasable):
+    
     context:EvaluationContext|None
     
     def __init__( self ):
@@ -36,15 +38,15 @@ class UpdateContextDebugManager(Releasable):
     def __enter__(self):
         assert self.context is not None
         self.prior_debugEvaluate = self.context.debugEvaluate
-        self.prior_debugIndent = self.context._debugIndent
+        self.prior_debugIndent = self.context._debugIndent # pyright: ignore[reportPrivateUsage]
         self.context.debugEvaluate = self.debugEvaluate
-        self.context._debugIndent = self.debugIndent = self.prior_debugIndent + 2
+        self.context._debugIndent = self.debugIndent = self.prior_debugIndent + 2 # pyright: ignore[reportPrivateUsage]
         return self
 
     def __exit__(self, eT:Type[BaseException], eV:BaseException, eTB:Any):
         assert self.context is not None
         self.context.debugEvaluate = self.prior_debugEvaluate
-        self.context._debugIndent = self.prior_debugIndent 
+        self.context._debugIndent = self.prior_debugIndent  # pyright: ignore[reportPrivateUsage]
         self.context = None
 
     def say( self, instanceOrMessage:Debuggable|str, *args:Any ) -> None:
@@ -88,9 +90,9 @@ class UpdateContext(Debuggable):
     @classmethod
     def _patch_fetchCurrentContext(cls, main:MainManager):
         assert main is not None
-        assert main._privateCurrentContext is not None
+        assert main._privateCurrentContext is not None # pyright: ignore[reportPrivateUsage]
         def patchedFetchCurrentContext( context:EvaluationContext|None ) -> EvaluationContext:
-            return context or main._privateCurrentContext
+            return context or main._privateCurrentContext # pyright: ignore[reportPrivateUsage]
         cls.fetchCurrentContext = patchedFetchCurrentContext
         
     def nestDebugEvaluate(self, debugEvaluate:Optional[bool] = True ) -> UpdateContextDebugManager:

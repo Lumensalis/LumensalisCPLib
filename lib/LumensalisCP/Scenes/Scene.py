@@ -14,22 +14,22 @@ class SceneTaskKwargs(TypedDict):
     name:Optional[str]
 
 class SceneTask(NamedLocalIdentifiable):
-    def __init__(self, task:Callable, period:TimeInSeconds = 0.02, name:Optional[str] = None ):
+    def __init__(self, task:Callable[[EvaluationContext,],Any], period:TimeInSecondsConfigArg = 0.02, name:Optional[str] = None ):
         super().__init__(name=name)
         self.task_callback = KWCallback.make( task )
-        self.__period = period
-        self.__nextRun = period
+        self.__period:TimeInSeconds = TimeInSeconds(period)
+        self.__nextRun:TimeInSeconds = TimeInSeconds(0.0)
         
     @property
-    def period(self) -> TimeInSeconds: return self.__period
+    def period(self) -> TimeInSeconds: 
+        return self.__period
     
     def run( self, scene:"Scene", context: EvaluationContext, frame:ProfileFrameBase ):
-        if self.__nextRun is not None:
-            if scene.main.when < self.__nextRun:
-                return
-            self.__nextRun = scene.main.when + self.__period
-        frame.snap( f"runSceneTask-{self.__name}" )
-        self.task_callback(context=context)
+        if scene.main.when < self.__nextRun:
+            return
+        self.__nextRun = TimeInSeconds( scene.main.when + self.__period )
+        frame.snap( "runSceneTask", self.name )
+        self.task_callback(context=context) # type: ignore[call-arg]
 
 class SceneRule( NamedLocalIdentifiable, Expression,  ):
     def __init__( self, target:NamedOutputTarget, term:ExpressionTerm, name:Optional[str]=None ):
@@ -50,34 +50,30 @@ class Scene(MainChild):
     def __init__( self, **kwargs:Unpack[MainChild.KWDS] ):
         super().__init__( **kwargs )
 
-        self.__rulesContainer = NliList("rules",parent=self)
+        self.__rulesContainer:NliList[SceneRule] = NliList("rules",parent=self)
         self.__rules: Mapping[str,SceneRule] = {}
         
-        self.__tasksContainer = NliList("tasks",parent=self)
+        self.__tasksContainer:NliList[SceneTask] = NliList("tasks",parent=self)
         self.__tasks:List[SceneTask] = []
         
-        self.__patternsContainer = NliList("patterns",parent=self)
+        self.__patternsContainer:NliList[Pattern] = NliList("patterns",parent=self)
         self.__patterns:NamedList[Pattern] = NamedList()
         
         self.__patternRefreshPeriod = 0.02
         self.__nextPatternsRefresh = 0
 
-    def nliGetContainers(self) -> list[NliContainerMixin]|None:
+    def nliGetContainers(self) -> list[NliContainerMixin[NamedLocalIdentifiable]]|None:
         
-        return [self.__rulesContainer, self.__tasksContainer, self.__patternsContainer]
+        return [self.__rulesContainer, self.__tasksContainer, self.__patternsContainer] # type: ignore[return-value]
     
     @property
     def patterns(self) -> NamedList[Pattern]:
         return self.__patterns
     
     def addPatterns(self, *patterns:Pattern ):
-        """add patterns to a scene
-
-        :param patternRefresh: _description_, defaults to None
-        :type patternRefresh: float, optional
+        """add patterns to a scene - see http://lumensalis.com/ql/h2Scenes
         """
-        #if patternRefresh is not None:
-        #    self.__patternRefreshPeriod = patternRefresh
+
         self.__patterns.extend(patterns)
         for pattern in patterns:
             pattern.nliSetContainer(self.__patternsContainer)
@@ -100,13 +96,16 @@ class Scene(MainChild):
 
     def sources( self ) -> Mapping[str,InputSource]:
         rv = {}
+        
         for setting in self.__rulesContainer:
-            for source in setting.sources().values():
+            #setting:SceneRule
+            sources = setting.sources()
+            for source in sources.values():
                 dictAddUnique( rv, source.name, source )
     
         return rv
 
-    def addTask( self, task:Callable, **kwds:Unpack[SceneTaskKwargs]  ) -> SceneTask:
+    def addTask( self, task:Callable[...,Any], **kwds:Unpack[SceneTaskKwargs]  ) -> SceneTask:
         sceneTask = SceneTask( task, **kwds )
         self.__tasks.append( sceneTask )
         sceneTask.nliSetContainer(self.__tasksContainer)
@@ -115,7 +114,7 @@ class Scene(MainChild):
     
     def addTaskDef( self, **kwds:Unpack[SceneTaskKwargs]  )  -> Callable[..., Any]:
 
-        def addTask( callable ):
+        def addTask( callable:Callable[...,Any] ):
             self.addTask(callable, **kwds)
             return callable
         

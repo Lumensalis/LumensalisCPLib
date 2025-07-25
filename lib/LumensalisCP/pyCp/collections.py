@@ -5,7 +5,7 @@ try:
 except ImportError:
     pass
 
-from LumensalisCP.CPTyping import Generic,TypeVar,Optional, GenericT, Any # pyright: ignore[unused-import] # type: ignore
+from LumensalisCP.CPTyping import Generic,TypeVar,Optional, GenericT, Any, TYPE_CHECKING # pyright: ignore[unused-import] # type: ignore
 
 _ULT = TypeVar('_ULT',)
 
@@ -61,7 +61,6 @@ class GenericList(Generic[_ULT]): # type:  ignore # pylint: disable=function-red
 
     def clear(self):
         self.data.clear()
-
 
 
 GenericListT = GenericT(GenericList)

@@ -35,7 +35,10 @@ class VL53L0X(I2CDevice):
         self.__range = VL53L0XInput(target=self,name="range")
 
     @property
-    def range(self) -> VL53L0XInput: return self.__range
+    def range(self) -> VL53L0XInput: 
+        """ range (in mm) to the nearest object detected by the VL53L0X sensor."""
+        return self.__range
+    
     
     def derivedUpdateDevice(self, context:EvaluationContext):
         if self.__readMode is None or self.__readMode  == 'startMeasurement':

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import LumensalisCP.Main.Manager 
 from LumensalisCP.CPTyping import *
 from LumensalisCP.Lights.RGB import *
 from LumensalisCP.Debug import Debuggable

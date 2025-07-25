@@ -4,7 +4,6 @@ from LumensalisCP.Eval.Expressions import EvaluationContext, UpdateContext
 
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
-from LumensalisCP.Main.Profiler import Profiler
 from LumensalisCP.Scenes.Scene import Scene
 from LumensalisCP.Debug import Debuggable
 
@@ -32,28 +31,30 @@ class Actor(Debuggable):
         self.__currentBehavior = None
         
     @property
-    def currentBehavior(self) -> "Behavior|None":
+    def currentBehavior(self) -> Behavior|None:
         """Current behavior of the actor."""
         #assert self.__currentBehavior is not None
         return self.__currentBehavior
 
     @currentBehavior.setter
-    def currentBehavior(self, behavior:"Behavior" ) -> None:
+    def currentBehavior(self, behavior:Behavior ) -> None:
         """Set the current behavior of the actor."""
         self.setCurrentBehavior( behavior )
         
-    def setCurrentBehavior(self, behavior:"Behavior", reset:bool=False ) -> None:
+    def setCurrentBehavior(self, behavior:Behavior|None, reset:bool=False, context:Optional[EvaluationContext]=None ) -> None:
         """Set the current behavior of the actor."""
+        assert behavior is not None, "Behavior must not be None"
         if self.__currentBehavior is behavior and reset is False:   
             if self.enableDbgOut: self.dbgOut("Behavior %s is already current, not changing", behavior.name)
             return
         
         if self.enableDbgOut: self.dbgOut("Setting current behavior to %s", behavior.name)
+        context = UpdateContext.fetchCurrentContext(context)
         if self.__currentBehavior is not None:
-            self.__currentBehavior.exit(self.main.getContext())
+            self.__currentBehavior.exit(context)
         self.__currentBehavior = behavior
-        if self.__currentBehavior is not None:
-            self.__currentBehavior.enter(self.main.getContext())
+        if self.__currentBehavior is not None: # pylint: disable=protected-access # pyright: ignore[reportUnnecessaryComparison]
+            self.__currentBehavior.enter(context)
         
 class Behavior(Debuggable):
     __name: str
@@ -72,6 +73,7 @@ class Behavior(Debuggable):
         return self.__name  
     
     def setScene(self, scene:str|Scene|None):
+        """ select a scene to be automatically activated when entering this behavior."""
         self.__scene = scene
         if scene is not None and self.isActive:
             context = UpdateContext.fetchCurrentContext(None)

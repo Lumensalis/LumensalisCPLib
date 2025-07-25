@@ -114,6 +114,7 @@ Dict = PseudoTypingTBType("Dict")
 Mapping = PseudoTypingTBType("Mapping")
 Generator =  PseudoTypingTBType("Generator")
 Iterable = PseudoTypingTBType("Iterable")
+Iterator = PseudoTypingTBType("Iterator")
 
 ClassVar = PseudoTypingModifier("ClassVar")
 Type = PseudoTypingModifier("Type")
@@ -134,8 +135,8 @@ class _GenericMaker:
 
 Generic = _GenericMaker()
 
-#def TypeVar(tag:str,bound=None): 
-#    return GenericBase
+def TypeVar(tag:str,bound=None): 
+    return GenericBase
 
 def ParamSpec(tag:str): return tag
  

@@ -16,12 +16,12 @@ class CaernarfonFrankenDemo( DemoBase ):
         # values published to the WebUI and can be modified
         # by various control inputs (encoder movement, WebUI, ... )
 
-        self.targetAngle = main.addControlVariable( "angle", "Servo Angle", min=20, max=160, kind="int" )
-        self.targetColor = main.addControlVariable( "color", "Pixel Strip Color", kind="RGB", startingValue=(255,0,0) )
+        self.targetAngle = main.panel.addAngle( name="Servo Angle", min=20, max=160, startingValue=45 )
+        self.targetColor = main.panel.addRGB( name="Pixel Strip Color", startingValue=(255,0,0) )
 
         #############################################################################
         # Add a CaernarfonCastle
-        self.caernarfon = caernarfon = main.addCaernarfon( neoPixelCount=9, servos=1 )
+        self.caernarfon = caernarfon = main.TerrainTronics.addCaernarfon( neoPixelCount=9, servos=1 )
 
         #############################################################################
         # I2C devices 

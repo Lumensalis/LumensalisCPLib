@@ -6,13 +6,13 @@ from LumensalisCP.CPTyping import *
 import audiomp3, audiobusio, board, audiocore, math, audiomixer
 from microcontroller import Pin
 import array
-import LumensalisCP.Main.Manager
+
 from  LumensalisCP.Main.Dependents import MainChild
 
 # TODO : recheck / fix everything with # type: ignore
 
-if TYPE_CHECKING:
-    from  LumensalisCP.Main.Manager import MainManager
+#if TYPE_CHECKING:
+#    from  LumensalisCP.Main.Manager import MainManager
     
 class AudioSample( object ):
     def __init__( self, sample, filename ):
@@ -27,20 +27,32 @@ class AudioSample( object ):
 class Audio( MainChild ):
     theAudio:'Audio'
 
+    class KWDS(MainChild.KWDS):
+        bit_clock:NotRequired[Pin]
+        word_select:NotRequired[Pin]
+        data:NotRequired[Pin]
+        useMixer:NotRequired[bool]
+        mixer_sample_rate:NotRequired[float]
+        mixer_channel_count:NotRequired[int]
+        mixer_signed:NotRequired[bool]
+        mixer_bits_per_sample:NotRequired[int]
+        mixer_voice_count:NotRequired[int]
+        mixer_buffer_size:NotRequired[int]
+
     def __init__( self, 
-                main:MainManager,
                 bit_clock:Pin|None = None, 
                 word_select:Pin|None= None, 
                 data:Pin|None= None, 
                 useMixer:bool=False,
-                mixer_sample_rate = 22050,
-                mixer_channel_count=1,
-                mixer_signed = False,
-                mixer_bits_per_sample = 16,
-                mixer_voice_count = 2,
-                mixer_buffer_size = 2048,
+                mixer_sample_rate:float = 22050,
+                mixer_channel_count:int=1,
+                mixer_signed:bool = False,
+                mixer_bits_per_sample:int = 16,
+                mixer_voice_count:int = 2,
+                mixer_buffer_size:int = 2048,
+                **kwds:Unpack[MainChild.KWDS]
             ):
-        super().__init__(main=main,name="Audio")
+        super().__init__(**kwds)
         assert getattr(Audio,'theAudio',None) is None
         Audio.theAudio = self
         

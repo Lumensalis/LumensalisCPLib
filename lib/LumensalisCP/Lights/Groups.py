@@ -47,7 +47,7 @@ class LightGroup(NamedLocalIdentifiable):
 class LightGroupList(LightGroup):
     
     class KWDS(NamedLocalIdentifiable.KWDS):
-        lights: NotRequired[List[Light]] 
+        lights: NotRequired[list[Light]] 
         
     def __init__(self, lights:List[Light]|None = None,**kwargs:Unpack[NamedLocalIdentifiable.KWDS]):
         super().__init__(**kwargs)

@@ -15,6 +15,7 @@ from LumensalisCP.util.bags import Bag
 #from LumensalisCP.CPTyping import *
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.Lights.Pattern import Pattern, PatternGeneratorStep, PatternGenerator
+from LumensalisCP.Lights.Pattern import OnOffPattern
 #from LumensalisCP.Lights.Pattern import PatternGeneratorStepBase
 #from LumensalisCP.Lights.Patterns import PatternGeneratorStepRGB
 

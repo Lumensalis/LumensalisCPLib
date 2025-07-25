@@ -49,6 +49,12 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
     def lastTouched(self): return self.__lastTouched
         
     def addInput( self, pin:int, **kwds:Unpack[MPR121Input.KWDS] ) -> MPR121Input:
+        """ Add a touch input to the MPR121.
+
+        :param pin: The pin number to add
+        :type pin: int
+        :rtype: MPR121Input
+        """
         assert pin >= 0 and pin < len(self.__inputs)
         inputSource = self.__inputs[pin]
     

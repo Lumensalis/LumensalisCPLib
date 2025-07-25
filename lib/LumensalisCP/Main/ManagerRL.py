@@ -26,7 +26,7 @@ def MainManager_nliGetChildren(self:MainManager) -> Iterable[NamedLocalIdentifia
         yield self.__dmx
 
 
-def MainManager_launchProject( self:MainManager, globals:Optional[dict]=None, verbose:bool = False ): 
+def MainManager_launchProject( self:MainManager, globals:Optional[StrAnyDict]=None, verbose:bool = False ) -> None: 
     if globals is not None:
         self.renameIdentifiables( globals, verbose=verbose )
     self.addBasicWebServer()
@@ -59,7 +59,7 @@ def MainManager_monitor( self:MainManager, *inputs:InputSource, enableDbgOut:Opt
             i.enableDbgOut = enableDbgOut
         self._monitored.append(i) 
 
-def MainManager_handleWsChanges( self:MainManager, changes:dict ):
+def MainManager_handleWsChanges( self:MainManager, changes:StrAnyDict ):
         
         # print( f"handleWsChanges {changes}")
         key = changes['name']

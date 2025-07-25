@@ -22,8 +22,6 @@ try:
     from typing import final, overload, override
     
     
-
-    
     # any imports below this won't happen if the error gets raised
     LCPF_TYPING_IMPORTED = True
     
@@ -46,8 +44,9 @@ try:
 except ImportError:
     LCPF_TYPING_IMPORTED = False # type: ignore
     TYPE_CHECKING = False # type: ignore
+
     if not TYPE_CHECKING:
-        from LumensalisCP._pseudoTyping import *
+        from LumensalisCP.CPTyping._pseudoTyping  import *
         
 if LCPF_TYPING_IMPORTED:
     # this is _not_ within the initial try/except because we do

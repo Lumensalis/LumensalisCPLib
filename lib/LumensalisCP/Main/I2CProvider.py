@@ -1,5 +1,5 @@
 
-
+from __future__ import annotations
 import busio
 import board
 
@@ -12,8 +12,16 @@ from LumensalisCP.Controllers.Config import ControllerConfig
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
     from LumensalisCP.Debug import Debuggable
+    from LumensalisCP.I2C.Adafruit.AdafruitI2CFactory import AdafruitFactory
+    from LumensalisCP.I2C.I2CFactory import I2CFactory
 
 class I2CProvider(Debuggable):
+    adafruitFactory: AdafruitFactory
+    """ factory to connect Adafruit I2C devices """
+    
+    i2cFactory:I2CFactory
+    """ factory to connect to I2C devices """
+
     def __init__(self,config:ControllerConfig, main:'MainManager'):
         super().__init__()
         

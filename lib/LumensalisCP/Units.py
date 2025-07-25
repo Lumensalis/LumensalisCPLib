@@ -18,6 +18,8 @@ TimeSpanInSeconds:TypeAlias  = float #
 DegreesPerSecond:TypeAlias  = float # rotation speed  in degrees per second
 Degrees:TypeAlias  = float # angle in degrees
 
+Millimeters:TypeAlias  = float # length in millimeters
+
 Volts:TypeAlias  = float   # voltage in volts
 Hertz:TypeAlias  = float   # frequency in cycles per second
 

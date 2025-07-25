@@ -3,10 +3,17 @@ from __future__ import annotations
 from LumensalisCP.IOContext import *
 from LumensalisCP.commonCP import *
 from LumensalisCP.Lights.NeoPixels import NeoPixelSource, NeoPixelSourceKwds
-from LumensalisCP.Gadgets.IrRemote import LCP_IRrecv, onIRCode
+from LumensalisCP.Gadgets.IrRemote import LCP_IRrecv, onIRCode # type: ignore
 from LumensalisCP.Gadgets.Servos import LocalServo
 
 from TerrainTronics.D1MiniBoardBase import D1MiniBoardBase
+
+class CaernarfonCastleKWDS(TypedDict):
+        neoPixelCount: NotRequired[int]
+        servos: NotRequired[int]
+        servo1pin: NotRequired[microcontroller.Pin|str]
+        servo2pin: NotRequired[microcontroller.Pin|str]
+        servo3pin: NotRequired[microcontroller.Pin|str]
 
 class CaernarfonCastle(D1MiniBoardBase):
     
@@ -59,6 +66,15 @@ class CaernarfonCastle(D1MiniBoardBase):
                     servoPin:Optional[int]=None, 
                     **kwds:Unpack[NeoPixelSourceKwds]
             ) -> NeoPixelSource:
+        """ Add a NeoPixelSource chain to the Caernarfon Castle board.
+
+        :param servoPin: If provided, the chain use the 
+            specified servo channel. Otherwise, it will be added at the 
+                board's NeoPixel connection
+
+        see :class:`NeoPixelSource` for more details on the parameters.
+
+        """
         pin = self.neoPixelPin if servoPin is None else getattr(self, f'servo{servoPin}pin')
         assert isinstance(pin, microcontroller.Pin)
         if servoPin is not None:
@@ -67,7 +83,7 @@ class CaernarfonCastle(D1MiniBoardBase):
             ensure( getattr(self,'__pixels',None) is None, "pixels already initialized" )
             
         kwds.setdefault( 'pixelCount', 1 )
-        kwds.setdefault( 'pixel_order', neopixel.GRB )
+        kwds.setdefault( 'pixel_order', neopixel.GRB ) # type: ignore
 
         pixels = NeoPixelSource( pin,  main = self.main,  **kwds )
         if servoPin is not None:
@@ -82,6 +98,13 @@ class CaernarfonCastle(D1MiniBoardBase):
             #// refreshRate=0.05, brightness=neoPixelBrightness, auto_write=False, pixel_order=neoPixelOrder
 
     def initNeoPixOnServo( self, servoN:int, **kwds:Unpack[NeoPixelSourceKwds] ) -> NeoPixelSource:
+        """Initialize a servo on one of the Caernarfon Castle's three Servo connections.
+
+        :param servoN: which servo connection (1, 2, or 3)
+        :type servoN: int
+        :param kwds: additional keyword arguments for NeoPixelSource
+        :return: the initialized NeoPixelSource instance
+        """
         assert( self.__servos[servoN-1] is None  and self.__neoPixOnServos[servoN-1] is None )
         pin = getattr(self,f'servo{servoN}pin',None)
         assert isinstance(pin, microcontroller.Pin), f"servo{servoN}pin is not a pin: {pin}"
@@ -152,8 +175,8 @@ class CaernarfonCastle(D1MiniBoardBase):
         self.nliAddComponent(self._irRemote)
         return self._irRemote
     
-    def analogInput( self, name:str, pin:Any ):
-        return self.main.addInput( name, pin )
+    #def analogInput( self, name:str, pin:Any ):
+    #    return self.main.addInput( name, pin )
     
     def initServo( self, servoN:int, 
                   #//name:Optional[str] = None, 
@@ -161,6 +184,17 @@ class CaernarfonCastle(D1MiniBoardBase):
                   frequency:int=50, 
                   **kwds:Unpack[LocalServo.KWDS]
                   ) -> LocalServo:
+        """Initialize a servo on one of the Caernarfon Castle's three Servo connections.
+
+        :param servoN: which servo connection (1, 2, or 3)
+        :type servoN: int
+        :param duty_cycle: the duty cycle for the servo, defaults to 2**15
+        :type duty_cycle: int, optional
+        :param frequency: the frequency for the servo, defaults to 50
+        :type frequency: int, optional
+        :return: the initialized LocalServo instance
+        :rtype: LocalServo
+        """
         ensure( self.__servos[servoN-1] is None, "servo position already in use by %r",  self.__servos[servoN-1] )
         ensure( self.__neoPixOnServos[servoN-1] is None, "servo position already in use by %r",  self.__neoPixOnServos[servoN-1]  )
         pin = getattr(self, 'servo{}pin'.format(servoN) )

@@ -1,9 +1,9 @@
 from __future__ import annotations
-from asyncio import Task
+
+import asyncio
 
 import wifi, displayio
 
-import LumensalisCP.Audio
 import LumensalisCP.Main.Dependents
 from LumensalisCP.commonPreManager import *
 from LumensalisCP.Main import PreMainConfig
@@ -13,13 +13,14 @@ from TerrainTronics.Factory import TerrainTronicsFactory
 from LumensalisCP.Shields.Base import ShieldBase
 from LumensalisCP.Main.I2CProvider import I2CProvider
 
-from LumensalisCP.Main.ControlVariables import ControlPanel
+from LumensalisCP.Main.Panel import ControlPanel
 
 from LumensalisCP.Main import ManagerRL
 
 if TYPE_CHECKING:
     from LumensalisCP.Lights.DMXManager import DMXManager
     import LumensalisCP.Main.Manager
+    from LumensalisCP.Audio import Audio
     # from LumensalisCP.Controllers.Config import ControllerConfigArg
 
 import LumensalisCP.Main.ProfilerRL
@@ -77,7 +78,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
         self.profiler = Profiler(self._privateCurrentContext )
 
-        self.__asyncTaskCreators: list[Callable[[], list[Task[None]]]] = []
+        self.__asyncTaskCreators: list[Callable[[], list[asyncio.Task[None]]]] = []
         self.__preFirstRunCallbacks: list[Callable[[], None]] = []
         self.__socketPool:Any = None
         
@@ -135,6 +136,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
     @property
     def TerrainTronics(self:'MainManager') -> TerrainTronicsFactory:
+        """ factory for adding TerrainTronics Castle boards"""
         if self.__TerrainTronics is None:
             from TerrainTronics.Factory import TerrainTronicsFactory
             #self.__TerrainTronics = TerrainTronicsFactory( self.__getMMSelf() )
@@ -228,17 +230,29 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
             
         self.__shutdownTasks.append(task)
 
-    #def addControlVariable( self, *args, **kwds ) -> ControlVariable:
-    #    return self.defaultController.addControlVariable( *args, **kwds )
-
-    #def addIntermediateVariable( self,  *args, **kwds ) -> IntermediateVariable:
-    #    return self.defaultController.addIntermediateVariable( *args, **kwds )
-
     def addScene( self, **kwds:Unpack[Scene.KWDS] ) -> Scene:
+        """ add a new scene - see http://lumensalis.com/ql/h2Scenes
+
+        ```python
+scene = main.addScene( )
+```
+    :param kwds: Keyword arguments for the scene.
+    :return: The newly created scene.
+
+        
+"""
         scene = self._scenes.addScene( **kwds )
         return scene
-    
+
     def addScenes( self, n:int ):
+        """ add multiple scenes to the manager.
+        :param n: The number of scenes to add.
+```python
+act1, intermission, act2 = main.addScenes(3)
+```
+see also :meth:`addScene` for adding a single scene.
+see http://lumensalis.com/ql/h2Scenes
+"""
         #->  Unpack[Tuple[Scene, ...]]:
         return [self.addScene() for _ in range(n)]
         return [self.addScene(name) for name in names]
@@ -268,39 +282,33 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         return server
 
     def monitor( self, *inputs:InputSource, **kwds:StrAnyDict ) -> None:
-        return ManagerRL.MainManager_monitor(self.__getMMSelf(), *inputs, **kwds )
+        return ManagerRL.MainManager_monitor( self, *inputs, **kwds )
 
 
-    def handleWsChanges( self, changes:dict ):
-        return ManagerRL.MainManager_handleWsChanges(self.__getMMSelf(), changes)
+    def handleWsChanges( self, changes:StrAnyDict ):
+        return ManagerRL.MainManager_handleWsChanges( self, changes)
 
-    async def msDelay( self, milliseconds ):
+    async def msDelay( self, milliseconds:TimeInMS ):
         await asyncio.sleep( milliseconds * 0.001 )
     
     @property
-    def audio(self) -> "LumensalisCP.Audio.Audio":
+    def audio(self) -> Audio:
         if self.__audio is None:
             self.addI2SAudio()
             assert self.__audio is not None
         return self.__audio
 
-    def addI2SAudio(self, *args, **kwds ) -> "LumensalisCP.Audio.Audio":
+    def addI2SAudio(self, *args:Any, **kwds:Unpack[Audio.KWDS] ) -> Audio:
         from LumensalisCP.Audio import Audio
         assert self.__audio is None
-        self.__audio = Audio( main=self.__getMMSelf(), *args,**kwds )
+        kwds.setdefault('main', self )
+        self.__audio = Audio( **kwds )
         return self.__audio
-
-    def movingValue( self, min=0, max=100, duration:float =1.0 ):
-        base = math.floor( self._when / duration ) * duration
-        subSpan = self._when - base
-        spanRatio = subSpan / duration
-        value = ((max - min)*spanRatio) + min
-        return value
 
     def addTask( self, task:KWCallbackArg ):
         self._tasks.append( KWCallback.make( task ) )
         
-    def __runDeferredTasks(self):
+    def __runDeferredTasks(self) -> None: # type: ignore
         while len( self.__deferredTasks ):
             task = self.__deferredTasks.popleft()
             self.infoOut( f"running deferred {task}")
@@ -315,17 +323,17 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def getNextFrame(self) ->ProfileFrameBase:
         return ManagerRL.MainManager_getNextFrame(self ) # type: ignore
     
-    def nliGetContainers(self) -> Iterable[NliContainerMixin]|None:
+    def nliGetContainers(self) -> Iterable[NliContainerMixin[NamedLocalIdentifiable]]|None:
         return ManagerRL.MainManager_nliContainers(self ) # type: ignore
    
     def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None:
         return ManagerRL.MainManager_nliGetChildren(self ) # type: ignore
 
-    def launchProject(self, globals:Optional[dict[str,Any]]=None, verbose:bool = False ):
-        return ManagerRL.MainManager_launchProject(self.__getMMSelf(), globals, verbose=verbose )
+    def launchProject(self, globals:Optional[StrAnyDict]=None, verbose:bool = False ):
+        return ManagerRL.MainManager_launchProject(self, globals, verbose=verbose )
 
     def renameIdentifiables(self, items:Optional[dict[str,NamedLocalIdentifiable]]=None, verbose:bool = False ):
-        return ManagerRL.MainManager_renameIdentifiables(self.__getMMSelf(), items, verbose )
+        return ManagerRL.MainManager_renameIdentifiables(self, items, verbose )
     
     async def taskLoop( self ):
         self.__priorSleepWhen = self.getNewNow()

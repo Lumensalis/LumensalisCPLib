@@ -6,12 +6,14 @@ from LumensalisCP.common import *
 from LumensalisCP.Main.Dependents import FactoryBase
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
-    from TerrainTronics.Caernarfon import CaernarfonCastle
+    from TerrainTronics.Caernarfon import CaernarfonCastle, CaernarfonCastleKWDS
     from TerrainTronics.Harlech import HarlechCastle
 
 class TerrainTronicsFactory(FactoryBase):
 
-    def addCaernarfon( self, **kwds:Unpack[CaernarfonCastle.KWDS] )-> CaernarfonCastle:
+    def addCaernarfon( self, **kwds:Unpack[CaernarfonCastleKWDS] )-> CaernarfonCastle:
+        """ add a Caernarfon Castle board - see http://lumensalis.com/ql/h2Caernarfon
+        """
         from TerrainTronics.Caernarfon import CaernarfonCastle
         
         return self.makeChild( CaernarfonCastle, **kwds ) # type: ignore

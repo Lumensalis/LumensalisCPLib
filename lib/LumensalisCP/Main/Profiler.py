@@ -12,6 +12,7 @@ import gc # type: ignore
 try:
     from typing import TYPE_CHECKING
     if TYPE_CHECKING:
+        from LumensalisCP.Main.Updates import UpdateContext
         pass
         
 except ImportError:
@@ -136,7 +137,7 @@ class ProfileSnapEntry(Releasable):
 
 
 
-    def subFrame(self, context, name:Optional[str]=None, name2:str|None = None) -> 'ProfileSubFrame':
+    def subFrame(self, context:UpdateContext, name:Optional[str]=None, name2:str|None = None) -> 'ProfileSubFrame':
         assert not self._nesting 
         self._nest = ProfileSubFrame.makeEntry(context,name, name2)
         self._nesting = True
@@ -325,7 +326,7 @@ class ProfileFrameBase(Releasable):
             return entry.nest.activeFrame()
         return self    
     
-    def subFrame(self, context, name:Optional[str]=None, name2:Optional[str]=None) -> 'ProfileSubFrame':
+    def subFrame(self, context:UpdateContext, name:Optional[str]=None, name2:Optional[str]=None) -> 'ProfileSubFrame':
         if name is not None:
             #snap = self.activeFrame().snap(name, name2)
             snap = self.snap(name, name2)

@@ -77,7 +77,7 @@ than CPython's.
             assert mpyAllowed, f"{sourceFile} required to reload {module.__file__}"
             if verbose: print( f"skipping reload of {name}, {sourceFile} not found")
             return
-    assert os.path.exists(sourceFile), f"Source file {sourceFile} does not exist for {name}"
+    #assert os.path.exists(sourceFile), f"Source file {sourceFile} does not exist for {name}"
     with open(sourceFile,'r',encoding='utf-8') as f:
         source = f.read()
         exec( source, newAttrs, newAttrs ) # pylint: disable=exec-used
