@@ -13,85 +13,92 @@ more at http://lumensalis.com/ql/h2Start
 """
 
 from __future__ import annotations
+
 import rainbowio
 import gc
+
 # pyright: ignore[reportUnusedImport]
 # pylint: disable=unused-import,import-error,unused-argument 
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 
 from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayImport = ImportProfiler( "Simple" )
+_saySimpleImport = ImportProfiler( "Simple" )
 
 def _importCollect() -> None:
-    _sayImport( "collecting garbage..." )
+    _saySimpleImport( "collecting garbage..." )
     gc.collect()
     
-_sayImport( "RGB")
+_saySimpleImport( "RGB")
 from LumensalisCP.Lights.RGB import *
 
-_sayImport( "PreMainConfig")
+_saySimpleImport( "PreMainConfig")
 from LumensalisCP.Main.PreMainConfig import *
 
-_sayImport( "Identity")
+_saySimpleImport( "Identity")
 import LumensalisCP.Identity.Local
 
-_sayImport( "Updates")
+_saySimpleImport( "Updates")
 import LumensalisCP.Main.Updates
 
-_sayImport( "kwCallback")
+_saySimpleImport( "kwCallback")
 import LumensalisCP.util.kwCallback
 
-_sayImport( "Eval")
+_saySimpleImport( "Eval")
 import LumensalisCP.Eval
 
-_sayImport( "EvaluationContext")
+_saySimpleImport( "EvaluationContext")
 import LumensalisCP.Eval.EvaluationContext 
 
-_sayImport( "ExpressionTerm")
+_saySimpleImport( "ExpressionTerm")
 import LumensalisCP.Eval.ExpressionTerm 
 
 _importCollect()
 
-_sayImport( "Eval.Terms")
+_saySimpleImport( "Eval.Terms")
 import LumensalisCP.Eval.Terms 
 
-_sayImport( "Eval.Evaluatable")
+_saySimpleImport( "Eval.Evaluatable")
 import LumensalisCP.Eval.Evaluatable 
 
-_sayImport( "Eval.common")
+_saySimpleImport( "Eval.common")
 import LumensalisCP.Eval.common
 
-_sayImport( "Inputs")
+_saySimpleImport( "Inputs")
 import LumensalisCP.Inputs
 
-_sayImport( "Outputs")
+_saySimpleImport( "Outputs")
 import LumensalisCP.Outputs
 
 _importCollect()
 
-_sayImport( "IOContext")
+_saySimpleImport( "IOContext")
 import LumensalisCP.IOContext
 
 _importCollect()
 
-_sayImport( "Triggers")
+_saySimpleImport( "Triggers")
 import LumensalisCP.Triggers 
 
-_sayImport( "Action")
+_saySimpleImport( "Triggers.Timer")
+from LumensalisCP.Triggers.Timer import addPeriodicTaskDef, PeriodicTimerManager, PeriodicTimer
+
+_saySimpleImport( "Action")
 from LumensalisCP.Triggers.Action import Action
 
-_sayImport( "Behaviors")
+_saySimpleImport( "Behaviors")
 from LumensalisCP.Behaviors.Behavior import Behavior, Actor 
 
 
-_sayImport( "MainManager" )
+_saySimpleImport( "MainManager" )
 from LumensalisCP.Main.Manager import MainManager
 
+_saySimpleImport( "Audio.Effect")
+from LumensalisCP.Audio.Effect import *
 
-_sayImport( "DemoCommon")
+_saySimpleImport( "DemoCommon")
 from LumensalisCP.Demo.DemoCommon import *
 
-def ProjectManager( ) -> MainManager:
+def ProjectManager( profile:Optional[bool]=None, profileMemory:Optional[bool|int]=None ) -> MainManager:
     """ return the MainManager for a new simple project 
 ```python
 from LumensalisCP.Simple import *
@@ -103,8 +110,45 @@ main.launchProject( globals() )
 ```
 see http://lumensalis.com/ql/h2Main
 """
-    _sayImport( "ProjectManager - getting MainManager" )
-    return  MainManager.initOrGetManager()
+    if profile is not None:
+        pmc_mainLoopControl.ENABLE_PROFILE = profile
+        if profileMemory is not None:
+            if isinstance(profileMemory, bool):
+                pmc_gcManager.PROFILE_MEMORY = profileMemory
+            else:
+                pmc_gcManager.PROFILE_MEMORY = True
+                if profileMemory & 1: pmc_gcManager.PROFILE_MEMORY_NESTED = True
+                if profileMemory & 2: pmc_gcManager.PROFILE_MEMORY_ENTRIES = True
+
+
+    main = MainManager.initOrGetManager()
+
+    #if pmc_gcManager.PROFILE_MEMORY == True:
+    #    pmc_gcManager.PROFILE_MEMORY_NESTED = True
+    #    pmc_gcManager.PROFILE_MEMORY_ENTRIES = True
+    if  pmc_mainLoopControl.ENABLE_PROFILE:
+        sayAtStartup("ProjectManager: starting project with profiling enabled")
+        if  pmc_mainLoopControl.ENABLE_PROFILE:
+            
+            gc.collect() # collect garbage before starting the project
+            gc.disable()
+
+            def addProfilingCallbacks():
+                
+                import LumensalisCP.Simple.profilingRL as profilingRL
+                #profilingRL.printDump(rv)
+
+                @addPeriodicTaskDef( "gc-collect", period=lambda: profilingRL.collectionCheckInterval, main=main )
+                def runCollection(context=None, when=None):
+                    pmc_gcManager.runCollection(context,when, show=True)
+
+                @addPeriodicTaskDef( "print-dump", period=lambda: profilingRL.printDumpInterval, main=main )
+                def dump():
+                    profilingRL.printDump(main)
+
+            main.callLater( addProfilingCallbacks )
+
+    return main
 
 def getColor( v:AnyRGBValue ) -> RGB:
     """ convert __v__ to an RGB value
@@ -219,3 +263,5 @@ class Z21Adapted(PipeInputSource):
             if offset < 0.0 or offset > self._span:
                 self.errOut(f"Z21Adapted: {v} not in range {self._min}..{self._max}")
         return (v - self._min) / self._span
+
+_saySimpleImport.complete()

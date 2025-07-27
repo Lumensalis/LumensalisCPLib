@@ -1,15 +1,23 @@
-from LumensalisCP.common import *
-from LumensalisCP.CPTyping import *
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+__sayControllersIdentityImport = ImportProfiler("Controllers.Identity" )
+
 import os, sys, json
 import microcontroller
 import binascii
 import board
 import adafruit_24lc32 # pyright: ignore[reportMissingImports]
 from adafruit_bus_device.i2c_device import I2CDevice
+
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
+
+from LumensalisCP.common import *
+from LumensalisCP.CPTyping import *
+
 
 if TYPE_CHECKING:
     from nvm import ByteArray
+
+__sayControllersIdentityImport.parsing()
 
 class ControllerNVM(object):
     MAGIC = b"LCP"
@@ -158,3 +166,5 @@ class ControllerIdentity(object):
                    or self.envProject 
                    or None
         )
+
+__sayControllersIdentityImport.complete()

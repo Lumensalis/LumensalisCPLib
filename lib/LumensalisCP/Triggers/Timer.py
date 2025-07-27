@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-
 from LumensalisCP.Main.PreMainConfig import ImportProfiler
-__timerSayImport = ImportProfiler("Triggers.Timer" )
+_sayTriggersTimerImport = ImportProfiler("Triggers.Timer" )
 
 from LumensalisCP.IOContext import *
 
 #import LumensalisCP.Main.Manager
 
 #from LumensalisCP.Eval.Expressions import Expression, ExpressionTerm
-__timerSayImport( "Dependents" )
+_sayTriggersTimerImport( "Dependents" )
 
 from LumensalisCP.Main.Dependents import SubManagerBase, ManagerRef
 
-__timerSayImport( "Trigger")
+_sayTriggersTimerImport( "Trigger")
 from LumensalisCP.Triggers.common import Trigger
     
     
@@ -154,7 +153,7 @@ class PeriodicTimer( Trigger ):
             self.manager._removeTimer( self )
     
     @final
-    def restart(self, interval:TimeSpanInSeconds|Callable|None =None, when:TimeInSeconds|None = None ):
+    def restart(self, interval:TimeSpanInSeconds|Callable[...,TimeSpanInSeconds]|None =None, when:TimeInSeconds|None = None ):
         """restart the timer"""
         assert self.__nextFire is not None
         when = when or self.manager.main.when
@@ -168,7 +167,7 @@ class PeriodicTimer( Trigger ):
 
 
     def addTaskDef( self, name:Optional[str]=None, autoStart=True):
-        def wrapper( cb:Callable  ):
+        def wrapper( cb:Callable[...,Any]  ) -> KWCallback:
             wrapped = KWCallback.make(cb,name=name)
             self.addAction( wrapped )
             if autoStart:
@@ -190,7 +189,7 @@ class PeriodicTimer( Trigger ):
                 self.restart(when=when)
 
 def addPeriodicTaskDef( name:Optional[str]=None, period:TimeSpanInSeconds=1.1,main:Optional[MainManager]=None):
-    def wrapper( cb:Callable  ):
+    def wrapper( cb:Callable[...,Any]  ) -> KWCallback:
         
         m = main or getMainManager()
         kwCb = KWCallback(cb,name=name)
@@ -200,3 +199,5 @@ def addPeriodicTaskDef( name:Optional[str]=None, period:TimeSpanInSeconds=1.1,ma
         return kwCb
 
     return wrapper
+
+_sayTriggersTimerImport.complete()

@@ -88,4 +88,4 @@ def fireOnRising( expression:ExpressionTerm, target:Any, trigger:Optional[Trigge
 def fireOnFalling( expression:ExpressionTerm, target:Action, trigger:Optional[Trigger]=None ) -> Any:
     return fireOnTrue( expression= falling( expression ), trigger=trigger, target=target )
 
-__triggersCommonSayImport( "complete." )
+__triggersCommonSayImport.complete()

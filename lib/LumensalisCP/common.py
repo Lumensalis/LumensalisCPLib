@@ -8,6 +8,10 @@ import json
 import math
 import adafruit_itertools as itertools  # type: ignore # pylint: disable=import-error
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayCommonImport = ImportProfiler( "common" )
+
+
 import LumensalisCP
 from LumensalisCP.CPTyping import *
 from LumensalisCP.Debug import Debuggable
@@ -17,6 +21,8 @@ import LumensalisCP.pyCp.weakref as weakref
 from LumensalisCP.Units import *
 
 from LumensalisCP.Main.GetManager import getMainManager
+
+_sayCommonImport.parsing()
 
 def dictAddUnique( d:Dict[Any,Any], key:Any, value:Any ) -> None:
     """_summary_
@@ -136,4 +142,4 @@ def SHOW_EXCEPTION( inst:Exception, fmt:str, *args:Any ):
     print( f"EXCEPTION {inst} : {safeFmt(fmt,*args)}" )
     print( "\n".join(traceback.format_exception(inst)) )
     
-    
+_sayCommonImport.complete()

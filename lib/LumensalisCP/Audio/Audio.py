@@ -8,7 +8,7 @@ from microcontroller import Pin
 import array
 
 from  LumensalisCP.Main.Dependents import MainChild
-from .Effect import EffectManager
+from .Effect import SoundEffectsManager
 
 # TODO : recheck / fix everything with # type: ignore
 
@@ -77,12 +77,12 @@ class Audio( MainChild ):
             
         self.__masterVolume = 1.0
         self.__sampleVolume = 1.0
-        self._effects:EffectManager|None = None
+        self._effects:SoundEffectsManager|None = None
         
     @property
-    def effects(self) -> EffectManager:
+    def effects(self) -> SoundEffectsManager:
         if self._effects is None:
-            self._effects = EffectManager( self )
+            self._effects = SoundEffectsManager( self )
         return self._effects
     
         

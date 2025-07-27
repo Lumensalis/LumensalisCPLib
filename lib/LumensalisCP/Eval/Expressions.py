@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayEvalExpressionsImport = ImportProfiler( "Eval.Expressions" )
+
 from LumensalisCP.Eval._common import *
+_sayEvalExpressionsImport( "Evaluatable")
 from LumensalisCP.Eval.Evaluatable import Evaluatable
+_sayEvalExpressionsImport( "EvaluationContext")
 from LumensalisCP.Eval.EvaluationContext import EvaluationContext
+_sayEvalExpressionsImport( "ExpressionTerm")
 from LumensalisCP.Eval.ExpressionTerm import ExpressionTerm, ensureIsTerm
 
 if TYPE_CHECKING:
@@ -20,7 +26,7 @@ if TYPE_CHECKING:
 # pyright: reportOperatorIssue=false
 
 #############################################################################
-
+_sayEvalExpressionsImport( "parsing" )
 
 #############################################################################
 
@@ -92,3 +98,5 @@ class Expression( Evaluatable ):
         self.__latestValue = value
         context.addChangedTerm(term)
         return True
+
+_sayEvalExpressionsImport.complete()

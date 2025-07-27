@@ -1,4 +1,9 @@
 from __future__ import annotations
+
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayMainUpdatesImport = ImportProfiler( "Main.Updates" )
+
+
 from LumensalisCP.CPTyping import *
 from LumensalisCP.Debug import Debuggable
 from LumensalisCP.common import *
@@ -18,6 +23,8 @@ DirectValue = Type[ Union[int,bool,float,'RGB' ] ]
     
 # pylint: disable=protected-access
 # pyright: ignore[reportPrivateUsage]
+
+_sayMainUpdatesImport.parsing()
 
 class UpdateContextDebugManager(Releasable):
     
@@ -155,9 +162,5 @@ class UpdateContext(Debuggable):
         
 
 #############################################################################
+_sayMainUpdatesImport.complete()
 
-
-
-
-
-#############################################################################

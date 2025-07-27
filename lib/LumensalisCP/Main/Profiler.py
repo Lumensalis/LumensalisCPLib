@@ -18,6 +18,9 @@ try:
 except ImportError:
     pass
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayProfilerImport = ImportProfiler( "Profiler" )
+
 import LumensalisCP.Main.Updates
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
 
@@ -29,6 +32,8 @@ from LumensalisCP.util.Releasable import Releasable
 from LumensalisCP.Main import ProfilerRL
 
 from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
+
+_sayProfilerImport.parsing()
 
 # pylint: disable=unused-argument, redefined-outer-name, attribute-defined-outside-init
 # pylint: disable=protected-access, pointless-string-statement
@@ -618,3 +623,5 @@ class Profiler(object):
                 print(f"tfy mismatch for {updateIndex} : [{timingIndex}].updateIndex={rv.updateIndex} {id(rv)}")
             return None
         return rv 
+
+_sayProfilerImport.complete()

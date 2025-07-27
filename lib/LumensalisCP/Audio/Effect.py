@@ -1,23 +1,29 @@
 from __future__ import annotations
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayAudioEffectImport = ImportProfiler( "Audio.Effect" )
+
+
 import ulab.numpy as np
 import synthio, array, math
 
-from LumensalisCP.common import *
+
+from LumensalisCP.IOContext import *
 from  LumensalisCP.Main.Dependents import MainChild
 from  LumensalisCP.Identity.Local import NamedLocalIdentifiable
+
 if TYPE_CHECKING:
     from .Audio import Audio
     WaveDataType:TypeAlias = Union[bytes, bytearray, array.array[int], memoryview, np.ndarray]
     WaveArgType:TypeAlias = Union[str, WaveDataType]
 
 
+#############################################################################
 
+_sayAudioEffectImport.parsing()
 
-
-
-class EffectManager(MainChild):
-    theEffectManager: 'EffectManager'
+class SoundEffectsManager(MainChild):
+    theEffectManager: 'SoundEffectsManager'
 
     def __init__(self, audio: Audio, **kwds: Unpack[MainChild.KWDS]) -> None:
         kwds.setdefault("main", audio.main)
@@ -48,37 +54,84 @@ class EffectManager(MainChild):
         self.waveForms['sine_wave'] = sine_wave
         if self.enableDbgOut: self.dbgOut(f"Created sine_wave with size {waveformSize} : {repr(sine_wave):.80}...")
 
-    def makeEffect(self, effectClass:Optional[type]=None, **kwargs:StrAnyDict) -> Effect:
-        effectClass = effectClass or Effect
+    def _makeEffect(self, effectClass:Optional[type]=None, **kwargs:StrAnyDict) -> SoundEffect:
+        effectClass = effectClass or SoundEffect
         effect = effectClass(self, **kwargs)
-        #self.callPostCreate(effect)
+        effect.postCreate()
         return effect
     
+    def makeEffect(self, **kwargs:SoundEffect.KWDS) -> SoundEffect:
+        return self._makeEffect(SoundEffect, **kwargs)
+
     def getWave(self, wave: WaveArgType) -> WaveDataType:
         if isinstance(wave, str):
             return self.waveForms[wave]
         return wave
 
-class Effect(NamedLocalIdentifiable):
+#############################################################################
+LOW_PASS = synthio.FilterMode.LOW_PASS
+HIGH_PASS = synthio.FilterMode.HIGH_PASS
+BAND_PASS = synthio.FilterMode.BAND_PASS
+NOTCH = synthio.FilterMode.NOTCH
+# filters beyond this line use the "A" parameter (in addition to f0 and Q)
+PEAKING_EQ = synthio.FilterMode.PEAKING_EQ
+LOW_SHELF = synthio.FilterMode.LOW_SHELF
+HIGH_SHELF = synthio.FilterMode.HIGH_SHELF
+
+class SoundEffect(NamedLocalIdentifiable):
+
     class KWDS(NamedLocalIdentifiable.KWDS):
         frequency: NotRequired[float] 
         wave: NotRequired[WaveArgType]
+        filter: NotRequired[synthio.Biquad]
+        filterMode: NotRequired[synthio.FilterMode]
+        filterFrequency: NotRequired[float]
+        filterQ: NotRequired[float|Evaluatable[float]]
+        filterA: NotRequired[float|Evaluatable[float]]
+        
 
-    def __init__(self, effectsManager: EffectManager, 
+    def __init__(self, effectsManager: SoundEffectsManager, 
                 frequency: Any = 440,  # Default frequency for the note
                 wave: WaveArgType = 'sine_wave',
+                filter: Optional[synthio.Biquad] = None,
+                filterMode: Optional[synthio.FilterMode] = None,
+                filterFrequency: Optional[float] = None,
+                filterQ: Optional[float|Evaluatable[float]] = None,
+                filterA: Optional[float|Evaluatable[float]] = None, 
                  **kwargs: Unpack[NamedLocalIdentifiable.KWDS]
                 ) -> None:
         NamedLocalIdentifiable.__init__(self, **kwargs)
 
         waveform=effectsManager.getWave(wave)
         if self.enableDbgOut: self.dbgOut(f"Creating Effect with frequency {frequency} and waveform {repr(waveform):.80}...")
+        if filter is not None:
+            assert filterFrequency is None, "Cannot specify both filter and filterFrequency"
+            assert filterQ is None, "Cannot specify both filter and filterQ"
+            assert filterA is None, "Cannot specify both filter and filterA"
+            assert filterMode is None, "Cannot specify both filter and filterMode"
+        elif filterMode is not None:
+            if filterFrequency is None:
+                filterFrequency = 1000.0
+            if filterQ is None:
+                filterQ = 0.707
+            if filterA is None:
+                filterA = 0.0
+
+            filter = synthio.Biquad( mode=filterMode,
+                frequency=filterFrequency,
+                Q=filterQ,
+                A=filterA
+            )
+
         self.note = synthio.Note(
             frequency=frequency,
-            waveform=waveform
+            waveform=waveform,
+            filter=filter,
         )
         self._playing = False
         self.effectsManager = effectsManager
+        if filter is not None:
+            self.filter: synthio.Biquad = filter
 
     @property
     def playing(self) -> bool:
@@ -100,3 +153,23 @@ class Effect(NamedLocalIdentifiable):
         self.effectsManager.synth.release(self.note)
         if self.enableDbgOut: self.dbgOut("Effect stopped")
 
+    def postCreate(self) -> None:
+        """ called after the effect is created, to allow for additional setup """
+        if self.enableDbgOut: self.dbgOut("Effect postCreate called")
+        pass
+
+_sayAudioEffectImport.complete()
+
+__all__ = [
+    "SoundEffectsManager",
+    "SoundEffect",
+    "WaveDataType",
+    "WaveArgType",
+    "LOW_PASS",
+    "HIGH_PASS",
+    "BAND_PASS",
+    "NOTCH",
+    "PEAKING_EQ",
+    "LOW_SHELF",
+    "HIGH_SHELF",
+]

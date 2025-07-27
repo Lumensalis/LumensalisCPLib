@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayEvalEvaluatableImport = ImportProfiler( "Eval.Evaluatable" )
+
 from LumensalisCP.common import Debuggable,TypeVar, Generic, TYPE_CHECKING, Any
 #from LumensalisCP.Debug import Debuggable
 from LumensalisCP.Main.Updates import UpdateContext, OptionalContextArg, DirectValue
    
     
 #############################################################################
+
+_sayEvalEvaluatableImport.parsing()
+
 ET = TypeVar('ET' )
 
 
@@ -43,3 +49,5 @@ def evaluate( value:Evaluatable[DirectValue]|DirectValue, context:OptionalContex
             return value.getValue(context)
     
     return value
+
+_sayEvalEvaluatableImport.complete()

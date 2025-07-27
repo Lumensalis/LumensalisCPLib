@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayEvalExpressionTermImport = ImportProfiler( "Eval.ExpressionTerm" )
+
 from LumensalisCP.Lights.RGB import *
 from LumensalisCP.Eval._common import *
 from LumensalisCP.Eval.Evaluatable import Evaluatable
@@ -18,6 +22,9 @@ if TYPE_CHECKING:
 # pyright: reportMissingParameterType=false, reportMissingTypeArgument=false
 # pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false
 # pyright: reportOperatorIssue=false
+
+
+_sayEvalExpressionTermImport.parsing()
 
 #############################################################################
 EVAL_VALUE_TYPES:TypeAlias  = Union[ int, float, bool, str, RGB]
@@ -404,3 +411,5 @@ class CallbackSource( ExpressionTerm ):
     
 
 #############################################################################
+
+_sayEvalExpressionTermImport.complete()

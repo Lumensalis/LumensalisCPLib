@@ -1,6 +1,9 @@
 
 from __future__ import annotations
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayScenesManagerImport = ImportProfiler( "Scenes.Manager" )
+
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable, NliContainerMixin, NliList
 from LumensalisCP.Scenes.Scene import Scene
 from LumensalisCP.Eval.Expressions import EvaluationContext
@@ -11,6 +14,8 @@ from LumensalisCP.common import *
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
     
+_sayScenesManagerImport.parsing()
+
 class SceneManager(NamedLocalIdentifiable):
     def __init__(self, main: MainManager) -> None:
         super().__init__("SceneManager")
@@ -71,3 +76,4 @@ class SceneManager(NamedLocalIdentifiable):
         print( f"switch from scene {currentSceneName} to {newSceneName}" )
         self.setScene( newSceneName )
         
+_sayScenesManagerImport.complete()

@@ -1,6 +1,10 @@
 from __future__ import annotations
 # pylint: disable=unused-import,import-error
 #   pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
+
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayCPTypingImport = ImportProfiler( "CPTyping" )
+
 try:
 	# imports used only for typing
     #import overrides
@@ -68,3 +72,5 @@ else:
     
     def GenericT(cls:type) ->type: 
         return _GenericT(cls) # type: ignore # pylint: disable=invalid-name
+
+_sayCPTypingImport.complete()

@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayIdentityLocalImport = ImportProfiler( "Identity.Local" )
+
 from LumensalisCP.common import *
 from LumensalisCP.Debug import Debuggable
 import LumensalisCP.pyCp.weakref as lcpWeakref
 from LumensalisCP.CPTyping import ReferenceType, Optional, Iterable , Generic, TypeVar, GenericT
 from LumensalisCP.pyCp.collections import GenericList, GenericListT
+
+_sayIdentityLocalImport.parsing()
 
 class LocalIdentifiable(object):
     
@@ -216,6 +221,8 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
             if child.name == name:
                 return child
         return None
+
+_sayIdentityLocalImport.complete()
 
 __all__ = ['LocalIdentifiable',
            'NamedLocalIdentifiable',

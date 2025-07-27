@@ -2,6 +2,9 @@ from __future__ import annotations
 
 #############################################################################
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+__sayUtilConvertorImport = ImportProfiler("util.Convertor" )
+
 #from LumensalisCP.CPTyping import TypeAlias, ZeroToOne,Union, Type, Callable, Optional,  Any, Tuple, NewType, ClassVar
 #from LumensalisCP.CPTyping import Generic, TypeVar
 
@@ -44,3 +47,5 @@ class Convertor(Generic[TIN,TOUT]):
             self.registerConvertor(cls, lambda v: cls(v))
             return cls
         return r
+
+__sayUtilConvertorImport.complete()    

@@ -5,6 +5,9 @@ from __future__ import annotations
 from random import random as randomZeroToOne, randint # pyright: ignore[reportUnusedImport]
 import re
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayLightsRGBImport = ImportProfiler( "Lights.RGB" )
+
 #from LumensalisCP.CPTyping import TypeAlias, ZeroToOne,Union, Type, Callable, Optional,  Any, Tuple, NewType, ClassVar
 #from LumensalisCP.CPTyping import Generic, TypeVar
 from LumensalisCP.CPTyping import *
@@ -14,6 +17,8 @@ from LumensalisCP.util.Convertor import Convertor
 #from LumensalisCP.Eval.Evaluatable import Evaluatable, evaluate
 
 #from LumensalisCP.CPTyping import *
+
+_sayLightsRGBImport.parsing()
 
 RGBChannel:TypeAlias = ZeroToOne
 
@@ -173,6 +178,8 @@ def intToRGB( v:int ) -> RGB: return RGB.fromNeoPixelRGBInt( v ) # pyright: igno
 
 @RGB.Convertors.defineRegisterConvertor( str )
 def strToRGB( v:str ) -> RGB: return RGB.lookupColor( v )
+
+_sayLightsRGBImport.complete()
 
 __all__ = [
     'RGB', 'Colors', 'RGBChannel', 'RGBTuple', 'NeoPixelRGBInt', 'AnyRGBValue',

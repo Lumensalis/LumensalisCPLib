@@ -1,6 +1,9 @@
 from __future__ import annotations
 # Common types used throughout the library
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayUnitsImport = ImportProfiler( "Units" )
+
 from LumensalisCP.CPTyping import TypeAlias, NewType, Union,Optional
 
 ZeroToOne:TypeAlias  = float # a value between 0.0 and 1.0 inclusive
@@ -30,3 +33,5 @@ def TimeInSecondsConfig( v:TimeInSecondsConfigArg|None, default:Optional[TimeInS
         assert default is not None, "TimeInSecondsConfig requires a value or a default"
         v = default
     return v # type: ignore
+
+_sayUnitsImport.complete()

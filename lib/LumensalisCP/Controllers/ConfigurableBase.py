@@ -3,21 +3,20 @@ from __future__ import annotations
 import os, board, microcontroller
 
 from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayImport = ImportProfiler( "ConfigurableBase" )
-
+_sayConfigurableBaseImport = ImportProfiler( "ConfigurableBase" )
 
 from LumensalisCP.Main.Dependents import MainChild
 from LumensalisCP.common import *
-_sayImport( "Controllers.Config" )
+_sayConfigurableBaseImport( "Controllers.Config" )
 from LumensalisCP.Controllers.Config import ControllerConfig,ControllerConfigArg
 
-_sayImport( "Controllers.Configs.Core" )
+_sayConfigurableBaseImport( "Controllers.Configs.Core" )
 from LumensalisCP.Controllers.Configs.Core import getConfig
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
     
-_sayImport( "parsing" )    
+_sayConfigurableBaseImport( "parsing" )    
 class ConfigurableBase(object):
     class KWDS( TypedDict ):
         config: NotRequired[ControllerConfigArg]
@@ -79,4 +78,4 @@ class ControllerConfigurableChildBase(ConfigurableBase,MainChild):
         ConfigurableBase.__init__( self, **kwargs ) # type: ignore
         #print( f"ControllerConfigurableChildBase.__init__( name={name} kwargs={kwargs})")
 
-_sayImport( "complete" )
+_sayConfigurableBaseImport.complete()

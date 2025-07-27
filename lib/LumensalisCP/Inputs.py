@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayInputsImport = ImportProfiler( "Inputs" )
 
 #from LumensalisCP.common import *
 from LumensalisCP.common import *
@@ -10,6 +12,9 @@ from LumensalisCP.Eval.Expressions import ExpressionTerm
 from LumensalisCP.Eval.EvaluationContext import EvaluationContext
 from LumensalisCP.CPTyping import Protocol
 #############################################################################
+
+_sayInputsImport.parsing()
+
 class _InputSourceChangedCallback(Protocol):
     def __call__(self, source:InputSource, context:EvaluationContext) -> None:
         pass
@@ -54,7 +59,7 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm):
         context.addChangedSource( self )
         for cb in self.__onChangedList:
             try:
-                cb( source=self, context=context )
+                cb( self, context )
             except Exception as inst: # pylint: disable=broad-exception-caught
                 self.SHOW_EXCEPTION( inst, "onChanged callback %r failed", cb )
 
@@ -104,5 +109,7 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm):
         return self.__latestValue
     
     def path( self ): return None
+
+_sayInputsImport.complete()
 
 __all__ = [ 'InputSource' ]

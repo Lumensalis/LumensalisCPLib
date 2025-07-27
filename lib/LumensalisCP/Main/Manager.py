@@ -391,4 +391,4 @@ see http://lumensalis.com/ql/h2Scenes
 
     _renameIdentifiablesItems :dict[str,NamedLocalIdentifiable]
 
-_sayMainImport( "complete" )
+_sayMainImport.complete()

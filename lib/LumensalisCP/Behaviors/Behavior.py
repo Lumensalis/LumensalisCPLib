@@ -110,4 +110,4 @@ class Behavior(Debuggable):
         """Return True if the behavior is active."""
         return self.actor.currentBehavior is self
 
-_sayBehaviorImport( "complete" )
+_sayBehaviorImport.complete()

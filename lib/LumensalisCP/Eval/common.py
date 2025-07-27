@@ -4,6 +4,9 @@ from __future__ import annotations
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 # pyright: reportUnknownVariableType=false
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayEvalCommonImport = ImportProfiler( "Eval.Common" )
+
 from LumensalisCP.common import *
 from LumensalisCP.Identity.Local import *
 from LumensalisCP.Eval.Terms import *
@@ -18,8 +21,10 @@ from LumensalisCP.Eval.ExpressionTerm import ExpressionTerm, rising, EVAL_VALUE_
 from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
 from LumensalisCP.Lights.RGB import *
 
-#_EvaluatableTimeInSecondsConfigArg:TypeAlias = Evaluatable
 
+_sayEvalCommonImport.parsing()
+
+#_EvaluatableTimeInSecondsConfigArg:TypeAlias = Evaluatable
 
 TimeInSecondsEvalArg:TypeAlias = Union[TimeInSecondsConfigArg, EvaluatableT[TimeInSeconds]]
 TimeInSecondsEval:TypeAlias = Union[TimeInSeconds, float, EvaluatableT[TimeInSeconds]]
@@ -47,3 +52,5 @@ def toRGBEval(value:  RGBEvalArg) -> RGBEval:
     if isinstance(value, Evaluatable):
         return value # type: ignore
     return RGB.toRGB(value)
+
+_sayEvalCommonImport.complete()

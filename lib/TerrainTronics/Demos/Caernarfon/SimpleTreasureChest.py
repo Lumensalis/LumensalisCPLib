@@ -1,12 +1,11 @@
+
+
 # ALWAYS START WITH "from LumensalisCP.Simple import *"
 from LumensalisCP.Simple import * # http://lumensalis.com/ql/h2Start
-import ulab.numpy as np
-import synthio, array, math
-import synthio
 
 #############################################################################
-sayAtStartup( "start project" )
-main = ProjectManager() #  http://lumensalis.com/ql/h2Main
+sayAtStartup( "start project" ) #  http://lumensalis.com/ql/h2Main
+main = ProjectManager(profile=True, profileMemory=3) 
 
 # setup three different scenes : http://lumensalis.com/ql/h2Scenes
 sceneClosed, sceneOpen, sceneMoving = main.addScenes( 3 ) 
@@ -45,9 +44,8 @@ vcnl4040.proximity_integration_time = 2
 main.panel.monitor( lightSensor )
 main.panel.monitor( proximitySensor )
 
-
-sayAtStartup( "setup touch inputs" )
-# setup touch inputs : http://lumensalis.com/ql/h2Touch
+#############################################################################
+sayAtStartup( "setup touch inputs" ) # http://lumensalis.com/ql/h2Touch
 capTouch = main.adafruitFactory.addMPR121()
 leftStoneTouch, centerStoneTouch, rightStoneTouch= capTouch.addInputs( 1, 2, 4 )
 leftRimTouch, centerRimTouch, rightRimTouch= capTouch.addInputs( 5, 6, 7 )
@@ -58,6 +56,11 @@ lidClosedMag    = magInputs.addInput(1)
 lidOpenMag      = magInputs.addInput(2)
 
 #############################################################################
+sayAtStartup( "setup oscillators" ) # http://lumensalis.com/ql/h2Oscillators
+oscillator2 = Oscillator.Oscillator( low = 0.3, high = 2, frequency = 0.1 )
+oscillator = Oscillator.Oscillator(  low = 0, high = 10, frequency = oscillator2 )
+
+#############################################################################
 sayAtStartup( "setup synth" )
 
 audio = main.addI2SAudio(
@@ -66,49 +69,27 @@ audio = main.addI2SAudio(
     data=board.IO10,            # MAX98357 din:orange
 )
 
-if 1:
-    testEffect = audio.effects.makeEffect()
-    testEffect.enableDbgOut = True
+testEffect = audio.effects.makeEffect() # filterMode=BAND_PASS)
+testEffect.enableDbgOut = True
 
-    def touchNote() -> None:
-        if testEffect.playing:
-            print( "releasing note" )
-            testEffect.stop()
-        else:
-            print( "startNote" )
-            testEffect.start()
+def updateTestEffect(source:Any=None, context:Optional[EvaluationContext]=None) -> None:
+    #testEffect.filter.frequency = oscillator.value * 2000 + 100
+    testEffect.note.bend = oscillator.getValue(context) /10
 
-    fireOnRising( leftRimTouch, do( touchNote ) )
-else:
-    sample_rate = 22050        
-    #synth = synthio.Synthesizer(sample_rate=44100)
-    synth = synthio.Synthesizer(sample_rate=44100)
-    audio.audio.play(synth)
+oscillator.onChange( updateTestEffect  )
 
-    waveformSize = 1024 #  sample_rate
-    sine_wave = array.array("h", [0] * waveformSize)
-    for i in range(waveformSize):
-        sine_wave[i] = int(32767 * math.sin(2 * math.pi * i / waveformSize) )
+def touchNote() -> None:
+    if testEffect.playing:
+        print( "releasing note" )
+        testEffect.stop()
+    else:
+        print( "startNote" )
+        testEffect.start()
 
-    print(f"Created sine_wave with size {waveformSize} : {repr(sine_wave):.80}...")
-    note = synthio.Note(frequency=440, waveform=sine_wave)
-    note_state = dict( is_playing = False )
-
-
-    def touchNote() -> None:
-        if note_state['is_playing']:
-            print( "releasing note" )
-            synth.release(note)
-        else:
-            print( "startNote" )
-            synth.press(note)  # Middle C
-        note_state['is_playing'] = not note_state['is_playing']
-
-    fireOnRising( leftRimTouch, do( touchNote ) )
+fireOnRising( leftRimTouch, do( touchNote ) )
 
 main.panel.monitor( leftRimTouch )
 
-    
 #############################################################################
 sayAtStartup( "setup lid" )
 # setup lid  : http://lumensalis.com/ql/h2ServoDoor
@@ -140,10 +121,6 @@ ir.onCode( "NEXT", do( main.scenes.switchToNextIn, ["sceneClosed","sceneOpening"
 fireOnRising( rightStoneTouch, lid.open )
 fireOnRising( rightRimTouch, lid.close )
 
-#############################################################################
-# http://lumensalis.com/ql/h2Oscillators
-oscillator2 = Oscillator.Oscillator( low = 0.3, high = 2, frequency = 0.1 )
-oscillator = Oscillator.Oscillator(  low = 0, high = 10, frequency = oscillator2 )
 
 #############################################################################
 # setup LED patterns : http://lumensalis.com/ql/h2Patterns
@@ -170,11 +147,7 @@ sceneOpen.addPatterns( frontLidBlink(onValue="GREEN"), aglSpinner, rainbowLeft, 
 sceneClosed.addPatterns( frontLidBlink(onValue="RED"), closedSpin, centerPattern, rainbowLeft, rainbowRight  )
 sceneMoving.addPatterns( frontLidBlink(onValue="YELLOW"), centerSpin, aglSpinner )
 
-
-
-
 #############################################################################
 # Wrap up and launch : http://lumensalis.com/ql/h2Launch
 sayAtStartup( "launch ..." )
-
 main.launchProject( globals() )

@@ -1,6 +1,10 @@
 
 from __future__ import annotations
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayEvalEvaluationContextImport = ImportProfiler( "Eval.EvaluationContext" )
+
+
 from LumensalisCP.Eval._common import *
 from LumensalisCP.Eval.Evaluatable import Evaluatable
 
@@ -9,6 +13,9 @@ if TYPE_CHECKING:
     from LumensalisCP.Eval.ExpressionTerm import ExpressionTerm
     #from LumensalisCP.Inputs import InputSource
     
+
+_sayEvalEvaluationContextImport.parsing()
+
 _simpleValueTypes = set([int,bool,float])
     
 class EvaluationContext(UpdateContext):    
@@ -40,3 +47,5 @@ class EvaluationContext(UpdateContext):
         elif callable(value):
             value = self.valueOf( value() )
         return value        
+
+_sayEvalEvaluationContextImport.complete()

@@ -32,4 +32,4 @@ from LumensalisCP.Main.Manager import MainManager
 _sayDemoCommonImport( "onIRCode" )
 from TerrainTronics.Caernarfon.Castle import onIRCode
 
-_sayDemoCommonImport( "complete" )
+_sayDemoCommonImport.complete()

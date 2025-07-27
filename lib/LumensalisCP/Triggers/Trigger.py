@@ -109,4 +109,4 @@ class Trigger(Debuggable):
         return on2        
 
 #############################################################################
-__triggersSayImport( "complete." )
+__triggersSayImport.complete()

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+
 from LumensalisCP.Main.PreMainConfig import ImportProfiler
 _ioContextImport = ImportProfiler( "IOContext" )
 
@@ -27,4 +28,4 @@ if TYPE_CHECKING:
     from LumensalisCP.Eval.Evaluatable import evaluate, Evaluatable
     from LumensalisCP.Main.Updates import UpdateContext
 
-_ioContextImport( "complete.")
+_ioContextImport.complete()

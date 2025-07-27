@@ -58,6 +58,11 @@ class GCManager(object):
     main:MainManager # type: ignore   # pylint: disable=no-member 
     
     def __init__(self):
+        self.PROFILE_MEMORY:bool = False
+        self.PROFILE_MEMORY_NESTED:bool = False
+        self.PROFILE_MEMORY_ENTRIES:bool = False
+        self.SHOW_ZERO_ALLOC_ENTRIES:bool = True
+    
         self.priorCycle = 0
         self.priorMs = 0
         self.prior_mem_alloc = 0
@@ -75,10 +80,7 @@ class GCManager(object):
         
         self.verboseCollect = True
         self.freeAfterLastCollection = gc.mem_free() # pylint: disable=no-member
-        self.PROFILE_MEMORY = False
-        self.PROFILE_MEMORY_NESTED = False
-        self.PROFILE_MEMORY_ENTRIES = False
-        self.SHOW_ZERO_ALLOC_ENTRIES = True
+
         
     def _setMain( self, main:MainManager ):
         self.main = main
@@ -203,11 +205,23 @@ def sayAtStartup(desc:str) -> None:
 class ImportProfiler(object):
     """ A simple profiler for imports, to help identify slow imports """
     
+    NESTING:list[ImportProfiler] = []
     def __init__(self, name:str ) -> None:
         self.name = name
-        self( "start parsing")
+        self.path = "->".join(  [i.name for i in ImportProfiler.NESTING] )
+        
+        self( "import starting")
+        ImportProfiler.NESTING.append( self )
         
     def __call__(self, desc:str) -> None:
-        sayAtStartup( f"IMPORT {self.name} : {desc}" )
+        sayAtStartup( f"IMPORT {self.path} | {self.name} : {desc}" )
+
+    def parsing(self) -> None:
+        self( "parsing" )
+
+    def complete(self) -> None:
+        self( "import complete" )
+        end = ImportProfiler.NESTING.pop()
+        assert end is self, f"ImportProfiler nesting mismatch: {end.name} != {self.name}"
 
 __all__ = [ 'pmc_gcManager', 'pmc_mainLoopControl', 'printElapsed', 'sayAtStartup','ImportProfiler' ]
