@@ -28,6 +28,17 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm):
     def __repr__( self ):
         return safeFmt( "%s:%s = %r", self.__class__.__name__, self.name, self.value )
     
+    @property
+    def latestUpdateIndex(self) -> int:
+        return self.__latestUpdateIndex
+    @property
+    def latestChangeIndex(self) -> int:
+        return self.__latestChangeIndex
+    @property
+    def latestValue(self) -> Any:
+        return self.__latestValue
+
+
     def expressionStrParts(self) -> Generator[str]:
         yield self.__class__.__name__ 
         yield ':'
@@ -72,6 +83,7 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm):
                 
         self.__latestValue = val
         self.__latestChangeIndex = context.updateIndex
+        self.__callOnChanged(context)
 
         return True
 

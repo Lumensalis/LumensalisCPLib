@@ -33,7 +33,7 @@ class NliInterface:
     
 
 #############################################################################    
-class NliContainerBaseMixin:
+class NliContainerBaseMixin(NliInterface):
     @property
     def containerName(self) -> str: ...
     @property
@@ -128,7 +128,7 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
 #############################################################################
 
 
-class NliContainerMixin( NliInterface, NliContainerBaseMixin ):
+class NliContainerMixin( NliContainerBaseMixin ):
     @property
     def containerName(self) -> str: ...
     @property
@@ -174,6 +174,9 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
     def __next__(self) -> Generator[_NLIListT]:
         for item in self.data:
             yield item
+
+    def iter(self) -> Iterable[_NLIListT]:
+        return iter(self.data)
     
     def keys(self) -> list[str]:
         return [v.name for v in self] # type: ignore[return-value]

@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayDemoCommonImport = ImportProfiler( "Motion" )
+
 from LumensalisCP.Behaviors._common import *
 from LumensalisCP.Behaviors.Behavior import Behavior, Actor
 from LumensalisCP.Gadgets.Servos import LocalServo

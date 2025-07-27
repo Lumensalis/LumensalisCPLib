@@ -1,14 +1,24 @@
+from __future__ import annotations
 #from LumensalisCP.CPTyping import *
 #from LumensalisCP.common import Debuggable
 #from LumensalisCP.Inputs import InputSource
+
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+
+__triggersSayImport = ImportProfiler("Triggers.Trigger" )
+    
+__triggersSayImport( "IOContext... " )
 from LumensalisCP.IOContext import *
+__triggersSayImport( "Eval.Expressions... " )
 from LumensalisCP.Eval.Expressions import  Expression, ExpressionTerm #, UpdateContext
 
 from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg # type: ignore
 
 #############################################################################
+__triggersSayImport( "parsing... " )
 
-TriggerActionType:TypeAlias = Callable[..., Any] | KWCallbackArg
+if TYPE_CHECKING:
+    TriggerActionType:TypeAlias = Callable[..., Any] | KWCallbackArg
 
 class Trigger(Debuggable):
     """Triggers represent a set of actions that can be "fired" upon a condition being met
@@ -99,3 +109,4 @@ class Trigger(Debuggable):
         return on2        
 
 #############################################################################
+__triggersSayImport( "complete." )

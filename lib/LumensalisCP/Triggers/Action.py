@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayActionImport = ImportProfiler( "Action" )
+
 from LumensalisCP.Debug import Debuggable
+
+_sayActionImport( "IOContext" )
 from LumensalisCP.IOContext import *
 
+_sayActionImport( "Behavior" )
 from LumensalisCP.Behaviors.Behavior import Behavior, Actor  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:
@@ -11,8 +17,9 @@ if TYPE_CHECKING:
     ActionCBArg:TypeAlias = Union[Callable[...,Any],'Action',KWCallback]
     FireCondition:TypeAlias = Union[bool,Callable[...,bool],Evaluatable[bool]]
 
+_sayActionImport( "parsing..." )
 
-ActionDoArg:TypeAlias = Union[Callable[...,Any],KWCallback,Behavior]
+ActionDoArg:TypeAlias = Union[Callable[...,Any],KWCallback,Behavior,'Action']
 
 class Action( Debuggable ):
     """ Base class for Actions 
@@ -113,3 +120,5 @@ class ActionUnless( Action ):
             unless = evaluate(self._condition,context ) # type: ignore
             if not unless:
                 return self._action.fire( context )
+
+_sayActionImport( "complete." )

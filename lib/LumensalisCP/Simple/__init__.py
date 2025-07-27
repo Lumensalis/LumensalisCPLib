@@ -14,16 +14,82 @@ more at http://lumensalis.com/ql/h2Start
 
 from __future__ import annotations
 import rainbowio
-
+import gc
 # pyright: ignore[reportUnusedImport]
+# pylint: disable=unused-import,import-error,unused-argument 
+# pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 
-from LumensalisCP.Demo.DemoCommon import *
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayImport = ImportProfiler( "Simple" )
+
+def _importCollect() -> None:
+    _sayImport( "collecting garbage..." )
+    gc.collect()
+    
+_sayImport( "RGB")
 from LumensalisCP.Lights.RGB import *
-from LumensalisCP.Main.Manager import MainManager
-from LumensalisCP.Triggers.Action import Action
+
+_sayImport( "PreMainConfig")
 from LumensalisCP.Main.PreMainConfig import *
+
+_sayImport( "Identity")
+import LumensalisCP.Identity.Local
+
+_sayImport( "Updates")
+import LumensalisCP.Main.Updates
+
+_sayImport( "kwCallback")
+import LumensalisCP.util.kwCallback
+
+_sayImport( "Eval")
+import LumensalisCP.Eval
+
+_sayImport( "EvaluationContext")
+import LumensalisCP.Eval.EvaluationContext 
+
+_sayImport( "ExpressionTerm")
+import LumensalisCP.Eval.ExpressionTerm 
+
+_importCollect()
+
+_sayImport( "Eval.Terms")
+import LumensalisCP.Eval.Terms 
+
+_sayImport( "Eval.Evaluatable")
+import LumensalisCP.Eval.Evaluatable 
+
+_sayImport( "Eval.common")
+import LumensalisCP.Eval.common
+
+_sayImport( "Inputs")
+import LumensalisCP.Inputs
+
+_sayImport( "Outputs")
+import LumensalisCP.Outputs
+
+_importCollect()
+
+_sayImport( "IOContext")
+import LumensalisCP.IOContext
+
+_importCollect()
+
+_sayImport( "Triggers")
+import LumensalisCP.Triggers 
+
+_sayImport( "Action")
+from LumensalisCP.Triggers.Action import Action
+
+_sayImport( "Behaviors")
 from LumensalisCP.Behaviors.Behavior import Behavior, Actor 
 
+
+_sayImport( "MainManager" )
+from LumensalisCP.Main.Manager import MainManager
+
+
+_sayImport( "DemoCommon")
+from LumensalisCP.Demo.DemoCommon import *
 
 def ProjectManager( ) -> MainManager:
     """ return the MainManager for a new simple project 
@@ -37,6 +103,7 @@ main.launchProject( globals() )
 ```
 see http://lumensalis.com/ql/h2Main
 """
+    _sayImport( "ProjectManager - getting MainManager" )
     return  MainManager.initOrGetManager()
 
 def getColor( v:AnyRGBValue ) -> RGB:

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from LumensalisCP.IOContext import *
 
 from LumensalisCP.Main.Dependents import MainChild
@@ -85,7 +87,6 @@ class IVT_KWDS(TypedDict, Generic[CVT]):
     max: NotRequired[CVT]
     name: NotRequired[str]
     description: NotRequired[str]
-    
 
 class PanelMonitor( NamedLocalIdentifiable, Generic[CVT]   ):
     """ combination of OutputTarget and InputSource
@@ -105,9 +106,7 @@ class PanelMonitor( NamedLocalIdentifiable, Generic[CVT]   ):
         self._min = kwds.pop('min', None)
         self._max = kwds.pop('max', None)
         self.description = kwds.pop('description', '')
-        
 
-    
 class PanelPipe( InputSource,  Generic[CVT], OutputTarget ):
     """ combination of OutputTarget and InputSource
 
@@ -148,7 +147,15 @@ class ControlPanel( MainChild ):
 
         self._controlVariables:NliList[PanelControl[Any,Any]] = NliList(name='controls',parent=self)
         self._monitored:NliList[PanelMonitor[Any]] = NliList(name='monitored',parent=self)
-        
+
+    @property    
+    def monitored(self) -> NliList[PanelMonitor[Any]]:
+        return self._monitored
+    
+    @property    
+    def controls(self) -> NliList[PanelControl[Any, Any]]:
+        return self._controlVariables
+
     def _addControl( self,
                 kind:Optional[str|type]=None,
                 kindMatch: Optional[type]=None,
@@ -163,8 +170,9 @@ class ControlPanel( MainChild ):
             convertor=convertor,
             **kwds )
         variable.nliSetContainer(self._controlVariables)
-        self.infoOut( f"added ControlVariable {variable}")
+        self.dbgOut( f"added ControlVariable {variable}")
         return variable
+
 
     #########################################################################
     def addZeroToOne( self, **kwds:Unpack[CVT_KWDS[float,ZeroToOne]] ) -> PanelControl[float,ZeroToOne]:
@@ -206,7 +214,7 @@ class ControlPanel( MainChild ):
         variable:PanelMonitor[Any] 
         variable = PanelMonitor( input, **kwds )
         variable.nliSetContainer(self._monitored)
-        self.infoOut( f"added Monitor {variable}")
+        self.dbgOut( f"added Monitor {variable} ({type(variable)})")
         return variable
     
     #########################################################################

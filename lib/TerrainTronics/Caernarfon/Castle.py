@@ -1,13 +1,22 @@
 from __future__ import annotations
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayImport = ImportProfiler( "CaernarfonCastle" )
+
+
 from LumensalisCP.IOContext import *
 from LumensalisCP.commonCP import *
+_sayImport( "NeoPixels" )
 from LumensalisCP.Lights.NeoPixels import NeoPixelSource, NeoPixelSourceKwds
 from LumensalisCP.Gadgets.IrRemote import LCP_IRrecv, onIRCode # type: ignore
+_sayImport( "LocalServo" )
 from LumensalisCP.Gadgets.Servos import LocalServo
 
 from TerrainTronics.D1MiniBoardBase import D1MiniBoardBase
 
+_sayImport( "parsing" )
+
+#############################################################################
 class CaernarfonCastleKWDS(TypedDict):
         neoPixelCount: NotRequired[int]
         servos: NotRequired[int]

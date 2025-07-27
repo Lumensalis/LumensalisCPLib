@@ -5,31 +5,33 @@ from LumensalisCP.commonCPWifi import *
 from LumensalisCP.pyCp.importlib import reload
 from LumensalisCP.HTTP import BasicServer
 
+import LumensalisCP.HTTP.ControlVarsRL
+
 #from adafruit_httpserver import DELETE, GET, POST, PUT, JSONResponse, Request, Response  # pyright: ignore[reportMissingImports|reportAttributeAccessIssue]
 from adafruit_httpserver import DELETE, GET, POST, PUT, JSONResponse, Request, Response  # pyright: ignore
 
-_v2jSimpleTypes = { int, str, bool, float,type(None) }
-def valToJson( val ):
+_v2jSimpleTypes:set[type] = { int, str, bool, float,type(None) }
+
+def valToJson( val:Any ) -> Any:
     if type(val) in _v2jSimpleTypes: return val
     if callable(val):
         try:
             return valToJson( val() )
         except: pass
     if isinstance( val, dict ):
-        return dict( [ (tag, valToJson(v2)) for tag,v2 in val.items() ])
+        return dict( [ (tag, valToJson(v2)) for tag,v2 in val.items() ]) # type:ignore[return-value]
 
     if isinstance( val, list ):
-        return [ valToJson(v2) for v2 in val ]
+        return [ valToJson(v2) for v2 in val ] # type:ignore[return-value]
     return repr(val)
 
-def attrsToDict( obj, attrList, **kwds ):
-    rv = dict(kwds)
+def attrsToDict( obj:Any, attrList:list[str], **kwds:StrAnyDict ) -> StrAnyDict:
+    rv:StrAnyDict = dict(kwds)
     for attr in attrList:
         rv[attr] = valToJson( getattr(obj,attr,None) )
     return rv
 
 #############################################################################
-
 
 def ExceptionResponse( request: Request, inst:Exception, message:Optional[str]=None ) -> Response:
     return JSONResponse( request,
@@ -42,19 +44,23 @@ def ExceptionResponse( request: Request, inst:Exception, message:Optional[str]=N
 #############################################################################
 def inputSourceSnapshot( input:InputSource ) -> dict[str,Any]:
     return dict(
-        value= input.getValue(),
-        lc=input.__latestChangeIndex,
-        lu=input.__latestUpdateIndex,
+        value= valToJson( input.getValue() ),
+        lc=input.latestChangeIndex,
+        lu=input.latestUpdateIndex,
         localId=input.localId,
         cls = input.__class__.__name__,
     )
 
-def getStatusInfo(self:BasicServer.BasicServer, request:Request ):
+def getStatusInfo(self:BasicServer.BasicServer, request:Request ) -> dict[str, Any]:
     main = self.main
     context = main.getContext()
-    monitoredInfo = [ (i.name, inputSourceSnapshot(i)) for i in main._monitored]
+    monitoredInfo = [ 
+        #(i.name, inputSourceSnapshot(i)) for i in main._monitored
+        (mv.source.name, inputSourceSnapshot(mv.source)) for mv in main.panel.monitored.values()
+    ]
+
     monitored = dict( monitoredInfo  )
-    rv =  {
+    rv:StrAnyDict =  {
             'supervisor': {
                 'runtime': attrsToDict( supervisor.runtime, ['autoreload','run_reason'] ),
                 'ticks_ms': supervisor.ticks_ms()
@@ -67,9 +73,10 @@ def getStatusInfo(self:BasicServer.BasicServer, request:Request ):
             'main': attrsToDict( main, ['cycle','when','newNow'],
                 context = attrsToDict( context, ['updateIndex','when'] ),
                 scenes = attrsToDict( main.scenes,["currentScenes"] ),
-                nextWait = main._nextWait,
-                priorWhen = main.__priorSleepWhen,
-                latestSleepDuration = main.__latestSleepDuration
+                nextWait = main._nextWait, # type: ignore
+                priorWhen = main.__priorSleepWhen, # type: ignore
+                #priorSleepDuration = main.__priorSleepDuration, # type: ignore
+                latestSleepDuration = main.__latestSleepDuration # type: ignore
             ),
             'monitored': monitored
         }
@@ -81,15 +88,15 @@ class QueryConfig(object):
     includeName:bool = False
     includeId:bool = True
     includeType:bool = True
-    
-def getQueryResult( target:NliInterface, path:list[str], qConfig:Optional[QueryConfig]=None ):
+
+def getQueryResult( target:NliInterface|NliContainerBaseMixin, path:list[str], qConfig:Optional[QueryConfig]=None ) -> Any: 
     rv = None
     if qConfig is None: qConfig=QueryConfig()
     if len(path):
         assert isinstance(target,NamedLocalIdentifiable)
         child = target.nliFind(path[0])
         if child is None: return { "missing child" : path[0]}
-        assert isinstance(child,NliContainerMixin)
+        assert isinstance(child,NliContainerBaseMixin), f"child {path[0]} is not a NliContainerMixinBaseMixin, but {type(child)}"
         rv = { child.containerName : getQueryResult( child, path[1:], qConfig )  }
         if not qConfig.fillParents: return rv
     else: 
@@ -102,9 +109,10 @@ def getQueryResult( target:NliInterface, path:list[str], qConfig:Optional[QueryC
     try:
         if len(path) == 0 and qConfig.recurseChildren is None: qConfig.recurseChildren = True
         localRecurseChildren = qConfig.recurseChildren # and not len(path)
-        containers = target.nliGetContainers() 
+        containers = target.nliGetContainers() #
         if containers is not None and len( items:=list(containers)) > 0: 
             if localRecurseChildren:
+                c:NliContainerBaseMixin
                 for c in items:
                     cv = getQueryResult(c,[],qConfig=qConfig)
                     if len(cv): 
@@ -126,7 +134,7 @@ def getQueryResult( target:NliInterface, path:list[str], qConfig:Optional[QueryC
             'message' : str(inst),
             'traceback' : traceback.format_exception(inst) ,
         }
-        rv["kind"] = type(target).__name__
+        rv["kind"] = target.__class__.__name__ # type:ignore[reportUnknownMemberType]
     finally:
          qConfig.recurseChildren = oldRecurseChildren
          
@@ -151,16 +159,17 @@ def BSR_query(self:BasicServer.BasicServer, request:Request, name:str):
     return JSONResponse(request, {"message": "Something went wrong"})
 
 
-def _reloadAll( ):
+def _reloadAll(self:BasicServer.BasicServer ):
     from LumensalisCP.Main import ManagerRL
-    from LumensalisCP.HTTP import BasicServerRL            
-    modules = [ ManagerRL, BasicServerRL ]
+    from LumensalisCP.HTTP import BasicServerRL
+    from LumensalisCP.HTTP import ControlVarsRL
+    modules = [ ManagerRL, BasicServerRL, ControlVarsRL ]
     for m in modules:
         reload( m )
+    self.cvHelper = None
     return modules
 
-    
-def BSR_cmd(self:BasicServer.BasicServer, request:Request, cmd:Optional[str]=None, **kwds ):
+def BSR_cmd(self:BasicServer.BasicServer, request:Request, cmd:Optional[str]=None, **kwds:StrAnyDict ) -> JSONResponse | Response:
     """
     """
     
@@ -184,7 +193,7 @@ def BSR_cmd(self:BasicServer.BasicServer, request:Request, cmd:Optional[str]=Non
             return JSONResponse(request, { "action":"resetting"} )
         
         if cmd == "reloadAll":
-            modules = _reloadAll()
+            modules = _reloadAll(self)
             
             return JSONResponse(request, {
                     "action":"reloading",
@@ -211,9 +220,9 @@ def BSR_sak(self:BasicServer.BasicServer, request:Request):
 
         # Upload or update objects
         if request.method in {POST, PUT}:
-            requestJson = request.json()
-            if 'autoreload' in requestJson:
-                autoreload = requestJson['autoreload']
+            requestJson = request.json() # type:ignore[reportAttributeAccessIssue]
+            if requestJson is not None and 'autoreload' in requestJson:
+                autoreload:bool = requestJson['autoreload'] # type:ignore[reportAttributeAccessIssue]
                 self.infoOut( "setting autoreload to %r", autoreload )
                 supervisor.runtime.autoreload = autoreload
 
@@ -222,23 +231,60 @@ def BSR_sak(self:BasicServer.BasicServer, request:Request):
     except Exception as inst:
         return ExceptionResponse(request, inst, "sak failed" )
     return JSONResponse(request, {"message": "Something went wrong"})
+
+
+
+def handle_websocket_request(self:BasicServer.BasicServer):
+    if self.websocket is None or self.websocket.closed:
+        return
     
+    data = None
+    try:
+        data = self.websocket.receive(fail_silently=False)
+    except Exception as inst:
+        self.SHOW_EXCEPTION( inst, "error receiving websocket data %r", data )
+        self.websocket.close()
+        self.websocket = None
+        return
+    if data is None:
+        return
+    try:
+        # print( f'websocket data = {data}' )
+        jdata = json.loads(data)
+        self.main.handleWsChanges(jdata)
+    except Exception as inst:
+        self.SHOW_EXCEPTION( inst, "error on incoming websocket data %r", data )
+
+def updateSocketClient(self:BasicServer.BasicServer, useStringIO:bool=False )->None:
+    if self.websocket is None or self.websocket.closed:
+        return
     
-def BSR_client(self:BasicServer.BasicServer, request: Request):
-    
-    print( f"get /client with {[v.name for v in self.monitoredVariables]}")
-    vb = self.cvHelper.varBlocks(self.monitoredVariables)
-    parts = [
-        self.HTML_TEMPLATE_A,
-        vb['htmlParts'],
-        self.HTML_TEMPLATE_B,
-        vb['jsSelectors'],
-        
-        vb['wsReceived'],
-        
-        self.HTML_TEMPLATE_Z,
-    ]
-    html = "\n".join(parts)
-    
-    return Response(request, html, content_type="text/html")
-    
+    payload = None
+    jsonBuffer =self._ws_jsonBuffer # type:ignore[reportAttributeAccessIssue]
+     
+    checked = 0
+    for mv in self.main.panel.monitored.values():
+        v = mv.source
+        currentValue = v.getValue()
+        assert currentValue is not None
+        checked += 1
+        if currentValue != self.priorMonitoredValue.get(v.name,None):
+            if payload is None: payload = {}
+            if self.enableDbgOut: self.dbgOut( "updateSocketClient %s changed to %r", v.name, currentValue )
+            if type(currentValue) not in _v2jSimpleTypes:
+                currentValue = valToJson(currentValue)
+
+            payload[v.name] = currentValue
+            self.priorMonitoredValue[v.name] = currentValue
+    if self.enableDbgOut: self.infoOut( "updateSocketClient checked %d variables" % checked )
+
+    if payload is not None:
+        if useStringIO:
+            jsonBuffer.seek(0) # type:ignore[reportAttributeAccessIssue]
+            jsonBuffer.truncate() # type:ignore[reportAttributeAccessIssue]
+            json.dump( payload, jsonBuffer ) # type:ignore[reportAttributeAccessIssue]
+            message = jsonBuffer.getvalue() # type:ignore[reportAttributeAccessIssue]
+        else:
+            message =json.dumps(payload)
+        self.websocket.send_message(message, fail_silently=True)
+        if self.enableDbgOut: self.dbgOut( "wrote WS update : %r", message ) 

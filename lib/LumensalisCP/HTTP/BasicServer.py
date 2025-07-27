@@ -4,7 +4,8 @@
 # SPDX-License-Identifier: Unlicense
 
 from __future__ import annotations
-from asyncio import create_task, gather, run, sleep as async_sleep, Task
+from asyncio import create_task, sleep as async_sleep, Task
+
 from adafruit_httpserver.methods import POST, PUT, GET   # type: ignore # pylint: disable=import-error,no-name-in-module
 from adafruit_httpserver import Server, Request, Response, Websocket, Route, JSONResponse  # pylint: disable=import-error,no-name-in-module # type: ignore
 
@@ -12,15 +13,19 @@ from LumensalisCP.IOContext import *
 
 from LumensalisCP.commonCPWifi import *
 
-from LumensalisCP.HTTP.ControlVars import ControlValueTemplateHelper
 
 from LumensalisCP.pyCp.importlib import reload
 from LumensalisCP.HTTP import BasicServerRL
+from LumensalisCP.HTTP import ControlVarsRL
+
 
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
 
 class BasicServer(Server,Debuggable):
     
+    # type:ignore[unused-function]
+    # type: ignore[reportUntypedFunctionDecorator,reportUnusedFunction]
+
     def __init__( self, main:MainManager ):
         
         assert main is not None
@@ -30,12 +35,12 @@ class BasicServer(Server,Debuggable):
         Debuggable.__init__(self)
 
         # TODO: make actual client instance for multiple connections...???
-        self.websocket: Websocket = None
-        self.cvHelper = ControlValueTemplateHelper( main=main )
+        self.websocket: Websocket|None = None
+        self.cvHelper:ControlVarsRL.PanelControlTemplateHelper|None = ControlVarsRL.PanelControlTemplateHelper( main=main )
 
         self.main = main
         self.monitoredVariables:List[InputSource] = []
-        self.priorMonitoredValue = {}
+        self.priorMonitoredValue:dict[str,Any] = {}
         self._setupRoutes()
         
         TTCP_HOSTNAME = main.config.options.get('TTCP_HOSTNAME',None)
@@ -48,7 +53,7 @@ class BasicServer(Server,Debuggable):
             self.mdns_server.instance_name = TTCP_HOSTNAME
             self.mdns_server.advertise_service(service_type="_http", protocol="_tcp", port=5000)
         
-    def __str__(self):
+    def __str__(self) -> str:
         port = f":{self.port}"
         url = f"http://{self.host}{port}"
         return f"{self.__class__.__name__}( {url} addr={wifi.radio.ipv4_address} )"
@@ -61,61 +66,33 @@ class BasicServer(Server,Debuggable):
         # TODO: handle additions after server startup better
         self.monitoredVariables.append(v)
 
-    HTML_TEMPLATE_A = """
-<html lang="en">
-    <head>
-        <title>Websocket Client</title>
-    </head>
-    <body>
-"""
 
-    HTML_TEMPLATE_B = """
-        <script>
-            console.log('client on ' + location.host );
-
-            let ws = new WebSocket('ws://' + location.host + '/connect-websocket');
-            ws.onopen = () => console.log('WebSocket connection opened');
-            ws.onclose = () => console.log('WebSocket connection closed');
-"""
-#            ws.onerror = error => cpuTemp.textContent = error;
-
-    HTML_TEMPLATE_Z = """            
-            ws.onmessage = event => handleWSMessage( event );
-
-            function debounce(callback, delay = 1000) {
-                let timeout
-                return (...args) => {
-                    clearTimeout(timeout)
-                    timeout = setTimeout(() => {
-                    callback(...args)
-                  }, delay)
-                }
-            }
-            
-        </script>
-    </body>
-</html>
-"""
-
-    def addReloadableRouteHandler( self, name, methods=[GET,POST,PUT], params:Optional[str]=None ):
+    def addReloadableRouteHandler( self, name:str, 
+                        methods:List[str]=[GET,POST,PUT], 
+                        params:Optional[str]=None 
+                    ) -> None:
         functionName = f'BSR_{name}'
         
-        def handler(request: Request,reloading=False,**kwds):
+        def handler(request: Request,reloading:bool=False,**kwds:StrAnyDict):
             try:
                 c = getattr( BasicServerRL, functionName, None )
+                if c is None:
+                    c = getattr( ControlVarsRL, functionName, None )
+
                 ensure( c is not None, "missing reloadable %r", functionName )
                 if self.enableDbgOut: self.dbgOut( f"handling reloadable route {name} with {functionName}, reloading={reloading} params={params}, kwds={kwds}")
-                rv =c(self,request,**kwds)
+                rv =c(self,request,**kwds) # type:ignore[call-arg]
                 if rv is not None: return rv
                 return JSONResponse(request, {"unhandled request": name } )
             except Exception as inst:
                 return BasicServerRL.ExceptionResponse(request, inst, "route exception" )
 
-        def reloadingHandler(request: Request,**kwds):
+        def reloadingHandler(request: Request,**kwds:StrAnyDict):
             if supervisor.runtime.autoreload:
                 self.infoOut( "/%s request disabling autoreload", name )
                 supervisor.runtime.autoreload = False
             self.infoOut( "reloading BasicServerRL" )
+            reload( ControlVarsRL )
             reload( BasicServerRL )
             return handler(request,reloading=True,**kwds)
         
@@ -140,8 +117,8 @@ class BasicServer(Server,Debuggable):
         self.addReloadableRouteHandler( "query", params="<name>" )
         self.addReloadableRouteHandler( "cmd", [PUT,POST], params="<cmd>"  )
 
-        @self.route("/connect-websocket", GET)
-        def connect_client(request: Request):
+        @self.route("/connect-websocket", GET) # type: ignore[reportUntypedFunctionDecorator,reportUnusedFunction]
+        def connect_client(request: Request) -> Websocket: # pyright: ignore[reportUntypedFunctionDecorator,reportUnusedFunction]
             #global websocket  # pylint: disable=global-statement
 
             if self.websocket is not None:
@@ -149,12 +126,13 @@ class BasicServer(Server,Debuggable):
                 self.websocket.close()  # Close any existing connection
                 
 
-            self.websocket = Websocket(request)
+            self.websocket = Websocket(request, buffer_size=8192)
             self.priorMonitoredValue = {}
             return self.websocket
         
-        @self.route("/")
-        def base(request: Request):
+        @self.route("/") # type:ignore[override]
+        def base(request: Request) -> Response: # type:ignore[reportUntypedFunctionDecorator,reportUnusedFunction]
+
             """
             Serve a default static plain text message.
             """
@@ -166,12 +144,16 @@ class BasicServer(Server,Debuggable):
             
             while True:
                 #print( "handle_http_requests poll..")
-                pool_result = self.poll()
-                if pool_result == adafruit_httpserver.REQUEST_HANDLED_RESPONSE_SENT:
-                    # Do something only after handling a request
-                    self.infoOut( "handle_http_requests handled request")
-                    pass
-                
+                try:
+                    pool_result = self.poll()
+                    if pool_result == adafruit_httpserver.REQUEST_HANDLED_RESPONSE_SENT:
+                        # Do something only after handling a request
+                        self.infoOut( "handle_http_requests handled request")
+                        pass
+
+                except Exception as error:
+                    self.SHOW_EXCEPTION( error, 'handle_http_requests error' )
+                    await async_sleep(0.25)
                 #print( "handle_http_requests sleep..")
                 await async_sleep(0.05)
     
@@ -185,14 +167,7 @@ class BasicServer(Server,Debuggable):
 
             while True:
                 if self.websocket is not None:
-                    if (data := self.websocket.receive(fail_silently=True)) is not None:
-                        
-                        try:
-                            # print( f'websocket data = {data}' )
-                            jdata = json.loads(data)
-                            self.main.handleWsChanges(jdata)
-                        except Exception as inst:
-                            self.SHOW_EXCEPTION( inst, "error on incoming websocket data %r", data )
+                    BasicServerRL.handle_websocket_request(self)
 
                 await async_sleep(0.05)
         except Exception  as error:
@@ -203,24 +178,13 @@ class BasicServer(Server,Debuggable):
         
         try:
             useStringIO = False
-            jsonBuffer = io.StringIO(8192) if useStringIO else None
+            self._ws_jsonBuffer:io.StringIO|None = io.StringIO(8192) if useStringIO else None # type:ignore[assignment]
             while True:
-                if self.websocket is not None:
-                    payload = {}
-                    for v in self.monitoredVariables:
-                        currentValue = v.getValue()
-                        assert currentValue is not None
-                        if currentValue != self.priorMonitoredValue.get(v.name,None):
-                            payload[v.name] = currentValue
-                            self.priorMonitoredValue[v.name] = currentValue
-                    if len(payload):
-                        if useStringIO:
-                            jsonBuffer.seek(0)
-                            jsonBuffer.truncate()
-                            json.dump( payload, jsonBuffer )
-                        message = jsonBuffer.getvalue() if useStringIO else json.dumps(payload)
-                        self.websocket.send_message(message, fail_silently=True)
-                        if self.enableDbgOut: self.dbgOut( "wrote WS update : %r", message )
+                try:
+                    BasicServerRL.updateSocketClient(self, useStringIO)
+                except Exception as inst:
+                    self.SHOW_EXCEPTION( inst, "error on sending websocket messages" )
+
                 await async_sleep(0.5)
         except Exception  as error:
             SHOW_EXCEPTION( error, 'send_websocket_messages error' )

@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 import math
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_ioContextImport = ImportProfiler( "IOContext" )
+
 from LumensalisCP.common import *
 from LumensalisCP.Eval.common import *
 from LumensalisCP.common import TYPE_CHECKING
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
+
+_ioContextImport( "Inputs")
 from LumensalisCP.Inputs import InputSource
 from LumensalisCP.Outputs import OutputTarget, NamedOutputTarget
 from LumensalisCP.Eval.Expressions  import Expression
@@ -21,3 +26,5 @@ if TYPE_CHECKING:
     from LumensalisCP.Eval.EvaluationContext import EvaluationContext
     from LumensalisCP.Eval.Evaluatable import evaluate, Evaluatable
     from LumensalisCP.Main.Updates import UpdateContext
+
+_ioContextImport( "complete.")

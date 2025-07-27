@@ -1,12 +1,20 @@
 from __future__ import annotations
 
+
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+__timerSayImport = ImportProfiler("Triggers.Timer" )
+
 from LumensalisCP.IOContext import *
 
 #import LumensalisCP.Main.Manager
 
 #from LumensalisCP.Eval.Expressions import Expression, ExpressionTerm
+__timerSayImport( "Dependents" )
+
 from LumensalisCP.Main.Dependents import SubManagerBase, ManagerRef
-from . import Trigger
+
+__timerSayImport( "Trigger")
+from LumensalisCP.Triggers.common import Trigger
     
     
 class PeriodicTimerManager( SubManagerBase ):

@@ -4,17 +4,24 @@ import asyncio
 
 import wifi, displayio
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayMainImport = ImportProfiler( "Main.MainManager" )
+
 import LumensalisCP.Main.Dependents
 from LumensalisCP.commonPreManager import *
 from LumensalisCP.Main import PreMainConfig
 
+_sayMainImport( "TerrainTronicsFactory" )
 from TerrainTronics.Factory import TerrainTronicsFactory
 
 from LumensalisCP.Shields.Base import ShieldBase
 from LumensalisCP.Main.I2CProvider import I2CProvider
 
+_sayMainImport( "ControlPanel" )
+
 from LumensalisCP.Main.Panel import ControlPanel
 
+_sayMainImport( "ManagerRL" )
 from LumensalisCP.Main import ManagerRL
 
 if TYPE_CHECKING:
@@ -383,3 +390,5 @@ see http://lumensalis.com/ql/h2Scenes
 
 
     _renameIdentifiablesItems :dict[str,NamedLocalIdentifiable]
+
+_sayMainImport( "complete" )

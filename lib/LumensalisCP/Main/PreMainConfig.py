@@ -196,4 +196,18 @@ def printElapsed(desc:str):
            gcUsed, gcFree
            ) )
     
-__all__ = [ 'pmc_gcManager', 'pmc_mainLoopControl', 'printElapsed' ]
+
+def sayAtStartup(desc:str) -> None:
+    print( f"Startup [{pmc_mainLoopControl.getMsSinceStart()/1000.0:.3f}]: {desc}" )
+
+class ImportProfiler(object):
+    """ A simple profiler for imports, to help identify slow imports """
+    
+    def __init__(self, name:str ) -> None:
+        self.name = name
+        self( "start parsing")
+        
+    def __call__(self, desc:str) -> None:
+        sayAtStartup( f"IMPORT {self.name} : {desc}" )
+
+__all__ = [ 'pmc_gcManager', 'pmc_mainLoopControl', 'printElapsed', 'sayAtStartup','ImportProfiler' ]

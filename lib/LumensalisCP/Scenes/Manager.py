@@ -1,8 +1,7 @@
 
 from __future__ import annotations
 
-from LumensalisCP.Triggers import NamedLocalIdentifiable
-from LumensalisCP.Identity.Local import NliContainerMixin, NliList
+from LumensalisCP.Identity.Local import NamedLocalIdentifiable, NliContainerMixin, NliList
 from LumensalisCP.Scenes.Scene import Scene
 from LumensalisCP.Eval.Expressions import EvaluationContext
 

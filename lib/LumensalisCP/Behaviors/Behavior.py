@@ -1,5 +1,11 @@
 from __future__ import annotations
-from LumensalisCP.Main.Manager import MainManager
+
+
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayBehaviorImport = ImportProfiler( "Behaviors.Behavior" )
+
+
+_sayBehaviorImport( "Expression" )
 from LumensalisCP.Eval.Expressions import EvaluationContext, UpdateContext 
 
 from LumensalisCP.CPTyping import *
@@ -8,8 +14,10 @@ from LumensalisCP.Scenes.Scene import Scene
 from LumensalisCP.Debug import Debuggable
 
 if TYPE_CHECKING:
-    import weakref
+    #import weakref
+    from LumensalisCP.Main.Manager import MainManager
 
+_sayBehaviorImport( "parsing" )
 class Actor(Debuggable):
     """
     Base class for actors in the scene.
@@ -25,7 +33,7 @@ class Actor(Debuggable):
         
         super().__init__()
         self.name = name if name else self.__class__.__name__
-        main = main or MainManager.theManager
+        main = main or getMainManager()
         assert main is not None
         self.main = main 
         self.__currentBehavior = None
@@ -101,3 +109,5 @@ class Behavior(Debuggable):
     def __bool__(self):
         """Return True if the behavior is active."""
         return self.actor.currentBehavior is self
+
+_sayBehaviorImport( "complete" )

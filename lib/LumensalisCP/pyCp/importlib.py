@@ -78,6 +78,7 @@ than CPython's.
             if verbose: print( f"skipping reload of {name}, {sourceFile} not found")
             return
     #assert os.path.exists(sourceFile), f"Source file {sourceFile} does not exist for {name}"
+    newAttrs['__file__'] = sourceFile
     with open(sourceFile,'r',encoding='utf-8') as f:
         source = f.read()
         exec( source, newAttrs, newAttrs ) # pylint: disable=exec-used
@@ -98,6 +99,8 @@ than CPython's.
             continue
         if verbose: print( f"reload {name} : updating {key}")
         setattr( existingModule, key, val )
+    setattr( existingModule, '__file__', sourceFile )
+
         
     #########################################################################
     # new code should now be "reloaded" into **module**
