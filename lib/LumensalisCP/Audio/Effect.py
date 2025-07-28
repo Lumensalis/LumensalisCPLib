@@ -163,8 +163,8 @@ _sayAudioEffectImport.complete()
 __all__ = [
     "SoundEffectsManager",
     "SoundEffect",
-    "WaveDataType",
-    "WaveArgType",
+    #"WaveDataType",
+    #"WaveArgType",
     "LOW_PASS",
     "HIGH_PASS",
     "BAND_PASS",

@@ -1,6 +1,10 @@
 
 from __future__ import annotations
 
+from LumensalisCP.Main.PreMainConfig import ReloadableImportProfiler
+__sayMainManagerRLImport = ReloadableImportProfiler( "Main.ManagerRL" )
+
+
 from LumensalisCP.commonPreManager import *
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl #, pmc_gcManager
 
@@ -19,7 +23,7 @@ def MainManager_nliContainers(self:MainManager) -> Iterable[NliContainerMixin[An
     yield self.i2cDevicesContainer
     yield self.controlPanels
 
-def MainManager_nliGetChildren(self:MainManager) -> Iterable[NamedLocalIdentifiable[Any]]|None:
+def MainManager_nliGetChildren(self:MainManager) -> Iterable[NamedLocalIdentifiable]|None:
     yield self._scenes
     #yield self.defaultController
     if self.__dmx is not None:
@@ -78,7 +82,7 @@ def MainManager_singleLoop( self:MainManager ): #, activeFrame:ProfileFrameBase)
         activeFrame.snap( 'preTimers' )
         entry = ProfileSnapEntry.makeEntry( "foo", self.when, "bar" )
         entry.release()
-        
+        activeFrame.snap( 'preTimers2' )
         activeFrame.snap( 'timers' )
         self._timers.update( context )
         if not mlc.MINIMUM_LOOP:
@@ -161,3 +165,5 @@ def MainManager_getNextFrame(self:MainManager) ->ProfileFrameBase:
         assert isinstance( newFrame, ProfileFrameBase )
         context.baseFrame  = context.activeFrame = newFrame
         return newFrame
+
+__sayMainManagerRLImport.complete()

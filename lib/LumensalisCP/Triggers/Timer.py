@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import List
 
 from LumensalisCP.Main.PreMainConfig import ImportProfiler
 _sayTriggersTimerImport = ImportProfiler("Triggers.Timer" )
@@ -35,7 +36,7 @@ class PeriodicTimerManager( SubManagerBase ):
             timers = self.__timers
             if self.enableDbgOut: self.dbgOut( "update now=%.3f", now )
             for t in timers:
-                now = self.main.getNewNow()
+                # now = self.main.getNewNow()
                 if t.nextFire is None:
                     continue
                 if t.nextFire <= now:
@@ -56,7 +57,7 @@ class PeriodicTimerManager( SubManagerBase ):
                 self.__shuffleTimers()
 
     @property
-    def timers(self): return self.__timers
+    def timers(self) -> List[PeriodicTimer]: return self.__timers
     
     def __shuffleTimers( self ):
         if self.__updating:

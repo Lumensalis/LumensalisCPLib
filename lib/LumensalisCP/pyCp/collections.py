@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_saypyCpcollectionsImport = ImportProfiler( "pyCp.Collections" )
+
+
 try:
     from collections import * # pylint: disable=unused-wildcard-import # type: ignore
 except ImportError:
@@ -27,22 +31,22 @@ class GenericList(Generic[_ULT]): # type:  ignore # pylint: disable=function-red
     def __repr__(self):
         return repr(self.data)
 
-    def __contains__(self, item:_ULT):
+    def __contains__(self, item:_ULT) -> bool:
         return item in self.data
 
     def __len__(self):
         return len(self.data)
 
-    def __getitem__(self, i:int|slice):
-        if isinstance(i, slice):
-            return self.__class__(self.data[i])
-        else:
-            return self.data[i]
+    def __getitem__(self, i:int) -> _ULT:
+        #if isinstance(i, slice):
+        #    return self.data[i]
+        #else:
+        return self.data[i]
 
-    def __setitem__(self, i:int, item:_ULT):
+    def __setitem__(self, i:int, item:_ULT) -> None:
         self.data[i] = item
 
-    def __delitem__(self, i:int):
+    def __delitem__(self, i:int) -> None:
         del self.data[i]
 
     def __copy__(self):
@@ -52,15 +56,18 @@ class GenericList(Generic[_ULT]): # type:  ignore # pylint: disable=function-red
         inst.__dict__["data"] = self.__dict__["data"][:]
         return inst
 
-    def append(self, item:_ULT):
+    def append(self, item:_ULT) -> None:
         self.data.append(item)
 
 
-    def remove(self, item:_ULT):
+    def remove(self, item:_ULT) -> None:
         self.data.remove(item)
 
-    def clear(self):
+    def clear(self) -> None:
         self.data.clear()
 
 
 GenericListT = GenericT(GenericList)
+
+
+_saypyCpcollectionsImport.complete()

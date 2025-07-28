@@ -131,4 +131,4 @@ class PatternTemplate(object):
         fullKwds.update( kwds )
         return self.patternClass( *fullArgs, **fullKwds )
     
-__all__ = [Spinner, PatternTemplate]
+__all__ = ['Spinner', 'PatternTemplate', 'ABFade', 'OnOffPattern', 'PatternRLTest']

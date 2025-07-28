@@ -58,7 +58,7 @@ if LCPF_TYPING_IMPORTED:
     raise NotImplementedError
 
 StrAnyDict:TypeAlias = Dict[str,Any]
-
+TracebackType: TypeAlias = Any
 
 if TYPE_CHECKING:
     from .GenericT import GenericT
@@ -72,5 +72,6 @@ else:
     
     def GenericT(cls:type) ->type: 
         return _GenericT(cls) # type: ignore # pylint: disable=invalid-name
+
 
 _sayCPTypingImport.complete()

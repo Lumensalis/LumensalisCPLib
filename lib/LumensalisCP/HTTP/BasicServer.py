@@ -9,6 +9,10 @@ from asyncio import create_task, sleep as async_sleep, Task
 from adafruit_httpserver.methods import POST, PUT, GET   # type: ignore # pylint: disable=import-error,no-name-in-module
 from adafruit_httpserver import Server, Request, Response, Websocket, Route, JSONResponse  # pylint: disable=import-error,no-name-in-module # type: ignore
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+__sayHTTPBasicServerImport = ImportProfiler("HTTP.BasicServer" )
+
+
 from LumensalisCP.IOContext import *
 
 from LumensalisCP.commonCPWifi import *
@@ -93,7 +97,7 @@ class BasicServer(Server,Debuggable):
                 supervisor.runtime.autoreload = False
             self.infoOut( "reloading BasicServerRL" )
             reload( ControlVarsRL )
-            reload( BasicServerRL )
+            BasicServerRL._reloadForRoute(name) # type:ignore[call-arg]
             return handler(request,reloading=True,**kwds)
         
         if params is not None:
@@ -114,6 +118,7 @@ class BasicServer(Server,Debuggable):
 
         self.addReloadableRouteHandler( "client", [GET])
         self.addReloadableRouteHandler( "sak" )
+        self.addReloadableRouteHandler( "profile" )
         self.addReloadableRouteHandler( "query", params="<name>" )
         self.addReloadableRouteHandler( "cmd", [PUT,POST], params="<cmd>"  )
 
@@ -198,3 +203,4 @@ class BasicServer(Server,Debuggable):
             create_task(self.send_websocket_messages()),
         ]
 
+__sayHTTPBasicServerImport.complete()

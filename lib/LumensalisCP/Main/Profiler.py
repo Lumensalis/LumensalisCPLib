@@ -4,6 +4,7 @@ from __future__ import annotations
 #   pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 
 import time, collections
+
 import gc # type: ignore
 
 #import asyncio, wifi, displayio
@@ -39,41 +40,110 @@ _sayProfilerImport.parsing()
 # pylint: disable=protected-access, pointless-string-statement
 TimePT = TimeInSeconds
 
-getProfilerNow = time.monotonic
-def ptToSeconds(v): return v
+getProfilerNow:Callable[[],TimePT] = time.monotonic # type: ignore[reportUnknownVariableType]
+
+def ptToSeconds(v: TimePT|float) -> TimeInSeconds:
+    return TimeInSeconds(v)
+
+PWJsonNestDataType:TypeAlias = Union[StrAnyDict,List[Any]]
 
 class ProfileWriteConfig(object):
     
-    def __init__(self,target,minE=None,minEB=None,minF=None,minSubF=None,minB=None, **kwds):
+    def __init__(self,target:TextIO|list[str]|StrAnyDict|None = None,
+                 minE:Optional[float]=None,minEB:Optional[int]=None,
+                 minF:Optional[float]=None,minSubF:Optional[float]=None,
+                 minB:Optional[int]=None,
+                   **kwds:StrAnyDict) ->None:
  
-        self.target = target
-        self.minB = minB if minB is not None else 1024
-        self.minEB = minEB if minEB is not None else self.minB
-        self.minE = minE if minE is not None else -1
-        self.minF =  minF or self.minE 
-        self.minSubF = minSubF or 0
-        
+        self.target = None
+        self.minB:int = minB if minB is not None else 1024
+        self.minEB:int = minEB if minEB is not None else self.minB
+        self.minE:float = minE if minE is not None else -1
+        self.minF:float =  minF or self.minE 
+        self.minSubF:float = minSubF or 0
+        self.__target = target
+        self.__makingJson = isinstance(target, dict) or isinstance(target, list)
+        self.__jsonData:PWJsonNestDataType|None = target if self.__makingJson else None # type:ignore[reportUnknownVariableType]
+        self.__jsonNestDataStack:list[PWJsonNestDataType] = [self.__jsonData] if self.__jsonData is not None else []
+        self.__jsonNestData:PWJsonNestDataType|None = None
+        self.__jsonNestTag:str|None = None
+
     def __repr__(self):
         return f"mE={self.minE} mF={self.minF} mSF={self.minSubF} mB={self.minB} mEB={self.minEB}"
     
-    def writeLine( self, fmt:str, *args ):
-        self.target.write( safeFmt( fmt, *args ) )
-        self.target.write( "\r\n" )
+    @property
+    def makingJson(self) -> bool:
+        return self.__makingJson
+    
+    @property
+    def top(self) -> PWJsonNestDataType:
+        assert len(self.__jsonNestDataStack) > 0
+        return self.__jsonNestDataStack[-1]
+
+    @property
+    def topDict(self) -> StrAnyDict:
+        rv = self.top
+        assert isinstance(rv,dict)
+        return rv
+
+    def nest( self, data:PWJsonNestDataType, tag:Optional[str] = None ) -> Self:
+        assert len(self.__jsonNestDataStack) > 0
+        top = self.__jsonNestDataStack[-1]
+        if isinstance(top, dict):
+            assert tag is not None, f"Cannot nest data {data} without tag in {top}"
+            top[tag] = data
+        else:
+            assert  isinstance(top, list)
+            top.append(data)
+        self.__jsonNestData = data    
+
+        return self
+
+    def nestList( self, tag:Optional[str] = None ) -> Self:
+        return self.nest( [], tag=tag )
+
+    def nestDict( self, tag:Optional[str] = None ) -> Self:
+        return self.nest( {}, tag=tag )
+
+    def __enter__(self) -> ProfileWriteConfig:
+        if self.__makingJson:
+            assert self.__jsonNestData is not None
+            self.__jsonNestDataStack.append( self.__jsonNestData )
+
+
+
+        return self
+    def __exit__(self, exc_type:Optional[Type[BaseException]], exc_value:Optional[BaseException], exc_tb:Optional[Any]) -> None:
+
+        if self.__makingJson:
+            top = self.__jsonNestDataStack.pop() # type:ignore[reportUnknownVariableType]
+
+        # return False
+    
+    def writeLine( self, fmt:str, *args:Any ) -> None:
+        message = safeFmt( fmt, *args )
+        if isinstance(self.__target, list):
+            self.__target.append( message )
+        else:
+            # assert isinstance(self.__target, TextIO), f"Invalid target {self.__target} for ProfileWriteConfig"
+            self.__target.write( message ) # type: ignore[reportAttributeAccessIssue]
+            self.__target.write( "\r\n" ) # type: ignore[reportAttributeAccessIssue]
         
+    
 
 class ProfileSnapEntry(Releasable): 
     # __slots__ = ["name","name2","lw","e","_nest","_nesting","etc"]
-    __defaultEtc = {}
+    __defaultEtc: dict[str, Any] = {}
     
     gcFixedOverhead = 0
     
     name:str
     name2:str|None
-    lw: TimeSpanInSeconds
+    lw: TimePT
     e: TimeSpanInSeconds
     _nest:ProfileSubFrame|None
     _nesting:  bool
-    etc: Dict
+    etc: dict[str, Any]
     _nextSnap:ProfileSnapEntry|None
 
     def __init__(self,tag:str, when:TimeInSeconds, name2:str|None = None):
@@ -95,7 +165,7 @@ class ProfileSnapEntry(Releasable):
             self._nextSnap.release()
             self._nextSnap = None
 
-    def shouldProfileMemory(self):
+    def shouldProfileMemory(self) -> bool:
         return pmc_gcManager.PROFILE_MEMORY_ENTRIES
     
     def usedByProfile(self):
@@ -120,7 +190,7 @@ class ProfileSnapEntry(Releasable):
         
         return cls._makeFinish( rp, entry )
             
-    def reset( self, name:str, when:TimeInSeconds, name2:str|None = None ):
+    def reset( self, name:str, when:TimePT, name2:str|None = None ):
         self.name = name
         self.lw = when
         self.e = 0.0
@@ -132,7 +202,7 @@ class ProfileSnapEntry(Releasable):
         self.name2 = name2
 
         
-    def augment( self, tag:str,val ):
+    def augment( self, tag:str,val:Any ):
         if self.etc is self.__defaultEtc:
             self.etc = {}
         self.etc[tag] = val
@@ -148,10 +218,10 @@ class ProfileSnapEntry(Releasable):
         self._nesting = True
         return self._nest
 
-    def writeOn(self,config:ProfileWriteConfig,indent=''):
+    def writeOn(self,config:ProfileWriteConfig,indent:str=''):
         return ProfilerRL.ProfileFrameEntry_writeOn(self,config,indent)
     
-    def jsonData(self,**kwds) -> Mapping[str,Any]:
+    def jsonData(self,**kwds:StrAnyDict) -> Mapping[str,Any]:
         #rv = collections.OrderedDict(lw=self.lw, e=self.e, id=id(self), **self.etc)
         rv:dict[str,Any] = dict(lw=self.lw, e=self.e, id=id(self), **self.etc)
         subFrame = self.nest
@@ -161,30 +231,31 @@ class ProfileSnapEntry(Releasable):
         return rv
 
 class IndexMap(object):
-    def __init__(self, attrPrefix, tags  ):
+    def __init__(self, attrPrefix:str, tags:list[str] ):
         self.tags = tags
         self.indices:dict[str,int] = dict( [(tag,x) for x,tag in enumerate(tags)] )
         self.attrNames:dict[str,str] = dict( [(tag,attrPrefix+tag) for tag in tags] )
         
-    def contains(self,tag):
+    def contains(self,tag:str) -> bool:
         return self.indices.get(tag,None) is not None
 
-    def attrFor(self,tag):
+    def attrFor(self,tag:str) -> str|None:
         return self.attrNames.get(tag,None)
     
 class CachedList(object):
-    def __init__(self, size ):
+    def __init__(self, size:int ):
         self.__maxSize = size
         self.__size = 0
         self.__entries:list[Releasable|None] =  [None for _ in range(size)] 
         
-    def __len__( self ):
+    def __len__( self ) -> int:
         return self.__size
-    def __getitem__(self,x):
+    
+    def __getitem__(self,x:int) -> Releasable|None:
         assert x >= 0 and x < self.__size
         return self.__entries[x]
     
-    def append( self, item:Releasable ):
+    def append( self, item:Releasable ) -> None:
         assert self.__size < self.__maxSize
         assert item is not None
         self.__entries[self.__size] = item
@@ -225,7 +296,7 @@ class ProfileFrameBase(Releasable):
     #_resets = 0
     #_allocs = 0
     
-    def __init__(self, context:'LumensalisCP.Main.Updates.UpdateContext'):
+    def __init__(self, context:UpdateContext):
         super().__init__()
         #self.__entries = []
         self.firstSnap = None
@@ -237,40 +308,44 @@ class ProfileFrameBase(Releasable):
         #ProfileFrameBase._allocs += 1
         #self.reset()
         
+    @property
+    def name(self) -> str|None:
+        return self._name
         
-    def reset(self, context:'LumensalisCP.Main.Updates.UpdateContext' ):
+    def reset(self, context:UpdateContext ) -> None:
         #nowPT = time.monotonic_ns()
         nowPT = getProfilerNow()
-        assert isinstance(context,LumensalisCP.Main.Updates.UpdateContext)
-        self.__context = context
-        self.allocGc = gc.mem_alloc() if self.shouldProfileMemory() else 0
-        self.rawUsedGC = 0
+        #assert isinstance(context,UpdateContext)
+        self.__context:UpdateContext = context
+        self.allocGc:int = gc.mem_alloc() if self.shouldProfileMemory() else 0
+        self.rawUsedGC:int = 0
         assert self.firstSnap is None
         assert self.currentSnap is None
         assert not self._inUse
         #if self.firstSnap is not None:
         #    self.firstSnap.release()
-        self.firstSnap = None
+        self.firstSnap:ProfileSnapEntry|None = None
         #self.__usedEntries = 0
         #self.__entries.clear()
-        self.e = 0
-        self.start = 0
-        self.when = 0
-        self.latestStartPT = self.priorStartPT = self.loopStartPT = nowPT
-        self.currentSnap = None
-        self.currentSnapIndex = 0
+        self.e:float = 0
+        self.start:float = 0
+        self.when:float = 0
+        self.latestStartPT:TimePT = nowPT
+        self.priorStartPT:TimePT = nowPT
+        self.loopStartPT:TimePT = nowPT
+
+        self.currentSnap:ProfileSnapEntry|None = None
+        self.currentSnapIndex:int= 0
 
         #for tag in self.snapNames.attrNames:
         #    self._resetSnap(tag)
                             
-    def __enter__(self) -> "ProfileFrameBase":
+    def __enter__(self) -> ProfileFrameBase:
         try:
             context = self.__context
-            ensure( context is not None and 
-                   ((context.activeFrame is not None)
-                    or self.__class__ is ProfileFrame
-                   )
-                   )
+            assert context is not None 
+            assert ((context.activeFrame is not None) or self.__class__ is ProfileFrame)
+                   
             self.__priorFrame = context.activeFrame
             self.depth = self.__priorFrame.depth + 1
             context.activeFrame = self
@@ -281,8 +356,8 @@ class ProfileFrameBase(Releasable):
             SHOW_EXCEPTION(inst, "ProfileFrame entering %r",self )
             raise
         return self
-    
-    def __exit__(self,exc_type, exc_value, exc_tb):
+
+    def __exit__(self,exc_type:Optional[Type[BaseException]], exc_value:Optional[BaseException], exc_tb:Optional[Any]):
         # type: ignore
         if exc_type is not None:
             print( f"PSF EXIT EXCEPTION {self} {exc_type} {exc_value} {exc_tb}" )
@@ -340,7 +415,7 @@ class ProfileFrameBase(Releasable):
         #return self.activeEntry().subFrame(context,name,name2)
         return self.subFrame(context,name,name2)
 
-    def shouldProfileMemory(self):
+    def shouldProfileMemory(self) -> bool:
         return False
 
         
@@ -357,7 +432,7 @@ class ProfileFrameBase(Releasable):
             # assert not self.currentSnap._inUse
             self.currentSnap = None
 
-    def _resetSnap(self,tag):
+    def _resetSnap(self,tag:str):
         snapTag = self.snapNames.attrFor( tag )
         assert snapTag is not None, f"Invalid snap tag {tag} in {self.snapNames}"
         existing:ProfileSnapEntry|None = getattr(self,snapTag,None)
@@ -365,21 +440,22 @@ class ProfileFrameBase(Releasable):
             existing.release()
         setattr(self,snapTag,None)
             
-    def snap(self, name:str, name2:str|None = None, cls=ProfileSnapEntry ) -> ProfileSnapEntry:
+    def snap(self, name:str, name2:str|None = None, cls:type=ProfileSnapEntry ) -> ProfileSnapEntry:
         self.priorStartPT = self.latestStartPT
         self.latestStartPT = getProfilerNow()
         self.when = ptToSeconds ( self.latestStartPT - self.loopStartPT ) 
         priorEntry = self.currentSnap
         
-        entry = cls.makeEntry( name, self.when, name2 )
         
+        entry:ProfileSnapEntry = cls.makeEntry( name, self.when, name2 ) # type:ignore[reportCallIssue]
+        assert isinstance( entry, ProfileSnapEntry ), f"Invalid snap entry {entry} for {name} in {self.snapNames}"
         #entry.snapIndex = self.currentSnapIndex
         #self.currentSnapIndex += 1
         #entry =  self.__add( cls, name, name2 )
         self.currentSnap = entry
         if priorEntry is not None:
             priorEntry.e = entry.lw - priorEntry.lw
-            priorEntry._nextSnap = entry
+            priorEntry._nextSnap = entry # type:ignore[reportAttributeAccessIssue]
             if entry.shouldProfileMemory():
                 priorEntry.rawUsedGC = entry.allocGc - priorEntry.allocGc 
         else:
@@ -388,7 +464,7 @@ class ProfileFrameBase(Releasable):
 
         return entry
         
-    def writeOn(self,config:ProfileWriteConfig,indent=''):
+    def writeOn(self,config:ProfileWriteConfig,indent:str=''):
         return ProfilerRL.ProfileFrameBase_writeOn(self,config,indent)
         
     """
@@ -419,7 +495,7 @@ class ProfileFrameBase(Releasable):
         return rv
     """        
     def __str__(self):
-        return f"PSF{('-'+self._name) if self._name is not None else ''}[{self.depth}:{self._rIndex}]@{id(self):X}"
+        return f"PSF{('-'+self.name) if self.name is not None else ''}[{self.depth}:{self._rIndex}]@{id(self):X}"
     
     def finish(self):
         self.snap('end')
@@ -428,11 +504,11 @@ class ProfileFrameBase(Releasable):
             self.rawUsedGC =  gc.mem_alloc() - self.allocGc 
         
 class ProfileSubFrame(ProfileFrameBase): 
-    #__context : 'LumensalisCP.Main.Updates.UpdateContext'
+    #__context : UpdateContext
     
     snapNames = IndexMap( 'snap', ['start','end' ] )
     
-    def __init__(self, context:'LumensalisCP.Main.Updates.UpdateContext', name:Optional[str]=None, name2:Optional[str]=None):
+    def __init__(self, context:UpdateContext, name:Optional[str]=None, name2:Optional[str]=None):
         super().__init__(context)
         #self.__context = context
         #self._name = name
@@ -440,13 +516,13 @@ class ProfileSubFrame(ProfileFrameBase):
         self._nextFree = None
         self.reset( context, name, name2 )
         
-    def reset(self, context:'LumensalisCP.Main.Updates.UpdateContext', name:Optional[str]=None, name2:Optional[str]=None):
+    def reset(self, context:UpdateContext, name:Optional[str]=None, name2:Optional[str]=None):
         super().reset(context)
         self._name = name
         self.name2 = name2
         
     @classmethod
-    def makeEntry(cls,  context:'LumensalisCP.Main.Updates.UpdateContext', name:Optional[str]=None, name2:Optional[str]=None ):
+    def makeEntry(cls,  context:UpdateContext, name:Optional[str]=None, name2:Optional[str]=None ):
         rp = cls.getReleasablePool()
         entry = cls._make_getFree( rp )
 
@@ -456,30 +532,28 @@ class ProfileSubFrame(ProfileFrameBase):
         return cls._makeFinish( rp, entry )
             
         
-    def shouldProfileMemory(self):
+    def shouldProfileMemory(self) -> bool:
         return pmc_gcManager.PROFILE_MEMORY_NESTED
-        
-
 
 
 class ProfileFrame(ProfileFrameBase): 
     updateIndex: int
-    start: TimeInSeconds
-    eSleep: TimeInSeconds
+    #start: TimeInSeconds
+    eSleep: TimeSpanInSeconds
     
     snapNames = IndexMap( 'snap', ['start','timers', 'deferred','scenes','i2c', 'tasks','boards','end' ] )
     
     snapMaxEntries = 10
     
-    def __init__(self,   context:'LumensalisCP.Main.Updates.UpdateContext',  eSleep=0.0):
+    def __init__(self,   context:UpdateContext,  eSleep:TimeSpanInSeconds=0.0):
         super().__init__(context)
         self.reset(  context, eSleep=eSleep)
-        
-    def shouldProfileMemory(self):
+
+    def shouldProfileMemory(self) -> bool:
         return pmc_gcManager.PROFILE_MEMORY
 
     @classmethod
-    def makeEntry(cls,   context:'LumensalisCP.Main.Updates.UpdateContext', eSleep=0.0):
+    def makeEntry(cls,   context:UpdateContext, eSleep:TimeSpanInSeconds=0.0) -> Self:
         """ NASTY!!! 
             the only reason this is overridden is to eliminate the cost of the 
             temporaries for *args and **kwds in CircuitPython GC
@@ -491,8 +565,8 @@ class ProfileFrame(ProfileFrameBase):
         else: entry.reset( context, eSleep=eSleep ) # pylint: disable=no-member # type: ignore
         
         return cls._makeFinish( rp, entry )
-    
-    def reset(self, context:'LumensalisCP.Main.Updates.UpdateContext',  eSleep=0.0):
+
+    def reset(self, context:UpdateContext,  eSleep:TimeSpanInSeconds=0.0):
         # nowPT = time.monotonic_ns()
 
         #self.currentUpdateIndex = 
@@ -502,15 +576,16 @@ class ProfileFrame(ProfileFrameBase):
         
 
         
-    def frameData(self,minF=None, minE = None, **kwds):
+    def frameData(self,minF:Optional[int]=None, minE:Optional[int] = None, **kwds:StrAnyDict):
         minE = minE  if minE is not None else -1
         minF = minF or minE
         #forceInclude = self.eSleep > min(minE,minF)
         
-        baseData = {} # super().jsonData(minF=minF, minE = minE, forceInclude=forceInclude, **kwds )
-        if baseData is None: 
-            return None
-        return dict( i=self.updateIndex, eSleep=self.eSleep, **baseData )        
+        #baseData = {} # super().jsonData(minF=minF, minE = minE, forceInclude=forceInclude, **kwds )
+        #if baseData is None: 
+        #    return None
+        #return dict( i=self.updateIndex, eSleep=self.eSleep, **baseData )        
+        return dict( i=self.updateIndex, eSleep=self.eSleep )        
 
     """
     def jsonData(self,minF=None, minE = None, **kwds): # type: ignore
@@ -523,28 +598,29 @@ class ProfileFrame(ProfileFrameBase):
         return dict( i=self.updateIndex, eSleep=self.eSleep, **baseData )
 """
 
-    def writeOn(self,config:ProfileWriteConfig,indent=''):
+    def writeOn(self,config:ProfileWriteConfig,indent:str=''):
         return ProfilerRL.ProfileFrame_writeOn(self,config,indent)
     
 
 class ProfileStubFrameEntry(ProfileSnapEntry): 
-    def __init__(self,frame=None):
-        super().__init__(tag="stub",when=0)
+    def __init__(self,frame:Optional[ProfileFrameBase]=None):
+        super().__init__(tag="stub",when=TimeInSeconds(0))
         self.__frame = frame
         
     def subFrame(self, context, name:Optional[str]=None, name2:Optional[str]=None) -> 'ProfileFrameBase': # type: ignore
         return self.__frame  # type: ignore
 
-    def writeOn(self,config:ProfileWriteConfig,indent=''):
+    def writeOn(self,config:ProfileWriteConfig,indent:str=''):
         pass
     
-    def jsonData(self,**kwds):
-        rv = collections.OrderedDict(lw=self.lw, e=self.e, id=id(self), **self.etc)
-        return rv    
+    def jsonData(self,**kwds:StrAnyDict) -> Any:
+        #rv = collections.OrderedDict(lw=self.lw, e=self.e, id=id(self), **self.etc)
+        #return rv    
+        return None
     
 class ProfileStubFrame(ProfileFrame): 
 
-    def __init__(self, context:'LumensalisCP.Main.Updates.UpdateContext'):
+    def __init__(self, context:UpdateContext):
         super().__init__(context=context, eSleep=0.0)
         self.when = 0
         self.updateIndex = -1
@@ -553,20 +629,20 @@ class ProfileStubFrame(ProfileFrame):
     def activeFrame(self) -> "ProfileFrameBase":
         return self
 
-    def subFrame(self, context, name:Optional[str]=None, name2:Optional[str]=None) -> 'ProfileSubFrame':
+    def subFrame(self, context:UpdateContext, name:Optional[str]=None, name2:Optional[str]=None) -> 'ProfileSubFrame':
         return self # type: ignore
 
-    def snap(self, name:str, name2:str|None = None, cls=ProfileSnapEntry ) -> ProfileSnapEntry:
+    def snap(self, name:str, name2:str|None = None, cls:type=ProfileSnapEntry ) -> ProfileSnapEntry:
         return self.__stubEntry
         
     
-    def reset(self, context:'LumensalisCP.Main.Updates.UpdateContext',  eSleep=0.0):
+    def reset(self, context:UpdateContext,  eSleep:TimeSpanInSeconds=0.0):
         pass
         
     def __enter__(self):
         return self
-    
-    def __exit__(self,exc_type, exc_value, exc_tb):
+
+    def __exit__(self,exc_type:Optional[Type[BaseException]], exc_value:Optional[BaseException], exc_tb:Optional[TracebackType]):
         return False
 
 #############################################################################
@@ -581,7 +657,7 @@ class Profiler(object):
     disabled:bool
     stubFrame:ProfileStubFrame
     
-    def __init__(self, context:'LumensalisCP.Main.Updates.UpdateContext', timings=None, stub=None ):
+    def __init__(self, context:UpdateContext, timings:Optional[int]=None, stub:Optional[bool]=None ):
         if stub is None:
             stub = not pmc_mainLoopControl.ENABLE_PROFILE
             
@@ -599,13 +675,13 @@ class Profiler(object):
             
              
         #self.nextNewFrame(0)
-        
-    def nextNewFrame(self, context:'LumensalisCP.Main.Updates.UpdateContext', eSleep:TimeInSeconds=0 ) -> ProfileFrame: 
+
+    def nextNewFrame(self, context:UpdateContext, eSleep:TimeInSeconds=TimeInSeconds(0) ) -> ProfileFrame:
         assert not self.disabled
         updateIndex = context.updateIndex
         timingIndex = updateIndex % self.timingsLength 
         old = self.timings[timingIndex]
-        if old is not None:
+        if old is not None: # type:ignore[reportAttributeAccessIssue]
             old.release()
         self.currentTiming = ProfileFrame.makeEntry( context, eSleep=eSleep )
         self.timings[timingIndex] = self.currentTiming
@@ -614,11 +690,11 @@ class Profiler(object):
         
         #print( f"reset {updateIndex} {timingIndex} {self.currentTiming.updateIndex} {id(self.currentTiming)} ")
     
-    def timingForUpdate( self, updateIndex ) -> ProfileFrame | None:
+    def timingForUpdate( self, updateIndex:int ) -> ProfileFrame | None:
         if self.disabled: return self.timings[0]
         timingIndex = updateIndex % self.timingsLength
         rv = self.timings[timingIndex]
-        if rv is not None and rv.updateIndex != updateIndex:
+        if rv is not None and rv.updateIndex != updateIndex: # type:ignore[reportAttributeAccessIssue]
             if rv.updateIndex != self._preContextIndex:
                 print(f"tfy mismatch for {updateIndex} : [{timingIndex}].updateIndex={rv.updateIndex} {id(rv)}")
             return None

@@ -81,8 +81,12 @@ than CPython's.
     newAttrs['__file__'] = sourceFile
     with open(sourceFile,'r',encoding='utf-8') as f:
         source = f.read()
-        exec( source, newAttrs, newAttrs ) # pylint: disable=exec-used
-
+        try:
+            exec( source, newAttrs, newAttrs ) # pylint: disable=exec-used
+        except SyntaxError as e:
+            print( f"Syntax error in {sourceFile}: {e}" )
+            raise ImportError( f"Syntax error in {sourceFile}: {e}") from e
+        
     #########################################################################
     # since **newAttrs** was used for globals in the `exec(...)` call
     # everything that was parsed/loaded from that source was stored 

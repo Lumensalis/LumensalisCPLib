@@ -1,8 +1,18 @@
+
+
+from LumensalisCP.Main.PreMainConfig import ReloadableImportProfiler
+__saySimpleProfilingRLImport = ReloadableImportProfiler( "Simple.profilingRL" )
+
+
 #from LumensalisCP.Demo.DemoCommon import *
 
 #from LumensalisCP.Main.PreMainConfig import pmc_gcManager
 from LumensalisCP.Main.Profiler import *
 import sys
+
+if TYPE_CHECKING:
+    from LumensalisCP.Main.Manager import MainManager
+    from LumensalisCP.Main.Profiler import ProfileSnapEntry, ProfileFrame, ProfileSubFrame, ProfileFrameBase, ProfileWriteConfig
 
 printDumpInterval = 21
 collectionCheckInterval = 3.51
@@ -14,52 +24,63 @@ dumpConfig = ProfileWriteConfig(target=sys.stdout,
         minB = 0,
     )
 
-def printEntry( name, entry, indent='' ):
-    data = dict(**entry)
-    lw = data.pop('lw')
-    e = data.pop('e')
-    nest = data.pop('nest',None)
-    print(f"{indent}{e:0.3f} {lw:0.3f} {name:32s} {data}")
-    if nest is not None:
-        printFrame( nest, indent+"  ")   
-
-
-def printFrame( frame, indent='' ):
-    #print( f"{frame}" )
-    data = dict(**frame)
-    i = data.pop('i')
-    e = data.pop('e')
-    #eSleep = data.pop('eSleep',None)
-    entries = data.pop('entries')
-    print(f"{indent}{e:0.3f} [{i}] {data}")
-    indent = indent + "  "
-    for name, entry in entries.items():
-        printEntry(name, entry, indent )
-
-
-
-def fmtPool( cls ):
+def addPoolInfo( dest:StrAnyDict,  cls:type[ProfileSnapEntry|ProfileFrame|ProfileSubFrame|ProfileFrameBase]) -> Any:
     pool = cls.getReleasablePool()
-    return f"[{cls.__name__} a:{pool._allocs} r:{pool._releases}]"
-def printDump( main:MainManager ):
+    return dictAddUnique(dest, cls.__name__, dict( a=pool._allocs, r=pool._releases ) )
+
+def getProfilerInfo( main:MainManager ) -> Any:
     
     if True:
         context = main.getContext()
         i = context.updateIndex
-        
+        rv:StrAnyDict = {}
+        dumpConfig = ProfileWriteConfig(target=rv,
+                minE = 0.000,
+                minF=0.015,
+                minSubF = 0.005,
+                minB = 0,
+            )
+
+        with dumpConfig.nestDict('timers'):
+            d = dumpConfig.topDict
+            d['timerSorts'] = main.timers.timerSorts
+            d['timerChanges'] = [ dict(
+                name=timer.name,
+                running=timer.running,
+                nextFire=timer.nextFire,    
+                lastFire=timer.lastFire,
+                
+            )
+                for timer in main.timers.timers]
+            
         count = 10
-        while count and i >= 0:
-            count -= 1
-            frame = main.profiler.timingForUpdate( i )
+        
+        with dumpConfig.nestList('frames'):
             
-            if frame is not None:
-                frame.writeOn( dumpConfig )
-            i -= 1
-            
-        #print( f"entry {ProfileSnapEntry._allocs}/{ProfileSnapEntry._resets}  | base {ProfileFrameBase._allocs}/{ProfileFrameBase._resets}  ")
-        print( f"{fmtPool(ProfileSnapEntry)} {fmtPool(ProfileFrame)} {fmtPool(ProfileSubFrame)} {fmtPool(ProfileFrameBase)}" )
-        print( f"   gc.mem_alloc={gc.mem_alloc()} gc.mem_free={gc.mem_free()}" )
-        #gcm.runCollection(context, force=True )
+            while count and i >= 0:
+                count -= 1
+                frame = main.profiler.timingForUpdate( i )
+                
+                if frame is not None:
+                    with dumpConfig.nestDict():
+                        frame.writeOn( dumpConfig )
+                i -= 1
+        with dumpConfig.nestDict('pools'):
+            d = dumpConfig.topDict
+            addPoolInfo( d, ProfileSnapEntry )
+            addPoolInfo( d, ProfileFrame )
+            addPoolInfo( d, ProfileSubFrame )
+            addPoolInfo( d, ProfileFrameBase )
+
+        with dumpConfig.nestDict('gc'):
+            d = dumpConfig.topDict
+            d['mem_alloc'] = gc.mem_alloc()
+            d['mem_free'] = gc.mem_free()
+
+
+
+        
+        return rv
     else:
         timings = main.dumpLoopTimings(50, minE = 0.01, minF=0.035)
         print( "----" )
@@ -68,3 +89,5 @@ def printDump( main:MainManager ):
         print( "----" )
         #print( f"{timings}" )
         #print( json.dumps( timings ) )
+
+__saySimpleProfilingRLImport.complete()

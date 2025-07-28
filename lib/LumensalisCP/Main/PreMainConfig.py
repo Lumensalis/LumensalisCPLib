@@ -224,4 +224,7 @@ class ImportProfiler(object):
         end = ImportProfiler.NESTING.pop()
         assert end is self, f"ImportProfiler nesting mismatch: {end.name} != {self.name}"
 
-__all__ = [ 'pmc_gcManager', 'pmc_mainLoopControl', 'printElapsed', 'sayAtStartup','ImportProfiler' ]
+class ReloadableImportProfiler(ImportProfiler):
+    pass 
+
+__all__ = [ 'pmc_gcManager', 'pmc_mainLoopControl', 'printElapsed', 'sayAtStartup','ImportProfiler', 'ReloadableImportProfiler' ]

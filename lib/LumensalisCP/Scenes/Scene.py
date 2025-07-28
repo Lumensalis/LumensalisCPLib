@@ -1,3 +1,7 @@
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayScenesSceneImport = ImportProfiler( "ScenesScene" )
+
+
 from LumensalisCP.common import *
 from LumensalisCP.IOContext import *
 from LumensalisCP.Main.Dependents import MainChild
@@ -95,7 +99,7 @@ class Scene(MainChild):
             self.addRule( self.findOutput(tag), val )
 
     def sources( self ) -> Mapping[str,InputSource]:
-        rv = {}
+        rv:dict[str,InputSource] = {}
         
         for setting in self.__rulesContainer:
             #setting:SceneRule
@@ -144,8 +148,11 @@ class Scene(MainChild):
                         SHOW_EXCEPTION( inst, "pattern %r refresh failed in %r", 
                                        getattr(pattern,'name',pattern), self )
 
-def addSceneTask( scene:Scene, **kwds:Unpack[SceneTaskKwargs] ):
-    def addTask( callable ):
+def addSceneTask( scene:Scene, **kwds:Unpack[SceneTaskKwargs] ) -> Callable[..., None]:
+    def addTask( callable:Callable[...,Any] ) -> None:
         scene.addTask(callable, **kwds)
         
     return addTask
+
+
+_sayScenesSceneImport.complete()

@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+_sayI2CDeviceImport = ImportProfiler( "I2C.I2CDevice" )
+
+
 from LumensalisCP.commonCP import *
 from LumensalisCP.IOContext import *
 
@@ -95,8 +99,8 @@ class I2CDevice( NamedLocalIdentifiable ):
         
 class I2CInputSource( InputSource ): # pylint: disable=abstract-method
     
-    class KWDS(TypedDict):
-        name: NotRequired[str|None]
+    class KWDS(InputSource.KWDS):
+        pass
 
     def __init__(self, target:I2CDevice,  **kwds:Unpack[InputSource.KWDS] ):
         super().__init__(**kwds)
@@ -105,14 +109,13 @@ class I2CInputSource( InputSource ): # pylint: disable=abstract-method
 
     @property
     def parentTarget(self): return self._wrTarget
-    
-class KWDS_InputSource(TypedDict):
-    name: Optional[str]
-    
+
 class I2COutputTarget( NamedOutputTarget ): # pylint: disable=abstract-method
-    def __init__(self, target:I2CDevice, **kwargs ):
+    def __init__(self, target:I2CDevice, **kwargs:Unpack[NamedOutputTarget.KWDS] ):
         super().__init__(**kwargs)
         self._wrTarget = target # weakref.ref(target)
         self.nliSetContainer(target._outputs) # type: ignore
     @property
     def parentTarget(self): return self._wrTarget    
+
+_sayI2CDeviceImport.complete()

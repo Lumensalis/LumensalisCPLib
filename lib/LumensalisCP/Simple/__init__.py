@@ -88,7 +88,6 @@ from LumensalisCP.Triggers.Action import Action
 _saySimpleImport( "Behaviors")
 from LumensalisCP.Behaviors.Behavior import Behavior, Actor 
 
-
 _saySimpleImport( "MainManager" )
 from LumensalisCP.Main.Manager import MainManager
 
@@ -142,9 +141,9 @@ see http://lumensalis.com/ql/h2Main
                 def runCollection(context=None, when=None):
                     pmc_gcManager.runCollection(context,when, show=True)
 
-                @addPeriodicTaskDef( "print-dump", period=lambda: profilingRL.printDumpInterval, main=main )
-                def dump():
-                    profilingRL.printDump(main)
+                #@addPeriodicTaskDef( "print-dump", period=lambda: profilingRL.printDumpInterval, main=main )
+                #def dump():
+                #    profilingRL.printDump(main)
 
             main.callLater( addProfilingCallbacks )
 

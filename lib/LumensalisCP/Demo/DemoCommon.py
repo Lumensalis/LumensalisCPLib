@@ -9,8 +9,8 @@ from LumensalisCP.Main.PreMainConfig import ImportProfiler
 _sayDemoCommonImport = ImportProfiler( "DemoCommon" )
 
 
-from LumensalisCP.common import *
-from LumensalisCP.Eval.common import *
+from LumensalisCP.IOContext import *
+
 _sayDemoCommonImport( "addSceneTask" )
 from LumensalisCP.Scenes.Scene import addSceneTask
 _sayDemoCommonImport( "Trigger" )

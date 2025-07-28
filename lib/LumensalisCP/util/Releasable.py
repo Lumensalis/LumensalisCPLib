@@ -55,7 +55,7 @@ class Releasable(object):
         return None            
 
     @classmethod
-    def _makeFinish(cls, rp:ReleasablePool, entry ) -> Self:
+    def _makeFinish(cls, rp:ReleasablePool, entry:Releasable ) -> Self:
         assert entry._nextFree is None  and not entry._inUse
         entry._inUse = True
         entry._rIndex = rp._rIndex
@@ -65,6 +65,9 @@ class Releasable(object):
     _inUse:bool
     _nextFree:"Releasable|None"
     _rIndex:int
+    @property
+    def rindex(self) -> int:
+        return self._rIndex
     
     def __init__(self):
         self._inUse = False
