@@ -6,8 +6,8 @@ import gc # type: ignore
 import sys
 from collections import OrderedDict
 
-from LumensalisCP.Main.PreMainConfig import ReloadableImportProfiler
-__sayMainProfilerRLImport = ReloadableImportProfiler( "Main.ProfilerRL" )
+from LumensalisCP.Main.PreMainConfig import pmc_getReloadableImportProfiler
+__sayMainProfilerRLImport = pmc_getReloadableImportProfiler( "Main.ProfilerRL" )
 
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
@@ -25,9 +25,7 @@ if TYPE_CHECKING:
 from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
 # pylint: disable=unused-argument, redefined-outer-name, attribute-defined-outside-init,protected-access,bad-indentation
 
-printDumpInterval = 28
-collectionCheckInterval = 11.51
-showRunCollection = True
+
 
 def _rl_setFixedOverheads():
     LumensalisCP.Main.Profiler.ProfileSnapEntry.gcFixedOverhead = 0
@@ -167,7 +165,7 @@ def getProfilerInfo( main:MainManager, dumpConfig:Optional[ProfileWriteConfig]=N
     else:
         rv = dumpConfig.target
     
-    if not isinstance(rv, (dict,OrderedDict)  ):
+    if not isinstance(rv, (dict,OrderedDict)  ): # pyright: ignore[reportUnnecessaryIsInstance]
         raise TypeError(f"dumpConfig.target is not a dict: {type(rv)}")
 
     with dumpConfig.nestDict('dumpConfig'):
@@ -225,4 +223,4 @@ def getProfilerInfo( main:MainManager, dumpConfig:Optional[ProfileWriteConfig]=N
 
 
 
-__sayMainProfilerRLImport.complete()
+__sayMainProfilerRLImport.complete(globals())

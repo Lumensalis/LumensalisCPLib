@@ -5,8 +5,8 @@ from __future__ import annotations
 
 import board, microcontroller
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayDemoCommonImport = ImportProfiler( "DemoCommon" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayDemoCommonImport = pmc_getImportProfiler( "DemoCommon" )
 
 
 from LumensalisCP.IOContext import *
@@ -32,4 +32,4 @@ from LumensalisCP.Main.Manager import MainManager
 _sayDemoCommonImport( "onIRCode" )
 from TerrainTronics.Caernarfon.Castle import onIRCode
 
-_sayDemoCommonImport.complete()
+_sayDemoCommonImport.complete(globals())

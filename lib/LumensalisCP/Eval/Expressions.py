@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayEvalExpressionsImport = ImportProfiler( "Eval.Expressions" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayEvalExpressionsImport = pmc_getImportProfiler( "Eval.Expressions" )
 
 from LumensalisCP.Eval._common import *
 _sayEvalExpressionsImport( "Evaluatable")
@@ -99,4 +99,4 @@ class Expression( Evaluatable ):
         context.addChangedTerm(term)
         return True
 
-_sayEvalExpressionsImport.complete()
+_sayEvalExpressionsImport.complete(globals())

@@ -1,8 +1,8 @@
 
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayEvalEvaluationContextImport = ImportProfiler( "Eval.EvaluationContext" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayEvalEvaluationContextImport = pmc_getImportProfiler( "Eval.EvaluationContext" )
 
 
 from LumensalisCP.Eval._common import *
@@ -42,10 +42,10 @@ class EvaluationContext(UpdateContext):
         if type(value)  in _simpleValueTypes:
             return value
         elif isinstance( value, Evaluatable ):
-            term = value
+            term:Evaluatable[Any] = value # type: ignore[assignment]
             value = term.getValue( self )
         elif callable(value):
             value = self.valueOf( value() )
         return value        
 
-_sayEvalEvaluationContextImport.complete()
+_sayEvalEvaluationContextImport.complete(globals())

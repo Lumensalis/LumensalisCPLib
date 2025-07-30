@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayEvalExpressionTermImport = ImportProfiler( "Eval.ExpressionTerm" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayEvalExpressionTermImport = pmc_getImportProfiler( "Eval.ExpressionTerm" )
 
 from LumensalisCP.Lights.RGB import *
 from LumensalisCP.Eval._common import *
@@ -422,4 +422,4 @@ class CallbackSource( ExpressionTerm ):
 
 #############################################################################
 
-_sayEvalExpressionTermImport.complete()
+_sayEvalExpressionTermImport.complete(globals())

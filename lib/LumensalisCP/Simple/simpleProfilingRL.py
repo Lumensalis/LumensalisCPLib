@@ -1,7 +1,7 @@
 
 
-from LumensalisCP.Main.PreMainConfig import ReloadableImportProfiler
-__saySimpleProfilingRLImport = ReloadableImportProfiler( "Simple.simpleProfilingRL" )
+from LumensalisCP.Main.PreMainConfig import pmc_getReloadableImportProfiler
+__saySimpleProfilingRLImport = pmc_getReloadableImportProfiler( "Simple.simpleProfilingRL" )
 
 #from LumensalisCP.Demo.DemoCommon import *
 #from LumensalisCP.Main.PreMainConfig import pmc_gcManager
@@ -13,10 +13,6 @@ if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
     from LumensalisCP.Main.Profiler import ProfileSnapEntry, ProfileFrame, ProfileSubFrame, ProfileFrameBase, ProfileWriteConfig
 
-
-printDumpInterval = 28
-collectionCheckInterval = 3.51
-
 dumpConfig = ProfileWriteConfig(target=sys.stdout,
         minE = 0.000,
         minF=0.005,
@@ -26,4 +22,4 @@ dumpConfig = ProfileWriteConfig(target=sys.stdout,
     )
 
 
-__saySimpleProfilingRLImport.complete()
+__saySimpleProfilingRLImport.complete(globals())

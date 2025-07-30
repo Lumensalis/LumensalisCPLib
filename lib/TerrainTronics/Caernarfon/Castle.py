@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayCaernarfonImport = ImportProfiler( "CaernarfonCastle" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayCaernarfonImport = pmc_getImportProfiler( "CaernarfonCastle" )
 
 
 from LumensalisCP.IOContext import *
@@ -47,7 +47,10 @@ class CaernarfonCastle(D1MiniBoardBase):
         super().__init__( **kwds )
         c = self.config
         self._irRemote = None
-        self.initI2C()
+        try:
+            self.initI2C()
+        except Exception as e:
+            self.errOut( f"CaernarfonCastle initI2C failed: {e}" )
         
         self.__servoContainer = NliList("servos", parent=self)
         self.__servos:list[LocalServo|None] = [ None, None, None ]
@@ -215,4 +218,4 @@ class CaernarfonCastle(D1MiniBoardBase):
         self.__servos[servoN-1] = servo
         return servo
     
-_sayCaernarfonImport.complete()
+_sayCaernarfonImport.complete(globals())

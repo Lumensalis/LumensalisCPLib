@@ -1,10 +1,9 @@
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayOutputsImport = ImportProfiler( "Outputs" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayOutputsImport = pmc_getImportProfiler( "Outputs" )
 
 
 from LumensalisCP.Eval.Expressions import *
-from LumensalisCP.Inputs import InputSource
 
 #############################################################################
 
@@ -31,6 +30,6 @@ class NamedOutputTarget(NamedLocalIdentifiable,OutputTarget):
 
     def path( self ): return None
 
-_sayOutputsImport.complete()
+_sayOutputsImport.complete(globals())
     
-__all__ = [ 'OutputTarget', 'NamedOutputTarget', 'KWDS_NamedOutputTarget' ]
+__all__ = [ 'OutputTarget', 'NamedOutputTarget' ]

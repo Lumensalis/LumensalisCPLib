@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 
-from LumensalisCP.Main.PreMainConfig import ReloadableImportProfiler
-__sayHTTPControlVarsRLImport = ReloadableImportProfiler( "HTTP.ControlVarsRL" )
+from LumensalisCP.Main.PreMainConfig import pmc_getReloadableImportProfiler
+__sayHTTPControlVarsRLImport = pmc_getReloadableImportProfiler( "HTTP.ControlVarsRL" )
 
 from adafruit_httpserver import DELETE, GET, POST, PUT, JSONResponse, Request, Response  # pyright: ignore
 
@@ -275,4 +275,4 @@ def BSR_client(self:BasicServer.BasicServer, request: Request):
     
     return Response(request, html, content_type="text/html")
     
-__sayHTTPControlVarsRLImport.complete()
+__sayHTTPControlVarsRLImport.complete(globals())

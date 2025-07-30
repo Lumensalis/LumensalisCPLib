@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayMotionImport = ImportProfiler( "Motion" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayMotionImport = pmc_getImportProfiler( "Motion" )
 
 from LumensalisCP.Behaviors._common import *
 from LumensalisCP.Behaviors.Behavior import Behavior, Actor
@@ -184,4 +184,4 @@ class ServoDoor(Door):
         """
         if self.enableDbgOut: self.dbgOut("ServoDoor move completed")
 
-_sayMotionImport.complete()
+_sayMotionImport.complete(globals())

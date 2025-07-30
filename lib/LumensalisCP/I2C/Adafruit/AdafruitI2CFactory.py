@@ -19,8 +19,7 @@ if TYPE_CHECKING:
     from LumensalisCP.I2C.Adafruit.Magnetic import TLV493D
     from LumensalisCP.I2C.Adafruit.AW9523 import AW9523
     from LumensalisCP.I2C.Adafruit.PCA9685 import PCA9685
-    
-    
+
 class AdafruitFactory(I2CFactory):
     
     def addQTRotaryEncoder(self, **kwds:Unpack[QtRotary.KWDS] ) -> QtRotary:
@@ -50,14 +49,17 @@ class AdafruitFactory(I2CFactory):
     def addTLV493D( self, **kwds:Unpack[TLV493D.KWDS] ) -> TLV493D:
         """Add a TLV493D 3D magnetic sensor."""
         from LumensalisCP.I2C.Adafruit.Magnetic import TLV493D
-        return TLV493D(  main=self.main, **kwds )
+        kwds.setdefault('main', self.main)
+        return TLV493D(  **kwds )
     
     def addAW9523( self, **kwds :Unpack[AW9523.KWDS] ) -> AW9523:
         """Add an AW9523 GPIO expander with LED driver."""
         from LumensalisCP.I2C.Adafruit.AW9523 import AW9523
-        return AW9523(  main=self.main, **kwds )
+        kwds.setdefault('main', self.main)
+        return AW9523( **kwds )
 
     def addPCA9685( self, **kwds:Unpack[PCA9685.KWDS] ) -> PCA9685:
         """Add a PCA9685 PWM driver."""
         from LumensalisCP.I2C.Adafruit.PCA9685 import PCA9685
-        return PCA9685(  main=self.main, **kwds )
+        kwds.setdefault('main', self.main)
+        return PCA9685(  **kwds )

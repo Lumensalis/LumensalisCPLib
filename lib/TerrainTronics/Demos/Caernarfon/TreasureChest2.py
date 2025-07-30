@@ -455,13 +455,13 @@ class TreasureChest( DemoBase ):
         #pt.start()
         #main.addTask( updateStuff )
         
-        dt = PeriodicTimer( interval=lambda : TreasureChest2RL.printDumpInterval, manager=main.timers, name="dump" )
+        dt = PeriodicTimer( interval=lambda : pmc_gcManager.printDumpInterval, manager=main.timers, name="dump" )
         
         @dt.addSimpleTaskDef( "printDumpPeriod" )
         def dump():
             #print( f"DUMPING at {main.newNow}" )
             #dt.restart( interval=TreasureChest2RL.printDumpInterval )
-            TerrainTronics.Demos.Caernarfon.TreasureChest2RL.printDump(main)
+            TerrainTronics.Demos.Caernarfon.pmc_gcManager.printDump(main)
             #print( f"DUMPED at {main.newNow}" )
             #gc.collect()
         #dt.addAction( dump )
@@ -478,9 +478,8 @@ class TreasureChest( DemoBase ):
     def setup(self):
         self.setupChest()
         
-        #gct = PeriodicTimer( interval=TreasureChest2RL.collectionCheckInterval, manager=main.timers, name="collection" )
  
-        @addPeriodicTaskDef( "gc-collect", period=lambda: TreasureChest2RL.collectionCheckInterval, main=main )
+        @addPeriodicTaskDef( "gc-collect", period=lambda: pmc_gcManager.collectionCheckInterval, main=main )
         def runCollection(context=None, when=None):
             pmc_gcManager.runCollection(context,when, show=True)
 

@@ -17,6 +17,14 @@ NOTES
 ## this is pulled in directly to work around issues related 
 ## to importing socket instead of socketpool
 
+# pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
+# pyright: reportMissingParameterType=false, reportUnknownParameterType=false
+# pyright: reportUnknownVariableType=false, reportUnknownArgumentType=false
+# pyright: reportUnusedVariable=false, reportUnknownMemberType=false
+# pyright: reportPrivateUsage=false, reportOptionalMemberAccess=false
+# pyright: reportUndefinedVariable=false
+
+
 def shift_this(number, high_first=True):
     """Utility method: extracts MSB and LSB from number.
 
@@ -138,7 +146,7 @@ class StupidArtnetASIOServer():
     ARTDMX_HEADER = b'Art-Net\x00\x00P\x00\x0e'
     listeners = []
 
-    def __init__(self, pool:socketpool.SocketPool, port=6454):
+    def __init__(self, pool:socketpool.SocketPool, port:int=6454):
         """Initializes Art-Net server."""
         self.port = port  # Use provided port or default
         # By default, the server uses port 6454, no need to specify it.

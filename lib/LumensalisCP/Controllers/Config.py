@@ -39,7 +39,7 @@ class ControllerConfig(object):
     
     options:dict[str,Any]
     
-    def __init__( self, **kwds:dict[str,Any] ):
+    def __init__( self, **kwds:Any ) -> None:
         self.kwds = dict(**kwds)
         self.pins = None
         # self.options = None

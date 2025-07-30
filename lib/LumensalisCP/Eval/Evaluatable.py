@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayEvalEvaluatableImport = ImportProfiler( "Eval.Evaluatable" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayEvalEvaluatableImport = pmc_getImportProfiler( "Eval.Evaluatable" )
 
 from LumensalisCP.common import Debuggable,TypeVar, Generic, TYPE_CHECKING, Any
 #from LumensalisCP.Debug import Debuggable
@@ -51,4 +51,4 @@ def evaluate( value:Evaluatable[DirectValue]|DirectValue, context:OptionalContex
     
     return value
 
-_sayEvalEvaluatableImport.complete()
+_sayEvalEvaluatableImport.complete(globals())

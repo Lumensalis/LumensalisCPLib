@@ -4,8 +4,8 @@ import asyncio
 
 import wifi, displayio
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayMainImport = ImportProfiler( "Main.MainManager" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayMainImport = pmc_getImportProfiler( "Main.MainManager" )
 
 import LumensalisCP.Main.Dependents
 from LumensalisCP.commonPreManager import *
@@ -211,9 +211,21 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
             
             import adafruit_connection_manager # type: ignore
             if not wifi.radio.connected:
-                ssid = os.getenv("CIRCUITPY_WIFI_SSID")
-                self.sayAtStartup("Connecting to %r", ssid)
-                wifi.radio.connect(ssid, os.getenv("CIRCUITPY_WIFI_PASSWORD")) # type: ignore
+                try:
+                    ssid =  os.getenv("LCPF_WIFI_SSID") or os.getenv("CIRCUITPY_WIFI_SSID")
+                    password = os.getenv("LCPF_WIFI_PASSWORD") or os.getenv("CIRCUITPY_WIFI_PASSWORD")
+                    channel = os.getenv("LCPF_WIFI_CHANNEL")
+                    options:dict[str,Any] = {}
+                    if channel is not None:
+                        options['channel'] = int(channel)
+                    self.sayAtStartup(f"Connecting to {ssid!r} with options {options!r}")
+                    options.setdefault('password', password)
+                    wifi.radio.connect(ssid=ssid, **options) # type: ignore
+
+                    self.sayAtStartup("Connected to %r", ssid)
+                except Exception as e:
+                    self.sayAtStartup("Failed to connect to WiFi: %s", e)
+                    raise
             #import socketpool
             #self.__socketPool = socketpool.SocketPool(wifi.radio)
             #self.sayAtStartup( "wifi.radio.start_dhcp()" )
@@ -265,9 +277,9 @@ see http://lumensalis.com/ql/h2Scenes
         return [self.addScene(name) for name in names]
     
     def sayAtStartup( self, fmt:str, *args:Any ):
-        if pmc_mainLoopControl.startupVerbose:
-            print( "-----" )
-            print( f"{self.getNewNow():0.3f} STARTUP : {safeFmt(fmt,*args)}" )
+        pmc_mainLoopControl.sayAtStartup( fmt, *args)
+            #print( "-----" )
+            #print( f"{self.getNewNow():0.3f} STARTUP : {safeFmt(fmt,*args)}" )
             
     def addBasicWebServer( self, *args:Any, **kwds:StrAnyDict ):
         from LumensalisCP.HTTP.BasicServer import BasicServer
@@ -349,15 +361,12 @@ see http://lumensalis.com/ql/h2Scenes
         self.infoOut( "starting manager main run" )
         _early_collect("end manager init")
         self.__priorSleepWhen = self.getNewNow()
-        
-        mlc = PreMainConfig.pmc_mainLoopControl
         self._nextWait = self.getNewNow()
         
         try:
             for cb in self.__preFirstRunCallbacks:
                 cb()
-            context = self._privateCurrentContext
-
+        
             self._when = self.getNewNow()
             while True:
                 ManagerRL.MainManager_singleLoop(self) # type: ignore
@@ -393,4 +402,4 @@ see http://lumensalis.com/ql/h2Scenes
 
     _renameIdentifiablesItems :dict[str,NamedLocalIdentifiable]
 
-_sayMainImport.complete()
+_sayMainImport.complete(globals())

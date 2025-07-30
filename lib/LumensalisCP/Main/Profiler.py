@@ -16,8 +16,8 @@ try:
 except ImportError:
     pass
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayProfilerImport = ImportProfiler( "Profiler" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayProfilerImport = pmc_getImportProfiler( "Profiler" )
 
 import LumensalisCP.Main.Updates
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
@@ -503,7 +503,7 @@ class ProfileFrameBase(Releasable):
         return f"PSF{('-'+self.name) if self.name is not None else ''}[{self.depth}:{self._rIndex}]@{id(self):X}"
     
     def finish(self):
-        snap = self.snap('end')
+        self.snap('end')
         self.frameEndPT = getProfilerNow()
         #snap.e = getProfilerNow() - self.latestStartPT
         self.e = self.frameEndPT - self.frameStartPT 
@@ -690,4 +690,4 @@ class Profiler(object):
             return None
         return rv 
 
-_sayProfilerImport.complete()
+_sayProfilerImport.complete(globals())

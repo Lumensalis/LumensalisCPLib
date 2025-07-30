@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayMainUpdatesImport = ImportProfiler( "Main.Updates" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayMainUpdatesImport = pmc_getImportProfiler( "Main.Updates" )
 
 
 from LumensalisCP.CPTyping import *
@@ -162,5 +162,5 @@ class UpdateContext(Debuggable):
         
 
 #############################################################################
-_sayMainUpdatesImport.complete()
+_sayMainUpdatesImport.complete(globals())
 

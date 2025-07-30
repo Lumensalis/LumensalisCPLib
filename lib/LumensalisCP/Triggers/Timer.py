@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayTriggersTimerImport = ImportProfiler("Triggers.Timer" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayTriggersTimerImport = pmc_getImportProfiler("Triggers.Timer" )
 
 from LumensalisCP.IOContext import *
 
@@ -225,8 +225,7 @@ def addPeriodicTaskDef( **kwargs:Unpack[PeriodicTimer.KWDS]
     return wrapper
 
 
-def addSimplePeriodicTaskDef( name:Optional[str]=None, 
-                **kwds:Unpack[PeriodicTimer.KWDS]
+def addSimplePeriodicTaskDef( **kwds:Unpack[PeriodicTimer.KWDS]
         ) -> Callable[[InvocableOrSimpleCB], Invocable]:
 
     def wrapper( cb:InvocableOrSimpleCB  ) -> Invocable:
@@ -238,4 +237,4 @@ def addSimplePeriodicTaskDef( name:Optional[str]=None,
 
     return wrapper
 
-_sayTriggersTimerImport.complete()
+_sayTriggersTimerImport.complete(globals())

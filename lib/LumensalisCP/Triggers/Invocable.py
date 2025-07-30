@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayInvocableImport = ImportProfiler( "Triggers.Invocable" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayInvocableImport = pmc_getImportProfiler( "Triggers.Invocable" )
 
 #from LumensalisCP.Debug import Debuggable
 
@@ -89,7 +89,7 @@ class InvocableContextCB(NamedInvocable):
 InvocableOrSimpleCB:TypeAlias = Union[Invocable, Callable[[], None]]
 InvocableOrContextCB:TypeAlias = Union[Invocable, Callable[['EvaluationContext'], None]]
 
-_sayInvocableImport.complete()
+_sayInvocableImport.complete(globals())
 
 __all__ = [
     "Invocable",

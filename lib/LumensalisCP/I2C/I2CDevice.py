@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayI2CDeviceImport = ImportProfiler( "I2C.I2CDevice" )
-
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayI2CDeviceImport = pmc_getImportProfiler( "I2C.I2CDevice" )
 
 from LumensalisCP.commonCP import *
 from LumensalisCP.IOContext import *
 
-
 #############################################################################
-
 
 class I2CDevice( NamedLocalIdentifiable ):
     """Base class for I2C devices."""
@@ -41,7 +38,7 @@ class I2CDevice( NamedLocalIdentifiable ):
         else:
             self.__updateInterval = self.DEFAULT_UPDATE_INTERVAL 
             
-        main._addI2CDevice(self)
+        main._addI2CDevice(self) # pyright: ignore[reportPrivateUsage]
     
         self._inputs:NliList[InputSource] = NliList(name='inputs',parent=self)
         self._outputs:NliList[NamedOutputTarget] = NliList(name='outputs',parent=self)
@@ -96,7 +93,8 @@ class I2CDevice( NamedLocalIdentifiable ):
                 self._markChanged(context)
         return True
         
-        
+#############################################################################
+
 class I2CInputSource( InputSource ): # pylint: disable=abstract-method
     
     class KWDS(InputSource.KWDS):
@@ -118,4 +116,6 @@ class I2COutputTarget( NamedOutputTarget ): # pylint: disable=abstract-method
     @property
     def parentTarget(self): return self._wrTarget    
 
-_sayI2CDeviceImport.complete()
+#############################################################################
+
+_sayI2CDeviceImport.complete(globals())

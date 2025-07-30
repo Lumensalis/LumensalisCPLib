@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import math
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_ioContextImport = ImportProfiler( "IOContext" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_ioContextImport = pmc_getImportProfiler( "IOContext" )
 
 from LumensalisCP.common import *
 from LumensalisCP.Eval.common import *
@@ -30,4 +30,4 @@ if TYPE_CHECKING:
     from LumensalisCP.Eval.Evaluatable import evaluate, Evaluatable
     from LumensalisCP.Main.Updates import UpdateContext
 
-_ioContextImport.complete()
+_ioContextImport.complete(globals())

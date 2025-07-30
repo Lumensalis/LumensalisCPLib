@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayInputsImport = ImportProfiler( "Inputs" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayInputsImport = pmc_getImportProfiler( "Inputs" )
 
 #from LumensalisCP.common import *
 from LumensalisCP.common import *
@@ -116,6 +116,6 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm):
     
     def path( self ): return None
 
-_sayInputsImport.complete()
+_sayInputsImport.complete(globals())
 
 __all__ = [ 'InputSource' ]

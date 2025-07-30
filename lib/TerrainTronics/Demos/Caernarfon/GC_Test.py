@@ -27,14 +27,14 @@ class GC_Test( DemoBase ):
         # pyright: reportUnusedFunction=false
 
 
-        dt = PeriodicTimer( interval=lambda : GC_TestRL.printDumpInterval, manager=main.timers, name="dump" )
+        dt = PeriodicTimer( interval=lambda : pmc_gcManager.printDumpInterval, manager=main.timers, name="dump" )
         
         @dt.addSimpleTaskDef( "printDumpPeriod" )
         def dump():
             GC_TestRL.printDump(main)
             
         @addPeriodicTaskDef( "gc-collect", 
-                            period=lambda: GC_TestRL.collectionCheckInterval,
+                            period=lambda: pmc_gcManager.collectionCheckInterval,
                             main=main
                  )
         def runCollection(context:EvaluationContext) -> None:

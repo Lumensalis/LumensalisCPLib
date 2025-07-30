@@ -4,8 +4,8 @@ from __future__ import annotations
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 # pyright: reportUnknownVariableType=false
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayEvalCommonImport = ImportProfiler( "Eval.Common" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayEvalCommonImport = pmc_getImportProfiler( "Eval.Common" )
 
 from LumensalisCP.common import *
 from LumensalisCP.Identity.Local import *
@@ -53,4 +53,4 @@ def toRGBEval(value:  RGBEvalArg) -> RGBEval:
         return value # type: ignore
     return RGB.toRGB(value)
 
-_sayEvalCommonImport.complete()
+_sayEvalCommonImport.complete(globals())

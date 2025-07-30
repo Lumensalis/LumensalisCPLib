@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayAudioEffectImport = ImportProfiler( "Audio.Effect" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayAudioEffectImport = pmc_getImportProfiler( "Audio.Effect" )
 
 
 import ulab.numpy as np
@@ -31,12 +31,10 @@ class SoundEffectsManager(MainChild):
 
         self.audio = audio
 
-        #self.sample_rate=
-        sample_rate=22050
-
+        #sample_rate=22050
 
         self.synth = synthio.Synthesizer( sample_rate=44100 )
-        audio.audio.play(self.synth)
+        audio.audio.play(self.synth) # type: ignore
 
         self.waveForms:dict[str,WaveDataType] = {
             #'sine': synthio.Waveform.SINE,
@@ -54,7 +52,7 @@ class SoundEffectsManager(MainChild):
         self.waveForms['sine_wave'] = sine_wave
         if self.enableDbgOut: self.dbgOut(f"Created sine_wave with size {waveformSize} : {repr(sine_wave):.80}...")
 
-    def _makeEffect(self, effectClass:Optional[type]=None, **kwargs:StrAnyDict) -> SoundEffect:
+    def _makeEffect(self, effectClass:Optional[type]=None, **kwargs:Any) -> SoundEffect:
         effectClass = effectClass or SoundEffect
         effect = effectClass(self, **kwargs)
         effect.postCreate()
@@ -74,9 +72,9 @@ HIGH_PASS = synthio.FilterMode.HIGH_PASS
 BAND_PASS = synthio.FilterMode.BAND_PASS
 NOTCH = synthio.FilterMode.NOTCH
 # filters beyond this line use the "A" parameter (in addition to f0 and Q)
-PEAKING_EQ = synthio.FilterMode.PEAKING_EQ
-LOW_SHELF = synthio.FilterMode.LOW_SHELF
-HIGH_SHELF = synthio.FilterMode.HIGH_SHELF
+PEAKING_EQ = synthio.FilterMode.PEAKING_EQ # type: ignore
+LOW_SHELF = synthio.FilterMode.LOW_SHELF # type: ignore
+HIGH_SHELF = synthio.FilterMode.HIGH_SHELF # type: ignore
 
 class SoundEffect(NamedLocalIdentifiable):
 
@@ -117,10 +115,11 @@ class SoundEffect(NamedLocalIdentifiable):
             if filterA is None:
                 filterA = 0.0
 
-            filter = synthio.Biquad( mode=filterMode,
-                frequency=filterFrequency,
-                Q=filterQ,
-                A=filterA
+            filter = synthio.Biquad(
+                 mode=filterMode,  # type: ignore
+                frequency=filterFrequency,  # type: ignore
+                Q=filterQ,  # type: ignore
+                A=filterA  # type: ignore
             )
 
         self.note = synthio.Note(
@@ -158,7 +157,7 @@ class SoundEffect(NamedLocalIdentifiable):
         if self.enableDbgOut: self.dbgOut("Effect postCreate called")
         pass
 
-_sayAudioEffectImport.complete()
+_sayAudioEffectImport.complete(globals())
 
 __all__ = [
     "SoundEffectsManager",

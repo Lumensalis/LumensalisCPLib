@@ -4,8 +4,6 @@ from LumensalisCP.Main.PreMainConfig import pmc_gcManager
 from LumensalisCP.Main.Profiler import *
 import sys
 
-printDumpInterval = 21
-collectionCheckInterval = 3.51
 
 dumpConfig = ProfileWriteConfig(target=sys.stdout,
         minE = 0.000,

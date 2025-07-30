@@ -26,7 +26,7 @@ class DemoBase( DemoMixin):
         
 class DemoSubBase( DemoMixin):
     pass
-    def __init__(self, demo:DemoBase, *args,**kwds):
+    def __init__(self, demo:DemoBase, *args:Any, **kwds:Any):
         self.demo = demo
         self.main = demo.main
         ensure( self.main.scenes.currentScene is not None, "You must have a scene defined before creating a %s", self.__class__.__name__)

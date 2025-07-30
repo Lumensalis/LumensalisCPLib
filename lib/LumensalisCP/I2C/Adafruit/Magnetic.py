@@ -42,9 +42,9 @@ class I2CSimpleInput(I2CInputSource):
 class TLV493D(I2CDevice,adafruit_tlv493d.TLV493D):
     DEFAULT_UPDATE_INTERVAL = TimeInSeconds(0.1)
     
-    def __init__(self, main, **kwds:Unpack[I2CDevice.KWDS] ):
+    def __init__(self, **kwds:Unpack[I2CDevice.KWDS] ):
                 
-        I2CDevice.__init__( self, main, **kwds ) 
+        I2CDevice.__init__( self, **kwds ) 
         adafruit_tlv493d.TLV493D.__init__(self, self.i2c)
         self.__lastReading:Tuple[int,int,int]  = (0,0,0)
         
@@ -78,11 +78,11 @@ class TLV493D(I2CDevice,adafruit_tlv493d.TLV493D):
             
             crTotal = 0
             for ix, inputSource in enumerate(self.__inputs):
-                inputSource._setValue( reading, context ) # pylint: disable=protected-access
+                inputSource._setValue( reading, context ) # pylint: disable=protected-access # pyright: ignore[reportPrivateUsage]
                 crTotal +=  reading[ix] *  reading[ix]
                 
             distance = math.sqrt( crTotal )
-            self.__distance._setValue( distance, context ) # pylint: disable=protected-access
+            self.__distance._setValue( distance, context ) # pylint: disable=protected-access # pyright: ignore[reportPrivateUsage]
 
             if self.enableDbgOut: self.dbgOut( "new reading : %8.1f [ %5d %5d %5d ] ", distance, *reading )
             return True

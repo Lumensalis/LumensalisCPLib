@@ -6,8 +6,8 @@ import gc # type: ignore
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 # pylint: disable=import-error,unused-import,unused-argument
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayCmPMMImport = ImportProfiler( "commonPreMainManager" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayCmPMMImport = pmc_getImportProfiler( "commonPreMainManager" )
 
 import LumensalisCP.Debug
 import LumensalisCP.Main
@@ -55,4 +55,4 @@ from LumensalisCP.Main.PreMainConfig import pmc_gcManager
 
 pmc_mainLoopControl = PreMainConfig.pmc_mainLoopControl
 
-_sayCmPMMImport.complete()
+_sayCmPMMImport.complete(globals())

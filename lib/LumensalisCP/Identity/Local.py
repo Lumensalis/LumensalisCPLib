@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayIdentityLocalImport = ImportProfiler( "Identity.Local" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayIdentityLocalImport = pmc_getImportProfiler( "Identity.Local" )
 
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 
@@ -10,6 +10,8 @@ from LumensalisCP.Debug import Debuggable
 import LumensalisCP.pyCp.weakref as lcpWeakref
 from LumensalisCP.CPTyping import ReferenceType, Optional, Iterable , Generic, TypeVar, GenericT
 from LumensalisCP.pyCp.collections import GenericList, GenericListT
+
+#############################################################################
 
 _sayIdentityLocalImport.parsing()
 
@@ -234,7 +236,9 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
                 return child
         return None
 
-_sayIdentityLocalImport.complete()
+#############################################################################
+
+_sayIdentityLocalImport.complete(globals())
 
 __all__ = ['LocalIdentifiable',
            'NamedLocalIdentifiable',

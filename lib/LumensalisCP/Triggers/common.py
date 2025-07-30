@@ -3,8 +3,8 @@ from __future__ import annotations
 # pylint: disable=unused-import
 # pyright: reportUnusedImport=false
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-__triggersCommonSayImport = ImportProfiler("Triggers.common" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+__triggersCommonSayImport = pmc_getImportProfiler("Triggers.common" )
 
 __triggersCommonSayImport( "IOContext... " )
 from LumensalisCP.IOContext  import *
@@ -101,4 +101,4 @@ def fireOnFalling( expression:ExpressionTerm, target:Action, trigger:Optional[Tr
 
 #############################################################################
 
-__triggersCommonSayImport.complete()
+__triggersCommonSayImport.complete(globals())

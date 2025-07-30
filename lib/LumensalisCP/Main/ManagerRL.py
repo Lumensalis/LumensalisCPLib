@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import ReloadableImportProfiler
-__sayMainManagerRLImport = ReloadableImportProfiler( "Main.ManagerRL" )
+from LumensalisCP.Main.PreMainConfig import pmc_getReloadableImportProfiler
+__sayMainManagerRLImport = pmc_getReloadableImportProfiler( "Main.ManagerRL" )
 
 from LumensalisCP.commonPreManager import *
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl #, pmc_gcManager
@@ -31,7 +31,9 @@ def MainManager_nliGetChildren(self:MainManager) -> Iterable[NamedLocalIdentifia
 def MainManager_launchProject( self:MainManager, globals:Optional[StrAnyDict]=None, verbose:bool = False ) -> None: 
     if globals is not None:
         self.renameIdentifiables( globals, verbose=verbose )
-    self.addBasicWebServer()
+    useWifi = getattr(self, 'useWifi', False)        
+    if useWifi:
+        self.addBasicWebServer()
     self.run()
 
 
@@ -74,14 +76,9 @@ def MainManager_handleWsChanges( self:MainManager, changes:StrAnyDict ):
             self.warnOut( f"missing cv {key} in {defaultPanel.controls.keys()} for wsChanges {changes}")
 
 def MainManager_singleLoop( self:MainManager ): #, activeFrame:ProfileFrameBase):
-    with self.getNextFrame() as activeFrame:
+    with self.getNextFrame(): #  as activeFrame:
         context = self._privateCurrentContext
-        
-        #activeFrame.snap( 'preTimers' )
-        ##entry = ProfileSnapEntry.makeEntry( "foo", self.when, "bar" )
-        #entry.release()
-        #activeFrame.snap( 'preTimers2' )
-        #activeFrame.snap( 'timers' )
+
         self._timers.update( context )
         if not mlc.MINIMUM_LOOP:
 
@@ -164,4 +161,4 @@ def MainManager_getNextFrame(self:MainManager) ->ProfileFrameBase:
         context.baseFrame  = context.activeFrame = newFrame
         return newFrame
 
-__sayMainManagerRLImport.complete()
+__sayMainManagerRLImport.complete(globals())

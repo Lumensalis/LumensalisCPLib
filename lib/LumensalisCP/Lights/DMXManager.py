@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+# pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
+
 from LumensalisCP.Main.Dependents import *
 from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.common import *
@@ -5,6 +9,7 @@ from LumensalisCP.Lights.Light import *
 from LumensalisCP.Inputs import InputSource
 from LumensalisCP.Main.Updates import UpdateContext
 
+#############################################################################
 
 #import stupidArtnet
 from .LCP_StupidArtnetServer import StupidArtnetASIOServer
@@ -14,7 +19,7 @@ import asyncio
 from asyncio import create_task, gather, run, sleep as async_sleep, Task
 
 class DMXWatcher(InputSource):
-    def __init__(self, name, manager:"DMXManager", c1, cN=None):
+    def __init__(self, name:str, manager:"DMXManager", c1:int, cN:Optional[int]=None):
         super().__init__(name=name)
         self.__manager = manager
         self.c1 = c1-1
@@ -32,7 +37,7 @@ class DMXWatcher(InputSource):
     def derivedUpdate(self) -> None: raise NotImplementedError
 
 class DMXDimmerWatcher(DMXWatcher):
-    def __init__(self, name, manager:"DMXManager", c1):
+    def __init__(self, name:str, manager:"DMXManager", c1:int):
         super().__init__(name, manager, c1, c1+1 )
         self.__dimmerValue = 0
         
@@ -40,8 +45,8 @@ class DMXDimmerWatcher(DMXWatcher):
         assert len(self.data) == 1
         self.__dimmerValue = self.data[0]/255.0
         self.dbgOut( "derivedUpdate  =  %r", self.__dimmerValue)
-        
-    def getDerivedValue(self, context:EvaluationContext) -> Any:
+
+    def getDerivedValue(self, context:EvaluationContext) -> Any: # pyright: reportUndefinedVariable=false
         #self.dbgOut( "getDerivedValue returning %r", self.__dimmerValue)
         return self.__dimmerValue
 
@@ -66,7 +71,7 @@ class DMXManager(MainChild):
         #self.__client = ArtNetClient()
         self._sasServer = StupidArtnetASIOServer(main.socketPool) #Create a server with the default port 6454
         self._universe = 0
-        self._settings = []
+        self._settings:list[Any] = []
         self._watchers:List[DMXWatcher] = []
         # For every universe we would like to receive,
         # add a new listener with a optional callback

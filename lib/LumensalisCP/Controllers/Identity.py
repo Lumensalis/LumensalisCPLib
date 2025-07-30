@@ -1,8 +1,10 @@
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-__sayControllersIdentityImport = ImportProfiler("Controllers.Identity" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+__sayControllersIdentityImport = pmc_getImportProfiler("Controllers.Identity" )
+
+# pyright: reportUnusedImport=false,reportUnusedVariable=false
 
 import os, sys, json
-import microcontroller
+import microcontroller, busio
 import binascii
 import board
 import adafruit_24lc32 # pyright: ignore[reportMissingImports]
@@ -16,6 +18,7 @@ from LumensalisCP.CPTyping import *
 
 if TYPE_CHECKING:
     from nvm import ByteArray
+    from LumensalisCP.Main.Manager import MainManager
 
 __sayControllersIdentityImport.parsing()
 
@@ -26,7 +29,7 @@ class ControllerNVM(object):
         PROJECT=(5,105),
     )
     
-    def __init__(self, nvm = microcontroller.nvm ):
+    def __init__(self, nvm: ByteArray = microcontroller.nvm ): # type: ignore[reportGeneralTypeIssues]
         assert nvm is not None
         self.__nvm: ByteArray = nvm
 
@@ -104,6 +107,7 @@ class ControllerNVM(object):
                 )
         
         with nvm._i2c as i2c: # type: ignore
+            i2c: busio.I2C
             for i in range(0, data_length):
                 assert  (start + i) < max_size
                 #buffer[0] = (start + i) >> 8
@@ -126,7 +130,7 @@ class ControllerNVM(object):
         return read_buffer
     
 class ControllerIdentity(object):
-    def __init__(self, main):
+    def __init__(self, main:MainManager):
         processorUid = microcontroller.cpu.uid
         if pmc_mainLoopControl.preMainVerbose: print( f"processorUid({type(processorUid)}) = {processorUid}")
         self.processorUid = binascii.hexlify(processorUid).decode('utf-8')
@@ -167,4 +171,4 @@ class ControllerIdentity(object):
                    or None
         )
 
-__sayControllersIdentityImport.complete()
+__sayControllersIdentityImport.complete(globals())

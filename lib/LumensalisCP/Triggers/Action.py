@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayActionImport = ImportProfiler( "Action" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayActionImport = pmc_getImportProfiler( "Action" )
 
 from LumensalisCP.Debug import Debuggable
 
@@ -216,4 +216,4 @@ __all__ = [
     'ActionCBArg',
 ]
 
-_sayActionImport.complete()
+_sayActionImport.complete(globals())

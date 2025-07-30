@@ -1,9 +1,9 @@
-from LumensalisCP.Main.PreMainConfig import ReloadableImportProfiler
-__sayBSR_sakRLImport = ReloadableImportProfiler( "HTTP.BSR_sakRL" )
+from LumensalisCP.Main.PreMainConfig import pmc_getReloadableImportProfiler
+__sayBSR_sakRLImport = pmc_getReloadableImportProfiler( "HTTP.BSR_sakRL" )
 
 from .common import *
 
-__sayBSR_sakRLImport.complete()
+__sayBSR_sakRLImport.complete(globals())
 
 def getStatusInfo(self:BasicServer.BasicServer, request:Request ) -> dict[str, Any]:
     main = self.main

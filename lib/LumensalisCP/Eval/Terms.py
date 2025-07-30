@@ -1,8 +1,8 @@
 # pyright: reportUnusedImport=false, reportImportCycles=false, reportMissingImports=false
 # pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false,  reportUnknownVariableType=false
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayEvalTermsImport = ImportProfiler( "Eval.Terms" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayEvalTermsImport = pmc_getImportProfiler( "Eval.Terms" )
 
 import LumensalisCP.Main
 from LumensalisCP.CPTyping import TYPE_CHECKING
@@ -14,4 +14,4 @@ from LumensalisCP.Eval.Expressions import Expression
 MILLIS = CallbackSource( "MILLIS", lambda: LumensalisCP.Main.MainManager.theManager.millis ) # type: ignore # pylint: disable=no-member
 CYCLES = CallbackSource( "CYCLES", lambda: LumensalisCP.Main.MainManager.theManager.cycle ) # type: ignore # pylint: disable=no-member
 
-_sayEvalTermsImport.complete()
+_sayEvalTermsImport.complete(globals())

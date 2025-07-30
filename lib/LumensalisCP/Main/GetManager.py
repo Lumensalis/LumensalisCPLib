@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayMainGetManagerImport = ImportProfiler( "Main.GetManager" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayMainGetManagerImport = pmc_getImportProfiler( "Main.GetManager" )
 
 from LumensalisCP.CPTyping import TYPE_CHECKING
 
@@ -14,4 +14,4 @@ if TYPE_CHECKING:
     
 getMainManager:Singleton[MainManager] = Singleton("MainManager") # type: ignore
 
-_sayMainGetManagerImport.complete()
+_sayMainGetManagerImport.complete(globals())

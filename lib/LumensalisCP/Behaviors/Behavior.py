@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayBehaviorImport = ImportProfiler( "Behaviors.Behavior" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayBehaviorImport = pmc_getImportProfiler( "Behaviors.Behavior" )
 
 
 _sayBehaviorImport( "Expression" )
@@ -110,4 +110,4 @@ class Behavior(Debuggable):
         """Return True if the behavior is active."""
         return self.actor.currentBehavior is self
 
-_sayBehaviorImport.complete()
+_sayBehaviorImport.complete(globals())

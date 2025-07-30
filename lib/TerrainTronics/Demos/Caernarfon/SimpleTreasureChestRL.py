@@ -16,8 +16,6 @@ import LumensalisCP.pyCp.importlib
 
 from . import SimpleTreasureChest
 
-printDumpInterval = 33
-collectionCheckInterval = 5.51
 pmc_mainLoopControl.ENABLE_PROFILE = False
 #gcm.setMinimumThreshold(1638400)
 pmc_gcManager.setMinimumThreshold(638400)
@@ -84,7 +82,7 @@ def printDump( main:MainManager ):
 def TreasureChest_finishSetup(self:SimpleTreasureChest.TreasureChest):
     main = self.main
     from . import SimpleTreasureChestRL
-    @addPeriodicTaskDef( "gc-collect", period=lambda: SimpleTreasureChestRL.collectionCheckInterval, main=main )
+    @addPeriodicTaskDef( "gc-collect", period=lambda: pmc_gcManager.collectionCheckInterval, main=main )
     def runCollection(context=None, when=None):
         pmc_gcManager.runCollection(context,when, show=False)
 

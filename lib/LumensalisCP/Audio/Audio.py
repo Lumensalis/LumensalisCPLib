@@ -16,11 +16,11 @@ from .Effect import SoundEffectsManager
 #    from  LumensalisCP.Main.Manager import MainManager
     
 class AudioSample( object ):
-    def __init__( self, sample, filename ):
+    def __init__( self, sample:Any, filename:str ):
         self.sample = sample
         self.filename = filename
     
-    def play(self, loop:bool = False, **kwds):
+    def play(self, loop:bool = False, **kwds:Any):
         #Audio.theAudio.mixer.play(self.sample)
         Audio.theAudio.play(self, loop=loop, **kwds)
         
@@ -127,7 +127,7 @@ class Audio( MainChild ):
         return  AudioSample( sample, filename=filename )
 
     def readSamples( self, *filenames:str ) -> List[AudioSample]:
-        rv = []
+        rv:list[AudioSample] = []
         for filename in filenames:
             rv.append( self.readSample( filename ) )
         return rv

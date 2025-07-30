@@ -8,10 +8,12 @@ import json
 import math
 import adafruit_itertools as itertools  # type: ignore # pylint: disable=import-error
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayCommonImport = ImportProfiler( "common" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayCommonImport = pmc_getImportProfiler( "common" )
 
+#############################################################################
 
+from LumensalisCP.Main.PreMainConfig import  pmc_mainLoopControl, pmc_gcManager
 import LumensalisCP
 from LumensalisCP.CPTyping import *
 from LumensalisCP.Debug import Debuggable
@@ -142,4 +144,4 @@ def SHOW_EXCEPTION( inst:Exception, fmt:str, *args:Any ):
     print( f"EXCEPTION {inst} : {safeFmt(fmt,*args)}" )
     print( "\n".join(traceback.format_exception(inst)) )
     
-_sayCommonImport.complete()
+_sayCommonImport.complete(globals())

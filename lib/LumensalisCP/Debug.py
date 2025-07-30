@@ -2,8 +2,8 @@ from __future__ import annotations
 # pylint: disable=unused-import,import-error
 #   pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayDebugImport = ImportProfiler( "Debug" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayDebugImport = pmc_getImportProfiler( "Debug" )
 
 try:
     #import typing
@@ -82,4 +82,4 @@ class Debuggable( object ):
     @enableDbgOut.setter
     def enableDbgOut(self,enabled:bool): self.__dbgOutEnabled = enabled
 
-_sayDebugImport.complete()
+_sayDebugImport.complete(globals())

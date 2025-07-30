@@ -1,5 +1,6 @@
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-ImportProfiler.SHOW_IMPORTS = False
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+
+
 # ALWAYS START WITH "from LumensalisCP.Simple import *"
 from LumensalisCP.Simple import * # http://lumensalis.com/ql/h2Start
 
@@ -103,7 +104,7 @@ print( f"touchNote = {touchNote}" )
 # fireOnRising( leftRimTouch, do( touchNote ) )
 dot = do( touchNote )
 dot.enableDbgOut = True
-dot.name = "dot"
+#dot.name = "dot"
 
 fireDot = fireOnRising( leftRimTouch, dot )
 fireDot.enableDbgOut = True

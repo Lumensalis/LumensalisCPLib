@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_saypyCpcollectionsImport = ImportProfiler( "pyCp.Collections" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_saypyCpcollectionsImport = pmc_getImportProfiler( "pyCp.Collections" )
 
 
 try:
@@ -70,4 +70,4 @@ class GenericList(Generic[_ULT]): # type:  ignore # pylint: disable=function-red
 GenericListT = GenericT(GenericList)
 
 
-_saypyCpcollectionsImport.complete()
+_saypyCpcollectionsImport.complete(globals())

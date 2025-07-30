@@ -1,5 +1,5 @@
-from LumensalisCP.Main.PreMainConfig import ReloadableImportProfiler, ImportProfiler
-__sayHTTPBasicServerRLImport = ReloadableImportProfiler( "HTTP.BasicServerRL" )
+from LumensalisCP.Main.PreMainConfig import pmc_getReloadableImportProfiler, pmc_getImportProfiler
+__sayHTTPBasicServerRLImport = pmc_getReloadableImportProfiler( "HTTP.BasicServerRL" )
 
 from .BSR.common import *
 import traceback
@@ -97,8 +97,8 @@ from LumensalisCP.HTTP.BSR import BSR_cmdRL
 def _reloadForRoute( name:str ) -> None: # type:ignore[no-untyped-def]
     from LumensalisCP.HTTP import BasicServerRL
     modules: list[Any] = [  ]
-    ReloadableImportProfiler.SHOW_IMPORTS = True
-    ImportProfiler.SHOW_IMPORTS = True
+    pmc_getReloadableImportProfiler.SHOW_IMPORTS = True
+    pmc_getImportProfiler.SHOW_IMPORTS = True
 
 
     if "profile" in name:
@@ -172,4 +172,4 @@ def updateSocketClient(self:BasicServer.BasicServer, useStringIO:bool=False )->N
         self.websocket.send_message(message, fail_silently=True)
         if self.enableDbgOut: self.dbgOut( "wrote WS update : %r", message ) 
 
-__sayHTTPBasicServerRLImport.complete()
+__sayHTTPBasicServerRLImport.complete(globals())

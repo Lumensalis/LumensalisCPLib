@@ -1,5 +1,11 @@
 from __future__ import annotations
 from math import log
+
+# pylint: disable=unused-import,import-error,reimported,import-outside-toplevel
+# pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
+
+#############################################################################
+
 from LumensalisCP.Lights._common import *
 from LumensalisCP.IOContext import *
 #from LumensalisCP.Main.Expressions import NamedOutputTarget, EvaluationContext
@@ -8,6 +14,7 @@ from LumensalisCP.Lights.Pattern import *
 from LumensalisCP.Temporal.Oscillator import Sawtooth
 
 #############################################################################
+
 from LumensalisCP.Lights import TestPatternsRL
 
 class PatternRLTest( Pattern, OutputTarget ):
@@ -18,8 +25,8 @@ class PatternRLTest( Pattern, OutputTarget ):
                 value:ZeroToOne|Evaluatable[ZeroToOne] = 0.0,
                 **kwargs:Unpack[Pattern.KWDS]
             ):
-        self._onValue = a
-        self._offValue = b
+        self._onValue:RGBEval = toRGBEval( a )
+        self._offValue:RGBEval = toRGBEval( b )
         self._value = value
         Pattern.__init__( self, target=target,**kwargs)
         OutputTarget.__init__(self )
@@ -30,7 +37,7 @@ class PatternRLTest( Pattern, OutputTarget ):
     @property
     def a(self): return  self._onValue
     @a.setter
-    def a(self,v):  self._onValue = v
+    def a(self,v:RGBEval):  self._onValue = v
     
     def set( self, value:ZeroToOne, context:EvaluationContext ):
         self._value = value
@@ -61,10 +68,10 @@ class Spinner( OnOffPattern ):
     """ a spinning pattern that wraps around the end of the LightGroup
     """
     def __init__(self,
-                target:LightGroup, name:Optional[str]=None, 
+                target:LightGroup, 
                 period:TimeInSecondsEval = 0.5,
                 tail:ZeroToOne = 0.35,
-                **kwargs:Unpack[OnOffPattern]
+                **kwargs:Unpack[OnOffPattern.KWDS]
             ):
         """ a spinning pattern that wraps around the end of the LightGroup
 
@@ -83,13 +90,13 @@ class Spinner( OnOffPattern ):
         """
         self._tail = tail
         super().__init__( target=target, **kwargs)
-        self.oscillator = Sawtooth( name, period=period )
+        self.oscillator = Sawtooth( name=kwargs.get('name','sawtooth'), period=period )
         
 
-    @property
-    def onValue(self): return  self._onValue
-    @onValue.setter
-    def onValue(self,v):  self._onValue = v
+    #@property
+    #def onValue(self): return  self._onValue
+    #@onValue.setter
+    #def onValue(self,v):  self._onValue = v
     
     def set( self, value:ZeroToOne, context:EvaluationContext ):
         self._value = value

@@ -1,5 +1,5 @@
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayScenesSceneImport = ImportProfiler( "ScenesScene" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayScenesSceneImport = pmc_getImportProfiler( "Scenes.Scene" )
 
 
 from LumensalisCP.common import *
@@ -9,6 +9,10 @@ from LumensalisCP.Main.Dependents import MainChild
 from LumensalisCP.util.bags import NamedList
 from LumensalisCP.Lights.Patterns import Pattern
 from LumensalisCP.Main.Profiler import ProfileFrameBase
+
+#############################################################################
+
+_sayScenesSceneImport.parsing()
 
 class Setter(object):
     pass
@@ -154,5 +158,6 @@ def addSceneTask( scene:Scene, **kwds:Unpack[SceneTaskKwargs] ) -> Callable[...,
         
     return addTask
 
+#############################################################################
 
-_sayScenesSceneImport.complete()
+_sayScenesSceneImport.complete(globals())

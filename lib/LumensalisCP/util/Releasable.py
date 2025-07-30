@@ -3,8 +3,16 @@
 from __future__ import annotations
 import asyncio.lock  # type: ignore # pylint: disable=import-error,no-name-in-module
 
+#############################################################################
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayReleasableImport = pmc_getImportProfiler( "util.Releasable" )
+
+
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
+
+
+#############################################################################
 
 class ReleasablePool(object):
     
@@ -58,11 +66,11 @@ class Releasable(object):
         entries = [
             cls() for _ in range(count)
         ]
-        print( "releasing entries" )
+        pmc_mainLoopControl.sayDebugAtStartup( "releasing entries" )
         for entry in entries:
             assert entry._nextFree is None and not entry._inUse
             entry._releaseBase(rp)
-        print( "preloading complete" )
+        pmc_mainLoopControl.sayDebugAtStartup( "preloading complete" )
 
     @classmethod 
     def releasableGetInstance(cls) -> Self:
@@ -108,9 +116,11 @@ class Releasable(object):
         try:
             self.releaseNested()
         except RuntimeError as e:
-            print(f"Error releasing nested resources: {e} in {self.__class__.__name__} @{id(self):X}") 
-            raise 
-        
+            pmc_mainLoopControl.sayDebugAtStartup(f"Error releasing nested resources: {e} in {self.__class__.__name__} @{id(self):X}") 
+            raise
+
 
     def releaseNested(self):
         pass            
+
+_sayReleasableImport.complete(globals())

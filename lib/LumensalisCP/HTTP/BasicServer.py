@@ -12,8 +12,8 @@ from asyncio import create_task, sleep as async_sleep, Task
 from adafruit_httpserver.methods import POST, PUT, GET   # type: ignore # pylint: disable=import-error,no-name-in-module
 from adafruit_httpserver import Server, Request, Response, Websocket, Route, JSONResponse  # pylint: disable=import-error,no-name-in-module # type: ignore
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-__sayHTTPBasicServerImport = ImportProfiler("HTTP.BasicServer" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+__sayHTTPBasicServerImport = pmc_getImportProfiler("HTTP.BasicServer" )
 
 
 from LumensalisCP.IOContext import *
@@ -214,4 +214,4 @@ class BasicServer(Server,Debuggable):
             create_task(self.send_websocket_messages()),
         ]
 
-__sayHTTPBasicServerImport.complete()
+__sayHTTPBasicServerImport.complete(globals())

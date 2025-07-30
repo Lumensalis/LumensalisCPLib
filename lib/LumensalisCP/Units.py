@@ -1,8 +1,8 @@
 from __future__ import annotations
 # Common types used throughout the library
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
-_sayUnitsImport = ImportProfiler( "Units" )
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayUnitsImport = pmc_getImportProfiler( "Units" )
 
 from LumensalisCP.CPTyping import TypeAlias, NewType, Union,Optional
 
@@ -34,4 +34,4 @@ def TimeInSecondsConfig( v:TimeInSecondsConfigArg|None, default:Optional[TimeInS
         v = default
     return v # type: ignore
 
-_sayUnitsImport.complete()
+_sayUnitsImport.complete(globals())

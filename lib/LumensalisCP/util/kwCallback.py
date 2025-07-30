@@ -2,6 +2,11 @@ from LumensalisCP.CPTyping import *
 import re
 
 #############################################################################
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
+_sayKWCallbackImport = pmc_getImportProfiler( "util.kwCallback" )
+
+
+#############################################################################
 
 class KWCallback(object):
     """wrapper for a callable, allowing it  be invoked safely(ish) with more 
@@ -97,3 +102,5 @@ class KWCallback(object):
         
         
 KWCallbackArg:TypeAlias = Callable[..., Any]  # type: ignore        
+
+_sayKWCallbackImport.complete(globals())

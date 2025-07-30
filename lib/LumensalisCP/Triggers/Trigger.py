@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import ImportProfiler
+from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
 
-__triggersSayImport = ImportProfiler("Triggers.Trigger" )
+__triggersSayImport = pmc_getImportProfiler("Triggers.Trigger" )
     
 __triggersSayImport( "IOContext... " )
 from LumensalisCP.IOContext import *
@@ -186,7 +186,7 @@ class Trigger(NamedLocalIdentifiable, Invocable):
         return on2        
 
 #############################################################################
-__triggersSayImport.complete()
+__triggersSayImport.complete(globals())
 
 __all__ = [
     'Trigger',

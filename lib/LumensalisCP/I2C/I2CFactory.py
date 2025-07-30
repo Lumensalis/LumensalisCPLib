@@ -22,6 +22,8 @@ if TYPE_CHECKING:
     from LumensalisCP.I2C.Generic.VL530lx import VL53L0X
     from LumensalisCP.Main.Manager import MainManager
 
+#############################################################################
+
 class I2CFactory(object):
     def __init__(self, main:MainManager|None=None):
         assert main is not None
@@ -44,3 +46,5 @@ class I2CFactory(object):
         from LumensalisCP.I2C.Generic.VL530lx import VL53L0X
         kwds.setdefault('main', self.main)
         return VL53L0X( **kwds )
+
+#############################################################################

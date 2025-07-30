@@ -21,7 +21,7 @@ MUST NOT IMPORT ANY OTHER LUMENSALIS FILES
 from __future__ import annotations
 
 try:
-    from typing import TYPE_CHECKING, Any,Optional
+    from typing import TYPE_CHECKING, Any,Optional, ClassVar
 except ImportError:
     
     TYPE_CHECKING = False # type: ignore
@@ -31,8 +31,33 @@ import sys
 import time
 import supervisor
 
+
+
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
+
+
+class _MLCAnnotation:
+    def __init__(self, message:str, *args:Any, **kwds:Any) -> None:
+
+        self.message = message
+        if len(args) > 0:
+            try:
+                self.message = message % args
+            except : 
+                self.message = self.message + " (could not format args)"
+                
+        self.kwds = kwds
+        self.msecSinceStart = pmc_mainLoopControl.getMsSinceStart()
+        if len(kwds) > 0:
+            self.kwds = kwds
+
+    def elapsedMs(self, prior:_MLCAnnotation) -> int:
+        return prior.msecSinceStart - self.msecSinceStart
+
+    def __repr__(self) -> str:
+        return f"STARTUP @ {self.msecSinceStart/1000.0:0.3f}ms) : {self.message}"
+
 
 class _MainLoopControl(object):
     
@@ -46,12 +71,26 @@ class _MainLoopControl(object):
         self.enableHttpDebug:bool = False
         self.preMainVerbose:bool = False
         self.startupVerbose:bool = True
-        
+        self.annotations:list[_MLCAnnotation] = []
+
     def getMsSinceStart(self):
         now = supervisor.ticks_ms()
         if now < self.__started:
             self.__started = now
         return now - self.__started
+
+    def sayAtStartup(self, desc:str, *args:Any, **kwds:Any) -> _MLCAnnotation:
+        annotation = _MLCAnnotation( desc, *args, **kwds ) 
+        self.annotations.append( annotation )
+        print( annotation )
+        return annotation
+
+    def sayDebugAtStartup(self, desc:str, *args:Any,  **kwds:Any) -> _MLCAnnotation:
+        annotation = _MLCAnnotation( desc, *args, **kwds ) 
+        self.annotations.append( annotation )
+        if self.startupVerbose: 
+            print( annotation )
+        return annotation
 
         
 class GCManager(object):
@@ -63,6 +102,10 @@ class GCManager(object):
         self.PROFILE_MEMORY_ENTRIES:bool = False
         self.SHOW_ZERO_ALLOC_ENTRIES:bool = True
     
+        self.printDumpInterval = 28
+        self.collectionCheckInterval = 3.1
+        self.showRunCollection = True
+
         self.priorCycle = 0
         self.priorMs = 0
         self.prior_mem_alloc = 0
@@ -71,8 +114,8 @@ class GCManager(object):
         #self.main: = None
         
         self.min_delta_free = 32768
-        self.__absoluteMinimumThreshold:int = 128000
-        self.__actualFreeThreshold:int = 128000
+        self.__absoluteMinimumThreshold:int = 256000
+        self.__actualFreeThreshold:int = 256000
         
         self.freeBuffer = None
         self.targetCollectPeriod:float|None = 0.15
@@ -99,13 +142,13 @@ class GCManager(object):
 
         now = time.monotonic()
         mem_free_before = gc.mem_free()  # pylint: disable=no-member
-        mem_free_before_elapsed = time.monotonic() - now
+        mem_free_beforeelapsed = time.monotonic() - now
         if mem_free_before > self.__actualFreeThreshold and not force:
             # print( f"GC free = {mem_free_before}" )
             if show:
                 now = time.monotonic()
                 mem_alloc_before = gc.mem_alloc()  # pylint: disable=no-member
-                mem_alloc_before_elapsed = time.monotonic() - now
+                mem_alloc_beforeelapsed = time.monotonic() - now
                 
                 timeBeforeCollect = self.main.getNewNow()
                 cycle = self.main.cycle
@@ -126,14 +169,14 @@ class GCManager(object):
         mem_free_before} alloc={mem_alloc_before}, since last collect = {
         elapsedSincePriorCollectMS/1000.0:.3f} [{delta_cycles}] {
         delta_alloc} alloc, {delta_free} free gc.mem_f/a()={
-        mem_free_before_elapsed:.3f}/{mem_alloc_before_elapsed:.3f}"""
+        mem_free_beforeelapsed:.3f}/{mem_alloc_beforeelapsed:.3f}"""
                   )
 
             return
         
         now = time.monotonic()
         mem_alloc_before = gc.mem_alloc()  # pylint: disable=no-member
-        mem_alloc_before_elapsed = time.monotonic() - now
+        mem_alloc_beforeelapsed = time.monotonic() - now
         if self.verboseCollect:
             sys.stdout.write( f"{now:.3f} GC collect " )
         
@@ -159,7 +202,7 @@ class GCManager(object):
         collectRatio = collectElapsed / elapsedSincePriorCollect
         
         if self.verboseCollect :
-            print( f" took {collectElapsed:.3f} of {elapsedSincePriorCollect:.3f} at {pmc_mainLoopControl.getMsSinceStart()/1000.0:0.3f} for {delta_cycles} cycles freeing {delta_alloc} ( {delta_alloc/delta_cycles:.1f} per cycle) leaving {mem_alloc_after} used, {mem_free_after} free t={self.__actualFreeThreshold} cr={collectRatio}  gc.mem_f/a()={mem_free_before_elapsed:.3f}/{mem_alloc_before_elapsed:.3f}" )
+            print( f" took {collectElapsed:.3f} of {elapsedSincePriorCollect:.3f} at {pmc_mainLoopControl.getMsSinceStart()/1000.0:0.3f} for {delta_cycles} cycles freeing {delta_alloc} ( {delta_alloc/delta_cycles:.1f} per cycle) leaving {mem_alloc_after} used, {mem_free_after} free t={self.__actualFreeThreshold} cr={collectRatio}  gc.mem_f/a()={mem_free_beforeelapsed:.3f}/{mem_alloc_beforeelapsed:.3f}" )
 
         if self.targetCollectPeriod is not None and collectElapsed > self.targetCollectPeriod:
             
@@ -196,47 +239,142 @@ class GCManager(object):
         #print( f"cycle {cycle}, {len(main.timers.timers)}")
         #print( f"GC collection at {timeBeforeCollect:0.3f} took {timeAfterCollect-timeBeforeCollect:.3f} of {elapsedSincePriorCollectMS/1000.0:.3f} for {delta_cycles} cycles freeing {delta_alloc} ( {delta_alloc/delta_cycles:.1f} per cycle) leaving {mem_alloc_after} used, {mem_free_after} free" )
 
+
+assert globals().get('pmc_gcManager',None) is None, "pmc_gcManager already exists, cannot reinitialize"    
+
 pmc_gcManager = GCManager()
 pmc_mainLoopControl = _MainLoopControl()
 
 def printElapsed(desc:str):
     gcUsed = gc.mem_alloc()  # pylint: disable=no-member
     gcFree = gc.mem_free() # pylint: disable=no-member
-    print( "%s : _mlc.getMsSinceStart()=%0.3f | %r used, %r free" % 
+    print( "%s : %0.3f seconds since start | %r used, %r free | monotonic=%.03f" % 
           (desc,pmc_mainLoopControl.getMsSinceStart()/1000.0, 
-           gcUsed, gcFree
+           gcUsed, gcFree, time.monotonic()
            ) )
-    
 
-def sayAtStartup(desc:str) -> None:
-    print( f"Startup [{pmc_mainLoopControl.getMsSinceStart()/1000.0:.3f}]: {desc}" )
+def sayAtStartup(desc:str, **kwds:Any) -> None:
+    pmc_mainLoopControl.sayAtStartup(desc,**kwds)
+    #print( f"Startup [{pmc_mainLoopControl.getMsSinceStart()/1000.0:.3f}]: {desc}" )
 
+#############################################################################
 class ImportProfiler(object):
     """ A simple profiler for imports, to help identify slow imports """
-    SHOW_IMPORTS:bool = False
+    SHOW_IMPORTS:ClassVar[bool] = False
+    RECORD_IMPORTS:ClassVar[bool|None] = True
+    _importIndex:ClassVar[int] = 0
 
-    NESTING:list[ImportProfiler] = []
-    def __init__(self, name:str ) -> None:
-        self.name = name
-        self.path = "->".join(  [i.name for i in ImportProfiler.NESTING] )
+
+    NESTING:ClassVar[list[ActualImportProfiler]] = []
+    IMPORTS:ClassVar[list[ActualImportProfiler]] = []
+
+    def __init__(self ) -> None: ...
         
-        self( "import starting")
-        ImportProfiler.NESTING.append( self )
+
+    def __call__(self, desc:str) -> None: 
+        raise NotImplementedError
         
-    def __call__(self, desc:str) -> None:
-        if self.SHOW_IMPORTS:
-            sayAtStartup( f"IMPORT {self.path} | {self.name} : {desc}" )
 
     def parsing(self) -> None:
+        raise NotImplementedError
+
+    def complete(self, moduleGlobals:dict[str,Any]) -> None:
+        raise NotImplementedError
+
+    @classmethod
+    def dumpWorstImports(cls, count:int = 10) -> None:
+        imports = sorted(ImportProfiler.IMPORTS, key=lambda i: i.innerElapsed, reverse=True)
+        count = min( count, len(imports))
+        print(f"top {count} of {len(ImportProfiler.IMPORTS)} Imports sorted by innerElapsed:")
+        totals:dict[str,float] = dict( innerElapsed = 0.0, parsingElapsed = 0.0, childElapsed = 0.0, totalElapsed = 0.0 )
+        for i in imports[:count]:
+            print(f"  {i}")
+            for k in totals:
+                totals[k] += getattr(i, k, 0.0)
+
+        print(f"Total: {totals}")
+############################################################################
+
+class FakeImportProfiler(ImportProfiler):
+    def __call__(self, desc:str) -> None: 
+        pass
+
+    def parsing(self) -> None:
+        pass
+
+    def complete(self, moduleGlobals:dict[str,Any]) -> None:
+        pass
+
+############################################################################
+
+class ActualImportProfiler(ImportProfiler):
+    """ A simple profiler for imports, to help identify slow imports """
+    SHOW_IMPORTS:ClassVar[bool] = False
+    #RECORD_IMPORTS:ClassVar[bool|None] = None
+
+
+    def __init__(self, name:str ) -> None:
+        self.name = name
+        self.importIndex = ImportProfiler._importIndex
+        ImportProfiler._importIndex += 1
+        self.path = "->".join(  [i.name for i in ImportProfiler.NESTING] )
+        self.startTime = time.monotonic()
+        self._endTime:Optional[float] = None
+        self.childElapsed  = 0
+        self.innerElapsed = 999
+        self.startParsing:float|None = None
+        self( "import starting")
+        ImportProfiler.IMPORTS.append( self )
+        ImportProfiler.NESTING.append( self )
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}( inner={self.innerElapsed:2.03f}, parsing={self._parsingElapsed:2.03f}, child={self.childElapsed:2.03f}, total={self.elapsed:2.03f}, start={self.startTime:2.03f}, name={repr(self.name)}, path=[{self.path}] )"
+
+    def __call__(self, desc:str) -> None:
+        if self.SHOW_IMPORTS:
+            sayAtStartup( f"IMPORT {self.path} | {self.name} : {desc}", importProfiler=self )
+
+    def parsing(self) -> None:
+        self.startParsing = time.monotonic()
         self( "parsing" )
 
-    def complete(self) -> None:
-        self( "import complete" )
+    def complete(self, moduleGlobals:dict[str,Any]) -> None:
         end = ImportProfiler.NESTING.pop()
         assert end is self, f"ImportProfiler nesting mismatch: {end.name} != {self.name}"
+        self._endTime = time.monotonic()
+        self.elapsed = self._endTime - self.startTime
+        self.innerElapsed = self.elapsed - self.childElapsed
+        self._globals = moduleGlobals
+        message = f"import complete in {self.innerElapsed:.3f}s / {self.elapsed:.3f}s"
+        if self.startParsing is not None:
+            self._parsingElapsed = self._endTime - self.startParsing
+            message += f" (parsing {self._parsingElapsed:.3f}s)"
+        else:
+            self._parsingElapsed = self.innerElapsed
+        self( message )
+        if len(ImportProfiler.NESTING) > 0:
+            top = ImportProfiler.NESTING[-1]
+            top.childElapsed += self.elapsed
 
-class ReloadableImportProfiler(ImportProfiler):
-    SHOW_IMPORTS:bool = True
+
+class ReloadableImportProfiler(ActualImportProfiler):
+    SHOW_IMPORTS:ClassVar[bool] = True
+    
     pass 
 
-__all__ = [ 'pmc_gcManager', 'pmc_mainLoopControl', 'printElapsed', 'sayAtStartup','ImportProfiler', 'ReloadableImportProfiler' ]
+############################################################################
+_fakeImportProfiler = FakeImportProfiler()
+
+def pmc_getImportProfiler(name:str) -> ImportProfiler:
+    """ returns a reloadable import profiler for the given name """
+    if ImportProfiler.RECORD_IMPORTS is True or ImportProfiler.SHOW_IMPORTS is True:
+        return ActualImportProfiler(name)
+    return _fakeImportProfiler
+
+def pmc_getReloadableImportProfiler(name:str) -> ImportProfiler:
+    """ returns a reloadable import profiler for the given name """
+    if ReloadableImportProfiler.RECORD_IMPORTS is True or ReloadableImportProfiler.SHOW_IMPORTS is True:
+        return ReloadableImportProfiler(name)
+    return _fakeImportProfiler
+
+__all__ = [ 'pmc_gcManager', 'pmc_mainLoopControl', 'printElapsed', 'sayAtStartup','pmc_getImportProfiler', 'pmc_getReloadableImportProfiler' ]

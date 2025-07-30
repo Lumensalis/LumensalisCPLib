@@ -8,7 +8,6 @@ from LumensalisCP.Main.Manager import MainManager
 from LumensalisCP.Triggers.Timer import PeriodicTimer
 #from LumensalisCP.CPTyping import *
 
-
 LocalServoCallback:TypeAlias = Callable[..., None] | KWCallbackArg
 
 class LocalServo( NamedOutputTarget ):
@@ -107,8 +106,9 @@ class LocalServo( NamedOutputTarget ):
     def onMoveComplete( self, callback:LocalServoCallback ):
         self.__moveCompleteCB = callback
 
-    def _updateMove(self, source:when:TimeInSeconds, context:EvaluationContext):
-        self.__moveTimer
+    def _updateMove(self, context:EvaluationContext) -> None:
+        #self.__moveTimer
+        when = context.when if context is not None else self.__moveTimer.manager.main.when
         assert when is not None
         assert self.__moveTimeAtStart is not None
         assert self.__moveSpan is not None

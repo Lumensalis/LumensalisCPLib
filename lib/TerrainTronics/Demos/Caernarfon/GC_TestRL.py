@@ -16,8 +16,6 @@ dumpConfig = ProfileWriteConfig(target=sys.stdout,
         minB = 0,
     )
 
-printDumpIntervalL:int = 21
-collectionCheckInterval:TimeSpanInSeconds = 3.51
 usbCheckInterval:TimeSpanInSeconds = 0.25
 
 def setupMlcAndGcm():
