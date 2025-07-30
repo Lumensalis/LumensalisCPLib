@@ -10,24 +10,38 @@ class ReleasablePool(object):
     
     _freeHead:"Releasable|None"
     
-    def __init__(self, cls ):
+    def __init__(self, cls:type ):
         self._freeHead = None
         self._allocs = 0
         self._releases = 0
         self._rIndex = 0
         self._cls = cls
-        self._lock = asyncio.lock.Lock() # pylint: disable=no-member
+        self._lock = asyncio.lock.Lock() # pylint: disable=no-member # type:ignore
+    
+    @property
+    def cls(self) -> type:  
+        return self._cls
+    @property
+    def allocs(self) -> int:
+        return self._allocs 
+    @property   
+    def releases(self) -> int:
+        return self._releases
     
 class Releasable(object):
-    """_summary_
-
-    :param object: _description_
-    :type object: _type_
-    :return: _description_
-    :rtype: _type_
+    """ Base for cacheable / reusable objects
     """
     # pylint: disable=protected-access
-    
+    # pyright: ignore[reportPrivateUsage]
+
+    _inUse:bool
+    _nextFree:Releasable|None
+    _rIndex:int
+
+    def __init__(self):
+        self._inUse = False
+        self._nextFree = None
+
     @classmethod 
     def getReleasablePool(cls) -> ReleasablePool:
         rv = getattr(cls,'__rp',None)
@@ -35,6 +49,20 @@ class Releasable(object):
             rv = ReleasablePool(cls)
             setattr(cls,'__rp',rv)
         return rv
+    
+    @classmethod
+    def releasablePreload(cls, count:int) -> None:
+        rp = cls.getReleasablePool()
+        count = max(0, count-rp.allocs)
+        print( "preloading %s[%d] with %d entries" % (cls.__name__, rp.allocs, count) )
+        entries = [
+            cls() for _ in range(count)
+        ]
+        print( "releasing entries" )
+        for entry in entries:
+            assert entry._nextFree is None and not entry._inUse
+            entry._releaseBase(rp)
+        print( "preloading complete" )
 
     @classmethod 
     def releasableGetInstance(cls) -> Self:
@@ -46,41 +74,43 @@ class Releasable(object):
         
     @classmethod
     def _make_getFree(cls, rp:ReleasablePool) -> Self | None:
-        if rp._freeHead is not None:
-            entry = rp._freeHead
-            rp._freeHead = entry._nextFree
+        if rp._freeHead is not None:  # pyright: ignore[reportPrivateUsage]
+            entry = rp._freeHead # pyright: ignore[reportPrivateUsage]
+            rp._freeHead = entry._nextFree # pyright: ignore[reportPrivateUsage]
             entry._nextFree = None
             return entry # type: ignore
-        rp._allocs += 1
+        rp._allocs += 1 # pyright: ignore[reportPrivateUsage]
         return None            
 
     @classmethod
-    def _makeFinish(cls, rp:ReleasablePool, entry:Releasable ) -> Self:
+    def _makeFinish(cls, rp:ReleasablePool, entry:Self ) -> Self:
         assert entry._nextFree is None  and not entry._inUse
         entry._inUse = True
-        entry._rIndex = rp._rIndex
-        rp._rIndex += 1
+        entry._rIndex = rp._rIndex # pyright: ignore[reportPrivateUsage]
+        rp._rIndex += 1 # pyright: ignore[reportPrivateUsage]
         return entry
                         
-    _inUse:bool
-    _nextFree:"Releasable|None"
-    _rIndex:int
+
     @property
     def rindex(self) -> int:
         return self._rIndex
     
-    def __init__(self):
+    def _releaseBase(self, rp: ReleasablePool) -> None:
         self._inUse = False
-        self._nextFree = None
-        
-    def release(self):
+        self._nextFree = rp._freeHead # pyright: ignore[reportPrivateUsage]
+        rp._freeHead = self # pyright: ignore[reportPrivateUsage]
+        rp._releases += 1   # pyright: ignore[reportPrivateUsage]
+
+    def release(self) -> None:
         assert self._inUse and self._nextFree is None
-        self._inUse = False
         rp = self.getReleasablePool()
-        self._nextFree = rp._freeHead
-        rp._freeHead = self
-        rp._releases += 1
-        self.releaseNested()
+        self._releaseBase(rp)
+        try:
+            self.releaseNested()
+        except RuntimeError as e:
+            print(f"Error releasing nested resources: {e} in {self.__class__.__name__} @{id(self):X}") 
+            raise 
+        
 
     def releaseNested(self):
         pass            

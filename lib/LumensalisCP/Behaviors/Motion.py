@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 from LumensalisCP.Main.PreMainConfig import ImportProfiler
 _sayMotionImport = ImportProfiler( "Motion" )
 
@@ -71,18 +70,18 @@ class ServoMovement(Motion):
             self.actor.setCurrentBehavior(self)
         return self
 
-    def _complete(self,**kwds):
+    def _complete(self,**kwds:StrAnyDict):
         self.infoOut( f"_complete {kwds}" )
         if self.nextBehavior is not None:
             self.nextBehavior.activate()
         
-    def enter(self, context):
+    def enter(self, context:EvaluationContext):
         super().enter(context)
         if self.enableDbgOut: self.dbgOut( f"enter moveTo {self.target} at {self.speed}" )
         self.actor._servo.moveTo( self.target, self.speed, context )  # type: ignore
         self.actor._servo.onMoveComplete( self._complete )  # type: ignore
     
-    def exit(self, context):
+    def exit(self, context:EvaluationContext):
         self.actor._servo.onMoveComplete( None )  # type: ignore
         super().exit(context)
         
@@ -150,7 +149,7 @@ class ServoDoor(Door):
         return (self.servo.lastSetAngle - self.closedPosition) - self.span
     
     # def setEnableDebugWithChildren(self, setting:bool):            
-    def _derivedSetEnableDebugWithChildren( self, setting:bool, *args, **kwds ):
+    def _derivedSetEnableDebugWithChildren( self, setting:bool, *args:Any, **kwds:StrAnyDict) -> None:
         self.enableDbgOut = setting
         self.opening.enableDbgOut = setting
         self.closing.enableDbgOut = setting
@@ -175,7 +174,7 @@ class ServoDoor(Door):
     def jog(self, offset:Degrees, speed:TimeInSeconds|None = None, context:Optional[EvaluationContext]=None) -> Motion:
         return self.moving.activate(speed=speed, target=self.servo.lastSetAngle + offset, context=context)
             
-    def addOpenTrigger( self, Input): pass
+    #def addOpenTrigger( self, Input): pass
     
     def _moveCompleted(self):
         """_summary_

@@ -3,6 +3,8 @@ from __future__ import annotations
 from LumensalisCP.Main.PreMainConfig import ImportProfiler
 _sayIdentityLocalImport = ImportProfiler( "Identity.Local" )
 
+# pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
+
 from LumensalisCP.common import *
 from LumensalisCP.Debug import Debuggable
 import LumensalisCP.pyCp.weakref as lcpWeakref
@@ -54,14 +56,21 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
 
     class KWDS(TypedDict):
         name:NotRequired[str]
+        temporaryName:NotRequired[str]
     
-    def __init__( self, name:Optional[str]=None ):
+    def __init__( self, 
+                name:Optional[str]=None,
+                temporaryName:Optional[str]=None
+            ) -> None:
+      
         self.__name = name
+        self.__temporaryName = temporaryName
+
         LocalIdentifiable.__init__(self)
         Debuggable.__init__(self)
 
     @property
-    def name(self) -> str: return self.__name or self.nliDynamicName()
+    def name(self) -> str: return self.__name or self.__temporaryName or self.nliDynamicName()
     
     @name.setter
     def name( self, name:str ):
@@ -113,7 +122,12 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
     def nliIsNamed(self) -> bool: return self.__name is not None
 
     def nliDynamicName(self) -> str:
-        return self.__name or f"{self.__class__.__name__}@{id(self):X}"
+        if self.__name is not None: return self.__name
+        cached = getattr(self, '_nliCachedName', None)
+        if cached is None: 
+            cached = f"{self.__class__.__name__}@{id(self):X}"
+            self._nliCachedName = cached
+        return cached
 
     def nliFind(self,name:str) -> NamedLocalIdentifiable|NliContainerBaseMixin| None:
         containers = self.nliGetContainers() # pylint: disable=assignment-from-none
@@ -184,18 +198,16 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
         return iter(self.data)
     
     def keys(self) -> list[str]:
-        return [v.name for v in self] # type: ignore[return-value]
-    
-    @property
-    def containerName(self): return self.name
+        return [v.name for v in self.data] # type: ignore[return-value]
 
-    
+    @property
+    def containerName(self) -> str: return self.name
 
     def values(self) -> list[_NLIListT]:
         return self.data
 
     def get(self, key:str, default:Optional[_NLIListT]=None) -> _NLIListT:
-        for v in self:
+        for v in self.data:
             if v.name == key:
                 return v
         assert default is not None, "default must be provided if key not found"

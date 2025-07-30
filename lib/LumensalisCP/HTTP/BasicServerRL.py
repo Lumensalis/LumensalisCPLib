@@ -1,4 +1,4 @@
-from LumensalisCP.Main.PreMainConfig import ReloadableImportProfiler
+from LumensalisCP.Main.PreMainConfig import ReloadableImportProfiler, ImportProfiler
 __sayHTTPBasicServerRLImport = ReloadableImportProfiler( "HTTP.BasicServerRL" )
 
 from .BSR.common import *
@@ -9,38 +9,8 @@ from LumensalisCP.commonCPWifi import *
 #############################################################################
 # pyright: ignore[reportUnusedImport]
 
-from LumensalisCP.HTTP.BSR.BSR_profileRL import BSR_profile 
+#from LumensalisCP.HTTP.BSR.BSR_profileRL import BSR_profile 
 
-def getStatusInfo(self:BasicServer.BasicServer, request:Request ) -> dict[str, Any]:
-    main = self.main
-    context = main.getContext()
-    monitoredInfo = [ 
-        #(i.name, inputSourceSnapshot(i)) for i in main._monitored
-        (mv.source.name, inputSourceSnapshot(mv.source)) for mv in main.panel.monitored.values()
-    ]
-
-    monitored = dict( monitoredInfo  )
-    rv:StrAnyDict =  {
-            'supervisor': {
-                'runtime': attrsToDict( supervisor.runtime, ['autoreload','run_reason'] ),
-                'ticks_ms': supervisor.ticks_ms()
-            },
-            'request': {
-                'path': request.path,
-                'query_params': str(request.query_params),
-            },
-            'gc': attrsToDict( gc, ['enabled','mem_alloc','mem_free'] ), 
-            'main': attrsToDict( main, ['cycle','when','newNow'],
-                context = attrsToDict( context, ['updateIndex','when'] ),
-                scenes = attrsToDict( main.scenes,["currentScenes"] ),
-                nextWait = main._nextWait, # type: ignore
-                priorWhen = main.__priorSleepWhen, # type: ignore
-                #priorSleepDuration = main.__priorSleepDuration, # type: ignore
-                latestSleepDuration = main.__latestSleepDuration # type: ignore
-            ),
-            'monitored': monitored
-        }
-    return rv
 
 class QueryConfig(object):
     fillParents:bool = False
@@ -100,7 +70,6 @@ def getQueryResult( target:NliInterface|NliContainerBaseMixin, path:list[str], q
          
     return rv        
 
-
 def BSR_query(self:BasicServer.BasicServer, request:Request, name:str):
     """
     """
@@ -118,99 +87,33 @@ def BSR_query(self:BasicServer.BasicServer, request:Request, name:str):
         return ExceptionResponse(request, inst)
     return JSONResponse(request, {"message": "Something went wrong"})
 
+from LumensalisCP.Main import ProfilerRL
+from LumensalisCP.HTTP.BSR import BSR_profileRL
+from LumensalisCP.HTTP.BSR import BSR_sakRL
+from LumensalisCP.HTTP.BSR import BSR_cmdRL
 
-def _reloadAll(self:BasicServer.BasicServer ):
-    from LumensalisCP.Main import ManagerRL
-    from LumensalisCP.HTTP import BasicServerRL
-    from LumensalisCP.Simple import profilingRL
-    from LumensalisCP.HTTP.BSR import BSR_profileRL
-    from LumensalisCP.HTTP import ControlVarsRL
-    modules = [ ManagerRL, profilingRL,  BSR_profileRL, ControlVarsRL, BasicServerRL ]
-    for m in modules:
-        reload( m )
-    self.cvHelper = None
-    return modules
+
 
 def _reloadForRoute( name:str ) -> None: # type:ignore[no-untyped-def]
     from LumensalisCP.HTTP import BasicServerRL
     modules: list[Any] = [  ]
+    ReloadableImportProfiler.SHOW_IMPORTS = True
+    ImportProfiler.SHOW_IMPORTS = True
+
+
     if "profile" in name:
-        from LumensalisCP.Main import ProfilerRL
-        from LumensalisCP.Simple import profilingRL
-        from LumensalisCP.HTTP.BSR import BSR_profileRL
-        modules.extend( [ProfilerRL, profilingRL, BSR_profileRL] )
+        modules.extend( [ProfilerRL,  BSR_profileRL] )
+    elif "sak" in name:
+        modules.extend( [BSR_sakRL] )
+    elif "cmd" in name:
+        modules.extend( [BSR_cmdRL] )
+
     
     modules.append( BasicServerRL )
 
+    print(f"_reloadForRoute: {name} : {modules}")
     for module in modules:
         reload( module )
-
-
-def BSR_cmd(self:BasicServer.BasicServer, request:Request, cmd:Optional[str]=None, **kwds:StrAnyDict ) -> JSONResponse | Response:
-    """
-    """
-    
-    try:
-        # Get objects
-        print( f"BSR_cmd cmd={repr(cmd)} received...")
-        if cmd == "restart":
-            def restart():
-                print( "restarting" )
-                supervisor.reload()
-                
-            self.main.callLater( restart )
-            return JSONResponse(request, { "action":"restarting"} )
-        
-        if cmd == "reset":
-            def reset():
-                print( "resetting" )
-                microcontroller.reset()
-                
-            self.main.callLater( reset )
-            return JSONResponse(request, { "action":"resetting"} )
-        
-        if cmd == "reloadAll":
-            modules = _reloadAll(self)
-            
-            return JSONResponse(request, {
-                    "action":"reloading",
-                    "modules": [m.__name__ for m in modules]                      
-                        } )
-            
-        return JSONResponse(request, {"unknown command":cmd} )
-    
-    except Exception as inst:
-        return ExceptionResponse(request, inst, "cmd failed" )
-    
-    return JSONResponse(request, {"message": "oops, command not handled..."})
-
-def BSR_sak(self:BasicServer.BasicServer, request:Request):
-    """
-    Serve a default static plain text message.
-    """
-    
-    try:
-        # Get objects
-        if request.method == GET:
-            
-            return JSONResponse(request, getStatusInfo(self, request) )
-
-        # Upload or update objects
-        if request.method in {POST, PUT}:
-            requestJson = request.json() # type:ignore[reportAttributeAccessIssue]
-            if requestJson is not None and 'autoreload' in requestJson:
-                autoreload:bool = requestJson['autoreload'] # type:ignore[reportAttributeAccessIssue]
-                self.infoOut( "setting autoreload to %r", autoreload )
-                supervisor.runtime.autoreload = autoreload
-
-
-        return JSONResponse(request, getStatusInfo(self, request) )
-    except Exception as inst:
-        return ExceptionResponse(request, inst, "sak failed" )
-    return JSONResponse(request, {"message": "Something went wrong"})
-
-
-
 
 def handle_websocket_request(self:BasicServer.BasicServer):
     if self.websocket is None or self.websocket.closed:
@@ -228,8 +131,8 @@ def handle_websocket_request(self:BasicServer.BasicServer):
         return
     try:
         # print( f'websocket data = {data}' )
-        jdata = json.loads(data)
-        self.main.handleWsChanges(jdata)
+        jData = json.loads(data)
+        self.main.handleWsChanges(jData)
     except Exception as inst:
         self.SHOW_EXCEPTION( inst, "error on incoming websocket data %r", data )
 
@@ -244,12 +147,14 @@ def updateSocketClient(self:BasicServer.BasicServer, useStringIO:bool=False )->N
     for mv in self.main.panel.monitored.values():
         v = mv.source
         currentValue = v.getValue()
-        assert currentValue is not None
+        if currentValue is None:
+            if self.enableDbgOut: self.dbgOut( "updateSocketClient %s is None", v.name )
+            continue
         checked += 1
         if currentValue != self.priorMonitoredValue.get(v.name,None):
             if payload is None: payload = {}
             if self.enableDbgOut: self.dbgOut( "updateSocketClient %s changed to %r", v.name, currentValue )
-            if type(currentValue) not in _v2jSimpleTypes:
+            if type(currentValue) not in v2jSimpleTypes:
                 currentValue = valToJson(currentValue)
 
             payload[v.name] = currentValue

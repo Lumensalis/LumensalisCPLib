@@ -61,7 +61,7 @@ class TwinCastles( DemoBase ):
 
         #doorDrive = caernarfon.initServo( 1, "doorDrive", )
 
-        #@scene.addTaskDef(period=0.25)
+        #@scene.addSimpleTaskDef(period=0.25)
         def dump():
             import json
             timings = dict(

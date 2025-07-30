@@ -9,10 +9,10 @@ import LumensalisCP.HTTP.ControlVarsRL
 #from adafruit_httpserver import DELETE, GET, POST, PUT, JSONResponse, Request, Response  # pyright: ignore[reportMissingImports|reportAttributeAccessIssue]
 from adafruit_httpserver import DELETE, GET, POST, PUT, JSONResponse, Request, Response  # pyright: ignore
 
-_v2jSimpleTypes:set[type] = { int, str, bool, float,type(None) }
+v2jSimpleTypes:set[type] = { int, str, bool, float,type(None) }
 
 def valToJson( val:Any ) -> Any:
-    if type(val) in _v2jSimpleTypes: return val
+    if type(val) in v2jSimpleTypes: return val
     if callable(val):
         try:
             return valToJson( val() )

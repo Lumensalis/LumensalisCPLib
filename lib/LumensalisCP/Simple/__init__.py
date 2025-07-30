@@ -80,13 +80,16 @@ _saySimpleImport( "Triggers")
 import LumensalisCP.Triggers 
 
 _saySimpleImport( "Triggers.Timer")
-from LumensalisCP.Triggers.Timer import addPeriodicTaskDef, PeriodicTimerManager, PeriodicTimer
+from LumensalisCP.Triggers.Timer import addPeriodicTaskDef, addSimplePeriodicTaskDef, PeriodicTimerManager, PeriodicTimer
 
 _saySimpleImport( "Action")
-from LumensalisCP.Triggers.Action import Action
+from LumensalisCP.Triggers.Action import *
 
 _saySimpleImport( "Behaviors")
 from LumensalisCP.Behaviors.Behavior import Behavior, Actor 
+
+
+from LumensalisCP.Behaviors.Behavior import Behavior as BehaviorClass
 
 _saySimpleImport( "MainManager" )
 from LumensalisCP.Main.Manager import MainManager
@@ -119,6 +122,11 @@ see http://lumensalis.com/ql/h2Main
                 if profileMemory & 1: pmc_gcManager.PROFILE_MEMORY_NESTED = True
                 if profileMemory & 2: pmc_gcManager.PROFILE_MEMORY_ENTRIES = True
 
+    if pmc_mainLoopControl.ENABLE_PROFILE:
+        from LumensalisCP.Main.Profiler import ProfileFrame,ProfileSnapEntry,ProfileSubFrame,ProfileFrameBase
+        ProfileFrame.releasablePreload( 70 )
+        ProfileSubFrame.releasablePreload( 1000 )
+        ProfileSnapEntry.releasablePreload( 3000 )
 
     main = MainManager.initOrGetManager()
 
@@ -127,25 +135,38 @@ see http://lumensalis.com/ql/h2Main
     #    pmc_gcManager.PROFILE_MEMORY_ENTRIES = True
     if  pmc_mainLoopControl.ENABLE_PROFILE:
         sayAtStartup("ProjectManager: starting project with profiling enabled")
-        if  pmc_mainLoopControl.ENABLE_PROFILE:
-            
-            gc.collect() # collect garbage before starting the project
-            gc.disable()
+    
+    gc.collect() # collect garbage before starting the project
+    gc.disable()
 
-            def addProfilingCallbacks():
-                
-                import LumensalisCP.Simple.profilingRL as profilingRL
-                #profilingRL.printDump(rv)
+    def addProfilingCallbacks():
+        print("\n\nAdding profiling callbacks...\n")
+        import LumensalisCP.Main.ProfilerRL as profilingRL
+        #profilingRL.printDump(rv)
 
-                @addPeriodicTaskDef( "gc-collect", period=lambda: profilingRL.collectionCheckInterval, main=main )
-                def runCollection(context=None, when=None):
-                    pmc_gcManager.runCollection(context,when, show=True)
+        def getCollectionCheckInterval() -> TimeSpanInSeconds:
+            rv = profilingRL.collectionCheckInterval
+            return rv
+        
+        timer = PeriodicTimer(manager=main.timers,name="gc-collect",
+                              interval=getCollectionCheckInterval, oneShot=False)
+        
+        #@addPeriodicTaskDef( name="gc-collect", interval=getCollectionCheckInterval, main=main )
+        def runCollect(context:EvaluationContext) -> None:
+            #print( f"pmc_gcManager.runCollection {context.updateIndex}..." )
+            pmc_gcManager.runCollection(context, show=profilingRL.showRunCollection)
 
-                #@addPeriodicTaskDef( "print-dump", period=lambda: profilingRL.printDumpInterval, main=main )
-                #def dump():
-                #    profilingRL.printDump(main)
+        timer.addAction(runCollect)
+        timer.start()
+        print("\n\n profiling callbacks added...\n")
 
-            main.callLater( addProfilingCallbacks )
+
+        #@addPeriodicTaskDef( "print-dump", period=lambda: profilingRL.printDumpInterval, main=main )
+        #def dump():
+        #    profilingRL.printDump(main)
+
+    main.callLater( addProfilingCallbacks )
+
 
     return main
 
@@ -159,14 +180,6 @@ def getColor( v:AnyRGBValue ) -> RGB:
     """
     return RGB.toRGB(v)
 
-DoArg:TypeAlias = Union[Callable[...,Any],KWCallback,Behavior]
-
-def do( cb:DoArg, *args:Any, **kwds:StrAnyDict ):
-    """ create an Action : see see http://lumensalis.com/ql/h2Actions"""
-    return Action.makeCallback( cb, *args, **kwds )
-
-def doDbg( cb:DoArg, *args:Any, **kwds:StrAnyDict ):
-    return Action.makeDbgCallback( cb, *args, **kwds )
 
 class ColorSource(InputSource):
     """ base class for InputSource which provides RGB color values """
@@ -188,12 +201,37 @@ class ColorWheel(ColorSource):
         self.spin = spin
 
     def getColor(self, context:EvaluationContext ) -> RGB:
-        spinValue = context.valueOf( self.spin )
-        wheelValue = rainbowio.colorwheel( spinValue )
-        rv = RGB.fromNeoPixelRGBInt( NeoPixelRGBInt(wheelValue) )
-        if self.enableDbgOut:  self.dbgOut( 'getColor rv=%r,  spin=%r, wheel=%X', rv, spinValue, wheelValue )
-        return rv
+        with context.subFrame('getColor', self.name ) as activeFrame:
+            spinValue = context.valueOf( self.spin )
+            activeFrame.snap( "colorwheel" )
+            wheelValue = rainbowio.colorwheel( spinValue )
+            rv = RGB.fromNeoPixelRGBInt( NeoPixelRGBInt(wheelValue) )
+            if self.enableDbgOut:  self.dbgOut( 'getColor rv=%r,  spin=%r, wheel=%X', rv, spinValue, wheelValue )
+            return rv
 
+class ColorWheelZ1(ColorSource):
+    def __init__( self, spin:Evaluatable[ZeroToOne], **kwargs:Unpack[ColorSource.KWDS] ) -> None:
+        """ provides an RGB color which changes as the value of spin changes from 0 to 1
+        
+        :param spin: the value to use for the color wheel, should be between 0 and 1
+        """ 
+        super().__init__(**kwargs)
+        self.spin = spin
+        self._colors = [  RGB.fromNeoPixelRGBInt(  rainbowio.colorwheel(x) ) for x in range(256) ]  # precompute the colors
+
+    def _getColor(self, val:ZeroToOne ) -> RGB:
+        index = max( 0, min(255, int(val * 255)) )
+        return self._colors[index]
+
+    def getColor(self, context:EvaluationContext ) -> RGB:
+        if True:
+            return self._getColor( context.valueOf( self.spin ))
+
+        with context.subFrame('getColor' ) as activeFrame:
+            spinValue = context.valueOf( self.spin )
+            activeFrame.snap( "colorwheel" )
+            return self._getColor( spinValue )
+        
 class PipeInputSource(InputSource):
     def __init__( self, inputSource:Evaluatable[Any], **kwargs:Unpack[InputSource.KWDS] ):
         super().__init__(**kwargs)
@@ -202,9 +240,19 @@ class PipeInputSource(InputSource):
     def getPipedValue(self, context:EvaluationContext, v:Any ) -> Any:
         raise NotImplementedError
     
-    def getDerivedValue(self, context:EvaluationContext) -> RGB:
-        v = context.valueOf(self.inputSource)
-        return self.getPipedValue(context,v)
+    def getDerivedValue(self, context:EvaluationContext) -> Any:
+        if True:
+            return self.getPipedValue(context, context.valueOf(self.inputSource))
+
+        with context.subFrame('PipeInputSource.getDerivedValue', self.name ) as activeFrame:
+            v = context.valueOf(self.inputSource)
+            activeFrame.snap("frameTest")
+            with context.subFrame('nestedFrame', self.name ) as nestedFrame:
+                nestedFrame.snap("frameSnap")
+            activeFrame.snap("getPipedValue")
+            rv = self.getPipedValue(context,v)
+            activeFrame.snap("return")
+        return rv
 
 class Z21Adapted(PipeInputSource):
     def __init__( self, 

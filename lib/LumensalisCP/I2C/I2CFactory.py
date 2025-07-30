@@ -30,14 +30,17 @@ class I2CFactory(object):
     def addDisplay_SSD1306(self, **kwds:Unpack[Display_SSD1306.KWDS] ) -> Display_SSD1306:
         """Add an SSD1306 display"""
         from LumensalisCP.I2C.Generic.Display_SSD1306 import Display_SSD1306
-        return Display_SSD1306( main=self.main, **kwds )
+        kwds.setdefault('main', self.main)
+        return Display_SSD1306( **kwds )
 
     def addDisplayIO_SSD1306(self, **kwds:Unpack[DisplayIO_SSD1306.KWDS] ) -> DisplayIO_SSD1306:
         """Add an SSD1306 display (using DisplayIO)"""
         from LumensalisCP.I2C.Generic.DisplayIO_SSD1306 import DisplayIO_SSD1306
-        return DisplayIO_SSD1306( main=self.main, **kwds )
+        kwds.setdefault('main', self.main)
+        return DisplayIO_SSD1306( **kwds )
 
     def addVL530lx(self, **kwds: Unpack[VL53L0X.KWDS] ) -> VL53L0X: # pylint: disable=used-before-assignment
         """ add a VL53L0X distance sensor """
         from LumensalisCP.I2C.Generic.VL530lx import VL53L0X
-        return VL53L0X( main=self.main, **kwds )
+        kwds.setdefault('main', self.main)
+        return VL53L0X( **kwds )

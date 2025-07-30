@@ -16,6 +16,7 @@ ET = TypeVar('ET' )
 
 
 class Evaluatable(Debuggable, Generic[ET]):
+    
     def __init__(self):
         super().__init__()
         self.enableDbgEvaluate = False

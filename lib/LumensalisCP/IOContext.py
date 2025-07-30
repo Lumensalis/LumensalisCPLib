@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# pyright: reportUnusedImport=false, reportUnusedVariable=false
+
 import math
 
 from LumensalisCP.Main.PreMainConfig import ImportProfiler

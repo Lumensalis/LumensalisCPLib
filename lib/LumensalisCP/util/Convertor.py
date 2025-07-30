@@ -26,6 +26,9 @@ class Convertor(Generic[TIN,TOUT]):
         if _type not in { int, bool, float, str, list, tuple, type(None)}:
             self._classConvertors.append( (_type, cf) )
 
+    def supportsType( self, _type:type ) -> bool:
+        return _type in self._convertors or _type.__name__ in self._convertors
+    
     def __call__(self, value:TIN) -> TOUT: 
         convertor = self._convertors.get(type(value),None)
         if convertor is not None:

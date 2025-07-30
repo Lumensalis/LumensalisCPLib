@@ -6,6 +6,7 @@ from LumensalisCP.Demo.DemoCommon import *
 from LumensalisCP.Main.Profiler import *
 import gc, supervisor, sys
 from LumensalisCP.pyCp.importlib import reload
+from LumensalisCP.util.Releasable import Releasable, ReleasablePool
 
 printElapsed("import GCTest_RL internal")
 dumpConfig = ProfileWriteConfig(target=sys.stdout,
@@ -15,18 +16,15 @@ dumpConfig = ProfileWriteConfig(target=sys.stdout,
         minB = 0,
     )
 
-printDumpInterval = 21
-collectionCheckInterval = 3.51
-usbCheckInterval = 0.25
-
+printDumpIntervalL:int = 21
+collectionCheckInterval:TimeSpanInSeconds = 3.51
+usbCheckInterval:TimeSpanInSeconds = 0.25
 
 def setupMlcAndGcm():
     pmc_mainLoopControl.ENABLE_PROFILE = True
     pmc_gcManager.PROFILE_MEMORY = True
     pmc_gcManager.PROFILE_MEMORY_NESTED = True
     pmc_gcManager.PROFILE_MEMORY_ENTRIES = True
-    
-
 
 import gc
 
@@ -61,8 +59,8 @@ def runCollection( context:EvaluationContext, when:Optional[TimeInSeconds]=None,
     usbCheck( context, when )
     pmc_gcManager.runCollection(context,when, force=force, show=show)
 
-def fmtPool( cls ):
-    pool = cls.getReleasablePool()
+def fmtPool( cls:type[ReleasablePool] ):
+    pool:ReleasablePool = cls.getReleasablePool() # type:ignore
     return f"[{cls.__name__} a:{pool._allocs} r:{pool._releases}]"
     
 def printDump( main:MainManager ):

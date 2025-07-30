@@ -13,7 +13,7 @@ from LumensalisCP.Eval.EvaluationContext import EvaluationContext
 if TYPE_CHECKING:
     #from LumensalisCP.Inputs import InputSource
     from LumensalisCP.Eval.Evaluatable import Evaluatable
-    from LumensalisCP.Inputs import InputSource
+    #from LumensalisCP.Inputs import InputSource
     
 # TODO: tighten up type hints / lint
 # pylint: disable=unused-argument,super-init-not-called
@@ -61,6 +61,8 @@ class ExpressionOperationException( Exception ):
 #############################################################################
 
 class ExpressionTerm(Evaluatable): 
+    class KWDS(TypedDict):
+        pass
 
     def terms(self) -> Generator["ExpressionTerm"]:
         yield self
@@ -302,6 +304,12 @@ def makeUnaryOperation( term:ExpressionTerm, op:Callable[[EvaluationContext,Expr
 #############################################################################
 
 class EdgeTerm(ExpressionOperation): # pylint: disable=abstract-method
+    class KWDS(ExpressionOperation.KWDS):
+        reset:NotRequired[ExpressionTerm]
+        rising:NotRequired[bool]
+        falling:NotRequired[bool]
+        name:NotRequired[str]
+
     def __init__(self, term:ExpressionTerm,
                  reset:Optional[ExpressionTerm]=None,
                  rising:bool = False,  # pylint: disable=redefined-outer-name
@@ -382,11 +390,13 @@ class EdgeTerm(ExpressionOperation): # pylint: disable=abstract-method
                 self.__value = False
         return self.__value
 
-def rising( term:Optional[ExpressionTerm]=None, **kwds ) -> EdgeTerm:
-    return EdgeTerm( term=TERM(term), rising=True, **kwds )
+def rising( term:Optional[ExpressionTerm]=None, **kwds:Unpack[EdgeTerm.KWDS] ) -> EdgeTerm:
+    kwds.setdefault('rising', True)
+    return EdgeTerm( term=TERM(term), **kwds )
 
-def falling( term:Optional[ExpressionTerm]=None, **kwds )  -> EdgeTerm:
-    return EdgeTerm( term=TERM(term), falling=True, **kwds )
+def falling( term:Optional[ExpressionTerm]=None, **kwds:Unpack[EdgeTerm.KWDS] )  -> EdgeTerm:
+    kwds.setdefault('falling', True)
+    return EdgeTerm( term=TERM(term), **kwds )
 
 #############################################################################
 

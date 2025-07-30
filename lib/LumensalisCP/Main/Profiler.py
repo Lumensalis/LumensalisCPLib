@@ -1,21 +1,18 @@
 from __future__ import annotations
 
 # pylint: disable=unused-import,import-error
-#   pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
+# pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
+# pyright: reportPrivateUsage=false
 
-import time, collections
-
-import gc # type: ignore
-
-#import asyncio, wifi, displayio
-#import busio, board
+import time
+from collections import OrderedDict
+import gc 
 
 try:
     from typing import TYPE_CHECKING
     if TYPE_CHECKING:
         from LumensalisCP.Main.Updates import UpdateContext
-        pass
-        
+
 except ImportError:
     pass
 
@@ -53,16 +50,23 @@ class ProfileWriteConfig(object):
                  minE:Optional[float]=None,minEB:Optional[int]=None,
                  minF:Optional[float]=None,minSubF:Optional[float]=None,
                  minB:Optional[int]=None,
+                 showMemory:Optional[bool]=None,
+                 showMemoryEntries:Optional[bool]=None,
                    **kwds:StrAnyDict) ->None:
  
-        self.target = None
+        self.target:Any = None
         self.minB:int = minB if minB is not None else 1024
         self.minEB:int = minEB if minEB is not None else self.minB
         self.minE:float = minE if minE is not None else -1
         self.minF:float =  minF or self.minE 
         self.minSubF:float = minSubF or 0
+        if showMemory is None: showMemory = pmc_gcManager.PROFILE_MEMORY
+        if showMemoryEntries is None: showMemoryEntries = pmc_gcManager.PROFILE_MEMORY_ENTRIES
+        self.showMemory:bool = showMemory
+        self.showMemoryEntries:bool = showMemoryEntries 
+
         self.__target = target
-        self.__makingJson = isinstance(target, dict) or isinstance(target, list)
+        self.__makingJson = isinstance(target, (dict, OrderedDict, list))
         self.__jsonData:PWJsonNestDataType|None = target if self.__makingJson else None # type:ignore[reportUnknownVariableType]
         self.__jsonNestDataStack:list[PWJsonNestDataType] = [self.__jsonData] if self.__jsonData is not None else []
         self.__jsonNestData:PWJsonNestDataType|None = None
@@ -70,26 +74,44 @@ class ProfileWriteConfig(object):
 
     def __repr__(self):
         return f"mE={self.minE} mF={self.minF} mSF={self.minSubF} mB={self.minB} mEB={self.minEB}"
-    
+
+
+    def tooMuchMemoryUsed( self:ProfileWriteConfig ,
+                entry:ProfileSnapEntry|ProfileFrameBase,
+            ) -> bool:
+        if isinstance(entry,ProfileSnapEntry):
+            return entry.usedGC >= self.minEB
+        return entry.usedGC >= self.minB 
+
+    def shouldShowSnap(self, snap:ProfileSnapEntry) -> bool:
+        return (snap.e >= self.minE) or self.tooMuchMemoryUsed(snap)
+
+
+    def shouldShowFrame(self, frame:ProfileFrameBase) -> bool:
+        if isinstance(frame,ProfileFrame):
+            return ( frame.eSleep > min(self.minE,self.minF) ) or ( frame.e >= self.minF )
+
+        return self.tooMuchMemoryUsed( frame ) or ( frame.e >= self.minSubF )
+
     @property
     def makingJson(self) -> bool:
         return self.__makingJson
     
     @property
     def top(self) -> PWJsonNestDataType:
-        assert len(self.__jsonNestDataStack) > 0
+        assert len(self.__jsonNestDataStack) > 0, f"top len() < 1 for {self.__jsonNestDataStack}"
         return self.__jsonNestDataStack[-1]
 
     @property
     def topDict(self) -> StrAnyDict:
         rv = self.top
-        assert isinstance(rv,dict)
+        assert isinstance(rv,(dict,OrderedDict)), f"top {rv} is not a dict, but {type(rv)}"
         return rv
 
     def nest( self, data:PWJsonNestDataType, tag:Optional[str] = None ) -> Self:
         assert len(self.__jsonNestDataStack) > 0
         top = self.__jsonNestDataStack[-1]
-        if isinstance(top, dict):
+        if isinstance(top, (dict,OrderedDict)):
             assert tag is not None, f"Cannot nest data {data} without tag in {top}"
             top[tag] = data
         else:
@@ -103,22 +125,18 @@ class ProfileWriteConfig(object):
         return self.nest( [], tag=tag )
 
     def nestDict( self, tag:Optional[str] = None ) -> Self:
-        return self.nest( {}, tag=tag )
+        return self.nest( OrderedDict(), tag=tag )
 
     def __enter__(self) -> ProfileWriteConfig:
         if self.__makingJson:
             assert self.__jsonNestData is not None
             self.__jsonNestDataStack.append( self.__jsonNestData )
 
-
-
         return self
     def __exit__(self, exc_type:Optional[Type[BaseException]], exc_value:Optional[BaseException], exc_tb:Optional[Any]) -> None:
 
         if self.__makingJson:
             top = self.__jsonNestDataStack.pop() # type:ignore[reportUnknownVariableType]
-
-        # return False
     
     def writeLine( self, fmt:str, *args:Any ) -> None:
         message = safeFmt( fmt, *args )
@@ -128,8 +146,6 @@ class ProfileWriteConfig(object):
             # assert isinstance(self.__target, TextIO), f"Invalid target {self.__target} for ProfileWriteConfig"
             self.__target.write( message ) # type: ignore[reportAttributeAccessIssue]
             self.__target.write( "\r\n" ) # type: ignore[reportAttributeAccessIssue]
-        
-    
 
 class ProfileSnapEntry(Releasable): 
     # __slots__ = ["name","name2","lw","e","_nest","_nesting","etc"]
@@ -146,10 +162,12 @@ class ProfileSnapEntry(Releasable):
     etc: dict[str, Any]
     _nextSnap:ProfileSnapEntry|None
 
-    def __init__(self,tag:str, when:TimeInSeconds, name2:str|None = None):
+    def __init__(self ) -> None:
+       #tag:str, when:TimeInSeconds, name2:str|None = None):
         super().__init__()
         self._nextSnap = None
-        self.reset(tag,when, name2)
+        #self.reset(tag,when, name2)
+
 
     def releaseNested(self):
         #print( f"releaseNested snap {self} @{id(self)}" )
@@ -158,12 +176,16 @@ class ProfileSnapEntry(Releasable):
             nest = self._nest
             self._nest = None
             self._nesting = False
+            assert nest is not self, f"releasing nested {nest} != {self}"
             nest.release()
         
+        assert self._nextSnap is None
         if self._nextSnap is not None:
             #print( f"  releasing next {id(self._nextSnap)}" )
-            self._nextSnap.release()
+            assert self._nextSnap is not self, f"releasing next {self._nextSnap} != {self}"
+            snap = self._nextSnap
             self._nextSnap = None
+            snap.release()
 
     def shouldProfileMemory(self) -> bool:
         return pmc_gcManager.PROFILE_MEMORY_ENTRIES
@@ -185,15 +207,15 @@ class ProfileSnapEntry(Releasable):
         rp = cls.getReleasablePool()
         entry = cls._make_getFree( rp )
 
-        if entry is None: entry = cls(name, when, name2)
-        else: entry.reset( name, when, name2 ) # pylint: disable=no-member # type: ignore
+        if entry is None: entry = cls()
+        entry.reset( name, when, name2 ) # pylint: disable=no-member # type: ignore
         
         return cls._makeFinish( rp, entry )
             
     def reset( self, name:str, when:TimePT, name2:str|None = None ):
         self.name = name
         self.lw = when
-        self.e = 0.0
+        self.e:float = 0.0
         self.etc = self.__defaultEtc
         self._nesting = False
         self.allocGc = gc.mem_alloc() if self.shouldProfileMemory() else 0
@@ -212,14 +234,17 @@ class ProfileSnapEntry(Releasable):
 
 
 
-    def subFrame(self, context:UpdateContext, name:Optional[str]=None, name2:str|None = None) -> 'ProfileSubFrame':
+    def subFrame(self, context:UpdateContext, 
+                 name:Optional[str]=None, 
+                 name2:str|None = None
+            ) -> 'ProfileSubFrame':
         assert not self._nesting 
         self._nest = ProfileSubFrame.makeEntry(context,name, name2)
         self._nesting = True
         return self._nest
 
     def writeOn(self,config:ProfileWriteConfig,indent:str=''):
-        return ProfilerRL.ProfileFrameEntry_writeOn(self,config,indent)
+        return ProfilerRL.ProfileSnapEntry_writeOn(self,config,indent)
     
     def jsonData(self,**kwds:StrAnyDict) -> Mapping[str,Any]:
         #rv = collections.OrderedDict(lw=self.lw, e=self.e, id=id(self), **self.etc)
@@ -276,7 +301,7 @@ class ProfileFrameBase(Releasable):
     #__usedEntries:int
     e:TimeSpanInSeconds
     when : TimeSpanInSeconds
-    loopStartPT : TimePT
+    frameStartPT : TimePT
     priorStartPT: TimePT
     latestStartPT: TimePT
     firstSnap: ProfileSnapEntry|None
@@ -296,14 +321,14 @@ class ProfileFrameBase(Releasable):
     #_resets = 0
     #_allocs = 0
     
-    def __init__(self, context:UpdateContext):
+    def __init__(self):
         super().__init__()
         #self.__entries = []
         self.firstSnap = None
         self.currentSnap = None
         self._name = '--'
         #self.__usedEntries = 0
-        self.__context = context
+        #self.__context = context
 
         #ProfileFrameBase._allocs += 1
         #self.reset()
@@ -332,7 +357,8 @@ class ProfileFrameBase(Releasable):
         self.when:float = 0
         self.latestStartPT:TimePT = nowPT
         self.priorStartPT:TimePT = nowPT
-        self.loopStartPT:TimePT = nowPT
+        self.frameStartPT:TimePT = nowPT
+        self.frameEndPT:TimePT = nowPT
 
         self.currentSnap:ProfileSnapEntry|None = None
         self.currentSnapIndex:int= 0
@@ -425,13 +451,19 @@ class ProfileFrameBase(Releasable):
         return ProfilerRL.ProfileFrameBase_iterSnaps(self) 
 
     def releaseNested(self):
-        if self.firstSnap is not None:
-            self.firstSnap.release()
-            self.firstSnap = None
+        snap = self.firstSnap
+        if snap is not None:
             assert self.currentSnap is not None
             # assert not self.currentSnap._inUse
             self.currentSnap = None
-
+            self.firstSnap = None
+            while snap is not None:
+                nextSnap = snap._nextSnap
+                snap._nextSnap = None
+                snap.release()
+                snap = nextSnap
+                
+        
     def _resetSnap(self,tag:str):
         snapTag = self.snapNames.attrFor( tag )
         assert snapTag is not None, f"Invalid snap tag {tag} in {self.snapNames}"
@@ -443,7 +475,7 @@ class ProfileFrameBase(Releasable):
     def snap(self, name:str, name2:str|None = None, cls:type=ProfileSnapEntry ) -> ProfileSnapEntry:
         self.priorStartPT = self.latestStartPT
         self.latestStartPT = getProfilerNow()
-        self.when = ptToSeconds ( self.latestStartPT - self.loopStartPT ) 
+        self.when = ptToSeconds ( self.latestStartPT - self.frameStartPT ) 
         priorEntry = self.currentSnap
         
         
@@ -466,39 +498,15 @@ class ProfileFrameBase(Releasable):
         
     def writeOn(self,config:ProfileWriteConfig,indent:str=''):
         return ProfilerRL.ProfileFrameBase_writeOn(self,config,indent)
-        
-    """
-    def jsonData(self,minF=None, minE = None, withSkipped=False, forceInclude = False, **kwds):
-        # type: ignore
-        # pylint: disable=no-member
-        minE = minE  if minE is not None else -1
-        minF = minF or minE
-        if self.e < minF and not forceInclude: return None
-        
-        skipped = []
-        rvEntries=collections.OrderedDict()
-        for snap in self.entries: # type: ignore
-            if snap.e < minE: 
-                skipped.append(snap.tag)
-                continue
-            rvEntries[snap.tag] =  snap.jsonData(**kwds)
-            #rvEntries.append( [snap.tag, snap.jsonData(**kwds)] )
-            
-        rv = dict(
-            e= self.e,
-            entries=rvEntries,
-            i=self.index,
-            id=id(self)
-        )
-        if withSkipped:
-            rv['skipped'] = skipped #type: ignore
-        return rv
-    """        
+    
     def __str__(self):
         return f"PSF{('-'+self.name) if self.name is not None else ''}[{self.depth}:{self._rIndex}]@{id(self):X}"
     
     def finish(self):
-        self.snap('end')
+        snap = self.snap('end')
+        self.frameEndPT = getProfilerNow()
+        #snap.e = getProfilerNow() - self.latestStartPT
+        self.e = self.frameEndPT - self.frameStartPT 
         
         if self.shouldProfileMemory():
             self.rawUsedGC =  gc.mem_alloc() - self.allocGc 
@@ -508,13 +516,13 @@ class ProfileSubFrame(ProfileFrameBase):
     
     snapNames = IndexMap( 'snap', ['start','end' ] )
     
-    def __init__(self, context:UpdateContext, name:Optional[str]=None, name2:Optional[str]=None):
-        super().__init__(context)
+    def __init__(self, ): # context:UpdateContext, name:Optional[str]=None, name2:Optional[str]=None):
+        super().__init__()#context)
         #self.__context = context
         #self._name = name
         #self.name2 = name2
         self._nextFree = None
-        self.reset( context, name, name2 )
+        #self.reset( context, name, name2 )
         
     def reset(self, context:UpdateContext, name:Optional[str]=None, name2:Optional[str]=None):
         super().reset(context)
@@ -522,12 +530,15 @@ class ProfileSubFrame(ProfileFrameBase):
         self.name2 = name2
         
     @classmethod
-    def makeEntry(cls,  context:UpdateContext, name:Optional[str]=None, name2:Optional[str]=None ):
+    def makeEntry(cls,  context:UpdateContext,
+                   name:Optional[str]=None, name2:Optional[str]=None 
+                ) -> Self:
+    
         rp = cls.getReleasablePool()
         entry = cls._make_getFree( rp )
 
-        if entry is None: entry = cls( context=context, name=name, name2=name2 )
-        else: entry.reset( context=context, name=name, name2=name2 ) # pylint: disable=no-member # type: ignore
+        if entry is None: entry = cls( )
+        entry.reset( context=context, name=name, name2=name2 ) # pylint: disable=no-member # type: ignore
         
         return cls._makeFinish( rp, entry )
             
@@ -545,9 +556,10 @@ class ProfileFrame(ProfileFrameBase):
     
     snapMaxEntries = 10
     
-    def __init__(self,   context:UpdateContext,  eSleep:TimeSpanInSeconds=0.0):
-        super().__init__(context)
-        self.reset(  context, eSleep=eSleep)
+    def __init__(self ) -> None:
+         #,   context:UpdateContext,  eSleep:TimeSpanInSeconds=0.0):
+        super().__init__()
+        #self.reset(  context, eSleep=eSleep)
 
     def shouldProfileMemory(self) -> bool:
         return pmc_gcManager.PROFILE_MEMORY
@@ -561,8 +573,8 @@ class ProfileFrame(ProfileFrameBase):
         rp = cls.getReleasablePool()
         entry = cls._make_getFree( rp )
 
-        if entry is None: entry = cls( context, eSleep=eSleep )
-        else: entry.reset( context, eSleep=eSleep ) # pylint: disable=no-member # type: ignore
+        if entry is None: entry = cls() # type: ignore
+        entry.reset( context, eSleep=eSleep ) # pylint: disable=no-member # type: ignore
         
         return cls._makeFinish( rp, entry )
 
@@ -573,30 +585,7 @@ class ProfileFrame(ProfileFrameBase):
         self.updateIndex = context.updateIndex
         self.eSleep = eSleep
         super().reset(context)
-        
 
-        
-    def frameData(self,minF:Optional[int]=None, minE:Optional[int] = None, **kwds:StrAnyDict):
-        minE = minE  if minE is not None else -1
-        minF = minF or minE
-        #forceInclude = self.eSleep > min(minE,minF)
-        
-        #baseData = {} # super().jsonData(minF=minF, minE = minE, forceInclude=forceInclude, **kwds )
-        #if baseData is None: 
-        #    return None
-        #return dict( i=self.updateIndex, eSleep=self.eSleep, **baseData )        
-        return dict( i=self.updateIndex, eSleep=self.eSleep )        
-
-    """
-    def jsonData(self,minF=None, minE = None, **kwds): # type: ignore
-        minE = minE  if minE is not None else -1
-        minF = minF or minE
-        forceInclude = self.eSleep > min(minE,minF)
-        baseData =super().jsonData(minF=minF, minE = minE, forceInclude=forceInclude, **kwds )
-        if baseData is None: 
-            return None
-        return dict( i=self.updateIndex, eSleep=self.eSleep, **baseData )
-"""
 
     def writeOn(self,config:ProfileWriteConfig,indent:str=''):
         return ProfilerRL.ProfileFrame_writeOn(self,config,indent)
@@ -604,7 +593,8 @@ class ProfileFrame(ProfileFrameBase):
 
 class ProfileStubFrameEntry(ProfileSnapEntry): 
     def __init__(self,frame:Optional[ProfileFrameBase]=None):
-        super().__init__(tag="stub",when=TimeInSeconds(0))
+        super().__init__()
+            #tag="stub",when=TimeInSeconds(0))
         self.__frame = frame
         
     def subFrame(self, context, name:Optional[str]=None, name2:Optional[str]=None) -> 'ProfileFrameBase': # type: ignore
@@ -620,8 +610,8 @@ class ProfileStubFrameEntry(ProfileSnapEntry):
     
 class ProfileStubFrame(ProfileFrame): 
 
-    def __init__(self, context:UpdateContext):
-        super().__init__(context=context, eSleep=0.0)
+    def __init__(self):
+        super().__init__()
         self.when = 0
         self.updateIndex = -1
         self.__stubEntry = ProfileStubFrameEntry(self)
@@ -661,14 +651,14 @@ class Profiler(object):
         if stub is None:
             stub = not pmc_mainLoopControl.ENABLE_PROFILE
             
-        self.stubFrame = ProfileStubFrame(context)
+        self.stubFrame = ProfileStubFrame()
         self._preContextIndex = context.updateIndex
-        if stub:
-            self.timings = [ self.stubFrame ]
-            timings = 1
-        else:
-            timings = timings or pmc_mainLoopControl.profileTimings
-            self.timings = [ ProfileFrame.makeEntry(context,0) for  _ in range(timings) ]
+        #if stub:
+        #    self.timings = [ self.stubFrame ]
+        #    timings = 1
+        #else:
+        timings = timings or pmc_mainLoopControl.profileTimings
+        self.timings = [ ProfileFrame.makeEntry(context,0) for  _ in range(timings) ]
         
         self.timingsLength = timings
         self.disabled = stub
@@ -677,7 +667,6 @@ class Profiler(object):
         #self.nextNewFrame(0)
 
     def nextNewFrame(self, context:UpdateContext, eSleep:TimeInSeconds=TimeInSeconds(0) ) -> ProfileFrame:
-        assert not self.disabled
         updateIndex = context.updateIndex
         timingIndex = updateIndex % self.timingsLength 
         old = self.timings[timingIndex]
@@ -691,7 +680,8 @@ class Profiler(object):
         #print( f"reset {updateIndex} {timingIndex} {self.currentTiming.updateIndex} {id(self.currentTiming)} ")
     
     def timingForUpdate( self, updateIndex:int ) -> ProfileFrame | None:
-        if self.disabled: return self.timings[0]
+        if self.disabled: self.stubFrame
+
         timingIndex = updateIndex % self.timingsLength
         rv = self.timings[timingIndex]
         if rv is not None and rv.updateIndex != updateIndex: # type:ignore[reportAttributeAccessIssue]

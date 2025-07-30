@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing import List
 
 from LumensalisCP.Main.PreMainConfig import ImportProfiler
 _sayTriggersTimerImport = ImportProfiler("Triggers.Timer" )
@@ -9,14 +8,19 @@ from LumensalisCP.IOContext import *
 #import LumensalisCP.Main.Manager
 
 #from LumensalisCP.Eval.Expressions import Expression, ExpressionTerm
+# pyright: ignore[reportPrivateUsage]
+
 _sayTriggersTimerImport( "Dependents" )
 
 from LumensalisCP.Main.Dependents import SubManagerBase, ManagerRef
 
 _sayTriggersTimerImport( "Trigger")
-from LumensalisCP.Triggers.common import Trigger
-    
-    
+from LumensalisCP.Triggers.Trigger import Trigger
+from LumensalisCP.Triggers.Invocable import *
+
+SimpleCallable:TypeAlias = Callable[[], None]
+
+
 class PeriodicTimerManager( SubManagerBase ):
     
     def __init__(self, main:MainManager ):
@@ -34,27 +38,29 @@ class PeriodicTimerManager( SubManagerBase ):
             now = self.main.when
             self.__latestUpdateWhen = now
             timers = self.__timers
-            if self.enableDbgOut: self.dbgOut( "update now=%.3f", now )
-            for t in timers:
-                # now = self.main.getNewNow()
-                if t.nextFire is None:
-                    continue
-                if t.nextFire <= now:
-                    priorNf = t.nextFire
-                    try:
-                        t._timerExpired( now, context=context ) # pylint: disable=protected-access
-                    except Exception as inst: # pylint: disable=broad-except
-                        t.SHOW_EXCEPTION( inst, "timer expire exception" )
-                    #self.enableDbgOut and 
-                    if self.enableDbgOut: self.dbgOut( f"timer {t.name} expired, nf={t.nextFire} now={now:.3f} pnf={priorNf}" )
-                else:
-                    #self.enableDbgOut and 
-                    if self.enableDbgOut: self.dbgOut( "timer %s still waiting, nf=%0.3f", t.name, t.nextFire )
-                                    
-            self.__updating = False
-            if self.__timerChanges:
-                if self.enableDbgOut: self.dbgOut( "%d changes, shuffling", self.__timerChanges )
-                self.__shuffleTimers()
+            with context.subFrame('timers.update', self.name ) as activeFrame:
+                if self.enableDbgOut: self.dbgOut( "update now=%.3f", now )
+                for t in timers:
+                    # now = self.main.getNewNow()
+                    if t.nextFire is None:
+                        continue
+                    if t.nextFire <= now:
+                        priorNf = t.nextFire
+                        try:
+                            t._timerExpired( now, context=context ) # pyright: ignore[reportPrivateUsage] # pylint: disable=protected-access
+                        except Exception as inst: # pylint: disable=broad-except
+                            t.SHOW_EXCEPTION( inst, "timer expire exception" )
+                        #self.enableDbgOut and 
+                        if self.enableDbgOut: self.dbgOut( f"timer {t.name} expired, nf={t.nextFire} now={now:.3f} pnf={priorNf}" )
+                    else:
+                        #self.enableDbgOut and 
+                        if self.enableDbgOut: self.dbgOut( "timer %s still waiting, nf=%0.3f", t.name, t.nextFire )
+                                        
+                self.__updating = False
+                if self.__timerChanges:
+                    activeFrame.snap( "__shuffleTimers" )
+                    if self.enableDbgOut: self.dbgOut( "%d changes, shuffling", self.__timerChanges )
+                    self.__shuffleTimers()
 
     @property
     def timers(self) -> List[PeriodicTimer]: return self.__timers
@@ -89,14 +95,26 @@ class PeriodicTimerManager( SubManagerBase ):
         
 class PeriodicTimer( Trigger ):
     # pylint: disable=protected-access
+    IntervalArg:TypeAlias = Union[TimeSpanInSeconds,Callable[[],TimeSpanInSeconds]]
     
-    def __init__(self, interval:TimeSpanInSeconds=1.0, name:Optional[str] = None, oneShot:bool = False, manager:Optional[PeriodicTimerManager] = None ):
-        super().__init__(name=name)
-        self.__interval:TimeSpanInSeconds|Callable = interval
+    class KWDS(Trigger.KWDS):
+        interval: NotRequired[Union[TimeSpanInSeconds,Callable[[],TimeSpanInSeconds]]]
+        oneShot: NotRequired[bool]
+        manager: NotRequired[PeriodicTimerManager]
+
+    def __init__(self, 
+                    interval:IntervalArg = 1.0,
+                    oneShot:bool = False,
+                    manager:Optional[PeriodicTimerManager] = None,
+                    **kwds:Unpack[Trigger.KWDS]
+            ) -> None:
+        super().__init__(**kwds)
+        self.__interval:PeriodicTimer.IntervalArg = interval
         self.__lastFire:TimeInSeconds = TimeInSeconds(0.0)
         self.__nextFire:TimeInSeconds|None = None
         self.__oneShot:bool = oneShot
-        assert manager is not None
+        if manager is None:
+            manager = getMainManager().timers
         self.__managerRef = ManagerRef(manager)
 
     @property
@@ -118,9 +136,6 @@ class PeriodicTimer( Trigger ):
         if isinstance(i,(float,int)):
             return float(i)
         i = i()
-        if isinstance(i,(float,int)):
-            return float(i)
-
         assert isinstance( i, float )
         return i
         
@@ -129,7 +144,7 @@ class PeriodicTimer( Trigger ):
 
     
     @interval.setter
-    def interval(self,interval:TimeSpanInSeconds|Callable):
+    def interval(self,interval:TimeSpanInSeconds|Callable[[],TimeSpanInSeconds]) -> None:
         self.__interval = interval
         if self.running:
             self.start()
@@ -142,16 +157,16 @@ class PeriodicTimer( Trigger ):
         nextFire = self.manager.main.when + interval 
         if self.__nextFire is None:
             self.__nextFire = nextFire # type: ignore
-            self.manager._addTimer(self)
+            self.manager._addTimer(self) # pyright: ignore[reportPrivateUsage]
         else:
             self.__nextFire = nextFire # type: ignore
-            self.manager._updateTimer(self)
+            self.manager._updateTimer(self) # pyright: ignore[reportPrivateUsage]
     
     @final
     def stop(self):
         if self.__nextFire is not None:
             self.__nextFire = None
-            self.manager._removeTimer( self )
+            self.manager._removeTimer( self ) # pyright: ignore[reportPrivateUsage]
     
     @final
     def restart(self, interval:TimeSpanInSeconds|Callable[...,TimeSpanInSeconds]|None =None, when:TimeInSeconds|None = None ):
@@ -164,40 +179,62 @@ class PeriodicTimer( Trigger ):
         self.__nextFire = when + interval # type: ignore
         if self.enableDbgOut: self.dbgOut( "restart at %.3fs i=%.3fs nf=%.3fs", when, interval, self.__nextFire)
         #self._nextFire = min( when, self._nextFire + self.__interval )
-        self.manager._updateTimer(self)
+        self.manager._updateTimer(self) # pyright: ignore[reportPrivateUsage]
 
 
-    def addTaskDef( self, name:Optional[str]=None, autoStart=True):
-        def wrapper( cb:Callable[...,Any]  ) -> KWCallback:
-            wrapped = KWCallback.make(cb,name=name)
-            self.addAction( wrapped )
+    def addSimpleTaskDef( self, name:Optional[str]=None, autoStart:bool=True) -> Callable[[InvocableOrSimpleCB], Invocable]:
+        def wrapper( cb:InvocableOrSimpleCB  ) -> Invocable:
+            invocable = InvocableSimpleCB.make(cb)
+            self.addAction( invocable )
             if autoStart:
                 self.start()
-            return wrapped
+            return invocable
 
         return wrapper
     
     #########################################################################
     # ONLY FOR USE BY PeriodicTimerManager
-    def _timerExpired(self, when:TimeInSeconds, context: EvaluationContext ):
+    def _timerExpired(self, when:TimeInSeconds, context: EvaluationContext ) -> None:
         
-        self.fire(when=when, context=context)
-        self.__lastFire = when
-        if self.__oneShot:
-            self.stop()
-        else:
-            if self.__nextFire is not None:
-                self.restart(when=when)
+        #self.fire(when=when, context=context)
+        with context.subFrame('_timerExpired', self.name ) as activeFrame:
+            self.fireTrigger( context=context )
+            self.__lastFire = when
+            if self.__oneShot:
+                activeFrame.snap( "stop" )
+                self.stop()
+            else:
+                if self.__nextFire is not None:
+                    activeFrame.snap( "restart" )
+                    self.restart(when=when)
 
-def addPeriodicTaskDef( name:Optional[str]=None, period:TimeSpanInSeconds=1.1,main:Optional[MainManager]=None):
-    def wrapper( cb:Callable[...,Any]  ) -> KWCallback:
-        
-        m = main or getMainManager()
-        kwCb = KWCallback(cb,name=name)
-        timer = PeriodicTimer( period, manager=m.timers, name=name,)
-        timer.addAction( kwCb )
+def addPeriodicTaskDef( **kwargs:Unpack[PeriodicTimer.KWDS]
+        )   -> Callable[[InvocableOrContextCB], PeriodicTimer]:
+#Callable[[InvocableOrContextCB], PeriodicTimer]:
+
+    def wrapper( cb:InvocableOrContextCB  ) -> PeriodicTimer:
+        m = kwargs.get("main") or getMainManager()
+        kwargs.setdefault('manager', m.timers )
+        #kwCb = KWCallback(cb,name=name)
+        timer = PeriodicTimer( **kwargs )
+        invocable = Invocable.makeInvocable(cb)
+        timer.addAction( invocable )
         timer.start()
-        return kwCb
+        return timer
+
+    return wrapper
+
+
+def addSimplePeriodicTaskDef( name:Optional[str]=None, 
+                **kwds:Unpack[PeriodicTimer.KWDS]
+        ) -> Callable[[InvocableOrSimpleCB], Invocable]:
+
+    def wrapper( cb:InvocableOrSimpleCB  ) -> Invocable:
+        timer = PeriodicTimer( **kwds )
+        invocable = InvocableSimpleCB.make(cb)
+        timer.addRawAction( invocable )
+        timer.start()
+        return invocable
 
     return wrapper
 

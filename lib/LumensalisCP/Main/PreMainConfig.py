@@ -37,15 +37,15 @@ if TYPE_CHECKING:
 class _MainLoopControl(object):
     
     def __init__(self):
-        self.__started = supervisor.ticks_ms()
-        self.MINIMUM_LOOP = False
-        self.ENABLE_PROFILE = False
-        self.nextWaitPeriod = 0.01
-        self.profileTimings = 10
-        self.preMainVerbose = False
-        self.startupVerbose = True
-        self.printStatCycles = 5000
-        self.enableHttpDebug = False
+        self.__started:int = supervisor.ticks_ms()
+        self.MINIMUM_LOOP:bool = False
+        self.ENABLE_PROFILE:bool = False
+        self.nextWaitPeriod:float = 0.01
+        self.profileTimings:int = 10
+        self.printStatCycles:int = 5000
+        self.enableHttpDebug:bool = False
+        self.preMainVerbose:bool = False
+        self.startupVerbose:bool = True
         
     def getMsSinceStart(self):
         now = supervisor.ticks_ms()
@@ -94,10 +94,9 @@ class GCManager(object):
         
     def runCollection(self, 
                       context:Optional[Any]=None,     # [unused-argument] # pylint: disable=unused-argument
-                      when:Optional[float]=None, # [unused-argument] # pylint: disable=unused-argument
                       force:bool = False, 
                       show:bool = False): 
-        
+
         now = time.monotonic()
         mem_free_before = gc.mem_free()  # pylint: disable=no-member
         mem_free_before_elapsed = time.monotonic() - now
@@ -118,7 +117,17 @@ class GCManager(object):
                 #print( f"cycle {cycle}, {len(main.timers.timers)}")
                 elapsedSeconds = elapsedSincePriorCollectMS/1000.0
                 if self.verboseCollect:
-                    print( f"GC per cycle = {elapsedSeconds/delta_cycles:0.03f}s, alloc={delta_alloc/delta_cycles:0.1f}, free={delta_free/delta_cycles:0.1f} skipping at {pmc_mainLoopControl.getMsSinceStart()/1000.0:0.3f} / {timeBeforeCollect:0.3f} [{cycle}],  free={mem_free_before} alloc={mem_alloc_before}, since last collect = {elapsedSincePriorCollectMS/1000.0:.3f} [{delta_cycles}] {delta_alloc} alloc, {delta_free} free gc.mem_f/a()={mem_free_before_elapsed:.3f}/{mem_alloc_before_elapsed:.3f}" )
+                    print( f"""GC per cycle = {
+        elapsedSeconds/delta_cycles:0.03f}s, alloc={
+        delta_alloc/delta_cycles:0.1f}, free={
+        delta_free/delta_cycles:0.1f} skipping at {
+        pmc_mainLoopControl.getMsSinceStart()/1000.0:0.3f} / {
+        timeBeforeCollect:0.3f} [{cycle}],  free={
+        mem_free_before} alloc={mem_alloc_before}, since last collect = {
+        elapsedSincePriorCollectMS/1000.0:.3f} [{delta_cycles}] {
+        delta_alloc} alloc, {delta_free} free gc.mem_f/a()={
+        mem_free_before_elapsed:.3f}/{mem_alloc_before_elapsed:.3f}"""
+                  )
 
             return
         
@@ -149,7 +158,7 @@ class GCManager(object):
         delta_cycles = max( 1, cycle - self.priorCycle )
         collectRatio = collectElapsed / elapsedSincePriorCollect
         
-        if self.verboseCollect:
+        if self.verboseCollect :
             print( f" took {collectElapsed:.3f} of {elapsedSincePriorCollect:.3f} at {pmc_mainLoopControl.getMsSinceStart()/1000.0:0.3f} for {delta_cycles} cycles freeing {delta_alloc} ( {delta_alloc/delta_cycles:.1f} per cycle) leaving {mem_alloc_after} used, {mem_free_after} free t={self.__actualFreeThreshold} cr={collectRatio}  gc.mem_f/a()={mem_free_before_elapsed:.3f}/{mem_alloc_before_elapsed:.3f}" )
 
         if self.targetCollectPeriod is not None and collectElapsed > self.targetCollectPeriod:
@@ -204,7 +213,8 @@ def sayAtStartup(desc:str) -> None:
 
 class ImportProfiler(object):
     """ A simple profiler for imports, to help identify slow imports """
-    
+    SHOW_IMPORTS:bool = False
+
     NESTING:list[ImportProfiler] = []
     def __init__(self, name:str ) -> None:
         self.name = name
@@ -214,7 +224,8 @@ class ImportProfiler(object):
         ImportProfiler.NESTING.append( self )
         
     def __call__(self, desc:str) -> None:
-        sayAtStartup( f"IMPORT {self.path} | {self.name} : {desc}" )
+        if self.SHOW_IMPORTS:
+            sayAtStartup( f"IMPORT {self.path} | {self.name} : {desc}" )
 
     def parsing(self) -> None:
         self( "parsing" )
@@ -225,6 +236,7 @@ class ImportProfiler(object):
         assert end is self, f"ImportProfiler nesting mismatch: {end.name} != {self.name}"
 
 class ReloadableImportProfiler(ImportProfiler):
+    SHOW_IMPORTS:bool = True
     pass 
 
 __all__ = [ 'pmc_gcManager', 'pmc_mainLoopControl', 'printElapsed', 'sayAtStartup','ImportProfiler', 'ReloadableImportProfiler' ]

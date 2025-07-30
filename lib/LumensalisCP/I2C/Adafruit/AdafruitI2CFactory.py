@@ -26,22 +26,26 @@ class AdafruitFactory(I2CFactory):
     def addQTRotaryEncoder(self, **kwds:Unpack[QtRotary.KWDS] ) -> QtRotary:
         """Add a QTRotaryEncoder."""
         from LumensalisCP.I2C.Adafruit.QTRotaryEncoder import QtRotary
-        return QtRotary( main=self.main, **kwds )
+        kwds.setdefault('main', self.main)
+        return QtRotary( **kwds )
 
     def addNunchuk( self, **kwds:Unpack[Nunchuk.KWDS] ) -> Nunchuk:
         """Add a Nunchuk controller."""
         from LumensalisCP.I2C.Adafruit.Nunchuk import Nunchuk
-        return Nunchuk( main=self.main, **kwds )
+        kwds.setdefault('main', self.main)
+        return Nunchuk( **kwds )
 
     def addMPR121( self, **kwds:Unpack[MPR121.KWDS] ) -> MPR121:
         """Add a MPR121 capacitive touch sensor."""
         from LumensalisCP.I2C.Adafruit.MPR121 import MPR121
-        return MPR121(  main=self.main, **kwds )
+        kwds.setdefault('main', self.main)
+        return MPR121(  **kwds )
 
     def addVCNL4040( self, **kwds:Unpack[VCNL4040.KWDS] ) -> VCNL4040:
         """Add a VCNL4040 proximity and ambient light sensor."""
         from LumensalisCP.I2C.Adafruit.VCNL4040 import VCNL4040
-        return VCNL4040(  main=self.main, **kwds )
+        kwds.setdefault('main', self.main)
+        return VCNL4040( **kwds )
 
     def addTLV493D( self, **kwds:Unpack[TLV493D.KWDS] ) -> TLV493D:
         """Add a TLV493D 3D magnetic sensor."""

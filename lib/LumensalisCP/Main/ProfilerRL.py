@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+# pyright: reportUnusedImport=false, reportUnusedVariable=false
 
 import gc # type: ignore
+import sys
+from collections import OrderedDict
 
 from LumensalisCP.Main.PreMainConfig import ReloadableImportProfiler
 __sayMainProfilerRLImport = ReloadableImportProfiler( "Main.ProfilerRL" )
@@ -13,11 +16,18 @@ import LumensalisCP.Main.Profiler
 
 if TYPE_CHECKING:
 
-    from LumensalisCP.Main.Profiler import ProfileSnapEntry, ProfileFrame, ProfileFrameBase, ProfileWriteConfig
+    from LumensalisCP.Main.Manager import MainManager
+    from LumensalisCP.Main.Profiler import ProfileSnapEntry, ProfileFrame, ProfileSubFrame, ProfileFrameBase, ProfileWriteConfig
+
+    #from LumensalisCP.Main.Profiler import ProfileSnapEntry, ProfileFrame, ProfileFrameBase, ProfileWriteConfig
     #from LumensalisCP.Main.Manager import MainManager   
 
 from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
 # pylint: disable=unused-argument, redefined-outer-name, attribute-defined-outside-init,protected-access,bad-indentation
+
+printDumpInterval = 28
+collectionCheckInterval = 11.51
+showRunCollection = True
 
 def _rl_setFixedOverheads():
     LumensalisCP.Main.Profiler.ProfileSnapEntry.gcFixedOverhead = 0
@@ -25,11 +35,10 @@ def _rl_setFixedOverheads():
     LumensalisCP.Main.Profiler.ProfileSubFrame.gcFixedOverhead = 0
     LumensalisCP.Main.Profiler.ProfileFrame.gcFixedOverhead = 0
 
-if getattr(  LumensalisCP.Main, 'Profiler', None ) is not None:
-    _rl_setFixedOverheads()
 
-def notEnoughMemUsed( self:ProfileSnapEntry|ProfileFrameBase, config:ProfileWriteConfig ) -> bool:
-    return self.usedGC < config.minB if self.usedGC else not pmc_gcManager.SHOW_ZERO_ALLOC_ENTRIES
+if getattr(  LumensalisCP.Main, 'Profiler', None ) is not None:
+    from LumensalisCP.Main.Profiler import ProfileSnapEntry, ProfileFrame, ProfileSubFrame, ProfileFrameBase, ProfileWriteConfig
+    _rl_setFixedOverheads()
 
 def _heading( self:ProfileFrameBase|ProfileSnapEntry ) -> str:
     if self.allocGc:
@@ -38,8 +47,8 @@ def _heading( self:ProfileFrameBase|ProfileSnapEntry ) -> str:
     else:
          return f"   {self.e:0.3f}"
 
-def ProfileFrameEntry_writeOn(self:ProfileSnapEntry,config:ProfileWriteConfig,indent:str='') -> None:
-    if self.e < config.minE and  notEnoughMemUsed(self, config): return # and self.tag not in ['start', 'end']: return 
+def ProfileSnapEntry_writeOn(self:ProfileSnapEntry,config:ProfileWriteConfig,indent:str='') -> None:
+    if not  config.shouldShowSnap(self): return
 
     if config.makingJson:
         data = config.top
@@ -49,8 +58,11 @@ def ProfileFrameEntry_writeOn(self:ProfileSnapEntry,config:ProfileWriteConfig,in
             data['name2'] = self.name2
         data['lw'] = self.lw
         data['e'] = self.e
-        if self.allocGc:
-             data['usedGC'] = self.usedGC
+        if config.showMemoryEntries:
+            if self.allocGc:
+                data['usedGC'] = self.usedGC
+                data['rawUsedGC'] = self.rawUsedGC
+                data['allocGc'] = self.allocGc
 
         if self.nest is not None:
             with config.nestDict( 'nest'):
@@ -69,14 +81,19 @@ def ProfileFrameBase_iterSnaps(self:ProfileFrameBase):
         entry = entry._nextSnap # type:ignore[reportAttributeAccessIssue]
 
 def ProfileFrameBase_writeOn(self:ProfileFrameBase,config:ProfileWriteConfig,indent:str=''):
-    if self.e < config.minSubF and notEnoughMemUsed(self, config): return
-
+    if not config.shouldShowFrame(self):
+        return
+    
     if config.makingJson:
         data = config.topDict
         data['name'] = self.name
         data['e'] = self.e
-        usedGC = self.usedGC
-        if usedGC: data['usedGC'] = usedGC
+        if config.showMemory:
+            usedGC = self.usedGC
+            if usedGC: data['usedGC'] = usedGC
+            data['rawUsedGC'] = self.rawUsedGC
+            data['allocGc'] = self.allocGc
+
         data['start'] = self.start
 
         with config.nestList( 'snaps' ):
@@ -88,54 +105,124 @@ def ProfileFrameBase_writeOn(self:ProfileFrameBase,config:ProfileWriteConfig,ind
         #config.target.write( f"   {_heading(self)}{indent}>{self._name or '??':.22s} {self.name2 or '??':.22s}@{id(self):X} {self.start:0.3f} {getattr(self,'usedGC',0)}b\r\n" )
         config.writeLine( f"   {_heading(self)}{indent}>{self.name or '??':.22s}@{id(self):X} {self.start:0.3f} {getattr(self,'usedGC',0)}b" )
         indent = indent+" ^ "
-        
-        
-        #for x in range(self.entries):
-        #    self.entry(x).writeOn(config,indent=indent)
+
         for snap in self.iterSnaps():
             snap.writeOn(config,indent=indent)
 
 def ProfileFrame_writeOn(self:ProfileFrame,config:ProfileWriteConfig,indent:str=''):
-    
-    try:
-        if self.eSleep < min(config.minE,config.minF) and self.e < config.minF and notEnoughMemUsed(self, config): 
-            return
-    except Exception as inst:
-        if not pmc_mainLoopControl.ENABLE_PROFILE:
-            return 
-        SHOW_EXCEPTION( inst, "ProfileFrame_writeOn check failed config=%r, eSleep=%r, e=%r, usedGC=%r", config, self.eSleep, self.e, self.usedGC )
-        raise
+    if not config.shouldShowFrame(self): return
 
     if config.makingJson:
         data = config.topDict
         data['rindex'] = self.rindex
         data['e'] = self.e
-        usedGC = self.usedGC
-        if usedGC: data['usedGC'] = usedGC
+        if config.showMemory:
+            usedGC = self.usedGC
+            if usedGC: data['usedGC'] = usedGC
         data['start'] = self.start
         data['eSleep'] = self.eSleep
 
         with config.nestList( 'snaps' ):
             for snap in self.iterSnaps():
-                with config.nestDict(  ):
-                    snap.writeOn(config)
+                if config.shouldShowSnap(snap):
+                    with config.nestDict( ):
+                        snap.writeOn(config)
     else:
         config.writeLine( f"[{self.rindex}] {_heading(self)}{indent} {self.start:0.3f} @{id(self):X}" )
         #return
         indent = indent+"  "
-        #for x in range(self.entries):
-        #    assert type(x) is int
-        #    entry = self.entry(x)
-        #    if entry is None:
-        #        config.writeLine( "  -- entry %r is None", x )
-        #    else:
+
         for entry in self.iterSnaps():        
             #assert isinstance( entry,  ProfileSnapEntry ), f"entry {type(entry) } is not ProfileSnapEntry"
             #assert isinstance( config,  ProfileWriteConfig ) 
             assert isinstance(indent, str ) 
         
             #config.target.write( f" --- [{x}]\r\n");
-            #ProfileFrameEntry_writeOn( entry, config, indent )
+            #ProfileSnapEntry_writeOn( entry, config, indent )
             entry.writeOn(config,indent=indent)
+
+
+#############################################################################
+
+def addPoolInfo( dest:StrAnyDict,  cls:type[ProfileSnapEntry|ProfileFrame|ProfileSubFrame|ProfileFrameBase]) -> Any:
+    pool = cls.getReleasablePool()
+    return dictAddUnique(dest, cls.__name__, dict( a=pool._allocs, r=pool._releases ) ) # type: ignore
+
+def getProfilerInfo( main:MainManager, dumpConfig:Optional[ProfileWriteConfig]=None ) -> Any:
+
+    context = main.getContext()
+    i = context.updateIndex
+    print(f"getProfilerInfo: updateIndex = {i}")
+    
+    if dumpConfig is None:
+
+        rv:StrAnyDict = OrderedDict()
+        dumpConfig = ProfileWriteConfig(target=rv,
+                minE = 0.005,
+                minF=0.01,
+                minSubF = 0.05,
+                minB = 0,
+                minEB = 0,
+            )
+    else:
+        rv = dumpConfig.target
+    
+    if not isinstance(rv, (dict,OrderedDict)  ):
+        raise TypeError(f"dumpConfig.target is not a dict: {type(rv)}")
+
+    with dumpConfig.nestDict('dumpConfig'):
+        d = dumpConfig.topDict
+        d['minE'] = dumpConfig.minE
+        d['minEB'] = dumpConfig.minEB
+        d['minF'] = dumpConfig.minF
+        d['minSubF'] = dumpConfig.minSubF
+        d['minB'] = dumpConfig.minB
+
+
+    with dumpConfig.nestDict('pools'):
+        d = dumpConfig.topDict
+        addPoolInfo( d, ProfileSnapEntry )
+        addPoolInfo( d, ProfileFrame )
+        addPoolInfo( d, ProfileSubFrame )
+        addPoolInfo( d, ProfileFrameBase )
+
+    with dumpConfig.nestDict('gc'):
+        d = dumpConfig.topDict
+        d['mem_alloc'] = gc.mem_alloc()
+        d['mem_free'] = gc.mem_free()
+
+    with dumpConfig.nestDict('timers'):
+        d = dumpConfig.topDict
+        d['timerSorts'] = main.timers.timerSorts
+        d['timerChanges'] = [ dict(
+            name=timer.name,
+            running=timer.running,
+            nextFire=timer.nextFire,    
+            lastFire=timer.lastFire,
+            
+        )
+            for timer in main.timers.timers]
+        
+    count = 10
+    
+    with dumpConfig.nestList('frames'):
+        
+        while count and i >= 0:
+            count -= 1
+            frame = main.profiler.timingForUpdate( i )
+            
+            if frame is not None:
+                with dumpConfig.nestDict():
+                    frame.writeOn( dumpConfig )
+            i -= 1
+
+
+    
+    return rv
+
+
+#############################################################################
+
+
 
 __sayMainProfilerRLImport.complete()

@@ -140,21 +140,21 @@ class TreasureChest( DemoBase ):
                     
                 print( f"TOUCHED!!! { capTouch.touchedInputs}" )
             
-            @fireOnTrue( centerStoneTouch )
+            @fireOnTrueDef( centerStoneTouch )
             def rl():
                 reloadTreasureChest()
 
-            @fireOnTrue( bottomTouch )
+            @fireOnTrueDef( bottomTouch )
             def rl():
                 reloadTreasureChest( )
             
-            @fireOnTrue( rightStoneTouch )
+            @fireOnTrueDef( rightStoneTouch )
             def _(): self.closeLid()
 
-            #@fireOnTrue( leftStoneTouch )
+            #@fireOnTrueDef( leftStoneTouch )
             #def _(): self.openLid()
 
-            @fireOnTrue( leftStoneTouch )
+            @fireOnTrueDef( leftStoneTouch )
             def _():
                 sName = scenes.currentScene.name
                 nextScene = dict(A="B",B="C",C="D",D="A").get(sName,"B")
@@ -196,14 +196,14 @@ class TreasureChest( DemoBase ):
         #####################################################################
         sceneManager = self.main.scenes
         
-        @fireOnTrue( rising( lidOpenMag == True ) )
+        @fireOnTrueDef( rising( lidOpenMag == True ) )
         def lidIsOpened():
             print( f"lidOpen!!!")
             #lidDrive.stop()
             #sceneManager.currentScene = "open"
             
             
-        @fireOnTrue( rising( lidClosedMag == True ) )
+        @fireOnTrueDef( rising( lidClosedMag == True ) )
         def lidIsClosed(**kwargs):
             print( f"lidClosed!!! {kwargs}")
             #lidDrive.stop()
@@ -398,12 +398,12 @@ class TreasureChest( DemoBase ):
         
         dmxRemote.addRule( lidDrive, dmxLid * lid.span + lid.closedPosition )
         
-        @fireOnTrue( rising( dmxEnable > 0.9 ) )
+        @fireOnTrueDef( rising( dmxEnable > 0.9 ) )
         def enableDMX(**kwargs):
             print( "enableDMX...")
             scenes.currentScene = dmxRemote
 
-        @fireOnTrue( rising( dmxEnable < 0.1 ) )
+        @fireOnTrueDef( rising( dmxEnable < 0.1 ) )
         def disableDMX(**kwargs):
             print( "disableDMX...")
             scenes.currentScene = "closing"
@@ -445,7 +445,7 @@ class TreasureChest( DemoBase ):
             if self.enableStatsPrint:
                 print( f"{main.latestContext.updateIndex}@{main.when:.3f}  openRatio={openRatio} for {self.lidDrive.lastSetAngle}, sceneColor = {sceneColor} for {self.main.scenes.currentScene}" )
 
-        @fireOnTrue( rising( rightRimTouch == True ) )
+        @fireOnTrueDef( rising( rightRimTouch == True ) )
         def toggleStatsPrint(**kwargs):
             self.enableStatsPrint = not self.enableStatsPrint 
             print( f"self.enableStatsPrint = {self.enableStatsPrint}")
@@ -457,7 +457,7 @@ class TreasureChest( DemoBase ):
         
         dt = PeriodicTimer( interval=lambda : TreasureChest2RL.printDumpInterval, manager=main.timers, name="dump" )
         
-        @dt.addTaskDef( "printDumpPeriod" )
+        @dt.addSimpleTaskDef( "printDumpPeriod" )
         def dump():
             #print( f"DUMPING at {main.newNow}" )
             #dt.restart( interval=TreasureChest2RL.printDumpInterval )

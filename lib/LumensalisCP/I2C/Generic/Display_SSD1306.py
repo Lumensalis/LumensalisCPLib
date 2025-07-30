@@ -14,5 +14,5 @@ class Display_SSD1306(I2CDevice,SSD1306_I2C):
         self.displayHeight = displayHeight 
         SSD1306_I2C.__init__( self, self.displayWidth, self.displayHeight, self.i2c )
         
-    def derivedUpdateDevice(self, context:EvaluationContext):
+    def derivedUpdateDevice(self, context:EvaluationContext) -> bool:
         return False    

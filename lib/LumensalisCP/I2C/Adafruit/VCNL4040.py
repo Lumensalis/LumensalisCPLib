@@ -1,13 +1,13 @@
 
 from __future__ import annotations
 
+import adafruit_vcnl4040
+
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
 from LumensalisCP.I2C.I2CDevice import  I2CDevice, I2CInputSource, EvaluationContext
 
-import adafruit_vcnl4040
-
-
+#############################################################################
 
 class VCNL4040ConfigDescriptor:
     def __init__(self, name:str='???'):
@@ -25,10 +25,11 @@ class VCNL4040ConfigDescriptor:
         if obj.dbgOut: obj.dbgOut( 'Updating %r to %r', self.attrName, value )
         setattr(obj.vcnl4040, self.attrName, value)
 
-                
+#############################################################################
+
 class VCNL4040Input(I2CInputSource):
-    def __init__( self, parent:"VCNL4040", attr:str, name:Optional[str]=None, **kwargs ):
-        super().__init__(parent,name=name,**kwargs)
+    def __init__( self, parent:"VCNL4040", attr:str, **kwargs: Unpack[I2CInputSource.KWDS] ):
+        super().__init__(parent,**kwargs)
         self.attr = attr
         self.vcnl4040 = parent.vcnl4040
         self._value:Any =  getattr( self.vcnl4040, self.attr ) 
@@ -44,8 +45,9 @@ class VCNL4040Input(I2CInputSource):
             #if self.enableDbgOut: self.dbgOut( "NEW VALUE %s cycle=%s",  value, context.updateIndex )
             self.updateValue( context )    
         # elif self.enableDbgOut: self.dbgOut( "unchanged %s cycle=%s",  value, context.updateIndex )
-        
-        
+
+#############################################################################
+
 class VCNL4040ReadableDescriptor:
 
     def __init__(self, name:str):
@@ -68,16 +70,18 @@ class VCNL4040ReadableDescriptor:
         return value
 
     def __set__(self, obj:'VCNL4040', value) -> None:
-        obj.raiseException( '%r is read only', self.name )
+        assert False, '%r is read only' % self.name
         #setattr(obj.vcnl4040, self.public_name, value)        
 
+#############################################################################
+
 class VCNL4040(I2CDevice):
-    
-    def __init__(self, **kwds ):
-        updateKWDefaults( kwds,
-            updateInterval = 0.1,
-        )
+
+    def __init__(self, **kwds:Unpack[I2CDevice.KWDS]) -> None:
+        kwds.setdefault("updateInterval", 0.3)
+        
         super().__init__(**kwds)
+
         self.vcnl4040:adafruit_vcnl4040.VCNL4040 = adafruit_vcnl4040.VCNL4040( i2c=self.i2c )
         
         self.__ios:List[VCNL4040Input] = []
@@ -114,7 +118,10 @@ class VCNL4040(I2CDevice):
     white = VCNL4040ReadableDescriptor('white')
     """ white light sensor value, 0-65535 """
 
-    def derivedUpdateDevice(self, context:EvaluationContext):
+    def derivedUpdateDevice(self, context:EvaluationContext) -> bool:
         if self.enableDbgOut: self.dbgOut( "reading %r ios", len(self.__ios))
-        for input in self.__ios:
-            input._setFromHW( context )
+        with context.subFrame('dUpdateDevice', self.name) as frame:
+            for input in self.__ios:
+                input._setFromHW( context )
+        return False
+        

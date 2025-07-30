@@ -40,7 +40,7 @@ class VL53L0X(I2CDevice):
         return self.__range
     
     
-    def derivedUpdateDevice(self, context:EvaluationContext):
+    def derivedUpdateDevice(self, context:EvaluationContext) -> bool:
         if self.__readMode is None or self.__readMode  == 'startMeasurement':
             self._sensor.do_range_measurement()
             self.__readMode = "measuring"

@@ -3,3 +3,4 @@ async*
 *.mpy
 *.pyc
 __pycache__
+out/*

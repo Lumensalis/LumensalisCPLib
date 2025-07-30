@@ -107,7 +107,8 @@ class LocalServo( NamedOutputTarget ):
     def onMoveComplete( self, callback:LocalServoCallback ):
         self.__moveCompleteCB = callback
 
-    def _updateMove(self, when:TimeInSeconds, context:EvaluationContext):
+    def _updateMove(self, source:when:TimeInSeconds, context:EvaluationContext):
+        self.__moveTimer
         assert when is not None
         assert self.__moveTimeAtStart is not None
         assert self.__moveSpan is not None

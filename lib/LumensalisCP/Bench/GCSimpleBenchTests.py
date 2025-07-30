@@ -27,7 +27,7 @@ def simpleTest():
 
 #############################################################################
 
-def kwdsBaseline( a=None, b=None, c=None ):
+def kwdsBaseline( a:Any=None, b:Any=None, c:Any=None ):
     pass
 
 class KtClass(object):
@@ -35,51 +35,51 @@ class KtClass(object):
     def __init__( self ):
         pass
     
-    def kBar(self,a=None, b=None, c=None ):
+    def kBar(self,a:Any=None, b:Any=None, c:Any=None ):
         return None
 
-def ktBar( a=None, b=None, c=None ):
+def ktBar( a:Any=None, b:Any=None, c:Any=None ):
     return a + 1 # type: ignore 
 
-def ktBarABC( a, b, c ):
+def ktBarABC( a:Any, b:Any, c:Any ):
     return a
 
-def ktBarNone( a=None, b=None, c=None ):
+def ktBarNone( a:Any=None, b:Any=None, c:Any=None ):
     return None
 
-def ktFoo( a, b=None, c=None ):
+def ktFoo( a, b:Any=None, c:Any=None ):
     pass
 
-def ktFooBar( a, b=None, c=None ):
+def ktFooBar( a:Any, b:Any=None, c:Any=None ):
     return ktBar( a, b, c )
 
-def ktFooBarK( a, b=None, c=None ):
+def ktFooBarK( a:Any, b:Any=None, c:Any=None ):
     return ktBar( a=a, b=b, c=c )
-    
-def ktFooBarNone( a, b=None, c=None ):    
+
+def ktFooBarNone( a:Any, b:Any=None, c:Any=None ):
     return ktBarNone( a, b, c )
 
-def ktFooBarNoneK( a, b=None, c=None ):    
+def ktFooBarNoneK( a:Any, b:Any=None, c:Any=None ):
     return ktBarNone( a=a, b=b, c=c )
         
 
-def ktFooBarNoneA( a ):
+def ktFooBarNoneA( a:Any ):
     return ktBarNone( a )
 
-def ktBaz( *args, **kwds ):
+def ktBaz( *args:Any, **kwds:Any ):
     pass
 
 
-def ktBazA( *args, **kwds ):
+def ktBazA( *args:Any, **kwds:Any ):
     pass
 
-def ktBazK( **kwds ):
+def ktBazK( **kwds:Any   ):
     pass
 
 from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
 
-def kwcWrap( name:Optional[str]=None ):
-    def wrapper( callable:Callable  ):
+def kwcWrap( name:Optional[str]=None ) -> Callable[..., KWCallback]:
+    def wrapper( callable:Callable[..., Any]  ) -> KWCallback:
         cb = KWCallback(callable,name=name)
         try:
             # TODO:  callable naming cleanup
@@ -90,15 +90,15 @@ def kwcWrap( name:Optional[str]=None ):
     return wrapper
 
 @kwcWrap(None)
-def wktFooBarNoneA( a ):
+def wktFooBarNoneA( a:Any ):
     return ktBarNone( a )
 
 @kwcWrap(None)
-def wktBarABC( a, b, c ):
+def wktBarABC( a:Any, b:Any, c:Any ) -> Any:
     return a
 
 @kwcWrap(None)
-def wktBarNone( a=None, b=None, c=None ):
+def wktBarNone( a:Any=None, b:Any=None, c:Any=None ):
     return None
 
 #############################################################################
@@ -161,7 +161,7 @@ def setTest():
     def filteredIterated( l ): return filter( None, iter(l) ) 
     def copyFilteredIterated( l ): return list(filter( None, iter(l) ) )
     def iterated( l ): return iter(l)
-    def iteratedD( l=None, m=2, n=3 ): return iter(l)  # type: ignore
+    def iteratedD( l:Any=None, m=2, n=3 ): return iter(l)  # type: ignore
     def iteratedA( *args ): return iter(args[0])
     def iteratedAK( *args, **kwds ): return iter(args[0])
     def iteratedLAK( l, *args, **kwds ): return iter(l)

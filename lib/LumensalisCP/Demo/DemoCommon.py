@@ -15,7 +15,7 @@ _sayDemoCommonImport( "addSceneTask" )
 from LumensalisCP.Scenes.Scene import addSceneTask
 _sayDemoCommonImport( "Trigger" )
 from LumensalisCP.Triggers.common import Trigger
-from LumensalisCP.Triggers.common import fireOnSet, fireOnTrue, fireOnRising, fireOnFalling
+from LumensalisCP.Triggers.common import fireOnTrue, fireOnRising, fireOnFalling
 from LumensalisCP.Temporal import Oscillator
 _sayDemoCommonImport( "DemoBase" )
 from LumensalisCP.Demo.DemoBase import DemoBase, DemoSubBase, demoMain

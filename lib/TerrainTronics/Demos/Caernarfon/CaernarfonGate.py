@@ -73,12 +73,12 @@ class CaernarfonGateDemo( DemoBase ):
 
         onGuardDistance = 550
         leftDutyDistance = 250
-        @fireOnTrue( rising( magSensor.distance > onGuardDistance, reset = magSensor.distance < leftDutyDistance ) )
+        @fireOnTrueDef( rising( magSensor.distance > onGuardDistance, reset = magSensor.distance < leftDutyDistance ) )
         def guardPresent():
             print( f"uh oh, guardPresent : {magSensor.distance.value}")
             doorDown()
         
-        @fireOnTrue( rising( magSensor.distance < leftDutyDistance, reset = magSensor.distance > onGuardDistance ) )
+        @fireOnTrueDef( rising( magSensor.distance < leftDutyDistance, reset = magSensor.distance > onGuardDistance ) )
         def guardLeft():
             print( f"uh oh, guardLeft : {magSensor.distance.value}" )
             doorUp()

@@ -3,7 +3,7 @@ from LumensalisCP.Eval.Terms import *
 from LumensalisCP.Scenes.Scene import addSceneTask
 from TerrainTronics.Caernarfon.Castle import onIRCode
 
-from LumensalisCP.Triggers import Trigger, fireOnSet, fireOnTrue
+from LumensalisCP.Triggers import Trigger, fireOnSetDef, fireOnTrue
 
 from LumensalisCP.Audio import Audio
 import board
@@ -48,14 +48,14 @@ class CaernarfonLogicDemo( DemoBase ):
 
         magSensor = main.adafruitFactory.addTLV493D(name="MagCheck")
 
-        @fireOnTrue( rising( magSensor.distance > 550, reset = magSensor.distance < 150 ) )
+        @fireOnTrueDef( rising( magSensor.distance > 550, reset = magSensor.distance < 150 ) )
         def guardPresent():
             print( f"uh oh, guardPresent : {magSensor.distance.value}")
             doorDown()
         
         #guardPresent._onTrueExpression.enableDbgOut = True
         
-        @fireOnTrue( rising( magSensor.distance < 250, reset = magSensor.distance > 400) )
+        @fireOnTrueDef( rising( magSensor.distance < 250, reset = magSensor.distance > 400) )
         def guardLeft():
             print( f"uh oh, guardLeft : {magSensor.distance.value}" )
             doorUp()

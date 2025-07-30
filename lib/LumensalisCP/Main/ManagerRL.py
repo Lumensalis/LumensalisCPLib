@@ -1,9 +1,7 @@
-
 from __future__ import annotations
 
 from LumensalisCP.Main.PreMainConfig import ReloadableImportProfiler
 __sayMainManagerRLImport = ReloadableImportProfiler( "Main.ManagerRL" )
-
 
 from LumensalisCP.commonPreManager import *
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl #, pmc_gcManager
@@ -57,7 +55,7 @@ def MainManager_renameIdentifiables( self:MainManager, items:Optional[dict[str,N
                 if val.nliGetContaining() is None:
                     val.nliSetContainer(self.__anonOutputs)
                     
-def MainManager_monitor( self:MainManager, *inputs:InputSource, enableDbgOut:Optional[bool]=None,**kwds:StrAnyDict ) ->None :
+def MainManager_monitor( self:MainManager, *inputs:InputSource, enableDbgOut:Optional[bool]=None ) ->None :
     for i in inputs:
         if enableDbgOut is not None:
             i.enableDbgOut = enableDbgOut
@@ -69,43 +67,42 @@ def MainManager_handleWsChanges( self:MainManager, changes:StrAnyDict ):
         key = changes['name']
         val = changes['value']
         defaultPanel = self.controlPanels[0]
-        v = defaultPanel.get(key,None)
+        v = defaultPanel.controls.get(key,None)
         if v is not None:
             v.setFromWs( val )
         else:
-            self.warnOut( f"missing cv {key} in {defaultPanel.keys()} for wsChanges {changes}")
+            self.warnOut( f"missing cv {key} in {defaultPanel.controls.keys()} for wsChanges {changes}")
 
 def MainManager_singleLoop( self:MainManager ): #, activeFrame:ProfileFrameBase):
     with self.getNextFrame() as activeFrame:
         context = self._privateCurrentContext
         
-        activeFrame.snap( 'preTimers' )
-        entry = ProfileSnapEntry.makeEntry( "foo", self.when, "bar" )
-        entry.release()
-        activeFrame.snap( 'preTimers2' )
-        activeFrame.snap( 'timers' )
+        #activeFrame.snap( 'preTimers' )
+        ##entry = ProfileSnapEntry.makeEntry( "foo", self.when, "bar" )
+        #entry.release()
+        #activeFrame.snap( 'preTimers2' )
+        #activeFrame.snap( 'timers' )
         self._timers.update( context )
         if not mlc.MINIMUM_LOOP:
 
-            activeFrame.snap( 'deferred' )
             if len( self.__deferredTasks ):
-                self.__runDeferredTasks()
+                self.__runDeferredTasks(context)
         
-            activeFrame.snap( 'scenes' )
+            #activeFrame.snap( 'scenes' )
             self._scenes.run(context)
             
-            activeFrame.snap( 'i2c' )
-            for target in self.__i2cDevices:
-                target.updateDevice(context)
-                
-            activeFrame.snap( 'tasks' )
-            for task in self._tasks:
-                task()
-                
-            activeFrame.snap( 'shields' )
-            for shield in self.shields:
-                shield.refresh(context)
-                
+            with context.subFrame('i2c'):
+                for target in self.__i2cDevices:
+                    target.updateDevice(context)
+
+            with context.subFrame('tasks'):
+                for task in self._tasks:
+                    task()
+
+            with context.subFrame( 'shields' ):
+                for shield in self.shields:
+                    shield.refresh(context)
+                    
             if pmc_mainLoopControl.printStatCycles and self.__cycle % pmc_mainLoopControl.printStatCycles == 0:
                 #self.infoOut( f"cycle {self.__cycle} at {self._when} with {len(self._tasks)} tasks, gmf={gc.mem_free()} cd={self.cycleDuration}" )
                 self.infoOut( "cycle %d at %.3f : scene %s ip=%s with %d tasks, gmf=%d cd=%r",
@@ -120,13 +117,13 @@ def MainManager_singleLoop( self:MainManager ): #, activeFrame:ProfileFrameBase)
         #    activeFrame.finish() 
 
         self.__priorSleepWhen = self.getNewNow()
-        self._nextWait += mlc.nextWaitPeriod
-        
+        self._nextWait += mlc.nextWaitPeriod # type: ignore
+
     #await asyncio.sleep( max(0.001,self._nextWait-self.__priorSleepWhen) ) # self.cycleDuration )
     #self.__cycle += 1        
 
-def MainManager_dumpLoopTimings( self:MainManager, count, minE=None, minF=None, **kwds ):
-        rv = []
+def MainManager_dumpLoopTimings( self:MainManager, count:int, minE:Optional[float]=None, minF:Optional[float]=None, **kwds:StrAnyDict ) -> list[Any]:
+        rv: list[Any] = []
         i = self._privateCurrentContext.updateIndex
         #count = min(count, len(self.__taskLoopTimings))
         # count = min(count,self.profiler.timingsLength)
@@ -137,9 +134,7 @@ def MainManager_dumpLoopTimings( self:MainManager, count, minE=None, minF=None, 
             frame = self.profiler.timingForUpdate( i )
             
             if frame is not None:
-                ##frameData =  frame.jsonData(minE = minE, minF = minF, **kwds )
-                #if frameData is not None:
-                #    rv.append( frameData )
+
                 pass
             i -= 1
         return rv
@@ -150,18 +145,21 @@ def MainManager_getNextFrame(self:MainManager) ->ProfileFrameBase:
         #priorWhen = self._when
         self._privateCurrentContext.reset(now)
         context = self._privateCurrentContext
-        
-        if pmc_mainLoopControl.ENABLE_PROFILE:
-            newFrame = self.profiler.nextNewFrame(context, eSleep = now  - self.__priorSleepWhen)
-            
-            
-            #memBefore = gc.mem_alloc()
-            #snap = newFrame.snap( 'start' )
-            #snap.augment( 'updateIndex', context.updateIndex )
-            #snap.augment( 'when', now )
-            #snap.augment( 'cycle', self.__cycle )
+
+        if True:
+            eSleep = TimeInSeconds( now - self.__priorSleepWhen )
+            newFrame = self.profiler.nextNewFrame(context, eSleep = eSleep ) 
         else:
-            newFrame = self.profiler.timings[0]
+            if pmc_mainLoopControl.ENABLE_PROFILE:
+                newFrame = self.profiler.nextNewFrame(context, eSleep = now  - self.__priorSleepWhen) 
+                #memBefore = gc.mem_alloc()
+                #snap = newFrame.snap( 'start' )
+                #snap.augment( 'updateIndex', context.updateIndex )
+                #snap.augment( 'when', now )
+                #snap.augment( 'cycle', self.__cycle )
+            else:
+                newFrame = self.profiler.timings[0]
+
         assert isinstance( newFrame, ProfileFrameBase )
         context.baseFrame  = context.activeFrame = newFrame
         return newFrame

@@ -95,7 +95,7 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
     def onUnused( self, cb:Callable):
         self.__onUnusedCB = cb
                     
-    def derivedUpdateDevice(self, context:EvaluationContext):
+    def derivedUpdateDevice(self, context:EvaluationContext) -> bool:
         with context.stubFrame('dUpdateDevice', self.name) as frame:
             frame.snap( "getTouched")
             allTouched = self.touched()
@@ -123,6 +123,7 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
                         self.__onUnusedCB( unused = unused, context = context )
                 
                 return True
+            return False
                 
 
         

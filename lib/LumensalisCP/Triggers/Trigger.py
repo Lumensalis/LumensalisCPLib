@@ -1,7 +1,4 @@
 from __future__ import annotations
-#from LumensalisCP.CPTyping import *
-#from LumensalisCP.common import Debuggable
-#from LumensalisCP.Inputs import InputSource
 
 from LumensalisCP.Main.PreMainConfig import ImportProfiler
 
@@ -14,60 +11,140 @@ from LumensalisCP.Eval.Expressions import  Expression, ExpressionTerm #, UpdateC
 
 from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg # type: ignore
 
+from LumensalisCP.Triggers.Invocable import *
+
 #############################################################################
 __triggersSayImport( "parsing... " )
 
-if TYPE_CHECKING:
-    TriggerActionType:TypeAlias = Callable[..., Any] | KWCallbackArg
+#if TYPE_CHECKING:
+#    from LumensalisCP.Eval.EvaluationContext import EvaluationContext
+        
+#TriggerActionType:TypeAlias = Invocable|Callable[[InputSource|None, EvaluationContext], None] # | KWCallbackArg
+TriggerActionType:TypeAlias = Invocable
+TriggerActionTypeArg:TypeAlias = Union[TriggerActionType, Callable[[EvaluationContext], None]]
 
-class Trigger(Debuggable):
+class Trigger(NamedLocalIdentifiable, Invocable):
     """Triggers represent a set of actions that can be "fired" upon a condition being met
     
     Args:
         object (_type_): _description_
     """
-    
-    def __init__( self, name:str|None = None, action:Optional[TriggerActionType] = None ):
-        super().__init__()
-        
+    class KWDS(NamedLocalIdentifiable.KWDS):
+        action:NotRequired[ Union[TriggerActionType, Callable[[EvaluationContext], None]]]
+
+    def __init__( self, 
+                 action:Optional[TriggerActionTypeArg] = None ,
+                 **kwds:Unpack[NamedLocalIdentifiable.KWDS]
+            ) -> None:
+        name = kwds.get("name", None)
         if name is None and action is not None:
-            name = action.__name__
-        self.__name = name
+            name = (
+                getattr(action, '__name__', None)
+                  or getattr(action, 'name', None)
+                  or getattr(action, 'tName', None)
+                  or getattr(action, 'dbgName', None)
+                    or f"{type(action).__name__}@{id(self):X}"
+            )
+            kwds['temporaryName'] = name
+        
+        super().__init__(**kwds)
+
         self.__actions:list[TriggerActionType] = []
         if action is not None:
             self.addAction(action)
 
     _onTrueExpression:Expression
-    
-    @property
-    def name(self): return self.__name
-    
-    def addAction( self, action:TriggerActionType ) -> None:
+
+    def addRawAction( self, action:TriggerActionType ) -> None:
         if self.enableDbgOut: self.dbgOut( "addAction( %r )", action )
-        self.__actions.append( KWCallback.make( action ) )
+        self.__actions.append( action )
+
+    def addSimpleAction( self, action:InvocableSimpleCB ) -> None:
+        if self.enableDbgOut: self.dbgOut( "addAction( %r )", action )
+        #self.__actions.append( KWCallback.make( action ) )
+        self.__actions.append( InvocableSimpleCB.make(action) )
+
+    def addAction( self, action:TriggerActionTypeArg ) -> None:
+        if self.enableDbgOut: self.dbgOut( "addAction( %r )", action )
+        #self.__actions.append( KWCallback.make( action ) )
+
+        self.__actions.append( Invocable.makeInvocable(action) )
 
 
-    def fire(self, source:Optional[InputSource]=None, context:Optional[EvaluationContext]=None, **kwds:StrAnyDict ) -> None:
-        if self.enableDbgOut: self.dbgOut( f"firing timer {self.name}[{len(self.__actions)}]")
-        for action in self.__actions:
-            try:
-                action( **kwds )
-            except Exception as inst: # pylint: disable=broad-exception-caught
-                self.SHOW_EXCEPTION( inst, "firing action %s( %s )", action, kwds )
+    def fireTrigger(self, context:Optional[EvaluationContext] ) -> None:
+        if context is None: context = UpdateContext.fetchCurrentContext(None)
+
+        if self.enableDbgOut: 
+            #self.dbgOut( f"firing timer {self.name}[{len(self.__actions)}]")
+            with context.nestDebugEvaluate() as nde:
+                nde.say(  self,  f"firing trigger on {self.__class__}@{hex(id(self))} [{len(self.__actions)}]" )
+                for action in self.__actions:
+                    nde.say( self, "firing action (%s) %r callable=%r",
+                            action.__class__,
+                            safeRepr(action),
+                            callable(action)
+                        )
+                    try:
+                        rv = action( context )
+                        nde.say( "action returned %r", rv )
+
+                    except Exception as inst: # pylint: disable=broad-exception-caught
+                        #self.SHOW_EXCEPTION( inst, "firing action %s( %s )", action, kwds )
+                        print ( f"Exception in action ({type(action).__name__}){action} : {inst!r}" )
+                        self.SHOW_EXCEPTION( inst, "firing action %s", action )
+        else:
+
+            for action in self.__actions:
+                try:
+                    action( context )
+                except Exception as inst: # pylint: disable=broad-exception-caught
+                    #self.SHOW_EXCEPTION( inst, "firing action %s( %s )", action, kwds )
+                    self.SHOW_EXCEPTION( inst, "firing action %s", action )
+
+    def fireWithSource(self, source:Optional[InputSource], context:Optional[EvaluationContext] ) -> None:
+        if context is None: context = UpdateContext.fetchCurrentContext(None)
+
+        raise NotImplementedError("fireWithSource is not implemented")
+        if self.enableDbgOut: 
+            #self.dbgOut( f"firing timer {self.name}[{len(self.__actions)}]")
+            with context.nestDebugEvaluate() as nde:
+                nde.say(  self,  f"firing trigger on {self.__class__}@{hex(id(self))} [{len(self.__actions)}]" )
+                for action in self.__actions:
+                    nde.say( self, "firing action (%s) %r callable=%r",
+                            action.__class__,
+                            safeRepr(action),
+                            callable(action)
+                        )
+                    try:
+                        rv = action( source, context )
+                        nde.say( "action returned %r", rv )
+
+                    except Exception as inst: # pylint: disable=broad-exception-caught
+                        #self.SHOW_EXCEPTION( inst, "firing action %s( %s )", action, kwds )
+                        print ( f"Exception in action ({type(action).__name__}){action} : {inst!r}" )
+                        self.SHOW_EXCEPTION( inst, "firing action %s", action )
+        else:
+
+            for action in self.__actions:
+                try:
+                    action( source, context )
+                except Exception as inst: # pylint: disable=broad-exception-caught
+                    #self.SHOW_EXCEPTION( inst, "firing action %s( %s )", action, kwds )
+                    self.SHOW_EXCEPTION( inst, "firing action %s", action )
 
     def fireOnTrue( self, expression: Expression|ExpressionTerm ):
         if isinstance(expression,ExpressionTerm):
             expression = Expression(expression)
 
         self._onTrueExpression = expression
-        def test(source:Optional[InputSource]=None, context:Optional[EvaluationContext] = None, **kwargs:StrAnyDict):
+        def test( source:Optional[InputSource]=None, context:Optional[EvaluationContext] = None):
             context = UpdateContext.fetchCurrentContext(context)
             expression.updateValue(context)
             shouldFire = expression.value
             if self.enableDbgOut: self.dbgOut( "fireOnTrue shouldFire=%s", shouldFire)
             if shouldFire:
-                self.fire(source=source, context=context, **kwargs)
-            
+                self.fireTrigger( context )
+
         for source in expression.sources().values():
             source.onChange( test )
         
@@ -80,12 +157,12 @@ class Trigger(Debuggable):
 
     def fireOnSet( self, source:InputSource):
 
-        def test(source:Optional[InputSource]=None, context:Optional[EvaluationContext]=None, **kwargs:StrAnyDict): #
+        def test(source:Optional[InputSource]=None, context:Optional[EvaluationContext]=None) -> None: #
             context = UpdateContext.fetchCurrentContext(None)
             assert source is not None
             if source.getValue(context):
                 if self.enableDbgOut: self.dbgOut( "firing on set of %s", source.name )
-                self.fire(source=source, context=context, **kwargs)
+                self.fireWithSource(source, context)
             else:
                 if self.enableDbgOut: self.dbgOut( "no fire on %s", source.name )
                 
@@ -110,3 +187,8 @@ class Trigger(Debuggable):
 
 #############################################################################
 __triggersSayImport.complete()
+
+__all__ = [
+    'Trigger',
+    'TriggerActionType',
+ ]

@@ -68,7 +68,7 @@ class LCP_IRrecv(MainChild):
                  main:MainManager,
                  codenames:dict[str,int]|str|None = {},
                  name:str|None = None,
-                 updateInterval:TimeInSecondsConfigArg = 0.1,
+                 updateInterval:TimeInSecondsConfigArg = 1.0,
                  showUnhandled:bool = False ) -> None:
         super().__init__( main=main, name=name )
         maxLen = 128
@@ -102,12 +102,9 @@ class LCP_IRrecv(MainChild):
 
         self._checkTimer = PeriodicTimer( updateInterval , manager=main.timers, name=f"{self.name}Check" )
         
-        def checkPulse(**kwds: StrAnyDict):
-            # print( "HKA check pulse...")
-            self.check(**kwds)
-            
-        self._checkTimer.addAction( checkPulse )
-        
+        self._checkTimer.addAction( self.check )
+
+
         def startIrTimer():
             #print( f"starting keep alive timer with {self.__keepAlivePulse}")
             self._checkTimer.start(self.__updateInterval)
@@ -184,22 +181,25 @@ class LCP_IRrecv(MainChild):
         assert action is not None
         self.addCallbackForCode( code, action )
         
-    def check( self, **kwds:StrAnyDict ):
+    def check( self, context:EvaluationContext ) -> None:
         # type: ignore
-        pulses:list[int]|None = self.decoder.read_pulses(self.pulseIn, blocking=False)  # type: ignore
-        if pulses is None or len(pulses) == 0: return # type: ignore
-        # print("Heard", len(pulses), "Pulses:", pulses)
-        try:
-            code = self.decoder.decode_bits(pulses) # type: ignore
-            
-            self.handleRawCode( code )# type: ignore
-        except adafruit_irremote.IRNECRepeatException:  # unusual short code! # type: ignore
-            if self.enableDbgOut: self.dbgOut("NEC repeat!")
-        except (
-            adafruit_irremote.IRDecodeException, # type: ignore
-            adafruit_irremote.FailedToDecode, # type: ignore
-        ) as e:  # failed to decode # type: ignore
-            if self.enableDbgOut: self.dbgOut("Failed to decode: %r /  %s %r", pulses, e.args, e ) # type: ignore
+        with context.subFrame('check', self.name ) as activeFrame:
+            activeFrame.snap("read_pulses")
+            pulses:list[int]|None = self.decoder.read_pulses(self.pulseIn, blocking=False)  # type: ignore
+            if pulses is None or len(pulses) == 0: return # type: ignore
+            # print("Heard", len(pulses), "Pulses:", pulses)
+            try:
+                activeFrame.snap("decode")
+                code = self.decoder.decode_bits(pulses) # type: ignore
+                activeFrame.snap("handleRawCode")
+                self.handleRawCode( code )# type: ignore
+            except adafruit_irremote.IRNECRepeatException:  # unusual short code! # type: ignore
+                if self.enableDbgOut: self.dbgOut("NEC repeat!")
+            except (
+                adafruit_irremote.IRDecodeException, # type: ignore
+                adafruit_irremote.FailedToDecode, # type: ignore
+            ) as e:  # failed to decode # type: ignore
+                if self.enableDbgOut: self.dbgOut("Failed to decode: %r /  %s %r", pulses, e.args, e ) # type: ignore
 
     
 def onIRCode( ir: LCP_IRrecv, code:int|str ):

@@ -116,7 +116,7 @@ class Scene(MainChild):
         return sceneTask
     
     
-    def addTaskDef( self, **kwds:Unpack[SceneTaskKwargs]  )  -> Callable[..., Any]:
+    def addSimpleTaskDef( self, **kwds:Unpack[SceneTaskKwargs]  )  -> Callable[..., Any]:
 
         def addTask( callable:Callable[...,Any] ):
             self.addTask(callable, **kwds)

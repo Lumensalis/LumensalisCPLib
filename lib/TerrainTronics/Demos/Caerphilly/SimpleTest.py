@@ -62,12 +62,12 @@ class CaerphillySimpleTestDemo( DemoBase ):
         def dimmer():
             harlechXL.brightness = max(0.1, harlechXL.brightness - 0.1)
 
-        @scene.addTaskDef( period=0.1 )
+        @scene.addSimpleTaskDef( period=0.1 )
         def updateColorCycle(**kwargs):
             pot.getValue(self.main.latestContext)
             rainbow.colorCycle = pot.value / 5000.0
         
-        @scene.addTaskDef( period=1.0 )
+        @scene.addSimpleTaskDef( period=1.0 )
         def updatePotLabel(context=None,**kwargs):
             potField.text = f"{pot.value}"
             

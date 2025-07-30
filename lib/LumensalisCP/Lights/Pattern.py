@@ -195,7 +195,7 @@ class PatternGenerator(Pattern):
         
     def refresh( self, context:EvaluationContext ):
         if self.__nextRefresh < context.when:
-            context.activeFrame.snap(f"PGRefresh-{self.name}")
+            context.activeFrame.snap("PGRefresh", self.name)
             if self.__nextStep < context.when:
                 self.stepForward( context )
             else:

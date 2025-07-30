@@ -4,6 +4,9 @@
 # SPDX-License-Identifier: Unlicense
 
 from __future__ import annotations
+
+# pyright: reportUnusedImport=false, reportUnusedVariable=false
+
 from asyncio import create_task, sleep as async_sleep, Task
 
 from adafruit_httpserver.methods import POST, PUT, GET   # type: ignore # pylint: disable=import-error,no-name-in-module
@@ -21,7 +24,9 @@ from LumensalisCP.commonCPWifi import *
 from LumensalisCP.pyCp.importlib import reload
 from LumensalisCP.HTTP import BasicServerRL
 from LumensalisCP.HTTP import ControlVarsRL
-
+from LumensalisCP.HTTP.BSR import BSR_profileRL
+from LumensalisCP.HTTP.BSR import BSR_sakRL
+from LumensalisCP.HTTP.BSR import BSR_cmdRL
 
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
 
@@ -76,10 +81,16 @@ class BasicServer(Server,Debuggable):
                         params:Optional[str]=None 
                     ) -> None:
         functionName = f'BSR_{name}'
+        moduleName = f'BSR_{name}RL'
         
         def handler(request: Request,reloading:bool=False,**kwds:StrAnyDict):
             try:
-                c = getattr( BasicServerRL, functionName, None )
+                module = globals().get(moduleName,None)
+                if module is not None:
+                    c = getattr( module, functionName, None )
+                    assert c is not None, f"missing reloadable {moduleName}.{functionName}" 
+                else:
+                    c = getattr( BasicServerRL, functionName, None )
                 if c is None:
                     c = getattr( ControlVarsRL, functionName, None )
 

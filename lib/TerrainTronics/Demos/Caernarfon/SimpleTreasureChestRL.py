@@ -94,7 +94,7 @@ def TreasureChest_finishSetup(self:SimpleTreasureChest.TreasureChest):
     main.scenes.enableDbgOut = True
 
     dt = PeriodicTimer( interval=lambda : SimpleTreasureChestRL.printDumpInterval, manager=main.timers, name="dump" )
-    @dt.addTaskDef( )
+    @dt.addSimpleTaskDef( )
     def  printDump():
         SimpleTreasureChestRL.printDump(main)
 

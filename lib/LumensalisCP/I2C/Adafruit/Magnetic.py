@@ -69,7 +69,7 @@ class TLV493D(I2CDevice,adafruit_tlv493d.TLV493D):
     def lastReading(self) -> tuple[int,int,int]:
         return self.__lastReading
     
-    def derivedUpdateDevice(self, context:EvaluationContext):
+    def derivedUpdateDevice(self, context:EvaluationContext) -> bool:
         reading = self.magnetic
         if self.__lastReading != reading:
             # self.dbgOut( "MPR121 = %X" % allTouched )
@@ -86,3 +86,4 @@ class TLV493D(I2CDevice,adafruit_tlv493d.TLV493D):
 
             if self.enableDbgOut: self.dbgOut( "new reading : %8.1f [ %5d %5d %5d ] ", distance, *reading )
             return True
+        return False

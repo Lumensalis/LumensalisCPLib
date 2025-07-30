@@ -17,7 +17,7 @@ class I2CDevice( NamedLocalIdentifiable ):
     DEFAULT_UPDATE_INTERVAL:ClassVar[TimeInSeconds] = TimeInSeconds(0.1)
 
     class KWDS(NamedLocalIdentifiable.KWDS):
-        #main: Required[MainManager]
+        main: NotRequired[MainManager]
         i2c: NotRequired[busio.I2C]
         address: NotRequired[int]
         updateInterval:NotRequired[TimeInSecondsConfigArg]
@@ -70,7 +70,7 @@ class I2CDevice( NamedLocalIdentifiable ):
     def changes(self) -> int: return self.__derivedUpdateChanges
     
 
-    def derivedUpdateDevice(self, context:EvaluationContext) -> bool|None:
+    def derivedUpdateDevice(self, context:EvaluationContext) -> bool:
         """Override this method to implement the device update logic.
         Return True if changes were detected
         """

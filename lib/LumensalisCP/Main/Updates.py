@@ -89,10 +89,10 @@ class UpdateContext(Debuggable):
         self.__mainRef = main.makeRef()
         self.__when = main.when
         #self.activeFrame = None
-        self.baseFrame = None
+        self.baseFrame:ProfileFrameBase|None = None
         self.debugEvaluate = False
         self._debugIndent = 0
-        self._stubFrame = ProfileStubFrame( self ) # type: ignore[assignment]
+        self._stubFrame = ProfileStubFrame() # type: ignore[assignment]
 
     @classmethod
     def _patch_fetchCurrentContext(cls, main:MainManager):

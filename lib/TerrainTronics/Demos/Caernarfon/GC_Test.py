@@ -12,6 +12,8 @@ GC_TestRL.setupMlcAndGcm()
 from LumensalisCP.Demo.DemoBase import DemoBase
 from LumensalisCP.Triggers.Timer import PeriodicTimer, addPeriodicTaskDef
 from LumensalisCP.util.bags import Bag
+from LumensalisCP.Eval.EvaluationContext  import EvaluationContext
+
 
 import gc
 
@@ -21,19 +23,25 @@ class GC_Test( DemoBase ):
 
     def setup(self):
         main = self.main
+        # pydfdfright: reportUnusedFunction=false
+        # pyright: reportUnusedFunction=false
+
 
         dt = PeriodicTimer( interval=lambda : GC_TestRL.printDumpInterval, manager=main.timers, name="dump" )
         
-        @dt.addTaskDef( "printDumpPeriod" )
+        @dt.addSimpleTaskDef( "printDumpPeriod" )
         def dump():
             GC_TestRL.printDump(main)
             
-        @addPeriodicTaskDef( "gc-collect", period=lambda: GC_TestRL.collectionCheckInterval, main=main )
-        def runCollection(context=None, when=None):
-            GC_TestRL.runCollection( context, when, show=True)
+        @addPeriodicTaskDef( "gc-collect", 
+                            period=lambda: GC_TestRL.collectionCheckInterval,
+                            main=main
+                 )
+        def runCollection(context:EvaluationContext) -> None:
+            GC_TestRL.runCollection( context, show=True)
             
         @addPeriodicTaskDef( period=lambda: GC_TestRL.usbCheckInterval, main=main )
-        def usbCheck(context=None, when=None):
+        def usbCheck(context:EvaluationContext):
             GC_TestRL.usbCheck( context)
             
                         

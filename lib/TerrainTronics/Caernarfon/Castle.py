@@ -168,9 +168,9 @@ class CaernarfonCastle(D1MiniBoardBase):
     
 
 
-    def addIrRemote(self, codenames:dict[str,int]|str|None = None) -> LCP_IRrecv:
+    def addIrRemote(self, **kwds:Unpack[LCP_IRrecv.KWDS]) -> LCP_IRrecv:
         assert self._irRemote is None
-        codenames = codenames or {
+        kwds.setdefault("codenames", {
             "CH-": 0xffa25d,
             "CH": 0xff629d,
             "CH+": 0xffe21d,
@@ -179,8 +179,9 @@ class CaernarfonCastle(D1MiniBoardBase):
             "PLAY": 0xffc23d,
             "VOL-": 0xffe01f,
             "VOL+": 0xffa857,
-        }
-        self._irRemote = LCP_IRrecv( self.D5.actualPin, main=self.main, codenames=codenames )
+        })
+        kwds.setdefault("main", self.main)
+        self._irRemote = LCP_IRrecv( self.D5.actualPin,  **kwds )
         self.nliAddComponent(self._irRemote)
         return self._irRemote
     

@@ -59,7 +59,7 @@ class KWCallback(object):
     def name(self): return self.__name
     
     def __repr__(self):
-        return f"{self.__name}[:{self.__maxPositionals}]!{self.__skippedKwds}"
+        return f"KWCallback({self.__name}[:{self.__maxPositionals}]!{self.__skippedKwds})"
     
     def __call__( self, *args, **kwds ):
         for k in self.__skippedKwds:
@@ -77,7 +77,7 @@ class KWCallback(object):
                 kwdName = m.group(1)
                 assert kwdName not in self.__skippedKwds
                 if self.requiredKwds is not None and kwdName in self.requiredKwds:
-                    raise TypeError( "keyword argument %r is required" % kwdName )
+                    raise TypeError( "keyword argument %r is required" % kwdName ) from inst
                 self.__skippedKwds[kwdName] = 1
                 # print(f"added kwdName = {kwdName}")
             elif m := self.__positionalArgs.match( asStr ):
@@ -93,7 +93,7 @@ class KWCallback(object):
             else:
                 # print( f"inst is {type(inst)} : {inst}")
                 raise
-        return self( *args,**kwds )
+        # return self( *args,**kwds )
         
         
 KWCallbackArg:TypeAlias = Callable[..., Any]  # type: ignore        

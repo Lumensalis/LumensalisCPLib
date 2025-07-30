@@ -63,7 +63,7 @@ class AW9523(I2CDevice):
     def lastInputs(self): return self.__lastInputs
 
 
-    def derivedUpdateDevice(self, context:EvaluationContext):
+    def derivedUpdateDevice(self, context:EvaluationContext) -> bool:
         inputValues = self.aw9523.inputs
         if self.__lastInputs != inputValues:
             self.__lastInputs = inputValues
@@ -73,3 +73,4 @@ class AW9523(I2CDevice):
                 if inp is not None:
                     inp._setFromInputs( inputValues, context )
             return True
+        return False

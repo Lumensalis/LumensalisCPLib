@@ -36,7 +36,7 @@ class CaernarfonTester( DemoBase ):
         
 
         loopyCycle = 15.0
-        @act1.addTaskDef( period=0.1 )
+        @act1.addSimpleTaskDef( period=0.1 )
         def loopy(context=None):
             when = main.when
             v = (divmod(when,loopyCycle)[1]) / loopyCycle

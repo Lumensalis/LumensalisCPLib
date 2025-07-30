@@ -289,7 +289,7 @@ see http://lumensalis.com/ql/h2Scenes
         return server
 
     def monitor( self, *inputs:InputSource, **kwds:StrAnyDict ) -> None:
-        return ManagerRL.MainManager_monitor( self, *inputs, **kwds )
+        return ManagerRL.MainManager_monitor( self, *inputs, **kwds ) # type: ignore
 
 
     def handleWsChanges( self, changes:StrAnyDict ):
@@ -315,16 +315,18 @@ see http://lumensalis.com/ql/h2Scenes
     def addTask( self, task:KWCallbackArg ):
         self._tasks.append( KWCallback.make( task ) )
         
-    def __runDeferredTasks(self) -> None: # type: ignore
-        while len( self.__deferredTasks ):
-            task = self.__deferredTasks.popleft()
-            self.infoOut( f"running deferred {task}")
-            try:
-                task()
-            except Exception as inst:
-                SHOW_EXCEPTION( inst, "exception on deferred task %r", task )
+    def __runDeferredTasks(self, context:EvaluationContext) -> None: # type: ignore
+        with context.subFrame('deferredTasks'):
 
-    def dumpLoopTimings( self, count, minE=None, minF=None, **kwds ):
+            while len( self.__deferredTasks ):
+                task = self.__deferredTasks.popleft()
+                self.infoOut( f"running deferred {task}")
+                try:
+                    task()
+                except Exception as inst:
+                    SHOW_EXCEPTION( inst, "exception on deferred task %r", task )
+
+    def dumpLoopTimings( self, count:int, minE:Optional[float]=None, minF:Optional[float]=None, **kwds:StrAnyDict ) -> list[Any]:
         return ManagerRL.MainManager_dumpLoopTimings(self.__getMMSelf(), count, minE=minE, minF=minF, **kwds )
 
     def getNextFrame(self) ->ProfileFrameBase:

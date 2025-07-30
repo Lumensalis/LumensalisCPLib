@@ -1,11 +1,14 @@
-
-
+from LumensalisCP.Main.PreMainConfig import ImportProfiler
+ImportProfiler.SHOW_IMPORTS = False
 # ALWAYS START WITH "from LumensalisCP.Simple import *"
 from LumensalisCP.Simple import * # http://lumensalis.com/ql/h2Start
 
 #############################################################################
 sayAtStartup( "start project" ) #  http://lumensalis.com/ql/h2Main
-main = ProjectManager(profile=True, profileMemory=3) 
+main = ProjectManager(
+        profile=True,
+        #  profileMemory=3
+    ) 
 
 # setup three different scenes : http://lumensalis.com/ql/h2Scenes
 sceneClosed, sceneOpen, sceneMoving = main.addScenes( 3 ) 
@@ -21,7 +24,7 @@ handSafetyRange = main.panel.addMillimeters(startingValue=300, min=10 )
 caernarfon = main.TerrainTronics.addCaernarfon( )
 
 lidServo = caernarfon.initServo( 1, movePeriod=0.05 )
-ir = caernarfon.addIrRemote(codenames="dvd_remote")     
+ir = caernarfon.addIrRemote(codenames="dvd_remote", updateInterval=5.0 )
 neoPixA = caernarfon.addNeoPixels(pixelCount=45) 
 neoPixB = caernarfon.addNeoPixels(servoPin=3,pixelCount=35)
 # setup neoPixel modules : http://lumensalis.com/ql/h2NeoPixels
@@ -74,11 +77,18 @@ testEffect.enableDbgOut = True
 
 def updateTestEffect(source:Any=None, context:Optional[EvaluationContext]=None) -> None:
     #testEffect.filter.frequency = oscillator.value * 2000 + 100
-    testEffect.note.bend = oscillator.getValue(context) /10
+    v = oscillator.latestValue /10
+    testEffect.note.bend = v
+    #testEffect.infoOut( "bending to %r", v )
 
 oscillator.onChange( updateTestEffect  )
 
-def touchNote() -> None:
+@addPeriodicTaskDef( interval=0.03, name="updateOscillator" )
+def updateOscillator(context:EvaluationContext) -> None:
+    oscillator.updateValue(context)
+
+def touchNote(context:Optional[EvaluationContext]=None, a2:Optional[Any]=None, a3:Optional[Any]=None) -> Any:
+    print( "in touchNote" )
     if testEffect.playing:
         print( "releasing note" )
         testEffect.stop()
@@ -86,7 +96,18 @@ def touchNote() -> None:
         print( "startNote" )
         testEffect.start()
 
-fireOnRising( leftRimTouch, do( touchNote ) )
+    return 42
+
+print( f"touchNote = {touchNote}" )
+
+# fireOnRising( leftRimTouch, do( touchNote ) )
+dot = do( touchNote )
+dot.enableDbgOut = True
+dot.name = "dot"
+
+fireDot = fireOnRising( leftRimTouch, dot )
+fireDot.enableDbgOut = True
+leftRimTouch.enableDbgOut = True
 
 main.panel.monitor( leftRimTouch )
 
@@ -135,8 +156,7 @@ rainbowRight = Rainbow(rightStoneLights,colorCycle=1.1, spread=2.0 )
 aglSpinner = Spinner(angleGaugeLights, onValue=Colors.RED, tail=0.42,period=0.49)
 
 lsZ21 = Z21Adapted( lightSensor )
-ls256 = lsZ21 * 256
-csWheel = ColorWheel( ls256 )
+csWheel = ColorWheelZ1( lsZ21 )
 main.panel.monitor( csWheel, description="Color Wheel based on light sensor" )
 #csWheel.enableDbgOut = True
 
@@ -144,7 +164,8 @@ closedSpin = Spinner(angleGaugeLights,onValue=csWheel,period=3.49 )
 centerSpin = Spinner(centerStoneLights)
 
 sceneOpen.addPatterns( frontLidBlink(onValue="GREEN"), aglSpinner, rainbowLeft, rainbowRight )
-sceneClosed.addPatterns( frontLidBlink(onValue="RED"), closedSpin, centerPattern, rainbowLeft, rainbowRight  )
+#sceneClosed.addPatterns( frontLidBlink(onValue="RED"), closedSpin, centerPattern, rainbowLeft, rainbowRight  )
+sceneClosed.addPatterns( closedSpin )
 sceneMoving.addPatterns( frontLidBlink(onValue="YELLOW"), centerSpin, aglSpinner )
 
 #############################################################################

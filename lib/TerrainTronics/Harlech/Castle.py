@@ -5,8 +5,7 @@ from LumensalisCP.IOContext import *
 #from LumensalisCP.Main.Expressions import NamedOutputTarget, EvaluationContext
 #from LumensalisCP.common import *
 #from LumensalisCP.CPTyping import *
-import digitalio, analogio
-import adafruit_74hc595
+import digitalio
 from adafruit_bus_device import spi_device
 import busio, math, digitalio
 from LumensalisCP.Triggers.Timer import PeriodicTimer
@@ -76,7 +75,11 @@ class KeepAlive(Debuggable):
         self.__output.value = state
         self.__state = state
      
-    def _timerHit(self,when:Optional[float]=None, **kwds):
+    def _timerHit(self,
+                  context:EvaluationContext,
+                  #when:Optional[float]=None, **kwds
+            ) -> None:
+        when = context.when
         
         if self.__nextPulse <= when:
             if self.enableDbgOut: self.dbgOut( "start pulse" )

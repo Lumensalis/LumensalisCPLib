@@ -57,11 +57,14 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm):
 
     def __callOnChanged(self, context:EvaluationContext): # pylint: disable=unused-private-member # type: ignore
         context.addChangedSource( self )
-        for cb in self.__onChangedList:
-            try:
-                cb( self, context )
-            except Exception as inst: # pylint: disable=broad-exception-caught
-                self.SHOW_EXCEPTION( inst, "onChanged callback %r failed", cb )
+        if len( self.__onChangedList ) > 0:
+            #with context.subFrame('InputSource.__callOnChanged', self.name) as frame:
+            if True:    
+                for cb in self.__onChangedList:
+                    try:
+                        cb( self, context )
+                    except Exception as inst: # pylint: disable=broad-exception-caught
+                        self.SHOW_EXCEPTION( inst, "onChanged callback %r failed", cb )
 
     def updateValue(self, context:EvaluationContext) -> bool:
         assert isinstance( context, EvaluationContext )
@@ -69,26 +72,29 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm):
             context.addChangedSource( self )
             return True
 
-        if context.debugEvaluate:
-            with context.nestDebugEvaluate() as nde:
+        #with context.subFrame('InputSource.updateValue', self.name) as frame:
+        if True:
+            if context.debugEvaluate:
+                with context.nestDebugEvaluate() as nde:
+                    val = self.getDerivedValue( context )
+                    self.__latestUpdateIndex = context.updateIndex
+                    
+                    if val == self.__latestValue:
+                        if self.enableDbgOut: self.dbgOut( "updateValue unchanged (%r) on update %d", self.__latestValue, context.updateIndex )
+                        return False
+                    else:
+                        nde.say( self, "value changing from %r to %r on %s", self.__latestValue, val, context.updateIndex )
+            else:
                 val = self.getDerivedValue( context )
                 self.__latestUpdateIndex = context.updateIndex
-                
                 if val == self.__latestValue:
-                    if self.enableDbgOut: self.dbgOut( "updateValue unchanged (%r) on update %d", self.__latestValue, context.updateIndex )
                     return False
-                else:
-                    nde.say( self, "value changing from %r to %r on %s", self.__latestValue, val, context.updateIndex )
-        else:
-            val = self.getDerivedValue( context )
-            self.__latestUpdateIndex = context.updateIndex
-            if val == self.__latestValue:
-                return False
-            if self.enableDbgOut: self.dbgOut( "updateValue changing from %r to %r on %s", self.__latestValue, val, context.updateIndex )
-                
-        self.__latestValue = val
-        self.__latestChangeIndex = context.updateIndex
-        self.__callOnChanged(context)
+                if self.enableDbgOut: self.dbgOut( "updateValue changing from %r to %r on %s", self.__latestValue, val, context.updateIndex )
+                    
+            self.__latestValue = val
+            self.__latestChangeIndex = context.updateIndex
+            #frame.snap( "__callOnChanged" )
+            self.__callOnChanged(context)
 
         return True
 
