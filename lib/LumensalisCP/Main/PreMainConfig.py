@@ -32,7 +32,6 @@ import time
 import supervisor
 
 
-
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
 
@@ -258,123 +257,6 @@ def sayAtStartup(desc:str, **kwds:Any) -> None:
     #print( f"Startup [{pmc_mainLoopControl.getMsSinceStart()/1000.0:.3f}]: {desc}" )
 
 #############################################################################
-class ImportProfiler(object):
-    """ A simple profiler for imports, to help identify slow imports """
-    SHOW_IMPORTS:ClassVar[bool] = False
-    RECORD_IMPORTS:ClassVar[bool|None] = True
-    _importIndex:ClassVar[int] = 0
 
 
-    NESTING:ClassVar[list[ActualImportProfiler]] = []
-    IMPORTS:ClassVar[list[ActualImportProfiler]] = []
-
-    def __init__(self ) -> None: ...
-        
-
-    def __call__(self, desc:str) -> None: 
-        raise NotImplementedError
-        
-
-    def parsing(self) -> None:
-        raise NotImplementedError
-
-    def complete(self, moduleGlobals:dict[str,Any]) -> None:
-        raise NotImplementedError
-
-    @classmethod
-    def dumpWorstImports(cls, count:int = 10) -> None:
-        imports = sorted(ImportProfiler.IMPORTS, key=lambda i: i.innerElapsed, reverse=True)
-        count = min( count, len(imports))
-        print(f"top {count} of {len(ImportProfiler.IMPORTS)} Imports sorted by innerElapsed:")
-        totals:dict[str,float] = dict( innerElapsed = 0.0, parsingElapsed = 0.0, childElapsed = 0.0, totalElapsed = 0.0 )
-        for i in imports[:count]:
-            print(f"  {i}")
-            for k in totals:
-                totals[k] += getattr(i, k, 0.0)
-
-        print(f"Total: {totals}")
-############################################################################
-
-class FakeImportProfiler(ImportProfiler):
-    def __call__(self, desc:str) -> None: 
-        pass
-
-    def parsing(self) -> None:
-        pass
-
-    def complete(self, moduleGlobals:dict[str,Any]) -> None:
-        pass
-
-############################################################################
-
-class ActualImportProfiler(ImportProfiler):
-    """ A simple profiler for imports, to help identify slow imports """
-    SHOW_IMPORTS:ClassVar[bool] = False
-    #RECORD_IMPORTS:ClassVar[bool|None] = None
-
-
-    def __init__(self, name:str ) -> None:
-        self.name = name
-        self.importIndex = ImportProfiler._importIndex
-        ImportProfiler._importIndex += 1
-        self.path = "->".join(  [i.name for i in ImportProfiler.NESTING] )
-        self.startTime = time.monotonic()
-        self._endTime:Optional[float] = None
-        self.childElapsed  = 0
-        self.innerElapsed = 999
-        self.startParsing:float|None = None
-        self( "import starting")
-        ImportProfiler.IMPORTS.append( self )
-        ImportProfiler.NESTING.append( self )
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}( inner={self.innerElapsed:2.03f}, parsing={self._parsingElapsed:2.03f}, child={self.childElapsed:2.03f}, total={self.elapsed:2.03f}, start={self.startTime:2.03f}, name={repr(self.name)}, path=[{self.path}] )"
-
-    def __call__(self, desc:str) -> None:
-        if self.SHOW_IMPORTS:
-            sayAtStartup( f"IMPORT {self.path} | {self.name} : {desc}", importProfiler=self )
-
-    def parsing(self) -> None:
-        self.startParsing = time.monotonic()
-        self( "parsing" )
-
-    def complete(self, moduleGlobals:dict[str,Any]) -> None:
-        end = ImportProfiler.NESTING.pop()
-        assert end is self, f"ImportProfiler nesting mismatch: {end.name} != {self.name}"
-        self._endTime = time.monotonic()
-        self.elapsed = self._endTime - self.startTime
-        self.innerElapsed = self.elapsed - self.childElapsed
-        self._globals = moduleGlobals
-        message = f"import complete in {self.innerElapsed:.3f}s / {self.elapsed:.3f}s"
-        if self.startParsing is not None:
-            self._parsingElapsed = self._endTime - self.startParsing
-            message += f" (parsing {self._parsingElapsed:.3f}s)"
-        else:
-            self._parsingElapsed = self.innerElapsed
-        self( message )
-        if len(ImportProfiler.NESTING) > 0:
-            top = ImportProfiler.NESTING[-1]
-            top.childElapsed += self.elapsed
-
-
-class ReloadableImportProfiler(ActualImportProfiler):
-    SHOW_IMPORTS:ClassVar[bool] = True
-    
-    pass 
-
-############################################################################
-_fakeImportProfiler = FakeImportProfiler()
-
-def pmc_getImportProfiler(name:str) -> ImportProfiler:
-    """ returns a reloadable import profiler for the given name """
-    if ImportProfiler.RECORD_IMPORTS is True or ImportProfiler.SHOW_IMPORTS is True:
-        return ActualImportProfiler(name)
-    return _fakeImportProfiler
-
-def pmc_getReloadableImportProfiler(name:str) -> ImportProfiler:
-    """ returns a reloadable import profiler for the given name """
-    if ReloadableImportProfiler.RECORD_IMPORTS is True or ReloadableImportProfiler.SHOW_IMPORTS is True:
-        return ReloadableImportProfiler(name)
-    return _fakeImportProfiler
-
-__all__ = [ 'pmc_gcManager', 'pmc_mainLoopControl', 'printElapsed', 'sayAtStartup','pmc_getImportProfiler', 'pmc_getReloadableImportProfiler' ]
+__all__ = [ 'pmc_gcManager', 'pmc_mainLoopControl', 'printElapsed', 'sayAtStartup', ]

@@ -1,5 +1,3 @@
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-
 
 # ALWAYS START WITH "from LumensalisCP.Simple import *"
 from LumensalisCP.Simple import * # http://lumensalis.com/ql/h2Start
@@ -173,3 +171,4 @@ sceneMoving.addPatterns( frontLidBlink(onValue="YELLOW"), centerSpin, aglSpinner
 # Wrap up and launch : http://lumensalis.com/ql/h2Launch
 sayAtStartup( "launch ..." )
 main.launchProject( globals() )
+

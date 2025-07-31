@@ -4,8 +4,8 @@ from __future__ import annotations
 import asyncio.lock  # type: ignore # pylint: disable=import-error,no-name-in-module
 
 #############################################################################
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayReleasableImport = pmc_getImportProfiler( "util.Releasable" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayReleasableImport = getImportProfiler( "util.Releasable" )
 
 
 from LumensalisCP.common import *

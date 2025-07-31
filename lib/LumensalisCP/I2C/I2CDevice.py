@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayI2CDeviceImport = pmc_getImportProfiler( "I2C.I2CDevice" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayI2CDeviceImport = getImportProfiler( globals() ) # "I2C.I2CDevice"
 
 from LumensalisCP.commonCP import *
 from LumensalisCP.IOContext import *

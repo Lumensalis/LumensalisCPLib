@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayActionImport = pmc_getImportProfiler( "Action" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayActionImport = getImportProfiler( globals() ) # "Action"
 
 from LumensalisCP.Debug import Debuggable
 

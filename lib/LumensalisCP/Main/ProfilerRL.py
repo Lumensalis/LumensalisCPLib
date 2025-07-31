@@ -6,8 +6,8 @@ import gc # type: ignore
 import sys
 from collections import OrderedDict
 
-from LumensalisCP.Main.PreMainConfig import pmc_getReloadableImportProfiler
-__sayMainProfilerRLImport = pmc_getReloadableImportProfiler( "Main.ProfilerRL" )
+from LumensalisCP.ImportProfiler import getImportProfiler, getReloadableImportProfiler
+__sayMainProfilerRLImport = getImportProfiler( globals(), reloadable=True  )
 
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *

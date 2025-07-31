@@ -8,8 +8,9 @@ import json
 import math
 import adafruit_itertools as itertools  # type: ignore # pylint: disable=import-error
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayCommonImport = pmc_getImportProfiler( "common" )
+#LumensalisCP.ImportProfiler import getImportProfiler
+from LumensalisCP.ImportProfiler import getImportProfiler
+_sayCommonImport = getImportProfiler( "common" )
 
 #############################################################################
 

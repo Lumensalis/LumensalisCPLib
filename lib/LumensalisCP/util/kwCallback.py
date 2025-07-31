@@ -2,8 +2,8 @@ from LumensalisCP.CPTyping import *
 import re
 
 #############################################################################
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayKWCallbackImport = pmc_getImportProfiler( "util.kwCallback" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayKWCallbackImport = getImportProfiler( globals() ) # "util.kwCallback"
 
 
 #############################################################################

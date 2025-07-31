@@ -1,5 +1,5 @@
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayScenesSceneImport = pmc_getImportProfiler( "Scenes.Scene" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayScenesSceneImport = getImportProfiler( "Scenes.Scene" )
 
 
 from LumensalisCP.common import *

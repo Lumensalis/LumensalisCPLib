@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayInvocableImport = pmc_getImportProfiler( "Triggers.Invocable" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayInvocableImport = getImportProfiler( globals() ) # "Triggers.Invocable"
 
 #from LumensalisCP.Debug import Debuggable
 

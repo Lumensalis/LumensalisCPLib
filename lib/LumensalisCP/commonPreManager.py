@@ -6,8 +6,8 @@ import gc # type: ignore
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 # pylint: disable=import-error,unused-import,unused-argument
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayCmPMMImport = pmc_getImportProfiler( "commonPreMainManager" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayCmPMMImport = getImportProfiler( "commonPreManager" )
 
 import LumensalisCP.Debug
 import LumensalisCP.Main
@@ -20,26 +20,14 @@ from LumensalisCP.Identity.Local import NliContainerMixin, NliList,NamedLocalIde
 
 from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
 from LumensalisCP.util.bags import Bag
-
-_sayCmPMMImport( "ConfigurableBase" )
 from LumensalisCP.Controllers.ConfigurableBase import ConfigurableBase
-_sayCmPMMImport( "Identity" )
 from LumensalisCP.Controllers.Identity import ControllerIdentity, ControllerNVM
-
-_sayCmPMMImport( "Expressions" )
 from LumensalisCP.Eval.Expressions import EvaluationContext, UpdateContext
-
 from LumensalisCP.Debug import Debuggable 
 from LumensalisCP.Outputs import OutputTarget, NamedOutputTarget
 from LumensalisCP.Inputs import InputSource
-
-_sayCmPMMImport( "Scenes.Manager" )
 from LumensalisCP.Scenes.Manager import SceneManager, Scene
-
-_sayCmPMMImport( "Triggers.Timer" )
 from LumensalisCP.Triggers.Timer import PeriodicTimerManager
-
-_sayCmPMMImport( "Profiler" )
 from LumensalisCP.Main.Profiler import Profiler, ProfileFrameBase, ProfileSnapEntry
 _sayCmPMMImport( "Panel" )
 from LumensalisCP.Main.Panel import PanelControl, PanelMonitor

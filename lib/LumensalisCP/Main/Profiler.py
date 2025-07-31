@@ -4,6 +4,10 @@ from __future__ import annotations
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 # pyright: reportPrivateUsage=false
 
+
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayProfilerImport = getImportProfiler( "Profiler" )
+
 import time
 from collections import OrderedDict
 import gc 
@@ -16,8 +20,6 @@ try:
 except ImportError:
     pass
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayProfilerImport = pmc_getImportProfiler( "Profiler" )
 
 import LumensalisCP.Main.Updates
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl

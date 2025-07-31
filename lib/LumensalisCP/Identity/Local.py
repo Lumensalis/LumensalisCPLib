@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayIdentityLocalImport = pmc_getImportProfiler( "Identity.Local" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayIdentityLocalImport = getImportProfiler( "Identity.Local" )
 
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 

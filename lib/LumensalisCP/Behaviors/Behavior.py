@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayBehaviorImport = pmc_getImportProfiler( "Behaviors.Behavior" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayBehaviorImport = getImportProfiler( globals() ) # "Behaviors.Behavior"
 
 
 _sayBehaviorImport( "Expression" )

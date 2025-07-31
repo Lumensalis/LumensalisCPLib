@@ -1,7 +1,10 @@
 
 
-from LumensalisCP.Main.PreMainConfig import pmc_getReloadableImportProfiler
-__saySimpleProfilingRLImport = pmc_getReloadableImportProfiler( "Simple.simpleProfilingRL" )
+from LumensalisCP.ImportProfiler import getImportProfiler, getReloadableImportProfiler
+__saySimpleProfilingRLImport = getReloadableImportProfiler( "Simple.simpleProfilingRL" )
+
+# pyright: reportUnusedImport=false
+
 
 #from LumensalisCP.Demo.DemoCommon import *
 #from LumensalisCP.Main.PreMainConfig import pmc_gcManager

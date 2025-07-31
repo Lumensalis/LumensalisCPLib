@@ -1,6 +1,6 @@
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayOutputsImport = pmc_getImportProfiler( "Outputs" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayOutputsImport = getImportProfiler( globals() ) # "Outputs"
 
 
 from LumensalisCP.Eval.Expressions import *

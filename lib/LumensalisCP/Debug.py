@@ -2,8 +2,8 @@ from __future__ import annotations
 # pylint: disable=unused-import,import-error
 #   pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayDebugImport = pmc_getImportProfiler( "Debug" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayDebugImport = getImportProfiler( globals() ) # "Debug"
 
 try:
     #import typing

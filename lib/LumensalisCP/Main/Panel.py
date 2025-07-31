@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayImport = getImportProfiler( "Main.Panel" )
+
 from LumensalisCP.IOContext import *
 
 from LumensalisCP.Main.Dependents import MainChild
 
 # pylint: disable=redefined-builtin,unused-variable,unused-argument,broad-exception-caught
+
+_sayImport.parsing()
 
 #############################################################################
 CVT = TypeVar('CVT')
@@ -257,3 +262,5 @@ class ControlPanel( MainChild ):
         yield self._controlVariables
         
 __all__ = [ 'ControlPanel', 'PanelControl', 'PanelMonitor' ]
+
+_sayImport.complete(globals())

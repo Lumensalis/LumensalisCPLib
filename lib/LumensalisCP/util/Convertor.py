@@ -2,8 +2,8 @@ from __future__ import annotations
 
 #############################################################################
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-__sayUtilConvertorImport = pmc_getImportProfiler("util.Convertor" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+__sayUtilConvertorImport = getImportProfiler( globals() ) # "util.Convertor"
 
 #from LumensalisCP.CPTyping import TypeAlias, ZeroToOne,Union, Type, Callable, Optional,  Any, Tuple, NewType, ClassVar
 #from LumensalisCP.CPTyping import Generic, TypeVar

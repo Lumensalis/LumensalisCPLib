@@ -1,9 +1,8 @@
-from LumensalisCP.Main.PreMainConfig import pmc_getReloadableImportProfiler
-__sayBSR_sakRLImport = pmc_getReloadableImportProfiler( "HTTP.BSR_sakRL" )
+from LumensalisCP.ImportProfiler import getImportProfiler
+__sayBSR_sakRLImport = getImportProfiler( globals(), reloadable=True )
 
 from .common import *
 
-__sayBSR_sakRLImport.complete(globals())
 
 def getStatusInfo(self:BasicServer.BasicServer, request:Request ) -> dict[str, Any]:
     main = self.main
@@ -63,3 +62,4 @@ def BSR_sak(self:BasicServer.BasicServer, request:Request):
     return JSONResponse(request, {"message": "Something went wrong"})
 
 
+__sayBSR_sakRLImport.complete()

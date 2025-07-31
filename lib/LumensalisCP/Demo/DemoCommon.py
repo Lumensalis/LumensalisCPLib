@@ -5,8 +5,8 @@ from __future__ import annotations
 
 import board, microcontroller
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayDemoCommonImport = pmc_getImportProfiler( "DemoCommon" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayDemoCommonImport = getImportProfiler( globals() ) # "DemoCommon"
 
 
 from LumensalisCP.IOContext import *

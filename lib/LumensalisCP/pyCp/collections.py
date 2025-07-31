@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_saypyCpcollectionsImport = pmc_getImportProfiler( "pyCp.Collections" )
-
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_saypyCpcollectionsImport = getImportProfiler( "pyCp.collections" )
 
 try:
     from collections import * # pylint: disable=unused-wildcard-import # type: ignore

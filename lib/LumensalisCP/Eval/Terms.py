@@ -1,8 +1,8 @@
 # pyright: reportUnusedImport=false, reportImportCycles=false, reportMissingImports=false
 # pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false,  reportUnknownVariableType=false
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayEvalTermsImport = pmc_getImportProfiler( "Eval.Terms" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayEvalTermsImport = getImportProfiler( globals() ) # "Eval.Terms"
 
 import LumensalisCP.Main
 from LumensalisCP.CPTyping import TYPE_CHECKING

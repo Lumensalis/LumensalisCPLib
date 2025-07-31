@@ -1,5 +1,5 @@
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler, ImportProfiler
-#pmc_getImportProfiler.SHOW_IMPORTS = True
+from LumensalisCP.ImportProfiler import  getImportProfiler, ImportProfiler
+#getImportProfiler.SHOW_IMPORTS = True
 
 
 #############################################################################

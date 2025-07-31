@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayEvalEvaluatableImport = pmc_getImportProfiler( "Eval.Evaluatable" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayEvalEvaluatableImport = getImportProfiler( globals() ) # "Eval.Evaluatable"
 
 from LumensalisCP.common import Debuggable,TypeVar, Generic, TYPE_CHECKING, Any
 #from LumensalisCP.Debug import Debuggable

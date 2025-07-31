@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayCaernarfonImport = pmc_getImportProfiler( "CaernarfonCastle" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayCaernarfonImport = getImportProfiler( globals()) # "CaernarfonCastle" )
 
 
 from LumensalisCP.IOContext import *

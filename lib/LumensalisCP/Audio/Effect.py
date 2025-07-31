@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayAudioEffectImport = pmc_getImportProfiler( "Audio.Effect" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayAudioEffectImport = getImportProfiler( globals() ) # "Audio.Effect"
 
 
 import ulab.numpy as np

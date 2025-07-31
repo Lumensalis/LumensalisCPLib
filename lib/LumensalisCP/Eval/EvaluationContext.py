@@ -1,8 +1,8 @@
 
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayEvalEvaluationContextImport = pmc_getImportProfiler( "Eval.EvaluationContext" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayEvalEvaluationContextImport = getImportProfiler( globals() ) # "Eval.EvaluationContext"
 
 
 from LumensalisCP.Eval._common import *

@@ -1,8 +1,8 @@
 
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayScenesManagerImport = pmc_getImportProfiler( "Scenes.Manager" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayScenesManagerImport = getImportProfiler( globals() ) # "Scenes.Manager"
 
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable, NliContainerMixin, NliList
 from LumensalisCP.Scenes.Scene import Scene

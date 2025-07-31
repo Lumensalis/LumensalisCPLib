@@ -1,7 +1,7 @@
 from .common import *
 
-from LumensalisCP.Main.PreMainConfig import pmc_getReloadableImportProfiler
-__sayHTTPBSRProfileRLImport = pmc_getReloadableImportProfiler( "HTTP.BSR.BSRprofileRL" )
+from LumensalisCP.ImportProfiler import getImportProfiler
+__sayHTTPBSRProfileRLImport = getImportProfiler( globals(), reloadable=True  )
 
 import LumensalisCP.Main.ProfilerRL
 
@@ -21,4 +21,4 @@ def BSR_profile(self:BasicServer.BasicServer, request:Request):
     return JSONResponse(request, {"message": "Something went wrong"})
 
 
-__sayHTTPBSRProfileRLImport.complete(globals())
+__sayHTTPBSRProfileRLImport.complete()

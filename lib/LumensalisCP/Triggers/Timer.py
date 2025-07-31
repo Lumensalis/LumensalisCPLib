@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayTriggersTimerImport = pmc_getImportProfiler("Triggers.Timer" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayTriggersTimerImport = getImportProfiler("Triggers.Timer" )
 
 from LumensalisCP.IOContext import *
 

@@ -1,5 +1,5 @@
-from LumensalisCP.Main.PreMainConfig import pmc_getReloadableImportProfiler
-__sayBSR_cmdRLImport = pmc_getReloadableImportProfiler( "HTTP.BSR_cmdRL" )
+from LumensalisCP.ImportProfiler import getImportProfiler
+__sayBSR_cmdRLImport = getImportProfiler( globals(), reloadable=True )
 
 from .common import *
 
@@ -79,4 +79,4 @@ def BSR_cmd(self:BasicServer.BasicServer, request:Request, cmd:Optional[str]=Non
     
     return JSONResponse(request, {"message": "oops, command not handled..."})
 
-__sayBSR_cmdRLImport.complete(globals())
+__sayBSR_cmdRLImport.complete()

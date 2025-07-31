@@ -21,10 +21,12 @@ import gc
 # pylint: disable=unused-import,import-error,unused-argument 
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler, pmc_gcManager, pmc_mainLoopControl
-_importStartAnnotation = pmc_mainLoopControl.sayAtStartup( "beginning import of LumensalisCP.Simple.__init__" )
+from LumensalisCP.ImportProfiler import getImportProfiler
+from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
+pmc_mainLoopControl.sayAtStartup( "beginning import of LumensalisCP.Simple.__init__" )
 
-_saySimpleImport = pmc_getImportProfiler( "Simple.__init__" )
+_saySimpleImport = getImportProfiler( "Simple.__init__" )
+
 def _importCollect() -> None:
     _saySimpleImport( "collecting garbage..." )
     gc.collect()

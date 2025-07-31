@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayInputsImport = pmc_getImportProfiler( "Inputs" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayInputsImport = getImportProfiler( globals() ) # "Inputs"
 
 #from LumensalisCP.common import *
 from LumensalisCP.common import *

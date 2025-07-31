@@ -4,8 +4,8 @@ from __future__ import annotations
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 # pyright: reportUnknownVariableType=false
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayEvalCommonImport = pmc_getImportProfiler( "Eval.Common" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayEvalCommonImport = getImportProfiler( "Eval.common" )
 
 from LumensalisCP.common import *
 from LumensalisCP.Identity.Local import *

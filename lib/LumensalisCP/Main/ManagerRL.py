@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import pmc_getReloadableImportProfiler
-__sayMainManagerRLImport = pmc_getReloadableImportProfiler( "Main.ManagerRL" )
+from LumensalisCP.ImportProfiler import getImportProfiler, getReloadableImportProfiler
+__sayMainManagerRLImport = getReloadableImportProfiler( "Main.ManagerRL" )
 
 from LumensalisCP.commonPreManager import *
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl #, pmc_gcManager

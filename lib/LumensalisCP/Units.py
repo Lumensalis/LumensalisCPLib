@@ -1,8 +1,8 @@
 from __future__ import annotations
 # Common types used throughout the library
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayUnitsImport = pmc_getImportProfiler( "Units" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayUnitsImport = getImportProfiler( globals() ) # "Units"
 
 from LumensalisCP.CPTyping import TypeAlias, NewType, Union,Optional
 

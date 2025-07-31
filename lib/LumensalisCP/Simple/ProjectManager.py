@@ -8,8 +8,9 @@ import gc
 # pylint: disable=unused-import,import-error,unused-argument 
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_saySimpleImport = pmc_getImportProfiler( "Simple.ProjectManager" )
+
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_saySimpleImport = getImportProfiler( "Simple.ProjectManager" )
 
 
 from LumensalisCP.common import *

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import os, board, microcontroller
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayConfigurableBaseImport = pmc_getImportProfiler( "ConfigurableBase" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayConfigurableBaseImport = getImportProfiler( globals() ) # "ConfigurableBase"
 
 from LumensalisCP.Main.Dependents import MainChild
 from LumensalisCP.common import *

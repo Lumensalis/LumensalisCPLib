@@ -2,8 +2,8 @@ from __future__ import annotations
 # pylint: disable=unused-import,import-error
 #   pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayCPTypingImport = pmc_getImportProfiler( "CPTyping" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayCPTypingImport = getImportProfiler( globals() ) # "CPTyping"
 
 try:
 	# imports used only for typing

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import math
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_ioContextImport = pmc_getImportProfiler( "IOContext" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_ioContextImport = getImportProfiler( globals() ) # "IOContext"
 
 from LumensalisCP.common import *
 from LumensalisCP.Eval.common import *

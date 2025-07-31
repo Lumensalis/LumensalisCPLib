@@ -3,8 +3,8 @@ from __future__ import annotations
 # pylint: disable=unused-import
 # pyright: reportUnusedImport=false
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-__triggersCommonSayImport = pmc_getImportProfiler("Triggers.common" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+__triggersCommonSayImport = getImportProfiler( globals() ) # "Triggers.common"
 
 __triggersCommonSayImport( "IOContext... " )
 from LumensalisCP.IOContext  import *

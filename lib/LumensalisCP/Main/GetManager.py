@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayMainGetManagerImport = pmc_getImportProfiler( "Main.GetManager" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayMainGetManagerImport = getImportProfiler( globals() ) # "Main.GetManager"
 
 from LumensalisCP.CPTyping import TYPE_CHECKING
 

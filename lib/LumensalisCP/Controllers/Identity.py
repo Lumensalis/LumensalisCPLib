@@ -1,5 +1,5 @@
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-__sayControllersIdentityImport = pmc_getImportProfiler("Controllers.Identity" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+__sayControllersIdentityImport = getImportProfiler( globals() ) # "Controllers.Identity"
 
 # pyright: reportUnusedImport=false,reportUnusedVariable=false
 

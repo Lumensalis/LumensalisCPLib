@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 
-from LumensalisCP.Main.PreMainConfig import pmc_getReloadableImportProfiler
-__sayHTTPControlVarsRLImport = pmc_getReloadableImportProfiler( "HTTP.ControlVarsRL" )
+from LumensalisCP.ImportProfiler import getImportProfiler, getReloadableImportProfiler
+__sayHTTPControlVarsRLImport = getReloadableImportProfiler( "HTTP.ControlVarsRL" )
 
 from adafruit_httpserver import DELETE, GET, POST, PUT, JSONResponse, Request, Response  # pyright: ignore
 

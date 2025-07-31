@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayEvalExpressionsImport = pmc_getImportProfiler( "Eval.Expressions" )
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayEvalExpressionsImport = getImportProfiler( globals() ) # "Eval.Expressions"
 
 from LumensalisCP.Eval._common import *
 _sayEvalExpressionsImport( "Evaluatable")

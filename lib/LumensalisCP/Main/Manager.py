@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayMainImport = getImportProfiler( "Main.Manager", globals() )
+
 import asyncio
 
 import wifi, displayio
 
-from LumensalisCP.Main.PreMainConfig import pmc_getImportProfiler
-_sayMainImport = pmc_getImportProfiler( "Main.MainManager" )
 
 import LumensalisCP.Main.Dependents
 from LumensalisCP.commonPreManager import *
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
     # from LumensalisCP.Controllers.Config import ControllerConfigArg
 
 import LumensalisCP.Main.ProfilerRL
+
 LumensalisCP.Main.ProfilerRL._rl_setFixedOverheads() # type: ignore
 
 def _early_collect(tag:str):

@@ -1,5 +1,5 @@
-from LumensalisCP.Main.PreMainConfig import pmc_getReloadableImportProfiler, pmc_getImportProfiler
-__sayHTTPBasicServerRLImport = pmc_getReloadableImportProfiler( "HTTP.BasicServerRL" )
+from LumensalisCP.ImportProfiler import getImportProfiler
+__sayHTTPBasicServerRLImport = getImportProfiler( "HTTP.BasicServerRL", globals(), reloadable=True )
 
 from .BSR.common import *
 import traceback
@@ -97,7 +97,7 @@ from LumensalisCP.HTTP.BSR import BSR_cmdRL
 def _reloadForRoute( name:str ) -> None: # type:ignore[no-untyped-def]
     from LumensalisCP.HTTP import BasicServerRL
     modules: list[Any] = [  ]
-    pmc_getReloadableImportProfiler.SHOW_IMPORTS = True
+    getReloadableImportProfiler.SHOW_IMPORTS = True
     pmc_getImportProfiler.SHOW_IMPORTS = True
 
 
