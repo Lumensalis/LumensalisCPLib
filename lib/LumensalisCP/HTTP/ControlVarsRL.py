@@ -253,6 +253,7 @@ def BSR_client(self:BasicServer.BasicServer, request: Request):
 
     monitored = [mv.source for mv in self.main.panel.monitored.values()]
     print( f"get /client with {[(v.name,type(v)) for v in monitored]}")
+    gc.collect()
     #if self.cvHelper is None:
     #    self.cvHelper = PanelControlTemplateHelper( main=self.main )
     #assert isinstance(self.cvHelper, PanelControlTemplateHelper), "cvHelper is not a PanelControlTemplateHelper"

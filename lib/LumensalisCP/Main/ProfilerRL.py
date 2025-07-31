@@ -11,20 +11,21 @@ __sayMainProfilerRLImport = getImportProfiler( globals(), reloadable=True  )
 
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
-from LumensalisCP.common import SHOW_EXCEPTION
-import LumensalisCP.Main.Profiler
-from LumensalisCP.util.Reloadable import reloadableClassMeta, ReloadableModule
-if TYPE_CHECKING:
 
+import LumensalisCP.Main.Profiler
+from LumensalisCP.util.Reloadable import ReloadableModule
+
+if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
     from LumensalisCP.Main.Profiler import ProfileSnapEntry, ProfileFrame, ProfileSubFrame, ProfileFrameBase, ProfileWriteConfig
+    from LumensalisCP.Main.Profiler import Profiler
 
     #from LumensalisCP.Main.Profiler import ProfileSnapEntry, ProfileFrame, ProfileFrameBase, ProfileWriteConfig
     #from LumensalisCP.Main.Manager import MainManager   
 
-from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
-# pylint: disable=unused-argument, redefined-outer-name, attribute-defined-outside-init,protected-access,bad-indentation
+#from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
 
+# pylint: disable=unused-argument, redefined-outer-name, attribute-defined-outside-init,protected-access,bad-indentation
 
 def _rl_setFixedOverheads():
     LumensalisCP.Main.Profiler.ProfileSnapEntry.gcFixedOverhead = 0
@@ -46,14 +47,38 @@ def _heading( self:ProfileFrameBase|ProfileSnapEntry ) -> str:
 
 # pyright: reportRedeclaration=false
 _module = ReloadableModule( 'LumensalisCP.Main.Profiler' )
+_ProfileWriteConfig = _module.reloadableClassMeta('ProfileWriteConfig' )
 _ProfileSnapEntry = _module.reloadableClassMeta('ProfileSnapEntry' )
 _ProfileFrameBase = _module.reloadableClassMeta('ProfileFrameBase' )
 _ProfileFrame = _module.reloadableClassMeta('ProfileFrame' )
 _ProfileSubFrame = _module.reloadableClassMeta('ProfileSubFrame' )
+_Profiler = _module.reloadableClassMeta('Profiler' )
+
+@_ProfileWriteConfig.reloadableMethod()
+def shouldShowSnap(self:ProfileWriteConfig, snap:ProfileSnapEntry) -> bool:
+    return (snap.e >= self.minE) or self.tooMuchMemoryUsed(snap)
+    
+
+@_ProfileWriteConfig.reloadableMethod()
+def shouldShowFrame(self:ProfileWriteConfig, frame:ProfileFrameBase) -> bool:
+    if isinstance(frame,ProfileFrame):
+        return ( frame.eSleep > min(self.minE,self.minF) ) or ( frame.e >= self.minF )
+
+    return self.tooMuchMemoryUsed( frame ) or ( frame.e >= self.minSubF )
+
+@_ProfileWriteConfig.reloadableMethod()
+def tooMuchMemoryUsed( self:ProfileWriteConfig ,
+            entry:ProfileSnapEntry|ProfileFrameBase,
+        ) -> bool:
+    if isinstance(entry,ProfileSnapEntry):
+        return entry.usedGC > self.minEB
+    return entry.usedGC > self.minB 
 
 @_ProfileSnapEntry.reloadableMethod()
 def writeOn(self:ProfileSnapEntry,config:ProfileWriteConfig,indent:str='') -> None:
-    if not  config.shouldShowSnap(self): return
+    if not  config.shouldShowSnap(self): 
+        # print(f"Skipping snap {self.name} with e={self.e} and usedGC={self.usedGC}")
+        return
 
     if config.makingJson:
         data = config.top
@@ -89,6 +114,7 @@ def iterSnaps(self:ProfileFrameBase):
 @_ProfileFrameBase.reloadableMethod()
 def writeOn(self:ProfileFrameBase,config:ProfileWriteConfig,indent:str=''):
     if not config.shouldShowFrame(self):
+        # print(f"Skipping frame {self.name} with e={self.e} and usedGC={self.usedGC}")
         return
     
     if config.makingJson:
@@ -118,7 +144,9 @@ def writeOn(self:ProfileFrameBase,config:ProfileWriteConfig,indent:str=''):
 
 @_ProfileFrame.reloadableMethod()
 def writeOn(self:ProfileFrame,config:ProfileWriteConfig,indent:str=''):
-    if not config.shouldShowFrame(self): return
+    if not config.shouldShowFrame(self): 
+        # print(f"Skipping frame {self.name} with e={self.e} and usedGC={self.usedGC}")
+        return
 
     if config.makingJson:
         data = config.topDict
@@ -135,6 +163,8 @@ def writeOn(self:ProfileFrame,config:ProfileWriteConfig,indent:str=''):
                 if config.shouldShowSnap(snap):
                     with config.nestDict( ):
                         snap.writeOn(config)
+                # else: print(f"Skipping snap {snap.name} with e={snap.e} and usedGC={snap.usedGC}")
+
     else:
         config.writeLine( f"[{self.rindex}] {_heading(self)}{indent} {self.start:0.3f} @{id(self):X}" )
         #return
@@ -156,11 +186,13 @@ def addPoolInfo( dest:StrAnyDict,  cls:type[ProfileSnapEntry|ProfileFrame|Profil
     pool = cls.getReleasablePool()
     return dictAddUnique(dest, cls.__name__, dict( a=pool._allocs, r=pool._releases ) ) # type: ignore
 
-def getProfilerInfo( main:MainManager, dumpConfig:Optional[ProfileWriteConfig]=None ) -> Any:
-
+@_Profiler.reloadableMethod()
+def getProfilerInfo( self:Profiler, dumpConfig:Optional[ProfileWriteConfig]=None ) -> Any:
+    #main 
+    main = getMainManager()
     context = main.getContext()
     i = context.updateIndex
-    print(f"getProfilerInfo: updateIndex = {i}")
+    # print(f"getProfilerInfo: updateIndex = {i}")
     
     if dumpConfig is None:
 
@@ -175,9 +207,11 @@ def getProfilerInfo( main:MainManager, dumpConfig:Optional[ProfileWriteConfig]=N
     else:
         rv = dumpConfig.target
     
+
     if not isinstance(rv, (dict,OrderedDict)  ): # pyright: ignore[reportUnnecessaryIsInstance]
         raise TypeError(f"dumpConfig.target is not a dict: {type(rv)}")
 
+    assert dumpConfig is not None, "dumpConfig should not be None"
     with dumpConfig.nestDict('dumpConfig'):
         d = dumpConfig.topDict
         d['minE'] = dumpConfig.minE

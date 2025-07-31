@@ -4,7 +4,6 @@ from __future__ import annotations
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 # pyright: reportPrivateUsage=false
 
-
 from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayProfilerImport = getImportProfiler( "Profiler" )
 
@@ -30,6 +29,7 @@ from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
 from LumensalisCP.util.bags import Bag
 from LumensalisCP.util.Releasable import Releasable
 from LumensalisCP.Main import ProfilerRL
+from LumensalisCP.util.Reloadable import addReloadableClass, reloadingMethod
 
 from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
 
@@ -46,6 +46,7 @@ def ptToSeconds(v: TimePT|float) -> TimeInSeconds:
 
 PWJsonNestDataType:TypeAlias = Union[StrAnyDict,List[Any]]
 
+@addReloadableClass
 class ProfileWriteConfig(object):
     
     def __init__(self,target:TextIO|list[str]|StrAnyDict|None = None,
@@ -56,7 +57,7 @@ class ProfileWriteConfig(object):
                  showMemoryEntries:Optional[bool]=None,
                    **kwds:StrAnyDict) ->None:
  
-        self.target:Any = None
+        self.target:Any = target
         self.minB:int = minB if minB is not None else 1024
         self.minEB:int = minEB if minEB is not None else self.minB
         self.minE:float = minE if minE is not None else -1
@@ -73,27 +74,19 @@ class ProfileWriteConfig(object):
         self.__jsonNestDataStack:list[PWJsonNestDataType] = [self.__jsonData] if self.__jsonData is not None else []
         self.__jsonNestData:PWJsonNestDataType|None = None
         self.__jsonNestTag:str|None = None
+        self.__skipped:list[Any] = []
 
     def __repr__(self):
         return f"mE={self.minE} mF={self.minF} mSF={self.minSubF} mB={self.minB} mEB={self.minEB}"
 
+    @reloadingMethod
+    def tooMuchMemoryUsed( self:ProfileWriteConfig, entry:ProfileSnapEntry|ProfileFrameBase ) -> bool: ...
 
-    def tooMuchMemoryUsed( self:ProfileWriteConfig ,
-                entry:ProfileSnapEntry|ProfileFrameBase,
-            ) -> bool:
-        if isinstance(entry,ProfileSnapEntry):
-            return entry.usedGC >= self.minEB
-        return entry.usedGC >= self.minB 
+    @reloadingMethod
+    def shouldShowSnap(self, snap:ProfileSnapEntry) -> bool: ...
 
-    def shouldShowSnap(self, snap:ProfileSnapEntry) -> bool:
-        return (snap.e >= self.minE) or self.tooMuchMemoryUsed(snap)
-
-
-    def shouldShowFrame(self, frame:ProfileFrameBase) -> bool:
-        if isinstance(frame,ProfileFrame):
-            return ( frame.eSleep > min(self.minE,self.minF) ) or ( frame.e >= self.minF )
-
-        return self.tooMuchMemoryUsed( frame ) or ( frame.e >= self.minSubF )
+    @reloadingMethod
+    def shouldShowFrame(self, frame:ProfileFrameBase) -> bool: ...
 
     @property
     def makingJson(self) -> bool:
@@ -149,6 +142,7 @@ class ProfileWriteConfig(object):
             self.__target.write( message ) # type: ignore[reportAttributeAccessIssue]
             self.__target.write( "\r\n" ) # type: ignore[reportAttributeAccessIssue]
 
+@addReloadableClass
 class ProfileSnapEntry(Releasable): 
     # __slots__ = ["name","name2","lw","e","_nest","_nesting","etc"]
     __defaultEtc: dict[str, Any] = {}
@@ -245,8 +239,9 @@ class ProfileSnapEntry(Releasable):
         self._nesting = True
         return self._nest
 
-    def writeOn(self,config:ProfileWriteConfig,indent:str=''):
-        return ProfilerRL.ProfileSnapEntry_writeOn(self,config,indent)
+    @reloadingMethod
+    def writeOn(self,config:ProfileWriteConfig,indent:str=''):...
+        #return ProfilerRL.ProfileSnapEntry_writeOn(self,config,indent)
     
     def jsonData(self,**kwds:StrAnyDict) -> Mapping[str,Any]:
         #rv = collections.OrderedDict(lw=self.lw, e=self.e, id=id(self), **self.etc)
@@ -295,7 +290,8 @@ class CachedList(object):
             e.release()
             self.__entries[x] = None
         self.__size = 0
-            
+
+@addReloadableClass
 class ProfileFrameBase(Releasable): 
     
     gcFixedOverhead = 0
@@ -448,9 +444,9 @@ class ProfileFrameBase(Releasable):
 
         
     #entries = property(lambda self: self.__usedEntries)
-    
-    def iterSnaps(self) -> Generator[ProfileSnapEntry]:
-        return ProfilerRL.ProfileFrameBase_iterSnaps(self) 
+    @reloadingMethod
+    def iterSnaps(self) -> Generator[ProfileSnapEntry]: ...
+        # return ProfilerRL.ProfileFrameBase_iterSnaps(self) 
 
     def releaseNested(self):
         snap = self.firstSnap
@@ -498,8 +494,9 @@ class ProfileFrameBase(Releasable):
 
         return entry
         
-    def writeOn(self,config:ProfileWriteConfig,indent:str=''):
-        return ProfilerRL.ProfileFrameBase_writeOn(self,config,indent)
+    @reloadingMethod
+    def writeOn(self,config:ProfileWriteConfig,indent:str=''): ...
+    #    return ProfilerRL.ProfileFrameBase_writeOn(self,config,indent)
     
     def __str__(self):
         return f"PSF{('-'+self.name) if self.name is not None else ''}[{self.depth}:{self._rIndex}]@{id(self):X}"
@@ -512,7 +509,8 @@ class ProfileFrameBase(Releasable):
         
         if self.shouldProfileMemory():
             self.rawUsedGC =  gc.mem_alloc() - self.allocGc 
-        
+
+@addReloadableClass  
 class ProfileSubFrame(ProfileFrameBase): 
     #__context : UpdateContext
     
@@ -548,7 +546,7 @@ class ProfileSubFrame(ProfileFrameBase):
     def shouldProfileMemory(self) -> bool:
         return pmc_gcManager.PROFILE_MEMORY_NESTED
 
-
+@addReloadableClass
 class ProfileFrame(ProfileFrameBase): 
     updateIndex: int
     #start: TimeInSeconds
@@ -588,9 +586,9 @@ class ProfileFrame(ProfileFrameBase):
         self.eSleep = eSleep
         super().reset(context)
 
-
-    def writeOn(self,config:ProfileWriteConfig,indent:str=''):
-        return ProfilerRL.ProfileFrame_writeOn(self,config,indent)
+    @reloadingMethod
+    def writeOn(self,config:ProfileWriteConfig,indent:str=''): ...
+    #    return ProfilerRL.ProfileFrame_writeOn(self,config,indent)
     
 
 class ProfileStubFrameEntry(ProfileSnapEntry): 
@@ -638,7 +636,7 @@ class ProfileStubFrame(ProfileFrame):
         return False
 
 #############################################################################
-
+@addReloadableClass
 class Profiler(object):
     updateIndex: int
     when: TimeInSeconds
@@ -667,6 +665,10 @@ class Profiler(object):
             
              
         #self.nextNewFrame(0)
+
+    @reloadingMethod
+    def getProfilerInfo(  dumpConfig:Optional[ProfileWriteConfig]=None ) -> Any: ...
+
 
     def nextNewFrame(self, context:UpdateContext, eSleep:TimeInSeconds=TimeInSeconds(0) ) -> ProfileFrame:
         updateIndex = context.updateIndex
