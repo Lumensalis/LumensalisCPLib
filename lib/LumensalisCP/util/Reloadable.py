@@ -10,6 +10,9 @@ from LumensalisCP.common import *
 
 ReloadableMethodType:TypeAlias = Callable[..., Any]
 
+def __reloadPrint( message:str) -> None:
+    pass
+
 class ReloadableModule(object):
 
     def __init__(self, name:Optional[str]=None, moduleGlobals:Optional[dict[str,Any]]=None):
@@ -31,7 +34,7 @@ class ReloadableClassMeta(object):
     _metaDict:ClassVar[dict[str, ReloadableClassMeta]] = {}
 
     def __init__(self, name: str) -> None:
-        print(f"Creating ReloadableClassMeta for {name}")
+        __reloadPrint(f"Creating ReloadableClassMeta for {name}")
         self.name = name
         self._methods:dict[str, ReloadableMethodType] = {}
         self._cls:type|None = None
@@ -53,19 +56,19 @@ class ReloadableClassMeta(object):
     def __updateMethod(self, name:str, method: ReloadableMethodType) -> None:
         assert self._cls is not None, "Class has not been set."
         assert hasattr(self._cls, name), f"Class {self._cls} does not have method {name}.\n Available methods: {list(self._cls.__dict__.keys())}"
-        print( f"replacing method {name} in {self._cls} with {method}" )
+        __reloadPrint( f"replacing method {name} in {self._cls} with {method}" )
         setattr(self._cls, name, method)
 
     def setClass(self, cls: type) -> None:
         assert self._cls is None, "Class has already been set."
-        print(f"Setting class {cls} for {self.name} ({len(self._methods)} methods)")
+        __reloadPrint(f"Setting class {cls} for {self.name} ({len(self._methods)} methods)")
         self._cls = cls
         for method_name, method in self._methods.items():
             self.__updateMethod(method_name, method)
     def setModule(self, module: Optional[ReloadableModule]) -> None:
         if module is not None:
             self.module = module
-            print(f"Setting module {module.name} for {self.name}")
+            __reloadPrint(f"Setting module {module.name} for {self.name}")
         else:
             self.module = None
 
@@ -74,23 +77,25 @@ class ReloadableClassMeta(object):
             if method_name.startswith(prefix):
                 method_name = method_name[len(prefix):]
                 break
-        print(f"Adding reloadable method {method.__name__} to {self.name}.{method_name} {self._cls}")
+        __reloadPrint(f"Adding reloadable method {method.__name__} to {self.name}.{method_name} {self._cls}")
         self._methods[method_name] = method
         if self._cls is not None:
             self.__updateMethod(method_name, method)
 
     def reloadableMethod(self, name:Optional[str]=None ) -> Callable[..., Callable[..., Any]]:
         def decorator( func:Callable[...,Any] ) -> Callable[...,Any]:
-            #print(f"Adding reloadable method {func.__name__} to {self.name}")
+            #__reloadPrint(f"Adding reloadable method {func.__name__} to {self.name}")
             self.add_method(name or func.__name__, func)
             return func
         return decorator
 
 
-def reloadableClassMeta(name:str, module:Optional[ReloadableModule]=None, stripPrefix:Optional[str]=None) -> ReloadableClassMeta:
-    if modile
+def reloadableClassMeta(name:str, 
+                        # module:Optional[ReloadableModule]=None, 
+                        stripPrefix:Optional[str]=None) -> ReloadableClassMeta:
+
     rv = ReloadableClassMeta.make(name)
-    rv.setModule(module)
+    #rv.setModule(module)
     rv.addStripPrefix(stripPrefix)
     return rv
 
@@ -105,7 +110,7 @@ def addReloadableClass(cls:Any) -> Any : # type: ignore
 
 def reloadableMethod( meta:ReloadableClassMeta, name:Optional[str]=None ) -> Callable[..., Callable[..., Any]]:
     def decorator( func:Callable[...,Any] ) -> Callable[...,Any]:
-        #print(f"Adding reloadable method {func.__name__} to {meta.name}")
+        #__reloadPrint(f"Adding reloadable method {func.__name__} to {meta.name}")
         meta.add_method(name or func.__name__, func)
         return func
     return decorator
@@ -119,7 +124,7 @@ class ReloadingMethodStub():
 
 def reloadingMethod(func:Callable[...,Any] ) -> Callable[...,Any]:
     return ReloadingMethodStub(func)
-    #print(f"Adding reloadable method {func.__name__} to {meta.name}")
+    #__reloadPrint(f"Adding reloadable method {func.__name__} to {meta.name}")
     return func
 
 #############################################################################

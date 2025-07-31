@@ -91,7 +91,7 @@ def MainManager_singleLoop( self:MainManager ): #, activeFrame:ProfileFrameBase)
         if not mlc.MINIMUM_LOOP:
 
             if len( self.__deferredTasks ):
-                self.__runDeferredTasks(context)
+                self.runDeferredTasks(context)
         
             #activeFrame.snap( 'scenes' )
             self._scenes.run(context)
@@ -170,5 +170,17 @@ def MainManager_getNextFrame(self:MainManager) ->ProfileFrameBase:
         assert isinstance( newFrame, ProfileFrameBase )
         context.baseFrame  = context.activeFrame = newFrame
         return newFrame
+
+@_mmMeta.reloadableMethod()
+def runDeferredTasks(self:MainManager, context:EvaluationContext) -> None: # type: ignore
+    with context.subFrame('deferredTasks'):
+
+        while len( self.__deferredTasks ):
+            task = self.__deferredTasks.popleft()
+            self.infoOut( f"running deferred {task}")
+            try:
+                task()
+            except Exception as inst:
+                SHOW_EXCEPTION( inst, "exception on deferred task %r", task )
 
 __sayMainManagerRLImport.complete(globals())

@@ -3,33 +3,29 @@ from __future__ import annotations
 from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayMainImport = getImportProfiler( "Main.Manager", globals() )
 
+# pyright: reportUnusedImport=false
+
 import asyncio
-
 import wifi, displayio
-
 
 import LumensalisCP.Main.Dependents
 from LumensalisCP.commonPreManager import *
 from LumensalisCP.Main import PreMainConfig
-
-_sayMainImport( "TerrainTronicsFactory" )
 from TerrainTronics.Factory import TerrainTronicsFactory
-
 from LumensalisCP.Shields.Base import ShieldBase
 from LumensalisCP.Main.I2CProvider import I2CProvider
-
-_sayMainImport( "ControlPanel" )
-
 from LumensalisCP.Main.Panel import ControlPanel
-
-_sayMainImport( "ManagerRL" )
 from LumensalisCP.Main import ManagerRL
+from LumensalisCP.Temporal.Refreshable import Refreshable
+from LumensalisCP.Temporal.RefreshableList import RefreshableList
+from LumensalisCP.util.Reloadable import addReloadableClass, reloadingMethod
 
 if TYPE_CHECKING:
     from LumensalisCP.Lights.DMXManager import DMXManager
     import LumensalisCP.Main.Manager
     from LumensalisCP.Audio import Audio
     # from LumensalisCP.Controllers.Config import ControllerConfigArg
+
 
 import LumensalisCP.Main.ProfilerRL
 
@@ -38,17 +34,19 @@ LumensalisCP.Main.ProfilerRL._rl_setFixedOverheads() # type: ignore
 def _early_collect(tag:str):
     PreMainConfig.pmc_gcManager.runCollection(force=True)
 
+@addReloadableClass
 class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     
     class KWDS(ConfigurableBase.KWDS): # type: ignore
         pass
     
-    theManager : "MainManager|None" = None
+    theManager : MainManager|None = None
     ENABLE_EEPROM_IDENTITY = False
     profiler: Profiler
     shields:NliList[ShieldBase]
     controlPanels:NliList[ControlPanel]
     _privateCurrentContext:EvaluationContext
+    
     
     @staticmethod
     def initOrGetManager() -> "MainManager":
@@ -77,21 +75,22 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         #self.__startNs = time.monotonic_ns()
         self.__startNow = time.monotonic()
         self._when:TimeInSeconds = self.getNewNow()
-        getMainManager.set(self.__getMMSelf())
+        getMainManager.set(self)
 
         from LumensalisCP.Main.Dependents import MainRef  # pylint: disable=
         MainRef._theManager = self  # type: ignore
         
-        self._privateCurrentContext = EvaluationContext(self.__getMMSelf())
+        self._privateCurrentContext = EvaluationContext(self)
         UpdateContext._patch_fetchCurrentContext(self) # type: ignore
 
+        self._refreshables = RefreshableList()
         self.profiler = Profiler(self._privateCurrentContext )
 
         self.__asyncTaskCreators: list[Callable[[], list[asyncio.Task[None]]]] = []
         self.__preFirstRunCallbacks: list[Callable[[], None]] = []
         self.__socketPool:Any = None
         
-        Debuggable._getNewNow = self.getNewNow
+        Debuggable._getNewNow = self.getNewNow # type: ignore
         mainConfigDefaults = dict(
             TTCP_HOSTNAME = os.getenv("TTCP_HOSTNAME")
         )
@@ -129,9 +128,9 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
         self._monitored:list[InputSource] = []
 
-        self._timers = PeriodicTimerManager(main=self.__getMMSelf())
+        self._timers = PeriodicTimerManager(main=self)
 
-        self._scenes: SceneManager = SceneManager(main=self.__getMMSelf())
+        self._scenes: SceneManager = SceneManager(main=self)
         self.__TerrainTronics = None
 
         if pmc_mainLoopControl.preMainVerbose: print( f"MainManager options = {self.config.options}" )
@@ -148,7 +147,6 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         """ factory for adding TerrainTronics Castle boards"""
         if self.__TerrainTronics is None:
             from TerrainTronics.Factory import TerrainTronicsFactory
-            #self.__TerrainTronics = TerrainTronicsFactory( self.__getMMSelf() )
             self.__TerrainTronics = TerrainTronicsFactory( self )
         return self.__TerrainTronics
     
@@ -185,13 +183,6 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def getContext(self)->EvaluationContext: 
         return  self._privateCurrentContext
 
-    def __getMMSelf(self) -> LumensalisCP.Main.Manager.MainManager:
-        """ hack to get around pyright getting confused by self ... ???
-        :rtype: LumensalisCP.Main.Manager.MainManager
-        """
-        # TODO : why is pylance flagging this as wrong?
-        return self # type: ignore
-    
     @property
     def panel(self) -> ControlPanel:
         """ the default control panel """
@@ -201,7 +192,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def dmx(self):
         if self.__dmx is None:
             import LumensalisCP.Lights.DMXManager
-            self.__dmx = LumensalisCP.Lights.DMXManager.DMXManager( self.__getMMSelf() )
+            self.__dmx = LumensalisCP.Lights.DMXManager.DMXManager( self )
             
             self.__asyncTaskCreators.append( self.__dmx.createAsyncTasks )
 
@@ -247,7 +238,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
             
     def addExitTask(self,task:ExitTask|Callable[[], None]|KWCallbackArg):
         if not isinstance( task, ExitTask ):
-            task = ExitTask( main=self.__getMMSelf(),task=task)
+            task = ExitTask( main=self,task=task)
             
         self.__shutdownTasks.append(task)
 
@@ -286,7 +277,7 @@ see http://lumensalis.com/ql/h2Scenes
     def addBasicWebServer( self, *args:Any, **kwds:StrAnyDict ):
         from LumensalisCP.HTTP.BasicServer import BasicServer
         self.sayAtStartup( "addBasicWebServer %r, %r ", args, kwds )
-        server = BasicServer( *args, main=self.__getMMSelf(), **kwds )
+        server = BasicServer( *args, main=self, **kwds )
         self._webServer = server
 
         self.__asyncTaskCreators.append( server.createAsyncTasks )
@@ -302,13 +293,12 @@ see http://lumensalis.com/ql/h2Scenes
         self.__preFirstRunCallbacks.append( startWebServer )
         return server
 
-    def monitor( self, *inputs:InputSource, **kwds:StrAnyDict ) -> None:
-        return ManagerRL.MainManager_monitor( self, *inputs, **kwds ) # type: ignore
+    @reloadingMethod
+    def monitor( self, *inputs:InputSource, **kwds:StrAnyDict ) -> None: ...
 
-
-    def handleWsChanges( self, changes:StrAnyDict ):
-        return ManagerRL.MainManager_handleWsChanges( self, changes)
-
+    @reloadingMethod
+    def handleWsChanges( self, changes:StrAnyDict ): ...
+     
     async def msDelay( self, milliseconds:TimeInMS ):
         await asyncio.sleep( milliseconds * 0.001 )
     
@@ -328,36 +318,31 @@ see http://lumensalis.com/ql/h2Scenes
 
     def addTask( self, task:KWCallbackArg ):
         self._tasks.append( KWCallback.make( task ) )
-        
-    def __runDeferredTasks(self, context:EvaluationContext) -> None: # type: ignore
-        with context.subFrame('deferredTasks'):
 
-            while len( self.__deferredTasks ):
-                task = self.__deferredTasks.popleft()
-                self.infoOut( f"running deferred {task}")
-                try:
-                    task()
-                except Exception as inst:
-                    SHOW_EXCEPTION( inst, "exception on deferred task %r", task )
+    @reloadingMethod
+    def runDeferredTasks(self, context:EvaluationContext) -> None: ...
 
-    def dumpLoopTimings( self, count:int, minE:Optional[float]=None, minF:Optional[float]=None, **kwds:StrAnyDict ) -> list[Any]:
-        return ManagerRL.MainManager_dumpLoopTimings(self.__getMMSelf(), count, minE=minE, minF=minF, **kwds )
+    @reloadingMethod
+    def dumpLoopTimings( self, count:int, minE:Optional[float]=None, minF:Optional[float]=None, **kwds:StrAnyDict ) -> list[Any]: ...
 
-    def getNextFrame(self) ->ProfileFrameBase:
-        return ManagerRL.MainManager_getNextFrame(self ) # type: ignore
+    @reloadingMethod
+    def getNextFrame(self) ->ProfileFrameBase: ...
+
+    @reloadingMethod
+    def nliGetContainers(self) -> Iterable[NliContainerMixin[NamedLocalIdentifiable]]|None: ...
+
+    @reloadingMethod
+    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None: ...
+
+    @reloadingMethod
+    def launchProject(self, globals:Optional[StrAnyDict]=None, verbose:bool = False ) -> Any: ...
+
+    @reloadingMethod
+    def renameIdentifiables(self, items:Optional[dict[str,NamedLocalIdentifiable]]=None, verbose:bool = False ): ...
     
-    def nliGetContainers(self) -> Iterable[NliContainerMixin[NamedLocalIdentifiable]]|None:
-        return ManagerRL.MainManager_nliContainers(self ) # type: ignore
-   
-    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None:
-        return ManagerRL.MainManager_nliGetChildren(self ) # type: ignore
+    @reloadingMethod
+    def singleLoop(self) -> None: ...
 
-    def launchProject(self, globals:Optional[StrAnyDict]=None, verbose:bool = False ):
-        return ManagerRL.MainManager_launchProject(self, globals, verbose=verbose )
-
-    def renameIdentifiables(self, items:Optional[dict[str,NamedLocalIdentifiable]]=None, verbose:bool = False ):
-        return ManagerRL.MainManager_renameIdentifiables(self, items, verbose )
-    
     async def taskLoop( self ):
         self.__priorSleepWhen = self.getNewNow()
         self.infoOut( "starting manager main run" )
@@ -371,7 +356,7 @@ see http://lumensalis.com/ql/h2Scenes
         
             self._when = self.getNewNow()
             while True:
-                ManagerRL.MainManager_singleLoop(self) # type: ignore
+                self.singleLoop() # type: ignore
                 self.__latestSleepDuration = max(0.001, self._nextWait-self.__priorSleepWhen )
                 
                 await asyncio.sleep( self.__latestSleepDuration ) 
@@ -403,5 +388,8 @@ see http://lumensalis.com/ql/h2Scenes
 
 
     _renameIdentifiablesItems :dict[str,NamedLocalIdentifiable]
+
+
+#addReloadableClass( MainManager )
 
 _sayMainImport.complete(globals())
