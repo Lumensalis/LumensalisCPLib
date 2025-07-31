@@ -13,7 +13,7 @@ from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import SHOW_EXCEPTION
 import LumensalisCP.Main.Profiler
-
+from LumensalisCP.util.Reloadable import reloadableClassMeta, ReloadableModule
 if TYPE_CHECKING:
 
     from LumensalisCP.Main.Manager import MainManager
@@ -24,7 +24,6 @@ if TYPE_CHECKING:
 
 from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
 # pylint: disable=unused-argument, redefined-outer-name, attribute-defined-outside-init,protected-access,bad-indentation
-
 
 
 def _rl_setFixedOverheads():
@@ -45,7 +44,15 @@ def _heading( self:ProfileFrameBase|ProfileSnapEntry ) -> str:
     else:
          return f"   {self.e:0.3f}"
 
-def ProfileSnapEntry_writeOn(self:ProfileSnapEntry,config:ProfileWriteConfig,indent:str='') -> None:
+# pyright: reportRedeclaration=false
+_module = ReloadableModule( 'LumensalisCP.Main.Profiler' )
+_ProfileSnapEntry = _module.reloadableClassMeta('ProfileSnapEntry' )
+_ProfileFrameBase = _module.reloadableClassMeta('ProfileFrameBase' )
+_ProfileFrame = _module.reloadableClassMeta('ProfileFrame' )
+_ProfileSubFrame = _module.reloadableClassMeta('ProfileSubFrame' )
+
+@_ProfileSnapEntry.reloadableMethod()
+def writeOn(self:ProfileSnapEntry,config:ProfileWriteConfig,indent:str='') -> None:
     if not  config.shouldShowSnap(self): return
 
     if config.makingJson:
@@ -72,13 +79,15 @@ def ProfileSnapEntry_writeOn(self:ProfileSnapEntry,config:ProfileWriteConfig,ind
         if self.nest is not None:
             self.nest.writeOn( config, indent=indent+'# ')
 
-def ProfileFrameBase_iterSnaps(self:ProfileFrameBase):
+@_ProfileFrameBase.reloadableMethod()
+def iterSnaps(self:ProfileFrameBase):
     entry = self.firstSnap
     while entry is not None:
         yield entry
         entry = entry._nextSnap # type:ignore[reportAttributeAccessIssue]
 
-def ProfileFrameBase_writeOn(self:ProfileFrameBase,config:ProfileWriteConfig,indent:str=''):
+@_ProfileFrameBase.reloadableMethod()
+def writeOn(self:ProfileFrameBase,config:ProfileWriteConfig,indent:str=''):
     if not config.shouldShowFrame(self):
         return
     
@@ -107,7 +116,8 @@ def ProfileFrameBase_writeOn(self:ProfileFrameBase,config:ProfileWriteConfig,ind
         for snap in self.iterSnaps():
             snap.writeOn(config,indent=indent)
 
-def ProfileFrame_writeOn(self:ProfileFrame,config:ProfileWriteConfig,indent:str=''):
+@_ProfileFrame.reloadableMethod()
+def writeOn(self:ProfileFrame,config:ProfileWriteConfig,indent:str=''):
     if not config.shouldShowFrame(self): return
 
     if config.makingJson:
