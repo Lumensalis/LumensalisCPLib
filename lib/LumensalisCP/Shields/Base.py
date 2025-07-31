@@ -1,4 +1,7 @@
 
+from LumensalisCP.ImportProfiler import getImportProfiler
+__sayImport = getImportProfiler( globals() )
+
 from LumensalisCP.IOContext import *
 
 from LumensalisCP.Controllers.ConfigurableBase import ControllerConfigurableChildBase
@@ -78,3 +81,5 @@ class ShieldI2CBase(ShieldBase,I2CProvider):  # pylint: disable=abstract-method
             self.i2c.unlock()
 
         print( "i2c scan complete\n")
+
+__sayImport.complete()

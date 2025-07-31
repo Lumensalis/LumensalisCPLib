@@ -62,7 +62,7 @@ class Releasable(object):
     def releasablePreload(cls, count:int) -> None:
         rp = cls.getReleasablePool()
         count = max(0, count-rp.allocs)
-        print( "preloading %s[%d] with %d entries" % (cls.__name__, rp.allocs, count) )
+        pmc_mainLoopControl.sayDebugAtStartup( "preloading %s[%d] with %d entries" % (cls.__name__, rp.allocs, count) )
         entries = [
             cls() for _ in range(count)
         ]

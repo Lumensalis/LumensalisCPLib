@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 try:
-    from typing import TYPE_CHECKING, Any,Optional, ClassVar
+    from typing import TYPE_CHECKING, Any, Optional, ClassVar
 except ImportError:
     
     TYPE_CHECKING = False # type: ignore
@@ -32,7 +32,7 @@ class ImportProfiler(object):
     def parsing(self) -> None:
         raise NotImplementedError
 
-    def complete(self, moduleGlobals:dict[str,Any]) -> None:
+    def complete(self, moduleGlobals:Optional[dict[str,Any]]=None) -> None:
         raise NotImplementedError
 
     @classmethod
@@ -56,7 +56,7 @@ class FakeImportProfiler(ImportProfiler):
     def parsing(self) -> None:
         pass
 
-    def complete(self, moduleGlobals:dict[str,Any]) -> None:
+    def complete(self, moduleGlobals:Optional[dict[str,Any]]=None) -> None:
         pass
 
 ############################################################################

@@ -1,5 +1,9 @@
 
 from __future__ import annotations
+
+from LumensalisCP.ImportProfiler import getImportProfiler
+__sayImport = getImportProfiler( globals() )
+
 import busio
 import board
 
@@ -90,3 +94,6 @@ class I2CProvider(Debuggable):
         self.__i2cChannels[ (sdaPinName,sclPinName) ] = i2c
         self._addBoardI2C( self, i2c )
         return i2c
+
+__sayImport.complete()
+

@@ -2,6 +2,9 @@
 # pylint: disable=unused-import,import-error,reimported,import-outside-toplevel,used-before-assignment
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
         
+from LumensalisCP.ImportProfiler import getImportProfiler
+__sayImport = getImportProfiler( globals() )
+
 from LumensalisCP.common import *
 from LumensalisCP.Main.Dependents import FactoryBase
 if TYPE_CHECKING:
@@ -33,3 +36,5 @@ class TerrainTronicsFactory(FactoryBase):
     def addHarlechXL( self, **kwds ):
         from TerrainTronics.HarlechXL import HarlechXLCastle
         return self.makeChild( HarlechXLCastle, **kwds ) # type: ignore
+
+__sayImport.complete()
