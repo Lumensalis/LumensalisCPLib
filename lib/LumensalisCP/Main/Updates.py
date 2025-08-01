@@ -124,7 +124,11 @@ class UpdateContext(Debuggable):
         
     @property
     def when(self) -> TimeInSeconds : return self.__when
-    
+
+    @property
+    def newNow(self) -> TimeInSeconds : 
+        return self.__mainRef().getNewNow()
+
     @property
     def updateIndex(self) -> int: return self.__updateIndex
 

@@ -71,6 +71,13 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
         LocalIdentifiable.__init__(self)
         Debuggable.__init__(self)
 
+    @staticmethod 
+    def extractInitArgs(kwds:dict[str,Any]|Any) -> dict[str,Any]:
+        return {
+            'name': kwds.pop('name', None),
+            'temporaryName': kwds.pop('temporaryName', None)
+        }
+
     @property
     def name(self) -> str: return self.__name or self.__temporaryName or self.nliDynamicName()
     

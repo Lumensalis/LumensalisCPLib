@@ -1,10 +1,11 @@
-from collections import deque
-from tkinter import N
-from .Refreshable import Refreshable, RefreshList
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayImport = getImportProfiler( __name__, globals() )
+
+
+from .Refreshable import Refreshable, RefreshableListInterface, RefreshableInterface
 
 from LumensalisCP.common import *
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
-import collections.deque
 
 # pyright: reportPrivateUsage=false
 
@@ -13,15 +14,16 @@ if TYPE_CHECKING:
 
 #############################################################################
 
-def _refeshableSortKey(item:Refreshable) -> TimeInSeconds:
+def _refreshableSortKey(item:Refreshable) -> TimeInSeconds:
     return item.__nextRefresh or 9999999999999.9 # type: ignore[return-value]
 
-class RefreshListImplementation( RefreshList ):
+class RefreshableListImplementation( NamedLocalIdentifiable, RefreshableListInterface ):
     
     class KWDS(NamedLocalIdentifiable.KWDS):
         maxLen: NotRequired[int]
 
-    def __init__(self, maxLen:int=100, **kwds:Unpack[RefreshList.KWDS] ):
+    def __init__(self, maxLen:int=100, **kwds:Unpack[RefreshableListInterface.KWDS] ) -> None:
+        super().__init__(**kwds)
         self._dirtyCount = 0
         self._sortCount = 0
         #self._refreshables:deque[Refreshable] = deque(maxlen=maxLen,flag=True)
@@ -30,6 +32,17 @@ class RefreshListImplementation( RefreshList ):
 
         self._nextListRefresh:TimeInSeconds|None = None
 
+    def process( self, context:EvaluationContext, when:TimeInSeconds ) -> None:
+        if len(self._refreshables) == 0: return 
+        if self._dirtyCount > 0:
+            if self.enableDbgOut: self.dbgOut( "sorting, dirtyCount = %d", self._dirtyCount )
+            self._sort()
+        
+        top = self._refreshables[0]
+        assert top.__nextRefresh is not None, f"Top item {top} has no next refresh time"
+        if top.__nextRefresh < when:
+            top._refresh(context, when)
+    
     def add( self, context:EvaluationContext, item:Refreshable, nextRefresh:Optional[TimeInSeconds]=None ) -> None:
         if item.__refreshList is not None:
             raise ValueError( f"Item {item} already in a refresh list {item.__refreshList}" )
@@ -85,30 +98,42 @@ class RefreshListImplementation( RefreshList ):
             self._refreshables.remove(item)
             item.__refreshList = None
 
+    def nextRefreshChanged( self, context:EvaluationContext, item:Refreshable ) -> None:
+        if len(self._refreshables) == 1:
+            assert self._refreshables[0] is item, f"Next refresh changed but only one item in list {self._refreshables[0]} is not {item}"
+            self._setNextListRefreshChanged(item.nextRefresh)
+            return 
+        pass
+
     def markDirty( self, context:EvaluationContext, item:Refreshable|None ) -> None:
         self._dirtyCount += 1
 
     def _sort(self) -> None:
-        self._refreshables.sort(key=_refeshableSortKey)
+        self._refreshables.sort(key=_refreshableSortKey)
         self._dirtyCount = 0
         self._sortCount += 1
 
-class RootRefreshList(RefreshListImplementation):
+#############################################################################
+
+class RootRefreshableList(RefreshableListImplementation):
     pass
 
-
-class NestedRefreshList(RefreshListImplementation, Refreshable):
+class NestedRefreshableList(RefreshableListImplementation, Refreshable):
     class KWDS(Refreshable.KWDS,NamedLocalIdentifiable.KWDS):
         pass
 
-    def __init__(self, parent:RefreshList, **kwds:Unpack[RefreshList.KWDS] ):
+    def __init__(self, parent:RefreshableListInterface, **kwds:Unpack[RefreshableListInterface.KWDS] ):
 
         name = kwds.get("name", None)
         temporaryName = kwds.pop("temporaryName", None)
         Refreshable().__init__(**kwds)
-        RefreshListImplementation.__init__(self, name=name, temporaryName=temporaryName)
+        RefreshableListImplementation.__init__(self, name=name, temporaryName=temporaryName)
         self.__parent = parent
 
 
-    def doRefresh(self,context:'EvaluationContext') -> None:
+    def derivedRefresh(self,context:'EvaluationContext') -> None:
         raise NotImplementedError        
+
+#############################################################################
+
+_sayImport.complete()

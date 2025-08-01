@@ -1,13 +1,17 @@
+from LumensalisCP.ImportProfiler import ImportProfiler
+ImportProfiler.SHOW_IMPORTS = True
 
 # ALWAYS START WITH "from LumensalisCP.Simple import *"
 from LumensalisCP.Simple import * # http://lumensalis.com/ql/h2Start
 
 #############################################################################
 sayAtStartup( "start project" ) #  http://lumensalis.com/ql/h2Main
-main = ProjectManager(
+main2:MainManager = ProjectManager(
         profile=True,
         #  profileMemory=3
     ) 
+
+main = getMainManager()
 
 # setup three different scenes : http://lumensalis.com/ql/h2Scenes
 sceneClosed, sceneOpen, sceneMoving = main.addScenes( 3 ) 
@@ -17,13 +21,14 @@ rbCycle = main.panel.addSeconds( startingValue=3.1, min=0.1, max=10.0 )
 rbs = main.panel.addFloat( startingValue=0.6, min=0.1, max=3.0 )
 handSafetyRange = main.panel.addMillimeters(startingValue=300, min=10 )
 
+
 #############################################################################
 # HARDWARE : http://lumensalis.com/ql/h2Hardware
 # setup the Caernarfon Castle : http://lumensalis.com/ql/h2Caernarfon
 caernarfon = main.TerrainTronics.addCaernarfon( )
 
 lidServo = caernarfon.initServo( 1, movePeriod=0.05 )
-ir = caernarfon.addIrRemote(codenames="dvd_remote", updateInterval=5.0 )
+ir = caernarfon.addIrRemote(codenames="dvd_remote", refreshRate=5.0 )
 neoPixA = caernarfon.addNeoPixels(pixelCount=45) 
 neoPixB = caernarfon.addNeoPixels(servoPin=3,pixelCount=35)
 # setup neoPixel modules : http://lumensalis.com/ql/h2NeoPixels
@@ -36,7 +41,7 @@ sceneIndicatorLights    = neoPixB.stick(8)
 angleGaugeLights        = neoPixB.ring(12)
 
 # StemmaQT modules
-timeOfFlightSensor = main.i2cFactory.addVL530lx(updateInterval=0.25)
+timeOfFlightSensor = main.i2cFactory.addVL530lx(refreshRate=0.25)
 vcnl4040 = main.adafruitFactory.addVCNL4040()
 
 lightSensor = vcnl4040.light
@@ -52,6 +57,7 @@ capTouch = main.adafruitFactory.addMPR121()
 leftStoneTouch, centerStoneTouch, rightStoneTouch= capTouch.addInputs( 1, 2, 4 )
 leftRimTouch, centerRimTouch, rightRimTouch= capTouch.addInputs( 5, 6, 7 )
 bottomTouch = capTouch.addInput( 8 )
+capTouch.enableDbgOut = True
 
 magInputs = main.adafruitFactory.addAW9523()
 lidClosedMag    = magInputs.addInput(1)

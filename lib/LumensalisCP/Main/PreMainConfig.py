@@ -103,7 +103,7 @@ class GCManager(object):
     
         self.printDumpInterval = 28
         self.collectionCheckInterval = 3.1
-        self.showRunCollection = True
+        self.showRunCollection = False
 
         self.priorCycle = 0
         self.priorMs = 0
@@ -133,8 +133,8 @@ class GCManager(object):
     def setMinimumThreshold(self, threshold:int ):
         self.__absoluteMinimumThreshold  = threshold
         self.__actualFreeThreshold = max( self.__actualFreeThreshold, self.__absoluteMinimumThreshold )
-        
-    def runCollection(self, 
+
+    def checkAndRunCollection(self,
                       context:Optional[Any]=None,     # [unused-argument] # pylint: disable=unused-argument
                       force:bool = False, 
                       show:bool = False): 

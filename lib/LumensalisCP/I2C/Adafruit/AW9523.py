@@ -38,11 +38,11 @@ class AW9523(I2CDevice):
     AW9523_PINS = 16
     
     
-    def __init__(self, main, **kwds:Unpack[I2CDevice.KWDS] ):
+    def __init__(self, **kwds:Unpack[I2CDevice.KWDS] ):
         updateKWDefaults( kwds,
-            updateInterval = TimeInSeconds(0.1) # type: ignore
+            refreshRate = TimeInSeconds(0.1) # type: ignore
         )
-        super().__init__(main,  **kwds) # type: ignore
+        super().__init__(  **kwds) # type: ignore
         self.aw9523 = adafruit_aw9523.AW9523( i2c_bus=self.i2c )
         
         self.__ios:List[AW9523Input|None] = [None] * AW9523.AW9523_PINS

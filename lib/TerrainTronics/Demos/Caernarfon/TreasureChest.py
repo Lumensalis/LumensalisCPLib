@@ -228,7 +228,7 @@ class TreasureChest( DemoBase ):
         #self.angleGaugeLights 
         anglePattern = Gauge(self.angleGaugeLights, name="AngleGauge", onValue=LightValueRGB.BLUE )
         
-        ranger = main.i2cFactory.addVL530lx(updateInterval=0.25)
+        ranger = main.i2cFactory.addVL530lx(refreshRate=0.25)
         rangeDump = dict( rMin = 99999, rMax = 0, rMaxB = 1, rMaxBCap=2192, rCount = 0 )
         
         def updateCylonColor(context:Optional[UpdateContext]=None, **kwargs):

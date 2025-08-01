@@ -46,7 +46,6 @@ def ptToSeconds(v: TimePT|float) -> TimeInSeconds:
 
 PWJsonNestDataType:TypeAlias = Union[StrAnyDict,List[Any]]
 
-@addReloadableClass
 class ProfileWriteConfig(object):
     
     def __init__(self,target:TextIO|list[str]|StrAnyDict|None = None,
@@ -142,7 +141,7 @@ class ProfileWriteConfig(object):
             self.__target.write( message ) # type: ignore[reportAttributeAccessIssue]
             self.__target.write( "\r\n" ) # type: ignore[reportAttributeAccessIssue]
 
-@addReloadableClass
+
 class ProfileSnapEntry(Releasable): 
     # __slots__ = ["name","name2","lw","e","_nest","_nesting","etc"]
     __defaultEtc: dict[str, Any] = {}
@@ -291,7 +290,7 @@ class CachedList(object):
             self.__entries[x] = None
         self.__size = 0
 
-@addReloadableClass
+
 class ProfileFrameBase(Releasable): 
     
     gcFixedOverhead = 0
@@ -510,7 +509,6 @@ class ProfileFrameBase(Releasable):
         if self.shouldProfileMemory():
             self.rawUsedGC =  gc.mem_alloc() - self.allocGc 
 
-@addReloadableClass  
 class ProfileSubFrame(ProfileFrameBase): 
     #__context : UpdateContext
     
@@ -546,7 +544,7 @@ class ProfileSubFrame(ProfileFrameBase):
     def shouldProfileMemory(self) -> bool:
         return pmc_gcManager.PROFILE_MEMORY_NESTED
 
-@addReloadableClass
+
 class ProfileFrame(ProfileFrameBase): 
     updateIndex: int
     #start: TimeInSeconds
@@ -636,7 +634,7 @@ class ProfileStubFrame(ProfileFrame):
         return False
 
 #############################################################################
-@addReloadableClass
+
 class Profiler(object):
     updateIndex: int
     when: TimeInSeconds
@@ -667,7 +665,7 @@ class Profiler(object):
         #self.nextNewFrame(0)
 
     @reloadingMethod
-    def getProfilerInfo(  dumpConfig:Optional[ProfileWriteConfig]=None ) -> Any: ...
+    def getProfilerInfo( self,  dumpConfig:Optional[ProfileWriteConfig]=None ) -> Any: ...
 
 
     def nextNewFrame(self, context:UpdateContext, eSleep:TimeInSeconds=TimeInSeconds(0) ) -> ProfileFrame:
@@ -693,5 +691,11 @@ class Profiler(object):
                 print(f"tfy mismatch for {updateIndex} : [{timingIndex}].updateIndex={rv.updateIndex} {id(rv)}")
             return None
         return rv 
-
+    
+addReloadableClass(ProfileWriteConfig)
+addReloadableClass(ProfileSnapEntry)
+addReloadableClass(ProfileFrame)
+addReloadableClass(ProfileFrameBase)
+addReloadableClass(ProfileSubFrame)
+addReloadableClass(Profiler)
 _sayProfilerImport.complete(globals())

@@ -48,7 +48,7 @@ class HarlechXLCastle(I2CDevice, LightSource ):
     def __init__( self, name:str|None =None, 
                  maxLeds = 32,
                  address=0x34,
-                 updateInterval = 0.1,
+                 refreshRate = 0.1,
                  **kwargs ):
         
         name = name or "HarlechXLCastle"
@@ -57,7 +57,7 @@ class HarlechXLCastle(I2CDevice, LightSource ):
         self.__brightness = 1.0
         self.__ledChanges = 0
 
-        super().__init__(address=address, updateInterval=updateInterval, **kwargs)
+        super().__init__(address=address, refreshRate=refreshRate, **kwargs)
         LightSource.__init__(self, name=name, lights= self.__leds ),
 
 

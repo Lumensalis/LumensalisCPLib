@@ -78,7 +78,7 @@ class VCNL4040ReadableDescriptor:
 class VCNL4040(I2CDevice):
 
     def __init__(self, **kwds:Unpack[I2CDevice.KWDS]) -> None:
-        kwds.setdefault("updateInterval", 0.3)
+        kwds.setdefault("refreshRate", 0.3)
         
         super().__init__(**kwds)
 

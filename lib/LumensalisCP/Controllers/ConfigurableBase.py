@@ -3,7 +3,7 @@ from __future__ import annotations
 import os, board, microcontroller
 
 from LumensalisCP.ImportProfiler import  getImportProfiler
-_sayConfigurableBaseImport = getImportProfiler( globals() ) # "ConfigurableBase"
+_sayConfigurableBaseImport = getImportProfiler( __name__, globals() )
 
 from LumensalisCP.Main.Dependents import MainChild
 from LumensalisCP.common import *
@@ -13,8 +13,8 @@ from LumensalisCP.Controllers.Config import ControllerConfig,ControllerConfigArg
 _sayConfigurableBaseImport( "Controllers.Configs.Core" )
 from LumensalisCP.Controllers.Configs.Core import getConfig
 
-if TYPE_CHECKING:
-    from LumensalisCP.Main.Manager import MainManager
+#if TYPE_CHECKING:
+#    from LumensalisCP.Main.Manager import MainManager
     
 _sayConfigurableBaseImport( "parsing" )    
 class ConfigurableBase(object):
@@ -22,6 +22,13 @@ class ConfigurableBase(object):
         config: NotRequired[ControllerConfigArg]
         defaults: NotRequired[dict[str, Any]]
         
+    @staticmethod 
+    def extractInitArgs(kwds:dict[str,Any]|Any) -> dict[str,Any]:
+        return {
+            'config': kwds.pop('config', None),
+            'defaults': kwds.pop('defaults', None)
+        }
+            
     def __init__(self, config:Optional[ControllerConfigArg]=None, defaults:Optional[StrAnyDict]=None, **kwds:StrAnyDict ):
         if configSecondary := config == "secondary":
             config = None
@@ -43,7 +50,7 @@ class ConfigurableBase(object):
         elif config is None:
             config = ControllerConfig()
         
-        assert isinstance(config, ControllerConfig)
+        assert isinstance(config, ControllerConfig), f"config must be ControllerConfig, not {type(config)}: {config}" 
         if defaults is not None:
             kwds = dict(kwds)
             for tag,val in defaults.items():
@@ -67,15 +74,12 @@ class ConfigurableBase(object):
         return pin
     
 class ControllerConfigurableChildBase(ConfigurableBase,MainChild):
-    class KWDS( ConfigurableBase.KWDS ):
-        name: NotRequired[str]
-        main: NotRequired[MainManager]
-        
-    def __init__( self, main:Optional[MainManager]=None, name:Optional[str]=None, **kwargs:Unpack[ConfigurableBase.KWDS] ):
-        if main is None:
-            main = getMainManager()
-        MainChild.__init__(self, main=main, name=name )
-        ConfigurableBase.__init__( self, **kwargs ) # type: ignore
+    class KWDS( ConfigurableBase.KWDS, MainChild.KWDS ):
+        pass        
+    def __init__( self, **kwargs:Unpack[KWDS] ):
+        cfgKwds =  ConfigurableBase.extractInitArgs(kwargs)
+        MainChild.__init__(self, **kwargs  )
+        ConfigurableBase.__init__( self, **cfgKwds ) # type: ignore
         #print( f"ControllerConfigurableChildBase.__init__( name={name} kwargs={kwargs})")
 
 _sayConfigurableBaseImport.complete(globals())

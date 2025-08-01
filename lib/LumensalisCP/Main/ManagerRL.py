@@ -5,7 +5,7 @@ __sayMainManagerRLImport = getImportProfiler( globals(), reloadable=True )
 
 from LumensalisCP.commonPreManager import *
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl #, pmc_gcManager
-from LumensalisCP.util.Reloadable import reloadableClassMeta, ReloadableModule
+from LumensalisCP.util.Reloadable import ReloadableModule
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
@@ -13,6 +13,8 @@ if TYPE_CHECKING:
 # pylint: disable=protected-access, bad-indentation, missing-function-docstring
 # pylint: disable=no-member, redefined-builtin, unused-argument
 # pyright: reportPrivateUsage=none
+
+#############################################################################
 
 mlc = pmc_mainLoopControl
 
@@ -83,12 +85,14 @@ def MainManager_handleWsChanges( self:MainManager, changes:StrAnyDict ):
             self.warnOut( f"missing cv {key} in {defaultPanel.controls.keys()} for wsChanges {changes}")
 
 @_mmMeta.reloadableMethod()
-def MainManager_singleLoop( self:MainManager ): #, activeFrame:ProfileFrameBase):
+def singleLoop( self:MainManager ): #, activeFrame:ProfileFrameBase):
     with self.getNextFrame(): #  as activeFrame:
         context = self._privateCurrentContext
 
+        self._refreshables.process(context, context.when)
         self._timers.update( context )
         if not mlc.MINIMUM_LOOP:
+
 
             if len( self.__deferredTasks ):
                 self.runDeferredTasks(context)
@@ -96,25 +100,19 @@ def MainManager_singleLoop( self:MainManager ): #, activeFrame:ProfileFrameBase)
             #activeFrame.snap( 'scenes' )
             self._scenes.run(context)
             
-            with context.subFrame('i2c'):
-                for target in self.__i2cDevices:
-                    target.updateDevice(context)
+            #with context.subFrame('i2c'):
+            #    for target in self.__i2cDevices:
+            #        target.updateDevice(context)
 
-            with context.subFrame('tasks'):
-                for task in self._tasks:
-                    task()
+            #with context.subFrame('tasks'):
+            #    for task in self._tasks:
+            #        task()
 
-            with context.subFrame( 'shields' ):
-                for shield in self.shields:
-                    shield.refresh(context)
+            #with context.subFrame( 'shields' ):
+            #    for shield in self.shields:
+            #        shield.refresh(context)
                     
-            if pmc_mainLoopControl.printStatCycles and self.__cycle % pmc_mainLoopControl.printStatCycles == 0:
-                #self.infoOut( f"cycle {self.__cycle} at {self._when} with {len(self._tasks)} tasks, gmf={gc.mem_free()} cd={self.cycleDuration}" )
-                self.infoOut( "cycle %d at %.3f : scene %s ip=%s with %d tasks, gmf=%d cd=%r",
-                             self.__cycle, self._when, 
-                             self.scenes.currentScene, self._webServer,
-                             len(self._tasks), gc.mem_free(), self.cycleDuration
-                        )
+ 
             #self._scenes.run( context )
             self.cycleDuration = 1.0 / (self.cyclesPerSecond *1.0)
             

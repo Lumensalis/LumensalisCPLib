@@ -15,9 +15,6 @@ class LocalIdentifiable(object):
         
     @property
     def localId(self) -> int: ...
-    
-    
-
 
 class NliInterface:
     def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None: ...
@@ -42,15 +39,20 @@ _NLIT_co = TypeVar('_NLIT_co',
                    #contravariant=False,
                    bound=NliInterface)
 
-    
-
-                                
 class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable): 
+    
     class KWDS(TypedDict):
         name:NotRequired[str]
+        temporaryName:NotRequired[str]
+    
+    def __init__( self, 
+                name:Optional[str]=None,
+                temporaryName:Optional[str]=None
+            ) -> None: ...
 
-    def __init__( self, name:Optional[str]=None ) -> None: ...
-
+    @staticmethod 
+    def extractInitArgs(kwds:dict[str,Any]|Any) -> dict[str,Any]: ...
+        
     @property
     def name(self) -> str: ...
     

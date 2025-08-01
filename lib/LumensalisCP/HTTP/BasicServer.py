@@ -29,6 +29,9 @@ from LumensalisCP.HTTP.BSR import BSR_sakRL
 from LumensalisCP.HTTP.BSR import BSR_cmdRL
 
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
+from LumensalisCP.util.Reloadable import addReloadableClass, reloadingMethod
+
+#############################################################################
 
 class BasicServer(Server,Debuggable):
     
@@ -155,7 +158,13 @@ class BasicServer(Server,Debuggable):
             self.infoOut( "base request...")
             return Response(request, "Hello from the CircuitPython HTTP Server!")
         
-    async def handle_http_requests(self):
+    @reloadingMethod
+    def updateSocketClient(self, useStringIO:bool=False )->None:...
+
+    @reloadingMethod
+    def handle_websocket_request(self): ...
+
+    async def handleddd_http_requests(self):
         try:
             
             while True:
@@ -176,8 +185,7 @@ class BasicServer(Server,Debuggable):
         except Exception  as error:
             self.SHOW_EXCEPTION( error, 'handle_http_requests error' )
             
-
-    async def handle_websocket_requests(self):
+    async def handleddd_websocket_requests(self):
         try:
             self.startupOut( 'handle_websocket_requests starting' )
 
@@ -189,8 +197,7 @@ class BasicServer(Server,Debuggable):
         except Exception  as error:
             self.SHOW_EXCEPTION( error, 'handle_websocket_requests error' )
 
-
-    async def send_websocket_messages(self):
+    async def ffffsend_websocket_messages(self):
         
         try:
             useStringIO = False
@@ -205,13 +212,52 @@ class BasicServer(Server,Debuggable):
         except Exception  as error:
             SHOW_EXCEPTION( error, 'send_websocket_messages error' )
 
+    #########################################################################
+
+    async def serverLoop(self) -> None:
+        try:
+            self.startupOut( f"{self.__class__.__name__} serverLoop starting" )
+            useStringIO = False
+            self._ws_jsonBuffer:io.StringIO|None = io.StringIO(8192) if useStringIO else None # type:ignore[assignment]
+
+            while True:
+                #print( "handle_http_requests poll..")
+                try:
+                    if self.websocket is not None and self.websocket.closed:
+                        self.handle_websocket_request()
+                        await async_sleep(0.05)
+                        self.updateSocketClient(useStringIO)
+                        await async_sleep(0.05)
+                    
+                    pool_result = self.poll()
+                    if pool_result == adafruit_httpserver.REQUEST_HANDLED_RESPONSE_SENT:
+                        # Do something only after handling a request
+                        self.infoOut( "handle_http_requests handled request")
+                        pass
+                    await async_sleep(0.05)
+                    
+                except Exception as error:
+                    self.SHOW_EXCEPTION( error, 'handle_http_requests error' )
+                    await async_sleep(0.25)
+                #print( "handle_http_requests sleep..")
+                await async_sleep(0.05)
+    
+        except Exception  as error:
+            self.SHOW_EXCEPTION( error, 'handle_http_requests error' )
+
+
+
+    #########################################################################
     def createAsyncTasks( self ) -> list[Task[None]]:
         self.dbgOut( "createAsyncTasks... " )
 
         return [
-            create_task(self.handle_http_requests()),
-            create_task(self.handle_websocket_requests()),
-            create_task(self.send_websocket_messages()),
+            create_task(self.serverLoop()),
+            #create_task(self.handle_http_requests()),
+            #create_task(self.handle_websocket_requests()),
+            #create_task(self.send_websocket_messages()),
         ]
+
+addReloadableClass(BasicServer)
 
 __sayHTTPBasicServerImport.complete(globals())

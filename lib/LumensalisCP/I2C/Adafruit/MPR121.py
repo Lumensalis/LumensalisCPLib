@@ -28,9 +28,9 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
     DEFAULT_UPDATE_INTERVAL = TimeInSeconds(0.1)  # type: ignore
     MPR121_PINS = 11
     
-    def __init__(self, main:MainManager, **kwds:Unpack[I2CDevice.KWDS] ):
+    def __init__(self, **kwds:Unpack[I2CDevice.KWDS] ):
         
-        I2CDevice.__init__( self, main=main, **kwds )
+        I2CDevice.__init__( self, **kwds )
         adafruit_mpr121.MPR121.__init__(self, self.i2c) # type: ignore
         self.__lastTouched:int = 0
         self.__inputs:List[MPR121Input|None] = [None] * MPR121.MPR121_PINS

@@ -23,7 +23,7 @@ from LumensalisCP.util.bags import Bag
 from LumensalisCP.Controllers.ConfigurableBase import ConfigurableBase
 from LumensalisCP.Controllers.Identity import ControllerIdentity, ControllerNVM
 from LumensalisCP.Eval.Expressions import EvaluationContext, UpdateContext
-from LumensalisCP.Debug import Debuggable 
+from LumensalisCP.Debug import Debuggable, IDebuggable 
 from LumensalisCP.Outputs import OutputTarget, NamedOutputTarget
 from LumensalisCP.Inputs import InputSource
 from LumensalisCP.Scenes.Manager import SceneManager, Scene

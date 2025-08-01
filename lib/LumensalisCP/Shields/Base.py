@@ -6,7 +6,7 @@ from LumensalisCP.IOContext import *
 
 from LumensalisCP.Controllers.ConfigurableBase import ControllerConfigurableChildBase
 #from LumensalisCP.Inputs import InputSource
-from LumensalisCP.Main.Refreshable import Refreshable
+from LumensalisCP.Temporal.Refreshable import Refreshable, RfMxnActivatablePeriodic
 
 #from LumensalisCP.Shields.Pins import PinHolder, PinProxy
 #from digitalio import DigitalInOut, Direction
@@ -15,16 +15,22 @@ from LumensalisCP.Inputs import NamedLocalIdentifiable
 from LumensalisCP.Main.I2CProvider import I2CProvider
 
 
-class ShieldBase(ControllerConfigurableChildBase,Refreshable): # pylint: disable=abstract-method
-    class KWDS(ControllerConfigurableChildBase.KWDS):
-        refreshRate: NotRequired[float] 
+class ShieldBase(ControllerConfigurableChildBase):#,RfMxnActivatablePeriodic, Refreshable): # pylint: disable=abstract-method
+    class KWDS(ControllerConfigurableChildBase.KWDS):#,RfMxnActivatablePeriodic.KWDS, Refreshable.KWDS):
+        pass
         
-    def __init__(self, refreshRate=0.1, **kwds:Unpack[ControllerConfigurableChildBase.KWDS] ):
+    def __init__(self, **kwds:Unpack[KWDS] ) -> None:
+        main = kwds.get('main')
+        #assert main is not None, "ShieldBase must be created with a main instance"
+        #kwds.setdefault('autoList',main.refreshables)
+        #Refreshable.__init__(self, mixinKwds=kwds )
         ControllerConfigurableChildBase.__init__(self, **kwds )
-        Refreshable.__init__(self,refreshRate=refreshRate) # type: ignore
-        self.__componentsContainer:NliList = NliList("components", parent=self)
+        #assert self.main is not None, "ShieldBase must be created with a main instance"
         
-    def nliGetContainers(self) -> Iterable[NliContainerMixin]:
+        self.__componentsContainer:NliList[NamedLocalIdentifiable] = NliList("components", parent=self)
+        self.activate(main.getContext())
+
+    def nliGetContainers(self) -> Iterable[NliContainerMixin[NamedLocalIdentifiable]]:
         return [ self.__componentsContainer ]
     
     def nliAddComponent(self, component:NamedLocalIdentifiable):

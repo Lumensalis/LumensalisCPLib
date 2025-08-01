@@ -10,24 +10,20 @@ import gc
 
 
 from LumensalisCP.ImportProfiler import  getImportProfiler
-_saySimpleImport = getImportProfiler( "Simple.ProjectManager" )
-
+_saySimpleImport = getImportProfiler( __name__, globals() )
 
 from LumensalisCP.common import *
-
 from LumensalisCP.Triggers.Timer import PeriodicTimer
-
 from LumensalisCP.Eval.EvaluationContext import EvaluationContext
-
-
-from LumensalisCP.Main.Manager import MainManager
-
-
+from LumensalisCP.Temporal.Refreshable import *
+from LumensalisCP.util.Reloadable import ReloadableModule, reloadableMethod, reloadableClassMeta
+#from LumensalisCP.util.Reloadable import ReloadableMethodType, Unpack, KWDS
+if TYPE_CHECKING:
+    from LumensalisCP.Main.Manager import MainManager
 
 def ProjectManager( profile:Optional[bool]=None,
                     profileMemory:Optional[bool|int]=None,
-                     
-                     useWifi:bool = True,
+                    useWifi:bool = True,
     ) -> MainManager:
     """ return the MainManager for a new simple project 
 ```python
@@ -40,6 +36,7 @@ main.launchProject( globals() )
 ```
 see http://lumensalis.com/ql/h2Main
 """
+    from LumensalisCP.Main.Manager import MainManager
     if profile is not None:
         pmc_mainLoopControl.ENABLE_PROFILE = profile
         if profileMemory is not None:
@@ -86,18 +83,14 @@ see http://lumensalis.com/ql/h2Main
             #print( f"pmc_gcManager.runCollection {context.updateIndex}..." )
             pmc_gcManager.runCollection(context, show=pmc_gcManager.showRunCollection)
 
-        timer.addAction(runCollect)
-        timer.start()
+        #timer.addAction(runCollect)
+        #timer.start()
         print("\n\n profiling callbacks added...\n")
-
-
         #@addPeriodicTaskDef( "print-dump", period=lambda: profilingRL.printDumpInterval, main=main )
         #def dump():
         #    profilingRL.printDump(main)
 
     main.callLater( addProfilingCallbacks )
-
-
     return main
 
 _saySimpleImport.complete(globals())

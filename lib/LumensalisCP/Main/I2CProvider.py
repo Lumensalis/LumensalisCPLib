@@ -20,6 +20,8 @@ if TYPE_CHECKING:
     from LumensalisCP.I2C.I2CFactory import I2CFactory
 
 class I2CProvider(Debuggable):
+    """ Provides I2C devices and factories for the main manager. """
+    
     adafruitFactory: AdafruitFactory
     """ factory to connect Adafruit I2C devices """
     
@@ -64,9 +66,9 @@ class I2CProvider(Debuggable):
         raise NotImplementedError
     
     @property
-    def defaultI2C(self): return self.__defaultI2C or board.I2C() # pylint: disable=no-member
+    def defaultI2C(self) -> busio.I2C: return self.__defaultI2C or board.I2C() # pylint: disable=no-member
             
-    def _addI2CDevice(self, target:I2CDevice ):
+    def addI2CDevice(self, target:I2CDevice ):
         self.__i2cDevices.append(target)
         target.nliSetContainer(self.i2cDevicesContainer)
    

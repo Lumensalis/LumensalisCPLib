@@ -80,21 +80,22 @@ def printDump( main:MainManager ):
         #gcm.runCollection(context, force=True )
         
 def TreasureChest_finishSetup(self:SimpleTreasureChest.TreasureChest):
-    main = self.main
-    from . import SimpleTreasureChestRL
-    @addPeriodicTaskDef( "gc-collect", period=lambda: pmc_gcManager.collectionCheckInterval, main=main )
-    def runCollection(context=None, when=None):
-        pmc_gcManager.runCollection(context,when, show=False)
+    if False:
+        main = self.main
+        from . import SimpleTreasureChestRL
+        @addPeriodicTaskDef( "gc-collect", period=lambda: pmc_gcManager.collectionCheckInterval, main=main )
+        def runCollection(context=None, when=None):
+            pmc_gcManager.runCollection(context,when, show=False)
 
-    def firstGC():
-        pmc_gcManager.runCollection(main.getContext(),main.when, force=True)
-    main.callLater(firstGC)
-    main.scenes.enableDbgOut = True
+        def firstGC():
+            pmc_gcManager.runCollection(main.getContext(),main.when, force=True)
+        main.callLater(firstGC)
+        main.scenes.enableDbgOut = True
 
-    dt = PeriodicTimer( interval=lambda : SimpleTreasureChestRL.printDumpInterval, manager=main.timers, name="dump" )
-    @dt.addSimpleTaskDef( )
-    def  printDump():
-        SimpleTreasureChestRL.printDump(main)
+        dt = PeriodicTimer( interval=lambda : SimpleTreasureChestRL.printDumpInterval, manager=main.timers, name="dump" )
+        @dt.addSimpleTaskDef( )
+        def  printDump():
+            SimpleTreasureChestRL.printDump(main)
 
                 
     gc.disable()

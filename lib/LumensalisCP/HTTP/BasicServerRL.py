@@ -8,11 +8,15 @@ import traceback
 from LumensalisCP.IOContext import *
 from LumensalisCP.commonCPWifi import *
     
+from LumensalisCP.util.Reloadable import ReloadableModule
+
 #############################################################################
 # pyright: ignore[reportUnusedImport]
 
 #from LumensalisCP.HTTP.BSR.BSR_profileRL import BSR_profile 
 
+_module = ReloadableModule( 'LumensalisCP.HTTP.BasicServer' )
+_BasicServer = _module.reloadableClassMeta('BasicServer')
 
 class QueryConfig(object):
     fillParents:bool = False
@@ -115,6 +119,7 @@ def _reloadForRoute( name:str ) -> None: # type:ignore[no-untyped-def]
     for module in modules:
         reload( module )
 
+@_BasicServer.reloadableMethod()
 def handle_websocket_request(self:BasicServer.BasicServer):
     if self.websocket is None or self.websocket.closed:
         return
@@ -136,6 +141,7 @@ def handle_websocket_request(self:BasicServer.BasicServer):
     except Exception as inst:
         self.SHOW_EXCEPTION( inst, "error on incoming websocket data %r", data )
 
+@_BasicServer.reloadableMethod()
 def updateSocketClient(self:BasicServer.BasicServer, useStringIO:bool=False )->None:
     if self.websocket is None or self.websocket.closed:
         return
@@ -171,5 +177,6 @@ def updateSocketClient(self:BasicServer.BasicServer, useStringIO:bool=False )->N
             message =json.dumps(payload)
         self.websocket.send_message(message, fail_silently=True)
         if self.enableDbgOut: self.dbgOut( "wrote WS update : %r", message ) 
+
 
 __sayHTTPBasicServerRLImport.complete(globals())

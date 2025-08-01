@@ -12,7 +12,6 @@ from LumensalisCP.Eval.common import *
 from LumensalisCP.common import TYPE_CHECKING
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 
-_ioContextImport( "Inputs")
 from LumensalisCP.Inputs import InputSource
 from LumensalisCP.Outputs import OutputTarget, NamedOutputTarget
 from LumensalisCP.Eval.Expressions  import Expression

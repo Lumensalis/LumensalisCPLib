@@ -36,7 +36,7 @@ class PCA9685(I2CDevice):
     def __init__(self, **kwds ):
         #updateKWDefaults( kwds,
         #    frequency = 50,
-        #    # updateInterval = 0.1,
+        #    # refreshRate = 0.1,
         #)
         frequency = kwds.pop("frequency", 50 )
         super().__init__(name="PCA9685",**kwds)

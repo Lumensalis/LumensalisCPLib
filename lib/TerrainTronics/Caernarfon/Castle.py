@@ -135,7 +135,7 @@ class CaernarfonCastle(D1MiniBoardBase):
     def nliGetContainers(self) -> list["NliContainerMixin"]|None: # type: ignore
         return itertools.chain(  [ self.__pixelsContainer, self.__servoContainer ], super().nliGetContainers())  #type: ignore
 
-    def doRefresh(self,context:EvaluationContext):
+    def derivedRefresh(self,context:EvaluationContext):
         for pixels in self.__allPixels:
             pixels.refresh()
         
@@ -168,8 +168,6 @@ class CaernarfonCastle(D1MiniBoardBase):
     def servo3(self) -> LocalServo:
         assert self.__servos[2] is not None
         return  self.__servos[2]
-    
-
 
     def addIrRemote(self, **kwds:Unpack[LCP_IRrecv.KWDS]) -> LCP_IRrecv:
         assert self._irRemote is None
@@ -185,7 +183,9 @@ class CaernarfonCastle(D1MiniBoardBase):
         })
         kwds.setdefault("main", self.main)
         self._irRemote = LCP_IRrecv( self.D5.actualPin,  **kwds )
+        
         self.nliAddComponent(self._irRemote)
+        self._irRemote.activate(UpdateContext.fetchCurrentContext(None))
         return self._irRemote
     
     #def analogInput( self, name:str, pin:Any ):

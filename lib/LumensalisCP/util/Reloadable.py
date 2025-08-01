@@ -11,6 +11,7 @@ from LumensalisCP.common import *
 ReloadableMethodType:TypeAlias = Callable[..., Any]
 
 def __reloadPrint( message:str) -> None:
+    #print( message )
     pass
 
 class ReloadableModule(object):
@@ -33,21 +34,21 @@ class ReloadableClassMeta(object):
 
     _metaDict:ClassVar[dict[str, ReloadableClassMeta]] = {}
 
+
     def __init__(self, name: str) -> None:
         __reloadPrint(f"Creating ReloadableClassMeta for {name}")
         self.name = name
+        self.index = len(ReloadableClassMeta._metaDict)
         self._methods:dict[str, ReloadableMethodType] = {}
         self._cls:type|None = None
         self._stripPrefixList:list[str] = []
         self.module:Optional[ReloadableModule] = None
+        assert name not in ReloadableClassMeta._metaDict, f"ReloadableClassMeta for {name} already exists."
+        ReloadableClassMeta._metaDict[name] = self
 
     @staticmethod
     def make(name: str) -> ReloadableClassMeta:
-        rv = ReloadableClassMeta._metaDict.get(name,None)
-        if rv is None:
-            rv = ReloadableClassMeta(name)
-            ReloadableClassMeta._metaDict[name] = rv
-        return rv
+        return ReloadableClassMeta._metaDict.get(name,None) or ReloadableClassMeta(name)
     
     def addStripPrefix(self, stripPrefix:Optional[str]) -> None:
         if stripPrefix is not None and stripPrefix not in self._stripPrefixList:
@@ -77,11 +78,14 @@ class ReloadableClassMeta(object):
             if method_name.startswith(prefix):
                 method_name = method_name[len(prefix):]
                 break
-        __reloadPrint(f"Adding reloadable method {method.__name__} to {self.name}.{method_name} {self._cls}")
+        __reloadPrint(f"Adding reloadable method {method.__name__} to {self.name}.{method_name} {self}")
         self._methods[method_name] = method
         if self._cls is not None:
             self.__updateMethod(method_name, method)
-
+    
+    def __repr__(self) -> str:
+        return f"ReloadableClassMeta({self.name}, {self.index}, {self._cls}, {self._methods.keys()})"
+    
     def reloadableMethod(self, name:Optional[str]=None ) -> Callable[..., Callable[..., Any]]:
         def decorator( func:Callable[...,Any] ) -> Callable[...,Any]:
             #__reloadPrint(f"Adding reloadable method {func.__name__} to {self.name}")
@@ -99,13 +103,15 @@ def reloadableClassMeta(name:str,
     rv.addStripPrefix(stripPrefix)
     return rv
 
-def addReloadableClass(cls:Any) -> Any : # type: ignore
+def addReloadableClass(cls:type) -> type : # type: ignore
     assert isinstance(cls, type), f"Expected a class, got {cls}"
     name = f"{cls.__module__}.{cls.__name__}"
     meta = reloadableClassMeta(name)
     meta.setClass(cls)
     for method_name, method in cls.__dict__.items():
-        assert not isinstance(method, ReloadingMethodStub), f"Method {method_name} in {cls} has not been given a reloadable implementation."
+        assert not isinstance(method, ReloadingMethodStub), f"""Method {name}.{method_name} in {meta} has not been given a reloadable implementation ({
+            ",\n   ".join( [ key + ":" + str(val.index) for key, val in ReloadableClassMeta._metaDict.items() ] )
+            })."""
     return cls
 
 def reloadableMethod( meta:ReloadableClassMeta, name:Optional[str]=None ) -> Callable[..., Callable[..., Any]]:

@@ -3,21 +3,27 @@
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.common import *
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
+from LumensalisCP.Temporal.Refreshable import ActivatablePeriodicRefreshable
 import LumensalisCP.pyCp.weakref as weakref
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
 
 #############################################################################
-class MainChild( NamedLocalIdentifiable ):
+class MainChild( NamedLocalIdentifiable, ActivatablePeriodicRefreshable ):
     
-    class KWDS( NamedLocalIdentifiable.KWDS ):
+    class KWDS( NamedLocalIdentifiable.KWDS, ActivatablePeriodicRefreshable.KWDS ):
         main: NotRequired[MainManager]
         
-    def __init__( self, main:Optional[MainManager]=None, name:Optional[str]=None ):
-        NamedLocalIdentifiable.__init__( self, name = name or self.__class__.__name__)
-        main = main or getMainManager()
+    def __init__( self, **kwds:Unpack[KWDS] ):
+        main = kwds.pop('main', None) or getMainManager()
         assert main is not None
+        
+        nliKwds = NamedLocalIdentifiable.extractInitArgs(kwds)
+        NamedLocalIdentifiable.__init__( self, **nliKwds )
+        kwds.setdefault( 'autoList', main.refreshables )
+        ActivatablePeriodicRefreshable.__init__(self, **kwds)
+        
         self.__main = weakref.ref(main)
         # print( f"MainChild __init__( name={self.name}, main={main})")
 
@@ -30,8 +36,8 @@ class MainChild( NamedLocalIdentifiable ):
 
 #############################################################################
 class FactoryBase( MainChild ):
-    def __init__(self, main:MainManager):
-        super().__init__( main, name=self.__class__.__name__ )
+    #def __init__(self, main:MainManager):
+    #    super().__init__( main, name=self.__class__.__name__ )
 
     def makeChild( self, cls:type, **kwds:StrAnyDict ):
         instance = cls( main=self.main, **kwds )

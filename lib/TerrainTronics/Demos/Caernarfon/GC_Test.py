@@ -11,21 +11,17 @@ GC_TestRL.setupMlcAndGcm()
 
 from LumensalisCP.Demo.DemoBase import DemoBase
 from LumensalisCP.Triggers.Timer import PeriodicTimer, addPeriodicTaskDef
-from LumensalisCP.util.bags import Bag
+
 from LumensalisCP.Eval.EvaluationContext  import EvaluationContext
 
-
-import gc
-
 printElapsed("parsing class GC_Test")
+
+# pyright: reportUnusedFunction=false
 
 class GC_Test( DemoBase ):
 
     def setup(self):
         main = self.main
-        # pydfdfright: reportUnusedFunction=false
-        # pyright: reportUnusedFunction=false
-
 
         dt = PeriodicTimer( interval=lambda : pmc_gcManager.printDumpInterval, manager=main.timers, name="dump" )
         

@@ -64,7 +64,7 @@ pixels2 = caernarfon.initNeoPixOnServo(3,neoPixelCount=35)
 lidDrive = caernarfon.initServo( 1, "lidDrive", movePeriod=0.05 )        
 if ENABLE_IR_REMOTE:
     ir = caernarfon.addIrRemote()            
-ranger = main.i2cFactory.addVL530lx(updateInterval=0.25)
+ranger = main.i2cFactory.addVL530lx(refreshRate=0.25)
 
 ## setup Touch inputs
 capTouch.enableDbgOut = True

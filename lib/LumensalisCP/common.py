@@ -17,13 +17,13 @@ _sayCommonImport = getImportProfiler( "common" )
 from LumensalisCP.Main.PreMainConfig import  pmc_mainLoopControl, pmc_gcManager
 import LumensalisCP
 from LumensalisCP.CPTyping import *
-from LumensalisCP.Debug import Debuggable
+from LumensalisCP.Debug import Debuggable, IDebuggable
 
 import LumensalisCP.pyCp.weakref as weakref
 
 from LumensalisCP.Units import *
 
-from LumensalisCP.Main.GetManager import getMainManager
+from LumensalisCP.Main.GetManager import getMainManager, getCurrentEvaluationContext
 
 _sayCommonImport.parsing()
 

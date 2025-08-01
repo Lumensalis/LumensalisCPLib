@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayImport = getImportProfiler( __name__, globals() )
+
 import json
 
 import pulseio
@@ -7,9 +10,7 @@ import adafruit_irremote    # pylint: disable=import-error # type: ignore
 
 from LumensalisCP.IOContext  import * # NamedOutputTarget, EvaluationContext, UpdateContext, InputSource
 from LumensalisCP.commonCP import *
-from LumensalisCP.Main.Manager import MainManager
 
-from LumensalisCP.Triggers.Timer import PeriodicTimer
 from LumensalisCP.Main.Dependents import MainChild
 
 if TYPE_CHECKING:
@@ -56,8 +57,7 @@ class LCP_IRrecv(MainChild):
     }
     
     class KWDS( MainChild.KWDS ):
-        name: NotRequired[str]
-        updateInterval: NotRequired[TimeInSecondsConfigArg]
+        #refreshRate: NotRequired[TimeInSecondsConfigArg]
         showUnhandled: NotRequired[bool]
         codenames: NotRequired[dict[str,int]|str|None]
         
@@ -65,12 +65,11 @@ class LCP_IRrecv(MainChild):
     codenames:dict[str,int]
     
     def __init__(self, pin:microcontroller.Pin,
-                 main:MainManager,
                  codenames:dict[str,int]|str|None = {},
-                 name:str|None = None,
-                 updateInterval:TimeInSecondsConfigArg = 1.0,
-                 showUnhandled:bool = False ) -> None:
-        super().__init__( main=main, name=name )
+                 showUnhandled:bool = False ,
+                **kwds:Unpack[MainChild.KWDS]
+            ) -> None:
+        super().__init__( **kwds )
         maxLen = 128
         self.showUnhandled = showUnhandled 
         try:
@@ -82,7 +81,7 @@ class LCP_IRrecv(MainChild):
         self.decoder = adafruit_irremote.GenericDecode() # type: ignore
         self.__callbacksByCode:dict[int,IRCallbackType] = {}
         self.__unhandledCallback:IRUnhandledCallbackType|None = None
-        self.__updateInterval = updateInterval
+        #self.__updateInterval = refreshRate
         self.__jsonCatalog = None
 
         if isinstance(codenames, str):
@@ -100,16 +99,6 @@ class LCP_IRrecv(MainChild):
             assert not isinstance(codenames, str)
             self.codenames = codenames # type: ignore
 
-        self._checkTimer = PeriodicTimer( updateInterval , manager=main.timers, name=f"{self.name}Check" )
-        
-        self._checkTimer.addAction( self.check )
-
-
-        def startIrTimer():
-            #print( f"starting keep alive timer with {self.__keepAlivePulse}")
-            self._checkTimer.start(self.__updateInterval)
-            
-        main.callLater( startIrTimer )
 
     __jsonCatalog: dict[str,dict[str,int]]|None
 
@@ -181,8 +170,10 @@ class LCP_IRrecv(MainChild):
         assert action is not None
         self.addCallbackForCode( code, action )
         
-    def check( self, context:EvaluationContext ) -> None:
+    #def check( self, context:EvaluationContext ) -> None:
+    def derivedRefresh(self,context:'EvaluationContext') -> None:        
         # type: ignore
+        if self.enableDbgOut: self.dbgOut( f"Checking IR remote {self.name} for codes")
         with context.subFrame('check', self.name ) as activeFrame:
             activeFrame.snap("read_pulses")
             pulses:list[int]|None = self.decoder.read_pulses(self.pulseIn, blocking=False)  # type: ignore
@@ -201,7 +192,6 @@ class LCP_IRrecv(MainChild):
             ) as e:  # failed to decode # type: ignore
                 if self.enableDbgOut: self.dbgOut("Failed to decode: %r /  %s %r", pulses, e.args, e ) # type: ignore
 
-    
 def onIRCode( ir: LCP_IRrecv, code:int|str ):
         
     def on2( callback:IRCallbackType ):
@@ -209,3 +199,5 @@ def onIRCode( ir: LCP_IRrecv, code:int|str ):
         return callback
         
     return on2
+
+_sayImport.complete()

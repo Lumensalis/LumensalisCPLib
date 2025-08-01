@@ -1,10 +1,11 @@
+
 import traceback
 from LumensalisCP.IOContext import *
 from LumensalisCP.commonCPWifi import *
 from LumensalisCP.pyCp.importlib import reload
-from LumensalisCP.HTTP import BasicServer
+#if TYPE_CHECKING:
+#    from LumensalisCP.HTTP.BasicServer import BasicServer
 
-import LumensalisCP.HTTP.ControlVarsRL
 
 #from adafruit_httpserver import DELETE, GET, POST, PUT, JSONResponse, Request, Response  # pyright: ignore[reportMissingImports|reportAttributeAccessIssue]
 from adafruit_httpserver import DELETE, GET, POST, PUT, JSONResponse, Request, Response  # pyright: ignore

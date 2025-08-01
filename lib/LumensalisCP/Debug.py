@@ -7,14 +7,33 @@ _sayDebugImport = getImportProfiler( globals() ) # "Debug"
 
 try:
     #import typing
-    from typing import NoReturn, Never, Optional, Any, TypeAlias
+    from typing import NoReturn, Never, Optional, Any, TypeAlias, Protocol, TYPE_CHECKING
     KWDS_TYPE: TypeAlias = dict[str, Any]  # keyword arguments dictionary
 except ImportError:
-    pass
+    TYPE_CHECKING = False # type: ignore
     
 import traceback, time
 
-class Debuggable( object ):
+if TYPE_CHECKING:
+    class IDebuggable(Protocol):
+        
+        @property
+        def dbgName(self) -> str: ...
+        @property
+        def enableDbgOut(self) -> bool: ...
+
+        def dbgOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ) -> None: ...
+        def startupOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ) -> None: ...
+        def infoOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ) -> None: ...
+        def errOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ) -> None: ...
+        def warnOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ) -> None: ...
+        def SHOW_EXCEPTION( self,  inst:Exception, fmtString:str, *args:Any, **kwds:Any) -> None: ...
+
+else:
+    class IDebuggable: ...
+
+
+class Debuggable( IDebuggable ):
     
     @staticmethod
     def _getNewNow():
@@ -30,7 +49,7 @@ class Debuggable( object ):
             return f"could not format {fmtString:r}, {inst}"
         
     @property
-    def dbgName(self):
+    def dbgName(self) -> str:
         name = getattr(self,'name',None) or getattr( self, '_DebuggableCachedName', None )
         if name is not None: return name
         self._DebuggableCachedName = f"{self.__class__.__name__}@{id(self):X}" # pylint: disable=attribute-defined-outside-init
@@ -65,15 +84,15 @@ class Debuggable( object ):
     def warnOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ):
         print( self.__format("WARNING", fmtString, args, kwds ) )
 
-    def SHOW_EXCEPTION( self,  inst:Exception, fmtString:str, *args:Any, **kwds:KWDS_TYPE) -> None:
+    def SHOW_EXCEPTION( self,  inst:Exception, fmtString:str, *args:Any, **kwds:Any) -> None:
         print( self.__format("EXCEPTION", fmtString, args, kwds ) )
         print( f"{inst}\n{''.join(traceback.format_exception(inst))}" )
 
-    def setEnableDebugWithChildren( self, setting:bool, *args:Any, **kwds:KWDS_TYPE ) -> None:
+    def setEnableDebugWithChildren( self, setting:bool, *args:Any, **kwds:Any ) -> None:
         self.enableDbgOut = setting
         self._derivedSetEnableDebugWithChildren( setting, *args, **kwds)
         
-    def _derivedSetEnableDebugWithChildren( self, setting:bool, *args:Any, **kwds:KWDS_TYPE ) -> None:
+    def _derivedSetEnableDebugWithChildren( self, setting:bool, *args:Any, **kwds:Any ) -> None:
         pass
             
     @property

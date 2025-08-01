@@ -7,10 +7,8 @@ import asyncio.lock  # type: ignore # pylint: disable=import-error,no-name-in-mo
 from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayReleasableImport = getImportProfiler( "util.Releasable" )
 
-
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
-
 
 #############################################################################
 

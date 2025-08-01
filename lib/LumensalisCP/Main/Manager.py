@@ -15,26 +15,32 @@ from TerrainTronics.Factory import TerrainTronicsFactory
 from LumensalisCP.Shields.Base import ShieldBase
 from LumensalisCP.Main.I2CProvider import I2CProvider
 from LumensalisCP.Main.Panel import ControlPanel
-from LumensalisCP.Main import ManagerRL
 from LumensalisCP.Temporal.Refreshable import Refreshable
-from LumensalisCP.Temporal.RefreshableList import RefreshableList
+from LumensalisCP.Temporal.RefreshableList import RootRefreshableList
 from LumensalisCP.util.Reloadable import addReloadableClass, reloadingMethod
+
+from LumensalisCP.Temporal.Refreshable import *
+
+from LumensalisCP.Main import ManagerRL
+from LumensalisCP.Main import Manager2RL
+
+from . import GetManager
 
 if TYPE_CHECKING:
     from LumensalisCP.Lights.DMXManager import DMXManager
     import LumensalisCP.Main.Manager
     from LumensalisCP.Audio import Audio
+    from LumensalisCP.Main.Profiler import Profiler, ProfileFrameBase
+    
     # from LumensalisCP.Controllers.Config import ControllerConfigArg
-
 
 import LumensalisCP.Main.ProfilerRL
 
 LumensalisCP.Main.ProfilerRL._rl_setFixedOverheads() # type: ignore
 
 def _early_collect(tag:str):
-    PreMainConfig.pmc_gcManager.runCollection(force=True)
+    PreMainConfig.pmc_gcManager.checkAndRunCollection(force=True)
 
-@addReloadableClass
 class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     
     class KWDS(ConfigurableBase.KWDS): # type: ignore
@@ -82,8 +88,12 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         
         self._privateCurrentContext = EvaluationContext(self)
         UpdateContext._patch_fetchCurrentContext(self) # type: ignore
-
-        self._refreshables = RefreshableList()
+        
+        def getCurrentEvaluationContext() -> EvaluationContext:
+            return self._privateCurrentContext
+        GetManager.getCurrentEvaluationContext = getCurrentEvaluationContext
+        
+        self._refreshables = RootRefreshableList(name='mainRefreshables')
         self.profiler = Profiler(self._privateCurrentContext )
 
         self.__asyncTaskCreators: list[Callable[[], list[asyncio.Task[None]]]] = []
@@ -115,7 +125,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self.__audio = None
         self.__dmx :DMXManager|None = None
 
-        self._tasks:List[KWCallback] = []
+        #self._tasks:List[KWCallback] = []
         self.__shutdownTasks:List[ExitTask] = []
         self.shields = NliList(name='shields',parent=self)
 
@@ -133,11 +143,19 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self._scenes: SceneManager = SceneManager(main=self)
         self.__TerrainTronics = None
 
+        self._finishInit()
+
+
         if pmc_mainLoopControl.preMainVerbose: print( f"MainManager options = {self.config.options}" )
         _early_collect("end manager init")
     
     def makeRef(self):
         return LumensalisCP.Main.Dependents.MainRef(self)
+
+    @property
+    def refreshables(self) -> RootRefreshableList:
+        """ The root refreshable list for the main manager. """
+        return self._refreshables
 
     @property
     def identity(self) -> ControllerIdentity: return self.__identity
@@ -147,7 +165,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         """ factory for adding TerrainTronics Castle boards"""
         if self.__TerrainTronics is None:
             from TerrainTronics.Factory import TerrainTronicsFactory
-            self.__TerrainTronics = TerrainTronicsFactory( self )
+            self.__TerrainTronics = TerrainTronicsFactory( main=self )
         return self.__TerrainTronics
     
     @property
@@ -316,7 +334,8 @@ see http://lumensalis.com/ql/h2Scenes
         self.__audio = Audio( **kwds )
         return self.__audio
 
-    def addTask( self, task:KWCallbackArg ):
+    def addTask( self, task:KWCallbackArg ) -> None:
+        raise NotImplementedError
         self._tasks.append( KWCallback.make( task ) )
 
     @reloadingMethod
@@ -342,6 +361,9 @@ see http://lumensalis.com/ql/h2Scenes
     
     @reloadingMethod
     def singleLoop(self) -> None: ...
+
+    @reloadingMethod
+    def _finishInit(self) -> None: ...
 
     async def taskLoop( self ):
         self.__priorSleepWhen = self.getNewNow()
@@ -389,7 +411,7 @@ see http://lumensalis.com/ql/h2Scenes
 
     _renameIdentifiablesItems :dict[str,NamedLocalIdentifiable]
 
-
+addReloadableClass(MainManager)
 #addReloadableClass( MainManager )
 
 _sayMainImport.complete(globals())
