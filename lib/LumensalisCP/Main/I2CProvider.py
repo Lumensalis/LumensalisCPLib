@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 class I2CProvider(Debuggable):
     """ Provides I2C devices and factories for the main manager. """
-    
+
     adafruitFactory: AdafruitFactory
     """ factory to connect Adafruit I2C devices """
     
@@ -71,6 +71,7 @@ class I2CProvider(Debuggable):
     def addI2CDevice(self, target:I2CDevice ):
         self.__i2cDevices.append(target)
         target.nliSetContainer(self.i2cDevicesContainer)
+        target.activate()
    
     def _addBoardI2C( self, board:Any, i2c:busio.I2C ): # pylint: disable=unused-argument,redefined-outer-name # type: ignore
         if self.__defaultI2C is None:

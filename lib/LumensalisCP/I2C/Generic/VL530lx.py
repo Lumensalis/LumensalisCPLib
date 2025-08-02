@@ -27,7 +27,8 @@ class VL53L0XInput(I2CInputSource):
 #############################################################################
 
 class VL53L0X(I2CDevice):
-    
+    RFD_refreshRate:ClassVar[TimeSpanInSeconds] = 0.41
+
     def __init__(self, *args, refreshRate=0.1, **kwds ):
         I2CDevice.__init__( self, *args, refreshRate=refreshRate, **kwds )
         self.__readMode = 'startMeasurement'

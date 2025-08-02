@@ -76,9 +76,9 @@ class VCNL4040ReadableDescriptor:
 #############################################################################
 
 class VCNL4040(I2CDevice):
+    RFD_refreshRate:ClassVar[TimeSpanInSeconds] = 0.43
 
     def __init__(self, **kwds:Unpack[I2CDevice.KWDS]) -> None:
-        kwds.setdefault("refreshRate", 0.3)
         
         super().__init__(**kwds)
 

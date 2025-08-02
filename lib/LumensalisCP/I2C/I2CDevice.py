@@ -41,6 +41,8 @@ class I2CDevice( MainChild ):
         assert self.main is not None, "I2CDevice must be created with a main instance"  
 
         self.__i2c:busio.I2C = i2c or self.main.defaultI2C
+        assert isinstance(self.__i2c, I2C), "I2CDevice must be created with a valid I2C instance"
+        
         self.__latestUpdateIndex:int = -1
         self.__address = address
         self.__updates = 0  

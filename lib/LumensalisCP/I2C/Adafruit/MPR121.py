@@ -62,6 +62,7 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
             pass
             #ensure( name == inputSource.name, "%r != %r", name, inputSource.name )
         else:
+            if self.enableDbgOut: self.dbgOut( "adding MPR121Input for pin %d", pin )
             inputSource = MPR121Input( target=self, pin=pin, **kwds)
             self.__inputs[pin] = inputSource
             self.__updateUnusedPinMask()
@@ -104,7 +105,7 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
             if self.__lastTouched != allTouched:
                 used =  allTouched & self.__usedPinsMask
                 priorUsed = self.__lastTouched & self.__usedPinsMask
-                
+                if self.enableDbgOut: self.dbgOut( "MPR121 allTouched = %X", allTouched )
                 self.__lastTouched = allTouched
                 
                 if used != priorUsed:
