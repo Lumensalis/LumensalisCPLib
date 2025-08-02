@@ -61,9 +61,10 @@ class Releasable(object):
         rp = cls.getReleasablePool()
         count = max(0, count-rp.allocs)
         pmc_mainLoopControl.sayDebugAtStartup( "preloading %s[%d] with %d entries" % (cls.__name__, rp.allocs, count) )
-        entries = [
-            cls() for _ in range(count)
-        ]
+        entries:list[Releasable|None] = [None]*count
+        for i in range(count):
+            entries[i] = cls() 
+
         pmc_mainLoopControl.sayDebugAtStartup( "releasing entries" )
         for entry in entries:
             assert entry._nextFree is None and not entry._inUse

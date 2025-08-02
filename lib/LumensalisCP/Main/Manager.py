@@ -121,6 +121,8 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self.cycleDuration = 0.01
 
         self._webServer = None
+
+        self._rrDeferred:RefreshablePrdInvAct|None = None
         self.__deferredTasks: collections.deque[Callable[[], None]] = collections.deque( [], 99, True ) # type: ignore # pylint: disable=all
         self.__audio = None
         self.__dmx :DMXManager|None = None
@@ -246,8 +248,12 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
             
         return self.__socketPool # type: ignore
         
-    def callLater( self, task:KWCallbackArg ):
+    def callLater( self, task:KWCallbackArg ) -> None:
+        if len(self.__deferredTasks) == 0:
+            pass
         self.__deferredTasks.append( KWCallback.make( task ) )
+        if self._rrDeferred is not None:
+            self._rrDeferred.deactivate(self.getContext())
 
     def __runExitTasks(self):
         print( "running Main exit tasks" )

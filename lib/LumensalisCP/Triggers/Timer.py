@@ -30,7 +30,8 @@ class PeriodicTimerManager( SubManagerBase ):
         self.__updating = False
         self.__timerSorts = 0
         self.__latestUpdateWhen:TimeInSeconds = TimeInSeconds(0.0)
-        
+    
+    
     def update(self, context: EvaluationContext ):
         if len(self.__timers) > 0:
             #if self.main.cycle % 10 != 0: return
@@ -60,12 +61,16 @@ class PeriodicTimerManager( SubManagerBase ):
                 if self.__timerChanges:
                     activeFrame.snap( "__shuffleTimers" )
                     if self.enableDbgOut: self.dbgOut( "%d changes, shuffling", self.__timerChanges )
-                    self.__shuffleTimers()
+                    self.__shuffleTimers(context)
 
+    def derivedRefresh(self,context:'EvaluationContext') -> None:
+        self.update(context)
+    
     @property
     def timers(self) -> List[PeriodicTimer]: return self.__timers
     
-    def __shuffleTimers( self ):
+    def __shuffleTimers( self, context:Optional[EvaluationContext]=None ) -> None:
+        if context is None: context = getCurrentEvaluationContext()
         if self.__updating:
             self.__timerChanges += 1
         else:
@@ -74,20 +79,27 @@ class PeriodicTimerManager( SubManagerBase ):
             self.__timers.sort( key=lambda t: t.nextFire or self.__latestUpdateWhen + 9999  )
             
             self.__timerSorts += 1
+            if len(self.__timers) > 0:
+                nextFire = self.__timers[0].nextFire 
+                assert nextFire is not None
+                self.setNextRefresh( context, nextFire )
+                if not self.isActiveRefreshable: self.activate(context)
+            else:
+                if self.isActiveRefreshable: self.deactivate(context)
 
     @property
     def timerSorts(self) -> int: return self.__timerSorts
     
-    def _addTimer( self, timer:"PeriodicTimer" ):
+    def _addTimer( self, timer:"PeriodicTimer" ) -> None:
         assert timer not in self.__timers
         self.__timers.append( timer )
         self.__shuffleTimers()
 
-    def _updateTimer( self, timer:"PeriodicTimer" ):
+    def _updateTimer( self, timer:"PeriodicTimer" ) -> None:
         assert timer in self.__timers
         self.__shuffleTimers()
             
-    def _removeTimer( self, timer:"PeriodicTimer" ):
+    def _removeTimer( self, timer:"PeriodicTimer" ) -> None:
         assert timer in self.__timers
         self.__timers.remove( timer )
         self.__shuffleTimers()

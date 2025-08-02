@@ -57,7 +57,6 @@ capTouch = main.adafruitFactory.addMPR121()
 leftStoneTouch, centerStoneTouch, rightStoneTouch= capTouch.addInputs( 1, 2, 4 )
 leftRimTouch, centerRimTouch, rightRimTouch= capTouch.addInputs( 5, 6, 7 )
 bottomTouch = capTouch.addInput( 8 )
-capTouch.enableDbgOut = True
 
 magInputs = main.adafruitFactory.addAW9523()
 lidClosedMag    = magInputs.addInput(1)
@@ -67,7 +66,7 @@ lidOpenMag      = magInputs.addInput(2)
 sayAtStartup( "setup oscillators" ) # http://lumensalis.com/ql/h2Oscillators
 oscillator2 = Oscillator.Oscillator( low = 0.3, high = 2, frequency = 0.1 )
 oscillator = Oscillator.Oscillator(  low = 0, high = 10, frequency = oscillator2 )
-
+oscillator.activate()
 #############################################################################
 sayAtStartup( "setup synth" )
 

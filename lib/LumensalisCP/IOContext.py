@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
     from LumensalisCP.Debug import Debuggable
     from LumensalisCP.Eval.EvaluationContext import EvaluationContext
-    from LumensalisCP.Eval.Evaluatable import evaluate, Evaluatable
+    from LumensalisCP.Eval.Evaluatable import evaluate, Evaluatable, EvaluatableT
     from LumensalisCP.Main.Updates import UpdateContext
 
 _ioContextImport.complete(globals())

@@ -112,17 +112,15 @@ class ColorWheelZ1(ColorSource):
                 for x in range(256) ]  # precompute the colors
 
     def _getColor(self, val:ZeroToOne ) -> RGB:
+
         index = max( 0, min(255, int(val * 255)) )
-        return self._colors[index]
+        rv =  self._colors[index]
+        if self.enableDbgOut:
+            self.dbgOut( 'rv=%r index=%d getColor spin=%r, ', rv, index, val )
+        return rv
 
     def getColor(self, context:EvaluationContext ) -> RGB:
-        if True:
-            return self._getColor( context.valueOf( self.spin ))
-
-        with context.subFrame('getColor' ) as activeFrame:
-            spinValue = context.valueOf( self.spin )
-            activeFrame.snap( "colorwheel" )
-            return self._getColor( spinValue )
+        return self._getColor( context.valueOf( self.spin ))
         
 class PipeInputSource(InputSource):
     def __init__( self, inputSource:Evaluatable[Any], **kwargs:Unpack[InputSource.KWDS] ):

@@ -65,8 +65,26 @@ def _finishInit(self:MainManager) -> None:
         refreshRate=10.0,
         
     )
-    rShowLoop.enableDbgOut = True
+    #rShowLoop.enableDbgOut = True
     rShowLoop.activate() 
     #self._rrShowLoop = rShowLoop
+
+    def runDeferred(context:EvaluationContext) -> None:
+        self.runDeferredTasks(context)
+        if len(self.__deferredTasks) == 0:
+            assert self._rrDeferred is not None, "rrDeferred should not be None"
+            self._rrDeferred.deactivate(context)
+
+    rDeferred = RefreshablePrdInvAct(
+        name='rDeferred',
+        invocable=runDeferred,
+        autoList=self._refreshables,
+        refreshRate=2.3,
+        
+    )
+    self._rrDeferred = rDeferred
+    #rCollect.enableDbgOut = True
+    rDeferred.activate() 
+
 
 __sayImport.complete(globals())

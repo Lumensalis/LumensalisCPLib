@@ -12,7 +12,6 @@ if TYPE_CHECKING:
     from  LumensalisCP.Eval.Expressions import EvaluationContext
     from LumensalisCP.Triggers.Invocable import Invocable, InvocableOrContextCB
 
-
 #############################################################################
 
 if TYPE_CHECKING:
@@ -144,16 +143,18 @@ class Refreshable( RefreshableInterface, IDebuggable ):
     def __mixins_init_base(self, cls:type, kwargs:StrAnyDict):
         if cls.__dict__.get( '_mixin_init',None) is not None:
             # cls is a mixin, call its _mixin_init 
+            if self._debugMixins: print( f"Calling _mixin_init for {cls.__name__} with kwargs={kwargs}" )
             cls._mixin_init(self, kwargs) # type: ignore[return-value]
         # check base classes
         for base in cls.__bases__:
             self.__mixins_init_base( base, kwargs)
 
+    _debugMixins:bool = False
     def _mixins_init(self, kwargs:StrAnyDict) -> StrAnyDict:
-        #print( f"_mixins_init called for {self.__class__.__name__} with kwargs={kwargs}" )
+        if self._debugMixins: print( f"_mixins_init called for {self.__class__.__name__} with kwargs={kwargs}" )
         for base in self.__class__.__bases__:
             self.__mixins_init_base(base, kwargs)
-        #print( f"  returning kwargs={kwargs}" )
+        if self._debugMixins: print( f"  returning kwargs={kwargs}" )
         return kwargs # type: ignore[return-value]
 
 #############################################################################
@@ -195,7 +196,17 @@ class RfMxnActivatable(RfMxn):
 
     def _mixin_init(self,kwargs:StrAnyDict) -> None:
         self.__autoList:RefreshableListInterface|None =  kwargs.pop('autoList', None)
+        self.__refreshIsActive:bool = False
 
+    @property
+    def autoList(self) -> RefreshableListInterface|None:
+        """ The list of refreshables that this refreshable is part of. """
+        return self.__autoList
+    
+    @property
+    def isActiveRefreshable(self) -> bool:
+        return self.__refreshIsActive
+    
     def activate( self, context:Optional[EvaluationContext]=None, nextRefresh:Optional[TimeInSeconds]=None ) -> None:
         if context is None:
             context = getCurrentEvaluationContext()
@@ -203,11 +214,14 @@ class RfMxnActivatable(RfMxn):
         assert self.__autoList is not None, f"ActivatablePeriodicRefreshable {self} has no autoList"
         if nextRefresh is None:
             nextRefresh = self.refreshableCalculateNextRefresh(context, context.when)
+
         self.__autoList.add( context, self, nextRefresh=nextRefresh )
+        self.__refreshIsActive = True
     
     def deactivate( self, context:'EvaluationContext' ) -> None:
         assert self.__autoList is not None
         self.__autoList.remove( context, self )
+        self.__refreshIsActive = False
 
 #############################################################################
 
@@ -215,9 +229,9 @@ class RfMxnActivatablePeriodic(RfMxnActivatable, RfMxnPeriodic):
     class KWDS(RfMxnActivatable.KWDS, RfMxnPeriodic.KWDS):
         pass
         
-    def _mixin_init(self,kwargs:StrAnyDict) -> None:
-        RfMxnActivatable._mixin_init(self, kwargs)
-        RfMxnPeriodic._mixin_init(self, kwargs)
+    #def _mixin_init(self,kwargs:StrAnyDict) -> None:
+    #    RfMxnActivatable._mixin_init(self, kwargs)
+    #    RfMxnPeriodic._mixin_init(self, kwargs)
 
 #############################################################################
 

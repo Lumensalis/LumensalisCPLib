@@ -94,8 +94,8 @@ def singleLoop( self:MainManager ): #, activeFrame:ProfileFrameBase):
         if not mlc.MINIMUM_LOOP:
 
 
-            if len( self.__deferredTasks ):
-                self.runDeferredTasks(context)
+            #if len( self.__deferredTasks ):
+            #    self.runDeferredTasks(context)
         
             #activeFrame.snap( 'scenes' )
             self._scenes.run(context)
