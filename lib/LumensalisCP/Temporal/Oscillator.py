@@ -7,6 +7,7 @@ from LumensalisCP.Eval.Terms import *
 #from LumensalisCP.Main.Manager import MainManager
 #from LumensalisCP.Triggers.Timer import PeriodicTimer
 #from lumensaliscplib.lib.LumensalisCP import Eval
+from LumensalisCP.Temporal.Refreshable import Refreshable, RfMxnActivatablePeriodic
 
 class EvalDescriptorHolder:
     def onDescriptorSet(self, name:str, value:Evaluatable[Any]|EVAL_VALUE_TYPES) -> Any:
@@ -37,13 +38,16 @@ class EvalDescriptor(Generic[_EDT]):
     def __set__(self, instance:EvalDescriptorHolder, value:_EDT|Evaluatable[_EDT]) -> None:
         assert instance is not None,  f"Cannot set {self.name} "
         setattr( instance, self.attrName, value )
+        instance.onDescriptorSet(self.name, value)
 
-class Oscillator( InputSource, EvalDescriptorHolder ):
+class Oscillator( InputSource, EvalDescriptorHolder, RfMxnActivatablePeriodic, Refreshable ):
     """_summary_
         Provides an input which changes over time in a repeating pattern
     """
-    
-    class KWDS( InputSource.KWDS ):
+    RFD_refreshRate:ClassVar[TimeSpanInSeconds] = 0.05
+    RFD_autoRefresh:ClassVar[bool] = True
+
+    class KWDS( InputSource.KWDS, RfMxnActivatablePeriodic.KWDS, Refreshable.KWDS ):
         frequency: NotRequired[Hertz|Evaluatable[Hertz]]
         period: NotRequired[TimeInSeconds]
         low: NotRequired[float|Evaluatable[float]]
@@ -53,13 +57,17 @@ class Oscillator( InputSource, EvalDescriptorHolder ):
     low:EvalDescriptor[float]=EvalDescriptor('low', 0.0)
     high:EvalDescriptor[float]=EvalDescriptor('high', 1.0)
 
-    def __init__(self, 
-                 frequency:Optional[Hertz|Evaluatable[Hertz]] = None,
-                 period:Optional[TimeInSeconds] = None,
-                 low:float|Evaluatable[float] = 0.0,
-                 high:float|Evaluatable[float] = 1.0,
-                 **kwds:Unpack[InputSource.KWDS] ):
+    def __init__(self, **kwds:Unpack[KWDS] ) -> None:
+        main = kwds.get('main', getMainManager())
+        kwds.setdefault('autoList', main.refreshables)
+        frequency = kwds.pop('frequency', None)
+        period = kwds.pop('period', None)
+        low = kwds.pop('low', 0.0)
+        high = kwds.pop('high', 1.0)
+        Refreshable.__init__(self, mixinKwds=kwds )
+
         InputSource.__init__( self, **kwds )
+
         self.low = low
         self.high = high
         if frequency is None:
@@ -76,6 +84,10 @@ class Oscillator( InputSource, EvalDescriptorHolder ):
     def onDescriptorSet(self, name:str, value:Evaluatable[Any]|EVAL_VALUE_TYPES) -> None:
         """Called when a descriptor is set on this object"""
 
+    def derivedRefresh(self, context:EvaluationContext) -> None:
+        if self.enableDbgOut:
+            self.dbgOut(f"derivedRefresh called for {self.__class__.__name__} at {context.when} with frequency={self.frequency}, low={self.low}, high={self.high}")
+        self.updateValue(context)
         
     @property
     def period(self) -> TimeInSeconds:
