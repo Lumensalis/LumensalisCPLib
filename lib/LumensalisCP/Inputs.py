@@ -18,7 +18,7 @@ _sayInputsImport.parsing()
 class _InputSourceChangedCallback(Protocol):
     def __call__(self, source:InputSource, context:EvaluationContext) -> None:
         pass
-    
+
 class InputSource(NamedLocalIdentifiable, ExpressionTerm):
     
     def __init__(self, name:Optional[str] = None):
@@ -54,6 +54,9 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm):
     
     def onChange(self, cb:_InputSourceChangedCallback) -> None:
         self.__onChangedList.append(cb)
+    
+    def removeOnChange(self, cb:_InputSourceChangedCallback) -> None:
+        self.__onChangedList.remove(cb)
 
     def __callOnChanged(self, context:EvaluationContext): # pylint: disable=unused-private-member # type: ignore
         context.addChangedSource( self )
