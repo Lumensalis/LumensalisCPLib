@@ -3,7 +3,7 @@ from __future__ import annotations
 from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayEvalEvaluatableImport = getImportProfiler( globals() ) # "Eval.Evaluatable"
 
-from LumensalisCP.common import Debuggable,TypeVar, Generic, TYPE_CHECKING, Any
+from LumensalisCP.common import Debuggable,TypeVar, Generic, TYPE_CHECKING, Any, Iterable
 #from LumensalisCP.Debug import Debuggable
 from LumensalisCP.Main.Updates import UpdateContext, OptionalContextArg, DirectValue
    
@@ -26,6 +26,9 @@ class Evaluatable(Debuggable, Generic[ET]):
         
     def getValue(self, context:OptionalContextArg) -> ET:
         """ current value of term"""
+        raise NotImplementedError
+    
+    def dependencies(self) -> Iterable[Evaluatable[ET]]:
         raise NotImplementedError
     
 if TYPE_CHECKING:

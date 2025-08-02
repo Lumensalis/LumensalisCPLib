@@ -66,7 +66,11 @@ class ExpressionTerm(Evaluatable):
 
     def terms(self) -> Generator["ExpressionTerm"]:
         yield self
-        
+    
+    def dependencies(self):  
+        for term in self.terms():
+            yield term
+
     def expressionStrParts(self) -> Generator[str]:
         raise NotImplementedError( 'expressionStrParts' )
         
