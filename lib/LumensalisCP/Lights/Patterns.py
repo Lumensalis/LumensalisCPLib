@@ -88,8 +88,9 @@ class Gauge( OnOffPattern, NamedOutputTarget ):
                 **kwargs:Unpack[OnOffPattern.KWDS]
             ):
         self.__value = value
-        Pattern.__init__( self, target , **kwargs)
+        OnOffPattern.__init__( self, target , **kwargs)
         NamedOutputTarget.__init__(self, name=kwargs.get('name',None))
+        self._mix = RGB(Colors.BLACK)
 
     @property
     def value(self)->ZeroToOne|Evaluatable[ZeroToOne]: return self.__value
@@ -104,8 +105,8 @@ class Gauge( OnOffPattern, NamedOutputTarget ):
         maxPx = int(maxPxf)
         pxR = maxPxf - maxPx
         
-        onValue = self._onValue
-        offValue = RGB.toRGB( context.valueOf(self.__offValue) )
+        onValue = RGB.toRGB( context.valueOf( self._onValue) )
+        offValue = RGB.toRGB( context.valueOf(self._offValue) )
         
         
         for px in range(target.lightCount):
@@ -114,7 +115,10 @@ class Gauge( OnOffPattern, NamedOutputTarget ):
             elif px > maxPx:
                 v = offValue 
             else:
-                v = offValue.fadeTowards(onValue, pxR)
+                self._mix.fadeAB(offValue, onValue, pxR)
+                v = self._mix
+                if self.enableDbgOut:
+                    self.dbgOut(f" px={px}, v={v}, offValue={offValue}, onValue={onValue},  pxR = {pxR}")
             target[px] = v # type: ignore[assignment]
 
 #############################################################################

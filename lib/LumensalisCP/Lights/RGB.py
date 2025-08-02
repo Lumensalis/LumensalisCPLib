@@ -66,21 +66,21 @@ class RGB(object):
 
     if True:
         @property 
-        def r(self)->RGBChannel: return self.__rgb>>16 & 0xFF
+        def r(self)->RGBChannel: return (self.__rgb>>16 & 0xFF)/255.0
         @r.setter
         def r(self,v:RGBChannel) -> None: 
             v = int(max(0.0, min(1.0,v)) * 255)
             self.__rgb = (self.__rgb & 0x00FFFF) | (v << 16)
 
         @property 
-        def g(self)->RGBChannel: return self.__rgb>>8 & 0xFF
+        def g(self)->RGBChannel: return (self.__rgb>>8 & 0xFF)/255.0
         @g.setter
         def g(self,v:RGBChannel) -> None: 
             v = int(max(0.0, min(1.0,v)) * 255)
             self.__rgb = (self.__rgb & 0xFF00FF) | (v << 8)
         
         @property 
-        def b(self)->RGBChannel: return self.__rgb & 0xFF
+        def b(self)->RGBChannel: return (self.__rgb & 0xFF)/255.0
         @b.setter
         def b(self,v:RGBChannel) -> None: 
             v = int(max(0.0, min(1.0,v)) * 255)
@@ -129,8 +129,14 @@ class RGB(object):
         return RGB(
             r=((npi&0xFF0000)>>16)/255.0,
             g=((npi&0xFF00)>>8)/255.0,
-            b=(npi&0xFF00)/255.0
+            b=(npi&0xFF)/255.0
         )
+    
+    def setFromNeoPixelRGBInt( self, npi:NeoPixelRGBInt ) -> None:
+        self.r=((npi&0xFF0000)>>16)/255.0
+        self.g=((npi&0xFF00)>>8)/255.0
+        self.b=(npi&0xFF)/255.0
+        
     
     def fadeTowards(self, other:RGB, ratio:ZeroToOne )->RGB:
         r2 = 1.0 - ratio
@@ -140,13 +146,21 @@ class RGB(object):
             b = self.b * r2 + other.b * ratio,
         )
 
+    def fadeAB(self, a:RGB, b:RGB, ratio:ZeroToOne )->None:
+        r2 = 1.0 - ratio
+        self.r = a.r * r2 + b.r * ratio
+        self.g = a.g * r2 + b.g * ratio
+        self.b = a.b * r2 + b.b * ratio
+        
+    
     @property
     def brightness(self)->float: 
         return (self.r + self.g + self.b) / 3.0
     
     def __repr__(self):
         return safeFmt( "(%.3f,%.3f,%.3f)", self.r, self.g, self.b)
-    
+        #    return safeFmt( "(%.3f,%.3f,%.3f)", self.r, self.g, self.b)
+
     def __str__(self):
         return safeFmt( "(%.3f,%.3f,%.3f)", self.r, self.g, self.b)
     #Point = namedtuple('Point', ['x', 'y'])
