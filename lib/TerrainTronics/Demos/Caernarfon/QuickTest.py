@@ -1,3 +1,4 @@
+import os
 from LumensalisCP.ImportProfiler import  getImportProfiler, ImportProfiler
 #getImportProfiler.SHOW_IMPORTS = True
 
@@ -51,25 +52,31 @@ angleGaugeLights        = neoPixB.ring(12)
 # main.panel.monitor( lightSensor )
 
 #############################################################################
+
+sayAtStartup( "setup interconnected oscillators" )
+oscillator2 = Oscillator.Oscillator( frequency = 0.1, low = 0.3, high = 2 )
+oscillator = Oscillator.Oscillator(  frequency = oscillator2, low = 0, high = 10 )
+# oscillator will range from 0 to 10 with a frequency from  from 0.3 to 2 HZ
+oscillator.activate() 
+
+sayAtStartup( "setup sound effect" )
+testEffect = audio.effects.makeEffect( filterMode=NOTCH, wave='noise' )
+testEffect.amplitude = 0.5 + Z21Adapted(oscillator2) * 0.5
+testEffect.bend = oscillator / 10.0
+testEffect.filterFrequency = (oscillator*oscillator2) * 500 + 100 
+
+sayAtStartup( "setup LED ring" ) # http://lumensalis.com/ql/h2Touch
+wheel = ColorWheelZ1( Z21Adapted(oscillator2) )
+gauge = Gauge( angleGaugeLights, value=Z21Adapted(oscillator), onValue=wheel )
+actOne.addPatterns( gauge )
+
 sayAtStartup( "setup touch inputs" ) # http://lumensalis.com/ql/h2Touch
 capTouch = main.adafruitFactory.addMPR121()
 leftRimTouch, centerRimTouch, rightRimTouch= capTouch.addInputs( 5, 6, 7 )
 
-
-oscillator2 = Oscillator.Oscillator( frequency = 0.1, low = 0.3, high = 2 )
-oscillator = Oscillator.Oscillator(  frequency = oscillator2, low = 0, high = 10 )
-oscillator.activate() 
-
-testEffect = audio.effects.makeEffect() # filterMode=BAND_PASS)
-
-testEffect.amplitude = oscillator2 / 5
-testEffect.bend = oscillator / 10.0
+# touching leftRimTouch will turn testEffect on and off
 fireOnRising( leftRimTouch, testEffect.toggle )
-wheel = ColorWheelZ1( Z21Adapted(oscillator2) )
-wheel.enableDbgOut = True
-gauge =  Gauge( angleGaugeLights, value=Z21Adapted(oscillator), onValue=wheel )
-#gauge.enableDbgOut = True
-actOne.addPatterns( gauge )
+
 #############################################################################
 
 #############################################################################

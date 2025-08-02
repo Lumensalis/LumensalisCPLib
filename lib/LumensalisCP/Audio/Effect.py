@@ -10,6 +10,7 @@ from LumensalisCP.IOContext import *
 from LumensalisCP.Main.Dependents import MainChild
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.util.LiveProperty  import *
+from random import random
 
 if TYPE_CHECKING:
     from .Audio import Audio
@@ -48,6 +49,12 @@ class SoundEffectsManager(MainChild):
         
 
         self.waveForms['sine_wave'] = sine_wave
+        wMin = -32767
+        wMax = 32767
+        self.waveForms['saw']  = array.array("h", [wMin, 0, wMax ] )
+        self.waveForms['square']  = array.array("h", ([wMin]*10) + ([wMax]*10) ) 
+        self.waveForms['noise']  = array.array("h", [int((random() -0.5) * 65000) for  _ in range(1024)] )
+
         if self.enableDbgOut: self.dbgOut(f"Created sine_wave with size {waveformSize} : {repr(sine_wave):.80}...")
 
     def _makeEffect(self, effectClass:Optional[type]=None, **kwargs:Any) -> SoundEffect:
@@ -56,7 +63,7 @@ class SoundEffectsManager(MainChild):
         effect.postCreate()
         return effect
     
-    def makeEffect(self, **kwargs:SoundEffect.KWDS) -> SoundEffect:
+    def makeEffect(self, **kwargs:Unpack[SoundEffect.KWDS]) -> SoundEffect:
         return self._makeEffect(SoundEffect, **kwargs)
 
     def getWave(self, wave: WaveArgType) -> WaveDataType:
@@ -118,10 +125,10 @@ class LiveBlockInputPropertyWrapper(Generic[_LCT,_LPT], Debuggable):
             if self.enableDbgOut: self.dbgOut(f"Input source {source.name} changed, updating {self.member}.{name} to {value}")
             setattr(getattr(instance, self.member), name, value)
 
-        for term in value.terms():
-            if isinstance(term, InputSource):
-                term.onChange(changedCallback)
-                self._inputChangedSubscriptions.append((term, changedCallback))
+        for dependency in value.dependencies():
+            if isinstance(dependency, InputSource):
+                dependency.onChange(changedCallback)
+                self._inputChangedSubscriptions.append((dependency, changedCallback))
         if self.enableDbgOut:
             self.dbgOut(
                  f"  {len(self._inputChangedSubscriptions)} inputChanged subscriptions for {name} in {instance}"
@@ -279,9 +286,12 @@ class SoundEffect(NamedLocalIdentifiable):
         self.effectsManager = effectsManager
         if filter is not None:
             self.filter: synthio.Biquad = filter
+            self.infoOut( "filter set to %r", filter )
 
     amplitude:WrappedBlockInputProperty[Self] = WrappedBlockInputProperty('note','amplitude', 1.0 )
     bend:WrappedBlockInputProperty[Self] = WrappedBlockInputProperty('note','bend', 0.0 )
+
+    filterFrequency:WrappedBlockInputProperty[Self] = WrappedBlockInputProperty('filter','frequency', 0.0 )
 
     def onNoteAttrSet(self, name:str, value:EvalSioBlockInput) -> None:
         """Called when a note property is set"""

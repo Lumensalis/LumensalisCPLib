@@ -67,7 +67,7 @@ class ExpressionTerm(Evaluatable):
     def terms(self) -> Generator["ExpressionTerm"]:
         yield self
     
-    def dependencies(self):  
+    def dependencies(self) -> Iterable[Evaluatable]:  
         for term in self.terms():
             yield term
 

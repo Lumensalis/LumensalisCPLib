@@ -125,8 +125,16 @@ class ColorWheelZ1(ColorSource):
 class PipeInputSource(InputSource):
     def __init__( self, inputSource:Evaluatable[Any], **kwargs:Unpack[InputSource.KWDS] ):
         super().__init__(**kwargs)
+        assert isinstance(inputSource, Evaluatable), f"PipeInputSource requires an Evaluatable inputSource, not {type(inputSource)}"
         self.inputSource = inputSource
+
         
+    def dependencies(self) -> Iterable[Evaluatable]::  
+        for dependency in InputSource.dependencies(self):
+            yield dependency
+        for dependency in self.inputSource.dependencies():
+            yield dependency
+
     def getPipedValue(self, context:EvaluationContext, v:Any ) -> Any:
         raise NotImplementedError
     
