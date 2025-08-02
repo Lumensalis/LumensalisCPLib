@@ -3,20 +3,18 @@ from __future__ import annotations
 from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayAudioEffectImport = getImportProfiler( globals() ) # "Audio.Effect"
 
-
 import ulab.numpy as np
 import synthio, array, math
 
-
 from LumensalisCP.IOContext import *
-from  LumensalisCP.Main.Dependents import MainChild
-from  LumensalisCP.Identity.Local import NamedLocalIdentifiable
+from LumensalisCP.Main.Dependents import MainChild
+from LumensalisCP.Identity.Local import NamedLocalIdentifiable
+from LumensalisCP.util.LiveProperty  import *
 
 if TYPE_CHECKING:
     from .Audio import Audio
     WaveDataType:TypeAlias = Union[bytes, bytearray, array.array[int], memoryview, np.ndarray]
     WaveArgType:TypeAlias = Union[str, WaveDataType]
-
 
 #############################################################################
 
@@ -67,6 +65,131 @@ class SoundEffectsManager(MainChild):
         return wave
 
 #############################################################################
+
+SioBlockInput:TypeAlias = Union[synthio.LFO,synthio.Math,float]
+EvalSioBlockInput:TypeAlias = Union[EvaluatableT[float], SioBlockInput]
+
+
+# pyright: reportPrivateUsage=false
+#if TYPE_CHECKING:
+from LumensalisCP.util.LiveProperty import _LCT, _LPT
+
+#############################################################################
+
+class LiveBlockInputPropertyWrapper(Generic[_LCT,_LPT], Debuggable):
+    """ wrapper for use with LiveWrappedPropertyDescriptor
+
+    redirects 'name' to property on 'member' instance, with Evaluatable handling
+
+    """
+
+    _inputChangedSubscriptions: list[tuple[InputSource,Callable[...,None]]]
+                                     
+    def __init__(self, instance:_LCT,  name:str,
+            default:EvalSioBlockInput|None = None, owner:Any = None, member:str|None=None ) -> None:
+        Debuggable.__init__(self)
+        assert member is not None, "member must be specified"
+        self.member = member
+        self.isEvaluatable = isinstance(default, Evaluatable)
+        if self.isEvaluatable:
+            self._evalName:str = f"_eval_{name}"
+        self.value = default
+
+    def get(self,name:str, instance:_LCT)-> EvalSioBlockInput:
+        if self.isEvaluatable:
+            return getattr( instance, self._evalName)
+        return getattr( getattr(instance,self.member), name)
+
+    def _unsubscribe( self,  instance:_LCT ) -> None:
+        if len(self._inputChangedSubscriptions) > 0:
+            for input, cb in self._inputChangedSubscriptions:
+                input.removeOnChange(cb)
+            self._inputChangedSubscriptions.clear()
+
+    def _subscribe( self, name:str, value:EvalSioBlockInput, instance:_LCT ) -> None:
+        assert isinstance(value, Evaluatable), f"Expected Evaluatable, got {type(value)}"
+        if self.enableDbgOut:
+            self.dbgOut(f"Subscribing to changes to {self.member}.{name} in {instance}")
+        self._unsubscribe(instance)
+        def changedCallback(source:InputSource, context:EvaluationContext) -> None:
+            eValue =  getattr( instance, self._evalName) 
+            assert isinstance(eValue, Evaluatable), f"Expected Evaluatable, got {type(eValue)}"
+            value = context.valueOf(eValue)
+            if self.enableDbgOut: self.dbgOut(f"Input source {source.name} changed, updating {self.member}.{name} to {value}")
+            setattr(getattr(instance, self.member), name, value)
+
+        for term in value.terms():
+            if isinstance(term, InputSource):
+                term.onChange(changedCallback)
+                self._inputChangedSubscriptions.append((term, changedCallback))
+        if self.enableDbgOut:
+            self.dbgOut(
+                 f"  {len(self._inputChangedSubscriptions)} inputChanged subscriptions for {name} in {instance}"
+                               )
+            
+    def set(self,name:str, instance:_LCT, value:EvalSioBlockInput) -> None:
+        if self.enableDbgOut:
+            self.dbgOut(f"set {name}={value} in {instance}")
+
+        if isinstance(value, Evaluatable):
+            if not self.isEvaluatable:
+                self.isEvaluatable = True
+                if not hasattr(self,'_evalName'): 
+                    setattr(self, '_evalName', f"_eval_{name}")
+                    self._inputChangedSubscriptions = []
+            else:
+                self._unsubscribe(instance)
+            self._subscribe(name, value, instance)
+            setattr( instance, self._evalName, value )
+            value = value.getValue(UpdateContext.fetchCurrentContext(None))
+        else:
+            if self.isEvaluatable:
+                self._unsubscribe(instance)
+                self.isEvaluatable = False
+            self.isEvaluatable = False
+
+        setattr( getattr( instance, self.member), name, value )
+
+
+if TYPE_CHECKING:
+        
+    class LivePropertyEvSFXBlockInput( LiveWrappedPropertyDescriptor['SoundEffect',EvalSioBlockInput] ): pass
+    class LivePropertyEvLFOBlockInput( LiveWrappedPropertyDescriptor['EffectLFO',EvalSioBlockInput] ): pass
+
+    class WrappedBlockInputProperty( LiveWrappedPropertyDescriptor[_LCT, EvalSioBlockInput] ):
+        def __init__(self,  member:str, *args:Any, **kwds:Any ) -> None: ...
+            #super().__init__(
+            #    LiveBlockInputPropertyWrapper[_LCT,EvalSioBlockInput],
+            #      *args, **kwds)
+else:
+    class WrappedBlockInputProperty( LiveWrappedPropertyDescriptor ):
+        def __init__(self, member:str, *args, **kwds ):
+            kwds['member'] = member
+            super().__init__(LiveBlockInputPropertyWrapper, *args, **kwds)
+
+    LivePropertyEvSFXBlockInput = WrappedBlockInputProperty
+    LivePropertyEvLFOBlockInput = WrappedBlockInputProperty
+
+#############################################################################
+
+
+class EffectNoteProperty(LivePropertyEvSFXBlockInput):
+
+    def _reportSet(self, instance:SoundEffect, value:EvalSioBlockInput) -> None:
+        if instance.enableDbgOut:
+            instance.dbgOut(f"Note property {self.name} set to {value}")
+
+        instance.onNoteAttrSet(self.name, value)
+
+#############################################################################
+
+class EffectFilterProperty(LivePropertyEvSFXBlockInput):
+
+    def _reportSet(self, instance:SoundEffect, value:EvalSioBlockInput) -> None:
+        instance.onFilterAttrSet(self.name, value)
+
+#############################################################################
+
 LOW_PASS = synthio.FilterMode.LOW_PASS
 HIGH_PASS = synthio.FilterMode.HIGH_PASS
 BAND_PASS = synthio.FilterMode.BAND_PASS
@@ -76,6 +199,31 @@ PEAKING_EQ = synthio.FilterMode.PEAKING_EQ # type: ignore
 LOW_SHELF = synthio.FilterMode.LOW_SHELF # type: ignore
 HIGH_SHELF = synthio.FilterMode.HIGH_SHELF # type: ignore
 
+
+
+class EffectLFO(NamedLocalIdentifiable):
+
+    def __init__(self, **kwds: Unpack[NamedLocalIdentifiable.KWDS]) -> None:
+        self.lfo = synthio.LFO()
+
+    rate:WrappedBlockInputProperty[Self] =  WrappedBlockInputProperty( 'lfo','rate', 1.0 )
+    offset:WrappedBlockInputProperty[Self] = WrappedBlockInputProperty( 'lfo', 'offset', 0.0 )
+    phase_offset:WrappedBlockInputProperty[Self] = WrappedBlockInputProperty( 'lfo', 'phase_offset', 0.0 )
+    scale:WrappedBlockInputProperty[Self] = WrappedBlockInputProperty( 'lfo', 'scale', 0.0 )
+    
+    def onDescriptorSet(self, name:str, value:Any) -> None:
+        if self.enableDbgOut:
+            self.dbgOut(f"EffectLFO property {name} set to {value}")
+        if not isinstance(value, (int, float, synthio.LFO)):
+            if isinstance(value, Evaluatable):
+                context = UpdateContext.fetchCurrentContext(None)
+                value = context.valueOf(value)
+            else:
+                raise TypeError(f"EffectLFO property {name} must be a number or LFO, not {type(value)}")
+
+        setattr(self.lfo, name, value)
+
+    
 class SoundEffect(NamedLocalIdentifiable):
 
     class KWDS(NamedLocalIdentifiable.KWDS):
@@ -132,11 +280,29 @@ class SoundEffect(NamedLocalIdentifiable):
         if filter is not None:
             self.filter: synthio.Biquad = filter
 
+    amplitude:WrappedBlockInputProperty[Self] = WrappedBlockInputProperty('note','amplitude', 1.0 )
+    bend:WrappedBlockInputProperty[Self] = WrappedBlockInputProperty('note','bend', 0.0 )
+
+    def onNoteAttrSet(self, name:str, value:EvalSioBlockInput) -> None:
+        """Called when a note property is set"""
+        if self.enableDbgOut: self.dbgOut(f"Note property {name} set to {value}")
+        setattr(self.note, name, value)
+
+    def onFilterAttrSet(self, name:str, value:EvalSioBlockInput) -> None:
+        if self.enableDbgOut: self.dbgOut(f"Filter property {name} set to {value}")
+        setattr(self.filter, name, value)
+        
     @property
     def playing(self) -> bool:
         return self._playing
     
-    def start(self) -> None:
+    def toggle(self, context:Optional[EvaluationContext]=None) -> None:
+        if self._playing:
+            self.stop()
+        else:
+            self.start()
+
+    def start(self, context:Optional[EvaluationContext]=None) -> None:
         if self._playing:
             if self.enableDbgOut: self.dbgOut("start() ... already started")
             return
@@ -144,7 +310,7 @@ class SoundEffect(NamedLocalIdentifiable):
         self.effectsManager.synth.press(self.note)
         if self.enableDbgOut: self.dbgOut("Effect started")
 
-    def stop(self) -> None:
+    def stop(self, context:Optional[EvaluationContext]=None) -> None:
         if not self._playing:
             if self.enableDbgOut: self.dbgOut("stop() ... not playing")
             return
@@ -162,6 +328,7 @@ _sayAudioEffectImport.complete(globals())
 __all__ = [
     "SoundEffectsManager",
     "SoundEffect",
+    "EffectLFO",
     #"WaveDataType",
     #"WaveArgType",
     "LOW_PASS",
