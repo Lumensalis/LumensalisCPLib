@@ -1,11 +1,22 @@
-import os
-from LumensalisCP.ImportProfiler import  getImportProfiler, ImportProfiler
-#getImportProfiler.SHOW_IMPORTS = True
+from LumensalisCP.Main.PreMainConfig import sayAtStartup, printElapsed, pmc_gcManager
+from LumensalisCP.ImportProfiler import ImportProfiler
+ImportProfiler.SHOW_IMPORTS = False
 
+# pyright: reportUnusedImport=false, reportUnusedVariable=false
 #############################################################################
 
 # ALWAYS START WITH "from LumensalisCP.Simple import *"
-from LumensalisCP.Simple import * # http://lumensalis.com/ql/h2Start
+#from LumensalisCP.Simple import * # http://lumensalis.com/ql/h2Start
+from LumensalisCP.Main.ProjectManager import ProjectManager
+from LumensalisCP.Main.Helpers import *
+from LumensalisCP.common import * # http://lumensalis.com/ql/h2Start
+
+from LumensalisCP.Temporal import Oscillator
+from LumensalisCP.Lights.Patterns import Gauge
+from LumensalisCP.Triggers.Fire import fireOnRising
+
+# from LumensalisCP.Audio import Audio
+import board
 
 #############################################################################
 printElapsed( "finished from LumensalisCP.Simple import *" )
@@ -60,7 +71,7 @@ oscillator = Oscillator.Oscillator(  frequency = oscillator2, low = 0, high = 10
 oscillator.activate() 
 
 sayAtStartup( "setup sound effect" )
-testEffect = audio.effects.makeEffect( filterMode=NOTCH, wave='noise' )
+testEffect = audio.effects.makeEffect( filterMode="NOTCH", wave='square' )
 testEffect.amplitude = 0.5 + Z21Adapted(oscillator2) * 0.5
 testEffect.bend = oscillator / 10.0
 testEffect.filterFrequency = (oscillator*oscillator2) * 500 + 100 
@@ -82,4 +93,5 @@ fireOnRising( leftRimTouch, testEffect.toggle )
 #############################################################################
 # Wrap up and launch : http://lumensalis.com/ql/h2Launch
 sayAtStartup( "launch ..." )
+ImportProfiler.dumpWorstImports(10)
 main.launchProject( globals() )

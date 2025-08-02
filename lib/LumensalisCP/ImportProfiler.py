@@ -2,14 +2,14 @@
 from __future__ import annotations
 
 try:
-    from typing import TYPE_CHECKING, Any, Optional, ClassVar
+    from typing import TYPE_CHECKING, Any, Optional, ClassVar # type: ignore
 except ImportError:
     
     TYPE_CHECKING = False # type: ignore
 
 import time
 
-from LumensalisCP.Main.PreMainConfig import sayAtStartup
+from LumensalisCP.Main.PreMainConfig import sayAtStartup, pmc_mainLoopControl, pmc_gcManager
 
 #############################################################################
 class ImportProfiler(object):
@@ -63,7 +63,6 @@ class FakeImportProfiler(ImportProfiler):
 
 class ActualImportProfiler(ImportProfiler):
     """ A simple profiler for imports, to help identify slow imports """
-    SHOW_IMPORTS:ClassVar[bool] = False
 
     def __init__(self, name:Optional[str|dict[str,Any]]=None, moduleGlobals:Optional[dict[str,Any]]=None ) -> None:
 
@@ -147,7 +146,7 @@ class ActualImportProfiler(ImportProfiler):
         self.checkName()
 
 class ReloadableImportProfiler(ActualImportProfiler):
-    SHOW_IMPORTS:ClassVar[bool] = True
+    #SHOW_IMPORTS:ClassVar[bool] = False
     
     pass 
 
@@ -170,4 +169,4 @@ def getImportProfiler(name:Optional[str|dict[str,Any]]=None, moduleGlobals:Optio
         return ActualImportProfiler(name, moduleGlobals=moduleGlobals)
     return _fakeImportProfiler
 
-__all__ = [ 'getImportProfiler' ]
+__all__ = [ 'getImportProfiler', 'sayAtStartup', 'pmc_mainLoopControl', 'pmc_gcManager' ]

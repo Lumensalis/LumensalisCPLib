@@ -19,6 +19,8 @@ if TYPE_CHECKING:
     from LumensalisCP.I2C.Adafruit.AdafruitI2CFactory import AdafruitFactory
     from LumensalisCP.I2C.I2CFactory import I2CFactory
 
+__sayImport.parsing()
+
 class I2CProvider(Debuggable):
     """ Provides I2C devices and factories for the main manager. """
 

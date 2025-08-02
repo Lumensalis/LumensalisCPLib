@@ -6,7 +6,7 @@ exclude = [
     #"src/pyright/dist",
 ]
 extraPaths = [
-    "../../lib",
+    "../../lumensalscplib/lib",
     "../../typings",
     # "CircuitPyDependencies/lib",
     "~/.vscode/extensions/wmerkens.vscode-circuitpython-v2-0.3.3/boards/0x303A/0x80C3",

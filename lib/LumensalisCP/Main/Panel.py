@@ -28,13 +28,14 @@ class PanelControl(InputSource, Generic[CVT, CVT_OUT]):
                  startingValue:CVT,
                  min:Optional[CVT] = None,
                  max:Optional[CVT] = None,
-                 name:Optional[str]=None,
                  description:str="",
                  kind:Optional[str|type]=None,
                  convertor:Optional[Callable[[CVT],CVT_OUT]]=None,
-                 kindMatch: Optional[type]=None
-                 ):
-        super().__init__(name)
+                 kindMatch: Optional[type]=None,
+                 **kwds:Unpack[InputSource.KWDS]
+                 ) -> None:
+        super().__init__(**kwds)
+        name = kwds.get('name', None)
         self.description = description or name
         if kind is None:
             assert startingValue is not None
@@ -147,8 +148,8 @@ class ControlPanel( MainChild ):
      interact with your project
 
     """
-    def __init__( self, main:MainManager, name:Optional[str]=None ) -> None: 
-        super().__init__( main=main, name=name )
+    def __init__( self, **kwds:Unpack[MainChild.KWDS] ) -> None: 
+        super().__init__( **kwds )
 
         self._controlVariables:NliList[PanelControl[Any,Any]] = NliList(name='controls',parent=self)
         self._monitored:NliList[PanelMonitor[Any]] = NliList(name='monitored',parent=self)

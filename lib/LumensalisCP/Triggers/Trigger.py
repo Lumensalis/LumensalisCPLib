@@ -1,16 +1,12 @@
 from __future__ import annotations
 
 from LumensalisCP.ImportProfiler import  getImportProfiler
-
 __triggersSayImport = getImportProfiler( globals() ) # "Triggers.Trigger"
     
-__triggersSayImport( "IOContext... " )
+
 from LumensalisCP.IOContext import *
-__triggersSayImport( "Eval.Expressions... " )
 from LumensalisCP.Eval.Expressions import  Expression, ExpressionTerm #, UpdateContext
-
 from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg # type: ignore
-
 from LumensalisCP.Triggers.Invocable import *
 
 #############################################################################

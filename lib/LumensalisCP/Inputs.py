@@ -21,8 +21,8 @@ class _InputSourceChangedCallback(Protocol):
 
 class InputSource(NamedLocalIdentifiable, ExpressionTerm):
     
-    def __init__(self, name:Optional[str] = None):
-        NamedLocalIdentifiable.__init__(self,name=name)
+    def __init__(self, **kwds:Unpack[NamedLocalIdentifiable.KWDS]) -> None:
+        NamedLocalIdentifiable.__init__(self, **kwds)
         ExpressionTerm.__init__(self)
         
         self.__latestValue = None

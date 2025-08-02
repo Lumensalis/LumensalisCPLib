@@ -5,13 +5,13 @@ from __future__ import annotations
 # pyright: reportUnknownVariableType=false
 
 from LumensalisCP.ImportProfiler import  getImportProfiler
-_sayEvalCommonImport = getImportProfiler( "Eval.common" )
+__sayImport = getImportProfiler( __name__, globals() )
 
 from LumensalisCP.common import *
 from LumensalisCP.Identity.Local import *
 from LumensalisCP.Eval.Terms import *
-from LumensalisCP.CPTyping import TYPE_CHECKING
-from LumensalisCP.Identity.Local import NamedLocalIdentifiable
+#from LumensalisCP.CPTyping import TYPE_CHECKING
+#from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.Main.Refreshable import Refreshable
 from LumensalisCP.Main.Updates import UpdateContext
 from LumensalisCP.Eval.EvaluationContext  import EvaluationContext
@@ -22,7 +22,7 @@ from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
 from LumensalisCP.Lights.RGB import *
 
 
-_sayEvalCommonImport.parsing()
+__sayImport.parsing()
 
 #_EvaluatableTimeInSecondsConfigArg:TypeAlias = Evaluatable
 
@@ -53,4 +53,4 @@ def toRGBEval(value:  RGBEvalArg) -> RGBEval:
         return value # type: ignore
     return RGB.toRGB(value)
 
-_sayEvalCommonImport.complete(globals())
+__sayImport.complete()

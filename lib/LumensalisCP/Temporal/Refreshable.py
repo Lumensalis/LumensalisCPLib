@@ -77,7 +77,7 @@ class Refreshable( RefreshableInterface, IDebuggable ):
             self._mixins_init(mixinKwds) # type: ignore[call-arg]
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.name!r}, nextRefresh={self.__nextRefresh}, refreshCount={self.__refreshCount}, latestRefresh={self.__latestRefresh})"
+        return f"{self.__class__.__name__}({getattr(self, 'name',self.dbgName)}, nextRefresh={self.__nextRefresh}, refreshCount={self.__refreshCount}, latestRefresh={self.__latestRefresh})"
     #def refreshableCalculateNextRefresh(self, context:'EvaluationContext', when:TimeInSeconds) -> TimeInSeconds|None:
     #    """ Calculate the next refresh time based on the current time and the refresh rate.
     #    """
@@ -219,8 +219,8 @@ class RfMxnActivatable(RfMxn):
         self.__refreshIsActive = True
     
     def deactivate( self, context:'EvaluationContext' ) -> None:
-        assert self.__autoList is not None
-        self.__autoList.remove( context, self )
+        assert self.__refreshList is not None
+        self.__refreshList.remove( context, self )
         self.__refreshIsActive = False
 
 #############################################################################

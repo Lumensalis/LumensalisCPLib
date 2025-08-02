@@ -6,13 +6,13 @@ _sayEvalExpressionTermImport = getImportProfiler( globals() ) # "Eval.Expression
 
 from LumensalisCP.Lights.RGB import *
 from LumensalisCP.Eval._common import *
-from LumensalisCP.Eval.Evaluatable import Evaluatable
+from LumensalisCP.Eval.Evaluatable import EvaluatableT
 
 from LumensalisCP.Eval.EvaluationContext import EvaluationContext
 
 if TYPE_CHECKING:
     #from LumensalisCP.Inputs import InputSource
-    from LumensalisCP.Eval.Evaluatable import Evaluatable
+    from LumensalisCP.Eval.Evaluatable import EvaluatableT
     #from LumensalisCP.Inputs import InputSource
     
 # TODO: tighten up type hints / lint
@@ -60,14 +60,14 @@ class ExpressionOperationException( Exception ):
 
 #############################################################################
 
-class ExpressionTerm(Evaluatable): 
+class ExpressionTerm(EvaluatableT[Any]): 
     class KWDS(TypedDict):
         pass
 
     def terms(self) -> Generator["ExpressionTerm"]:
         yield self
     
-    def dependencies(self) -> Iterable[Evaluatable]:  
+    def dependencies(self) -> Iterable[EvaluatableT[Any]]:  
         for term in self.terms():
             yield term
 

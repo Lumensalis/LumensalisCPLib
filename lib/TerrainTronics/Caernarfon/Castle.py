@@ -1,20 +1,17 @@
 from __future__ import annotations
 
 from LumensalisCP.ImportProfiler import  getImportProfiler
-_sayCaernarfonImport = getImportProfiler( globals()) # "CaernarfonCastle" )
+_sayImport = getImportProfiler( __name__, globals()) 
 
 
 from LumensalisCP.IOContext import *
 from LumensalisCP.commonCP import *
-_sayCaernarfonImport( "NeoPixels" )
 from LumensalisCP.Lights.NeoPixels import NeoPixelSource, NeoPixelSourceKwds
 from LumensalisCP.Gadgets.IrRemote import LCP_IRrecv, onIRCode # type: ignore
-_sayCaernarfonImport( "LocalServo" )
 from LumensalisCP.Gadgets.Servos import LocalServo
-
 from TerrainTronics.D1MiniBoardBase import D1MiniBoardBase
 
-_sayCaernarfonImport( "parsing" )
+_sayImport.parsing()
 
 #############################################################################
 class CaernarfonCastleKWDS(TypedDict):
@@ -28,6 +25,7 @@ class CaernarfonCastle(D1MiniBoardBase):
     
     __servoContainer:NliList[LocalServo]
     __pixelsContainer:NliList[NeoPixelSource]
+
     class KWDS(D1MiniBoardBase.KWDS):
         neoPixelCount: NotRequired[int]
         servos: NotRequired[int]
@@ -66,13 +64,6 @@ class CaernarfonCastle(D1MiniBoardBase):
         if neoPixelCount > 0:
             assert neoPixels is None
             self.addNeoPixels( pixelCount = neoPixelCount )
-            
-            #self.__pixels:NeoPixelSource = NeoPixelSource(
-            #    c.neoPixelPin, pixelCount=c.neoPixelCount, main = self.main, refreshRate=0.05, 
-                #brightness=c.neoPixelBrightness, 
-             #   auto_write=False, pixel_order=c.neoPixelOrder # type: ignore
-            #)
-            #self.__pixels.nliSetContainer(self.__pixelsContainer)
     
     def addNeoPixels(self,
                     servoPin:Optional[int]=None, 
@@ -125,8 +116,7 @@ class CaernarfonCastle(D1MiniBoardBase):
         self.__neoPixOnServos[servoN-1] = pixels
         self.__allPixels.append(pixels)
         return pixels
-    
-        
+
     def nliGetChildren(self) -> Iterable['NamedLocalIdentifiable']|None:
         #if self._irRemote is not None:
         #    return [ self._irRemote ]
@@ -146,11 +136,13 @@ class CaernarfonCastle(D1MiniBoardBase):
     @property
     def neoPixOnServo1(self) -> NeoPixelSource: 
         assert self.__neoPixOnServos[0] is not None
-        return  self.__neoPixOnServos[0] 
+        return  self.__neoPixOnServos[0]
+     
     @property
     def neoPixOnServo2(self) -> NeoPixelSource: 
         assert self.__neoPixOnServos[1] is not None
         return  self.__neoPixOnServos[1] 
+    
     @property
     def neoPixOnServo3(self) -> NeoPixelSource: 
         assert self.__neoPixOnServos[2] is not None
@@ -160,10 +152,12 @@ class CaernarfonCastle(D1MiniBoardBase):
     def servo1(self) -> LocalServo: 
         assert self.__servos[0] is not None
         return  self.__servos[0] 
+    
     @property
     def servo2(self) -> LocalServo: 
         assert self.__servos[1] is not None
         return  self.__servos[1] 
+    
     @property
     def servo3(self) -> LocalServo:
         assert self.__servos[2] is not None
@@ -187,9 +181,6 @@ class CaernarfonCastle(D1MiniBoardBase):
         self.nliAddComponent(self._irRemote)
         self._irRemote.activate(UpdateContext.fetchCurrentContext(None))
         return self._irRemote
-    
-    #def analogInput( self, name:str, pin:Any ):
-    #    return self.main.addInput( name, pin )
     
     def initServo( self, servoN:int, 
                   #//name:Optional[str] = None, 
@@ -218,4 +209,4 @@ class CaernarfonCastle(D1MiniBoardBase):
         self.__servos[servoN-1] = servo
         return servo
     
-_sayCaernarfonImport.complete(globals())
+_sayImport.complete()

@@ -67,9 +67,9 @@ class ManagerBase(object):
 
 class SubManagerBase(ManagerBase,MainChild):
     
-    def __init__(self, main:MainManager, name:Optional[str] = None ):
+    def __init__(self, **kwds:Unpack[MainChild.KWDS] ):
         ManagerBase.__init__(self)
-        MainChild.__init__( self, main=main, name=name )
+        MainChild.__init__( self, **kwds )
         
         self._registerManager()
 

@@ -5,35 +5,25 @@ from __future__ import annotations
 # pyright: reportPrivateUsage=false
 
 from LumensalisCP.ImportProfiler import  getImportProfiler
-_sayProfilerImport = getImportProfiler( "Profiler" )
+__sayImport = getImportProfiler( __name__, globals() )
 
 import time
 from collections import OrderedDict
 import gc 
 
-try:
-    from typing import TYPE_CHECKING
-    if TYPE_CHECKING:
-        from LumensalisCP.Main.Updates import UpdateContext
-
-except ImportError:
-    pass
-
-
-import LumensalisCP.Main.Updates
-from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
+from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
 
 from LumensalisCP.common import *
-from LumensalisCP.CPTyping import *
-from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
-from LumensalisCP.util.bags import Bag
+
+#from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
+#from LumensalisCP.util.bags import Bag
 from LumensalisCP.util.Releasable import Releasable
 from LumensalisCP.Main import ProfilerRL
 from LumensalisCP.util.Reloadable import addReloadableClass, reloadingMethod
+if TYPE_CHECKING:
+    from LumensalisCP.Main.Updates import UpdateContext
 
-from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
-
-_sayProfilerImport.parsing()
+__sayImport.parsing()
 
 # pylint: disable=unused-argument, redefined-outer-name, attribute-defined-outside-init
 # pylint: disable=protected-access, pointless-string-statement
@@ -698,4 +688,4 @@ addReloadableClass(ProfileFrame)
 addReloadableClass(ProfileFrameBase)
 addReloadableClass(ProfileSubFrame)
 addReloadableClass(Profiler)
-_sayProfilerImport.complete(globals())
+__sayImport.complete(globals())

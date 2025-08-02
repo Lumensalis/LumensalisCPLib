@@ -13,6 +13,22 @@ ReloadableMethodType:TypeAlias = Callable[..., Any]
 def __reloadPrint( message:str) -> None:
     #print( message )
     pass
+#############################################################################
+
+class ReloadingMethodStub():
+    def __init__(self,  func:Callable[...,Any] ) -> None:
+        self.func = func
+
+    def __call__(self, *args:Any, **kwargs:Any) -> Any:
+        raise NotImplementedError(f"Method {self.func.__name__} is not implemented in the reloading context. Please use the reloadingMethod decorator to implement it.")
+
+_rmStub = ReloadingMethodStub( lambda: None)
+
+def reloadingMethod(func:Callable[...,Any] ) -> Callable[...,Any]:
+    return _rmStub
+    # return ReloadingMethodStub(func)
+
+#############################################################################
 
 class ReloadableModule(object):
 
@@ -103,35 +119,33 @@ def reloadableClassMeta(name:str,
     rv.addStripPrefix(stripPrefix)
     return rv
 
+# pyright: reportPrivateUsage=false
+
 def addReloadableClass(cls:type) -> type : # type: ignore
+
     assert isinstance(cls, type), f"Expected a class, got {cls}"
     name = f"{cls.__module__}.{cls.__name__}"
     meta = reloadableClassMeta(name)
     meta.setClass(cls)
     for method_name, method in cls.__dict__.items():
-        assert not isinstance(method, ReloadingMethodStub), f"""Method {name}.{method_name} in {meta} has not been given a reloadable implementation ({
+        #assert not isinstance(method, ReloadingMethodStub),
+        if method is not _rmStub: continue
+
+        assert method is not _rmStub, f"""Method {name}.{method_name} in {meta} has not been given a reloadable implementation ({
             ",\n   ".join( [ key + ":" + str(val.index) for key, val in ReloadableClassMeta._metaDict.items() ] )
             })."""
     return cls
 
-def reloadableMethod( meta:ReloadableClassMeta, name:Optional[str]=None ) -> Callable[..., Callable[..., Any]]:
+def reloadableMethod( meta:ReloadableClassMeta, 
+                     name:Optional[str]=None 
+        ) -> Callable[..., Callable[..., Any]]:
     def decorator( func:Callable[...,Any] ) -> Callable[...,Any]:
         #__reloadPrint(f"Adding reloadable method {func.__name__} to {meta.name}")
         meta.add_method(name or func.__name__, func)
         return func
     return decorator
 
-class ReloadingMethodStub():
-    def __init__(self,  func:Callable[...,Any] ) -> None:
-        self.func = func
 
-    def __call__(self, *args:Any, **kwargs:Any) -> Any:
-        raise NotImplementedError(f"Method {self.func.__name__} is not implemented in the reloading context. Please use the reloadingMethod decorator to implement it.")
-
-def reloadingMethod(func:Callable[...,Any] ) -> Callable[...,Any]:
-    return ReloadingMethodStub(func)
-    #__reloadPrint(f"Adding reloadable method {func.__name__} to {meta.name}")
-    return func
 
 #############################################################################
 

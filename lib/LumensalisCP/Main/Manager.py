@@ -5,7 +5,6 @@ _sayMainImport = getImportProfiler( "Main.Manager", globals() )
 
 # pyright: reportUnusedImport=false
 
-import asyncio
 import wifi, displayio
 
 import LumensalisCP.Main.Dependents
@@ -23,6 +22,7 @@ from LumensalisCP.Temporal.Refreshable import *
 
 from LumensalisCP.Main import ManagerRL
 from LumensalisCP.Main import Manager2RL
+from .Async import ManagerAsync
 
 from . import GetManager
 
@@ -31,10 +31,14 @@ if TYPE_CHECKING:
     import LumensalisCP.Main.Manager
     from LumensalisCP.Audio import Audio
     from LumensalisCP.Main.Profiler import Profiler, ProfileFrameBase
+    from LumensalisCP.Main.MainAsyncLoop import MainAsyncLoop
+
     
     # from LumensalisCP.Controllers.Config import ControllerConfigArg
 
 import LumensalisCP.Main.ProfilerRL
+
+_sayMainImport.parsing()
 
 LumensalisCP.Main.ProfilerRL._rl_setFixedOverheads() # type: ignore
 
@@ -52,8 +56,10 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     shields:NliList[ShieldBase]
     controlPanels:NliList[ControlPanel]
     _privateCurrentContext:EvaluationContext
+    asyncLoop:MainAsyncLoop
     
-    
+    useWifi:bool
+
     @staticmethod
     def initOrGetManager() -> "MainManager":
         rv = MainManager.theManager
@@ -79,7 +85,8 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         
 
         #self.__startNs = time.monotonic_ns()
-        self.__startNow = time.monotonic()
+        #self.__startNow = time.monotonic()
+        self.__startNow = time.monotonic() - pmc_mainLoopControl.getMsSinceStart()/1000.0
         self._when:TimeInSeconds = self.getNewNow()
         getMainManager.set(self)
 
@@ -96,8 +103,8 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self._refreshables = RootRefreshableList(name='mainRefreshables')
         self.profiler = Profiler(self._privateCurrentContext )
 
-        self.__asyncTaskCreators: list[Callable[[], list[asyncio.Task[None]]]] = []
-        self.__preFirstRunCallbacks: list[Callable[[], None]] = []
+        self.asyncManager:ManagerAsync = ManagerAsync(main=self)
+        
         self.__socketPool:Any = None
         
         Debuggable._getNewNow = self.getNewNow # type: ignore
@@ -123,6 +130,8 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self._webServer = None
 
         self._rrDeferred:RefreshablePrdInvAct|None = None
+        self._rrCollect:RefreshablePrdInvAct|None = None
+
         self.__deferredTasks: collections.deque[Callable[[], None]] = collections.deque( [], 99, True ) # type: ignore # pylint: disable=all
         self.__audio = None
         self.__dmx :DMXManager|None = None
@@ -135,7 +144,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self.__anonInputs:NliList[InputSource] = NliList(name='inputs',parent=self)
         self.__anonOutputs:NliList[NamedOutputTarget] = NliList(name='outputs',parent=self)
         self.controlPanels = NliList(name='controllers',parent=self)
-        self.defaultController = ControlPanel(self)
+        self.defaultController = ControlPanel(main=self)
         self.defaultController.nliSetContainer(self.controlPanels)
 
         self._monitored:list[InputSource] = []
@@ -212,16 +221,14 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     def dmx(self):
         if self.__dmx is None:
             import LumensalisCP.Lights.DMXManager
-            self.__dmx = LumensalisCP.Lights.DMXManager.DMXManager( self )
-            
-            self.__asyncTaskCreators.append( self.__dmx.createAsyncTasks )
-
+            self.__dmx = LumensalisCP.Lights.DMXManager.DMXManager( main=self )
+ 
         return self.__dmx
     
     @property
     def socketPool(self) -> Any:
         if self.__socketPool is None:
-            
+            self.sayAtStartup( "socketPool is None, creating it" )
             import adafruit_connection_manager # type: ignore
             if not wifi.radio.connected:
                 try:
@@ -243,17 +250,18 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
             #self.__socketPool = socketpool.SocketPool(wifi.radio)
             #self.sayAtStartup( "wifi.radio.start_dhcp()" )
             #wifi.radio.start_dhcp()
+            self.sayAtStartup( "get_radio_socketpool" )
             pool = adafruit_connection_manager.get_radio_socketpool(wifi.radio) # type: ignore
+            self.sayAtStartup( "socketPool = %r", pool )
             self.__socketPool = pool
             
         return self.__socketPool # type: ignore
         
     def callLater( self, task:KWCallbackArg ) -> None:
-        if len(self.__deferredTasks) == 0:
-            pass
         self.__deferredTasks.append( KWCallback.make( task ) )
-        if self._rrDeferred is not None:
-            self._rrDeferred.deactivate(self.getContext())
+        assert self._rrDeferred is not None
+        if not self._rrDeferred.isActiveRefreshable:
+            self._rrDeferred.activate(self.getContext())
 
     def __runExitTasks(self):
         print( "running Main exit tasks" )
@@ -297,34 +305,18 @@ see http://lumensalis.com/ql/h2Scenes
         pmc_mainLoopControl.sayAtStartup( fmt, *args)
             #print( "-----" )
             #print( f"{self.getNewNow():0.3f} STARTUP : {safeFmt(fmt,*args)}" )
-            
-    def addBasicWebServer( self, *args:Any, **kwds:StrAnyDict ):
-        from LumensalisCP.HTTP.BasicServer import BasicServer
-        self.sayAtStartup( "addBasicWebServer %r, %r ", args, kwds )
-        server = BasicServer( *args, main=self, **kwds )
-        self._webServer = server
 
-        self.__asyncTaskCreators.append( server.createAsyncTasks )
-        
-        def startWebServer():
-            if wifi.radio.ipv4_address is not None:
-                address = str(wifi.radio.ipv4_address)
-                self.sayAtStartup( "startWebServer on %r ", address )
-                self._webServer.start(address) # type: ignore
-            else:
-                self.sayAtStartup( "no address for startWebServer" )
-
-        self.__preFirstRunCallbacks.append( startWebServer )
-        return server
-
+    @reloadingMethod            
+    def addBasicWebServer( self, *args:Any, **kwds:StrAnyDict ) -> None: ...
+  
     @reloadingMethod
     def monitor( self, *inputs:InputSource, **kwds:StrAnyDict ) -> None: ...
 
     @reloadingMethod
     def handleWsChanges( self, changes:StrAnyDict ): ...
      
-    async def msDelay( self, milliseconds:TimeInMS ):
-        await asyncio.sleep( milliseconds * 0.001 )
+    #async def msDelay( self, milliseconds:TimeInMS ):
+    #    await asyncio.sleep( milliseconds * 0.001 )
     
     @property
     def audio(self) -> Audio:
@@ -365,53 +357,33 @@ see http://lumensalis.com/ql/h2Scenes
     @reloadingMethod
     def renameIdentifiables(self, items:Optional[dict[str,NamedLocalIdentifiable]]=None, verbose:bool = False ): ...
     
-    @reloadingMethod
-    def singleLoop(self) -> None: ...
+    #@reloadingMethod
+    #def singleLoop(self) -> None: ...
 
     @reloadingMethod
     def _finishInit(self) -> None: ...
 
-    async def taskLoop( self ):
-        self.__priorSleepWhen = self.getNewNow()
-        self.infoOut( "starting manager main run" )
-        _early_collect("end manager init")
-        self.__priorSleepWhen = self.getNewNow()
-        self._nextWait = self.getNewNow()
-        
-        try:
-            for cb in self.__preFirstRunCallbacks:
-                cb()
-        
-            self._when = self.getNewNow()
-            while True:
-                self.singleLoop() # type: ignore
-                self.__latestSleepDuration = max(0.001, self._nextWait-self.__priorSleepWhen )
-                
-                await asyncio.sleep( self.__latestSleepDuration ) 
-                self.__cycle += 1    
+    #@reloadingMethod 
+    #async def runAsyncSetup(self) -> None:
 
-        except Exception as inst:
-            self.errOut( "EXCEPTION in task loop : {}".format(inst) )
-            print(''.join(traceback.format_exception(inst)))
-            
-        except KeyboardInterrupt:
-            self.errOut( "KeyboardInterrupt!" )
-            self.__runExitTasks()
-            raise
-
-        self.__runExitTasks()
+    #@reloadingMethod 
+    #async def runAsyncSingleLoop( self ): ...
+    _rCollect:RefreshablePrdInvAct
+    
     
     def run( self ):
-        
-        async def main():      
-            asyncTasks = [
-                asyncio.create_task( self.taskLoop() )
-            ]
-            for atc in self.__asyncTaskCreators:
-                asyncTasks.extend(atc())
-            await asyncio.gather( *asyncTasks )
-            
-        asyncio.run( main() )
+        if True:
+            self.asyncManager.asyncMainLoop()
+        else:
+            async def main():      
+                asyncTasks = [
+                    asyncio.create_task( self.taskLoop() )
+                ]
+                for atc in self.__asyncTaskCreators:
+                    asyncTasks.extend(atc())
+                await asyncio.gather( *asyncTasks )
+                
+            asyncio.run( main() )
         self.__runExitTasks()
 
 

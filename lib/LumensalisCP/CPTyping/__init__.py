@@ -24,6 +24,7 @@ try:
     from typing import ClassVar, Generic, Generator
     from typing import NoReturn
     from typing import final, overload, override
+    from typing import Coroutine, Awaitable, AsyncGenerator, AsyncIterable, AsyncIterator
     
     
     # any imports below this won't happen if the error gets raised

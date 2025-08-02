@@ -2,24 +2,25 @@ from __future__ import annotations
 
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 
-from LumensalisCP.Main.Dependents import *
-from LumensalisCP.Main.Manager import MainManager
-from LumensalisCP.common import *
+from LumensalisCP.IOContext import *
 from LumensalisCP.Lights.Light import *
-from LumensalisCP.Inputs import InputSource
-from LumensalisCP.Main.Updates import UpdateContext
+from LumensalisCP.Main.Dependents import *
 
 #############################################################################
 
 #import stupidArtnet
 from .LCP_StupidArtnetServer import StupidArtnetASIOServer
-import time
 
-import asyncio
-from asyncio import create_task, gather, run, sleep as async_sleep, Task
+# pyright: reportPrivateUsage=false
+
+from LumensalisCP.Main.Async import MainAsyncChild, ManagerAsync
+
+_DMXChannelArgType:TypeAlias = int
+_DMXUniverseArgType:TypeAlias = Any
+_DMXDataList:TypeAlias = list[Any]
 
 class DMXWatcher(InputSource):
-    def __init__(self, name:str, manager:"DMXManager", c1:int, cN:Optional[int]=None):
+    def __init__(self, name:str, manager:"DMXManager", c1:_DMXChannelArgType, cN:Optional[_DMXChannelArgType]=None):
         super().__init__(name=name)
         self.__manager = manager
         self.c1 = c1-1
@@ -37,7 +38,7 @@ class DMXWatcher(InputSource):
     def derivedUpdate(self) -> None: raise NotImplementedError
 
 class DMXDimmerWatcher(DMXWatcher):
-    def __init__(self, name:str, manager:"DMXManager", c1:int):
+    def __init__(self, name:str, manager:"DMXManager", c1:_DMXChannelArgType):
         super().__init__(name, manager, c1, c1+1 )
         self.__dimmerValue = 0
         
@@ -46,13 +47,13 @@ class DMXDimmerWatcher(DMXWatcher):
         self.__dimmerValue = self.data[0]/255.0
         self.dbgOut( "derivedUpdate  =  %r", self.__dimmerValue)
 
-    def getDerivedValue(self, context:EvaluationContext) -> Any: # pyright: reportUndefinedVariable=false
+    def getDerivedValue(self, context:EvaluationContext) -> Any:
         #self.dbgOut( "getDerivedValue returning %r", self.__dimmerValue)
         return self.__dimmerValue
 
 
 class DMX_RGBWatcher(DMXWatcher):
-    def __init__(self, name, manager:"DMXManager", c1):
+    def __init__(self, name:str, manager:"DMXManager", c1:_DMXChannelArgType):
         super().__init__(name, manager, c1, c1+3 )
         self.__rgbValue = RGB(0,0,0)
         
@@ -63,20 +64,22 @@ class DMX_RGBWatcher(DMXWatcher):
     def getDerivedValue(self, context:EvaluationContext) -> Any:
         return self.__rgbValue
 
-class DMXManager(MainChild):
+
+
+class DMXManager(MainAsyncChild):
     pass
 
-    def __init__(self, main:MainManager, name:Optional[str] = None):
-        super().__init__(main=main,name=name)
+    def __init__(self, **kwds:Unpack[MainAsyncChild.KWDS]):
+        super().__init__(**kwds)
         #self.__client = ArtNetClient()
-        self._sasServer = StupidArtnetASIOServer(main.socketPool) #Create a server with the default port 6454
-        self._universe = 0
-        self._settings:list[Any] = []
+        self._sasServer = StupidArtnetASIOServer(self.main.socketPool) #Create a server with the default port 6454
+        self._universe:_DMXUniverseArgType = 0
+        self._settings:_DMXDataList = []
         self._watchers:List[DMXWatcher] = []
         # For every universe we would like to receive,
         # add a new listener with a optional callback
         # the return is an id for the listener
-        self.u1_listener = self._sasServer.register_listener(
+        self.u1_listener = self._sasServer.register_listener( # type: ignore
             self._universe, callback_function=self.test_callback)
 
 
@@ -87,23 +90,23 @@ class DMXManager(MainChild):
         #                    setSimplified=False, callback_function=test_callback)
 
 
-    def addDimmerInput( self, name, channel ):
+    def addDimmerInput( self, name:str, channel:_DMXChannelArgType ):
         rv = DMXDimmerWatcher( name, self, channel )
         self._watchers.append(rv)
         return rv
 
 
-    def addRGBInput( self, name, channel ):
+    def addRGBInput( self, name:str, channel:_DMXChannelArgType ):
         rv = DMX_RGBWatcher( name, self, channel )
         self._watchers.append(rv)
         return rv
     
-    async def handle_dmx(self, universe, data):
+    async def handle_dmx(self, universe:_DMXUniverseArgType, data:_DMXDataList ):
         print(f"Universe {universe}: {data}")
         self._settings = data
 
     
-    def test_callback(self, data, addr=None):
+    def test_callback(self, data:_DMXDataList, addr:Any=None):
         """Test function to receive callback data."""
         # the received data is an array
         # of the channels value (no headers)
@@ -112,8 +115,17 @@ class DMXManager(MainChild):
         for watcher in self._watchers:
             watcher.update( )
         
-    def createAsyncTasks(self) -> list[Task[None]]:
-        return [
-            #create_task(self._runNode()),
-            create_task(self._sasServer._listenLoop()),
-    ]
+    async def runAsyncSingleLoop(self) -> None:
+        await self._sasServer._listenSingleLoop()
+        
+
+    def addAsyncTasks(self, am:ManagerAsync) -> None:
+        pass
+        #am.addTaskCreator(  "DMX Listener",self._sasServer._listenLoop)
+
+            
+    #def createAsyncTasks(self) -> list[Task[None]]:
+    #    return [
+    #        #create_task(self._runNode()),
+    #        create_task(self._sasServer._listenLoop()),
+    #        #create_task(self.]

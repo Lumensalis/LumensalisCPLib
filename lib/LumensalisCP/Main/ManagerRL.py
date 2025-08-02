@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from LumensalisCP.ImportProfiler import getImportProfiler
+
 __sayMainManagerRLImport = getImportProfiler( globals(), reloadable=True )
 
 from LumensalisCP.commonPreManager import *
@@ -35,12 +36,14 @@ def MainManager_nliGetChildren(self:MainManager) -> Iterable[NamedLocalIdentifia
         yield self.__dmx
 
 @_mmMeta.reloadableMethod()
-def MainManager_launchProject( self:MainManager, globals:Optional[StrAnyDict]=None, verbose:bool = False ) -> None: 
+def launchProject( self:MainManager, globals:Optional[StrAnyDict]=None, verbose:bool = False ) -> None: 
     if globals is not None:
         self.renameIdentifiables( globals, verbose=verbose )
     useWifi = getattr(self, 'useWifi', False)        
     if useWifi:
+        self.sayAtStartup( "adding web server" )
         self.addBasicWebServer()
+    self.sayAtStartup( "MainManager.launchProject: starting main loop" )
     self.run()
 
 @_mmMeta.reloadableMethod()
@@ -84,8 +87,8 @@ def MainManager_handleWsChanges( self:MainManager, changes:StrAnyDict ):
         else:
             self.warnOut( f"missing cv {key} in {defaultPanel.controls.keys()} for wsChanges {changes}")
 
-@_mmMeta.reloadableMethod()
-def singleLoop( self:MainManager ): #, activeFrame:ProfileFrameBase):
+#@_mmMeta.reloadableMethod()
+def ___singleLoop( self:MainManager ): #, activeFrame:ProfileFrameBase):
     with self.getNextFrame(): #  as activeFrame:
         context = self._privateCurrentContext
 
@@ -122,7 +125,6 @@ def singleLoop( self:MainManager ): #, activeFrame:ProfileFrameBase):
         self.__priorSleepWhen = self.getNewNow()
         self._nextWait += mlc.nextWaitPeriod # type: ignore
 
-    #await asyncio.sleep( max(0.001,self._nextWait-self.__priorSleepWhen) ) # self.cycleDuration )
     #self.__cycle += 1        
 
 @_mmMeta.reloadableMethod()
@@ -147,23 +149,12 @@ def dumpLoopTimings( self:MainManager, count:int, minE:Optional[float]=None, min
 def MainManager_getNextFrame(self:MainManager) ->ProfileFrameBase:
         now = self.getNewNow()
         self._when = now
-        #priorWhen = self._when
         self._privateCurrentContext.reset(now)
         context = self._privateCurrentContext
 
-        if True:
-            eSleep = TimeInSeconds( now - self.__priorSleepWhen )
-            newFrame = self.profiler.nextNewFrame(context, eSleep = eSleep ) 
-        else:
-            if pmc_mainLoopControl.ENABLE_PROFILE:
-                newFrame = self.profiler.nextNewFrame(context, eSleep = now  - self.__priorSleepWhen) 
-                #memBefore = gc.mem_alloc()
-                #snap = newFrame.snap( 'start' )
-                #snap.augment( 'updateIndex', context.updateIndex )
-                #snap.augment( 'when', now )
-                #snap.augment( 'cycle', self.__cycle )
-            else:
-                newFrame = self.profiler.timings[0]
+        eSleep = TimeInSeconds( now - self.asyncLoop.priorSleepWhen )
+        newFrame = self.profiler.nextNewFrame(context, eSleep = eSleep ) 
+
 
         assert isinstance( newFrame, ProfileFrameBase )
         context.baseFrame  = context.activeFrame = newFrame

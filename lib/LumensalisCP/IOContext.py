@@ -5,19 +5,12 @@ from __future__ import annotations
 import math
 
 from LumensalisCP.ImportProfiler import  getImportProfiler
-_ioContextImport = getImportProfiler( globals() ) # "IOContext"
+__sayImport = getImportProfiler( __name__, globals() )
 
-from LumensalisCP.common import *
 from LumensalisCP.Eval.common import *
-from LumensalisCP.common import TYPE_CHECKING
-from LumensalisCP.Identity.Local import NamedLocalIdentifiable
-
 from LumensalisCP.Inputs import InputSource
 from LumensalisCP.Outputs import OutputTarget, NamedOutputTarget
-from LumensalisCP.Eval.Expressions  import Expression
-from LumensalisCP.Eval.ExpressionTerm import ExpressionTerm, EVAL_VALUE_TYPES, rising
 
-from LumensalisCP.CPTyping import TYPE_CHECKING
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
     # shouldn't be needed, but pyright whines and misses 
@@ -29,4 +22,4 @@ if TYPE_CHECKING:
     from LumensalisCP.Eval.Evaluatable import evaluate, Evaluatable, EvaluatableT
     from LumensalisCP.Main.Updates import UpdateContext
 
-_ioContextImport.complete(globals())
+__sayImport.complete(globals())

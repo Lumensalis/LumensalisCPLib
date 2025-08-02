@@ -8,6 +8,7 @@ __sayImport = getImportProfiler( globals(), reloadable=True )
 # pylint: disable=no-member, redefined-builtin, unused-argument
 # pyright: reportPrivateUsage=false, reportUnusedImport=false, reportUnusedFunction=false
 
+import wifi
 
 from LumensalisCP.commonPreManager import *
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl #, pmc_gcManager
@@ -16,11 +17,11 @@ from LumensalisCP.util.Reloadable import ReloadableModule
 from LumensalisCP.Temporal.Refreshable import *
 from LumensalisCP.Temporal.RefreshableList import RefreshableListInterface
 
+from LumensalisCP.Main.Async import MainAsyncChild, ManagerAsync
+from LumensalisCP.Main.MainAsyncLoop import MainAsyncLoop
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
-
-
 
 #############################################################################
 
@@ -29,17 +30,22 @@ mlc = pmc_mainLoopControl
 _module = ReloadableModule( 'LumensalisCP.Main.Manager' )
 _mmMeta = _module.reloadableClassMeta('MainManager', stripPrefix='MainManager_')
 
+
 @_mmMeta.reloadableMethod()
 def _finishInit(self:MainManager) -> None: 
+
+    self.asyncLoop = MainAsyncLoop(main=self)
+    #self.asyncLoop.enableDbgOut = True
 
     def runCollect(context:EvaluationContext) -> None:
         #print( f"pmc_gcManager.runCollection {context.updateIndex}..." )
         pmc_gcManager.checkAndRunCollection(context, show=pmc_gcManager.showRunCollection)
 
-    def getRefereshRate() -> TimeSpanInSeconds:
+    def getRefreshRate() -> TimeSpanInSeconds:
         """ Get the refresh rate for the collection check interval. """
         return pmc_gcManager.collectionCheckInterval
     
+
     rCollect = RefreshablePrdInvAct(
         name='runCollect',
         invocable=runCollect,
@@ -85,6 +91,31 @@ def _finishInit(self:MainManager) -> None:
     self._rrDeferred = rDeferred
     #rCollect.enableDbgOut = True
     rDeferred.activate() 
+
+
+
+@_mmMeta.reloadableMethod()
+def addBasicWebServer( self:MainManager, *args:Any, **kwds:StrAnyDict ):
+    from LumensalisCP.HTTP.BasicServer import BasicServer
+    self.sayAtStartup( "addBasicWebServer %r, %r ", args, kwds )
+
+    #self.__asyncTaskCreators.append( server.createAsyncTasks )
+    
+    def startWebServer():
+        self.sayAtStartup( "startWebServer %r", server )
+        if wifi.radio.ipv4_address is not None:
+            address = str(wifi.radio.ipv4_address)
+            self.sayAtStartup( "startWebServer on %r ", address )
+            self._webServer.start(address) # type: ignore
+
+            self.sayAtStartup( "creating web server" )
+            server = BasicServer( *args, main=self, **kwds )
+            self._webServer = server
+
+        else:
+            self.sayAtStartup( "no address for startWebServer" )
+    self.callLater( startWebServer )
+
 
 
 __sayImport.complete(globals())

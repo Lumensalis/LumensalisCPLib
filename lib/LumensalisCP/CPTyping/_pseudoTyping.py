@@ -101,11 +101,17 @@ class PseudoTypingModifier(PseudoTypingBracketableExpression):
         self.name = name
     
 Any = PseudoTypingTType("Any")
+AsyncGenerator = PseudoTypingTBType("AsyncGenerator")
+AsyncIterable = PseudoTypingTBType("AsyncIterable")
+AsyncIterator = PseudoTypingTBType("AsyncIterator")
+Awaitable = PseudoTypingTBType("Awaitable")
+
 NoReturn = PseudoTypingTType("NoReturn")
 TextIO = PseudoTypingTType("TextIO")
 Self = PseudoTypingTType("Self")
 
 Callable = PseudoTypingTBType("Callable")
+Coroutine = PseudoTypingTBType("Coroutine")
 Tuple = PseudoTypingTBType("Tuple")
 Mapping = PseudoTypingTBType("Mapping")
 List = PseudoTypingTBType("List")

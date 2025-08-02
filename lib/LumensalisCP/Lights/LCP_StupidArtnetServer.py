@@ -155,7 +155,7 @@ class StupidArtnetASIOServer():
         
         # server active flag
         self.listen = True
-
+        self.dataBuffer = bytearray(1024)
 
         #self.server_thread = _thread.start_new_thread(self.__init_socket, ())
         self.__init_socket(pool)
@@ -173,17 +173,20 @@ class StupidArtnetASIOServer():
         
     async def _listenLoop(self):
         loop = asyncio.get_event_loop()
-        data = bytearray(1024)
+        
         while self.listen:
             await asyncio.sleep(0.005)
+
+    async def _listenSingleLoop(self):
+            data = self.dataBuffer 
             try:
                 dataLen, unused_address = self.socket_server.recvfrom_into(data)
             except Exception as inst:
-                if isinstance( inst, OSError ) and inst.errno == 11: continue
+                if isinstance( inst, OSError ) and inst.errno == 11: return
                 print( f"dmx read exception : {inst}")
-                continue
+                return
             if dataLen == 0:
-                continue
+                return
             
             #data, unused_address = await loop.sock_recv( self.socket_server, 1024)
             # only dealing with Art-Net DMX

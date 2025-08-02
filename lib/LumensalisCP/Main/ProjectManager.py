@@ -13,11 +13,15 @@ from LumensalisCP.ImportProfiler import  getImportProfiler
 _saySimpleImport = getImportProfiler( __name__, globals() )
 
 from LumensalisCP.common import *
-from LumensalisCP.Triggers.Timer import PeriodicTimer
+#from LumensalisCP.Triggers.Timer import PeriodicTimer
 from LumensalisCP.Eval.EvaluationContext import EvaluationContext
 from LumensalisCP.Temporal.Refreshable import *
 from LumensalisCP.util.Reloadable import ReloadableModule, reloadableMethod, reloadableClassMeta
 #from LumensalisCP.util.Reloadable import ReloadableMethodType, Unpack, KWDS
+
+from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
+
+
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
 
@@ -75,8 +79,8 @@ see http://lumensalis.com/ql/h2Main
             rv = pmc_gcManager.collectionCheckInterval
             return rv
         
-        timer = PeriodicTimer(manager=main.timers,name="gc-collect",
-                              interval=getCollectionCheckInterval, oneShot=False)
+        #timer = PeriodicTimer(manager=main.timers,name="gc-collect",
+         #                     interval=getCollectionCheckInterval, oneShot=False)
         
         #@addPeriodicTaskDef( name="gc-collect", interval=getCollectionCheckInterval, main=main )
         def runCollect(context:EvaluationContext) -> None:
@@ -90,7 +94,7 @@ see http://lumensalis.com/ql/h2Main
         #def dump():
         #    profilingRL.printDump(main)
 
-    main.callLater( addProfilingCallbacks )
+    #main.callLater( addProfilingCallbacks )
     return main
 
 _saySimpleImport.complete(globals())

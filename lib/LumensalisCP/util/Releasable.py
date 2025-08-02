@@ -1,7 +1,7 @@
 
 
 from __future__ import annotations
-import asyncio.lock  # type: ignore # pylint: disable=import-error,no-name-in-module
+#import asyncio.lock  # type: ignore # pylint: disable=import-error,no-name-in-module
 
 #############################################################################
 from LumensalisCP.ImportProfiler import  getImportProfiler
@@ -22,7 +22,7 @@ class ReleasablePool(object):
         self._releases = 0
         self._rIndex = 0
         self._cls = cls
-        self._lock = asyncio.lock.Lock() # pylint: disable=no-member # type:ignore
+        #self._lock = asyncio.lock.Lock() # pylint: disable=no-member # type:ignore
     
     @property
     def cls(self) -> type:  

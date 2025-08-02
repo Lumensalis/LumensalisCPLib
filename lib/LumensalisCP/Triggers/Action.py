@@ -4,14 +4,8 @@ from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayActionImport = getImportProfiler( globals() ) # "Action"
 
 from LumensalisCP.Debug import Debuggable
-
-_sayActionImport( "IOContext" )
 from LumensalisCP.IOContext import *
-
-
-_sayActionImport( "Behavior" )
 from LumensalisCP.Behaviors.Behavior import Behavior, Actor  # type: ignore[import-untyped]
-
 from LumensalisCP.Triggers.Invocable import Invocable
 
 #if TYPE_CHECKING:

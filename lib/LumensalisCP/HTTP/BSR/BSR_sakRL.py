@@ -27,7 +27,7 @@ def getStatusInfo(self:BasicServer.BasicServer, request:Request ) -> dict[str, A
                 context = attrsToDict( context, ['updateIndex','when'] ),
                 scenes = attrsToDict( main.scenes,["currentScenes"] ),
                 nextWait = main._nextWait, # type: ignore
-                priorWhen = main.__priorSleepWhen, # type: ignore
+                priorWhen = main.asyncLoop.priorSleepWhen, # type: ignore
                 #priorSleepDuration = main.__priorSleepDuration, # type: ignore
                 latestSleepDuration = main.__latestSleepDuration # type: ignore
             ),

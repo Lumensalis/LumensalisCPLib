@@ -238,7 +238,7 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
         return None
             
     def nliFind(self,name:str) -> NamedLocalIdentifiable|None:
-        for child in self:
+        for child in self.data:
             if child.name == name:
                 return child
         return None

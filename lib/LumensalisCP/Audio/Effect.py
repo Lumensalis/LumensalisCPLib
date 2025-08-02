@@ -206,7 +206,14 @@ PEAKING_EQ = synthio.FilterMode.PEAKING_EQ # type: ignore
 LOW_SHELF = synthio.FilterMode.LOW_SHELF # type: ignore
 HIGH_SHELF = synthio.FilterMode.HIGH_SHELF # type: ignore
 
-
+_filterModes:dict[str,Any] = dict( LOW_PASS=LOW_PASS,
+                     HIGH_PASS=HIGH_PASS,
+                     BAND_PASS=BAND_PASS,   
+                     NOTCH=NOTCH,
+                     PEAKING_EQ=PEAKING_EQ, # type: ignore
+                     LOW_SHELF=LOW_SHELF, # type: ignore
+                     HIGH_SHELF=HIGH_SHELF # type: ignore
+                     )
 
 class EffectLFO(NamedLocalIdentifiable):
 
@@ -237,7 +244,7 @@ class SoundEffect(NamedLocalIdentifiable):
         frequency: NotRequired[float] 
         wave: NotRequired[WaveArgType]
         filter: NotRequired[synthio.Biquad]
-        filterMode: NotRequired[synthio.FilterMode]
+        filterMode: NotRequired[synthio.FilterMode|str]
         filterFrequency: NotRequired[float]
         filterQ: NotRequired[float|Evaluatable[float]]
         filterA: NotRequired[float|Evaluatable[float]]
@@ -247,7 +254,7 @@ class SoundEffect(NamedLocalIdentifiable):
                 frequency: Any = 440,  # Default frequency for the note
                 wave: WaveArgType = 'sine_wave',
                 filter: Optional[synthio.Biquad] = None,
-                filterMode: Optional[synthio.FilterMode] = None,
+                filterMode: Optional[synthio.FilterMode|str] = None,
                 filterFrequency: Optional[float] = None,
                 filterQ: Optional[float|Evaluatable[float]] = None,
                 filterA: Optional[float|Evaluatable[float]] = None, 
@@ -257,6 +264,9 @@ class SoundEffect(NamedLocalIdentifiable):
 
         waveform=effectsManager.getWave(wave)
         if self.enableDbgOut: self.dbgOut(f"Creating Effect with frequency {frequency} and waveform {repr(waveform):.80}...")
+        if isinstance(filterMode,str):
+            filterMode = _filterModes.get(filterMode)
+            assert filterMode is not None, f"Unknown filter mode {filterMode}"
         if filter is not None:
             assert filterFrequency is None, "Cannot specify both filter and filterFrequency"
             assert filterQ is None, "Cannot specify both filter and filterQ"
