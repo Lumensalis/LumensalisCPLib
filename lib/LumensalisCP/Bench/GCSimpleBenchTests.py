@@ -1,5 +1,11 @@
 from .GCSimpleBench import *
 
+# typing: ignore
+
+# pyright: reportUnknownVariableType=false,reportUnknownMemberType=false,reportUnknownArgumentType=false,reportUnknownParameterType=false,reportUnknownVariableType=false
+# pyright: reportMissingParameterType=false,reportUnusedImport=false,reportUnusedVariable=false
+# pyright: reportArgumentType=false,reportUnusedImport=false,reportUnusedVariable=false,reportUnknownLambdaType=false
+
 #############################################################################
 
 def innerFoo( ):
