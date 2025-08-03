@@ -1,5 +1,5 @@
 from LumensalisCP.ImportProfiler import ImportProfiler
-ImportProfiler.SHOW_IMPORTS = True
+ImportProfiler.SHOW_IMPORTS = False
 
 # ALWAYS START WITH "from LumensalisCP.Simple import *"
 from LumensalisCP.Simple import * # http://lumensalis.com/ql/h2Start
@@ -7,7 +7,7 @@ from LumensalisCP.Simple import * # http://lumensalis.com/ql/h2Start
 #############################################################################
 sayAtStartup( "start project" ) #  http://lumensalis.com/ql/h2Main
 main2:MainManager = ProjectManager(
-        profile=True,
+        # profile=True,
         #  profileMemory=3
     ) 
 
@@ -77,7 +77,7 @@ audio = main.addI2SAudio(
 )
 
 testEffect = audio.effects.makeEffect() # filterMode=BAND_PASS)
-testEffect.enableDbgOut = True
+#testEffect.enableDbgOut = True
 
 def updateTestEffect(source:Any=None, context:Optional[EvaluationContext]=None) -> None:
     #testEffect.filter.frequency = oscillator.value * 2000 + 100
@@ -85,9 +85,11 @@ def updateTestEffect(source:Any=None, context:Optional[EvaluationContext]=None) 
     testEffect.note.bend = v
     #testEffect.infoOut( "bending to %r", v )
 
-oscillator.onChange( updateTestEffect  )
+#oscillator.onChange( updateTestEffect  )
+testEffect.bend = oscillator / 10.0
+testEffect.amplitude = 0.14
 
-@addPeriodicTaskDef( interval=0.03, name="updateOscillator" )
+#@addPeriodicTaskDef( interval=0.03, name="updateOscillator" )
 def updateOscillator(context:EvaluationContext) -> None:
     oscillator.updateValue(context)
 
@@ -159,17 +161,21 @@ rainbowLeft = Rainbow(leftStoneLights,colorCycle=rbCycle, spread=rbs )
 rainbowRight = Rainbow(rightStoneLights,colorCycle=1.1, spread=2.0 )
 aglSpinner = Spinner(angleGaugeLights, onValue=Colors.RED, tail=0.42,period=0.49)
 
-lsZ21 = Z21Adapted( lightSensor )
+lsZ21 = Z21Adapted( oscillator2 )
 csWheel = ColorWheelZ1( lsZ21 )
 main.panel.monitor( csWheel, description="Color Wheel based on light sensor" )
 #csWheel.enableDbgOut = True
+sayAtStartup( "setup LED ring" ) # http://lumensalis.com/ql/h2Touch
+wheel = ColorWheelZ1( Z21Adapted(oscillator2) )
+gauge = Gauge( angleGaugeLights, value=Z21Adapted(oscillator), onValue=wheel )
 
-closedSpin = Spinner(angleGaugeLights,onValue=csWheel,period=3.49 )
+
+#closedSpin = Spinner(angleGaugeLights,onValue=csWheel,period=3.49 )
 centerSpin = Spinner(centerStoneLights)
 
 sceneOpen.addPatterns( frontLidBlink(onValue="GREEN"), aglSpinner, rainbowLeft, rainbowRight )
 #sceneClosed.addPatterns( frontLidBlink(onValue="RED"), closedSpin, centerPattern, rainbowLeft, rainbowRight  )
-sceneClosed.addPatterns( closedSpin )
+sceneClosed.addPatterns( gauge )
 sceneMoving.addPatterns( frontLidBlink(onValue="YELLOW"), centerSpin, aglSpinner )
 
 #############################################################################

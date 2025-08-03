@@ -53,7 +53,9 @@ if False:
 #from LumensalisCP.Behaviors.Behavior import Behavior as BehaviorClass
 #from LumensalisCP.Main.Manager import MainManager
 #from LumensalisCP.Audio.Effect import *
+from LumensalisCP.Triggers.Action import do
 from LumensalisCP.Demo.DemoCommon import *
+from LumensalisCP.Main.Helpers import *
 from LumensalisCP.Main.ProjectManager import ProjectManager
 
 _saySimpleImport.parsing()

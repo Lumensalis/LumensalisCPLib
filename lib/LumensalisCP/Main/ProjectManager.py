@@ -64,8 +64,8 @@ see http://lumensalis.com/ql/h2Main
     #if pmc_gcManager.PROFILE_MEMORY == True:
     #    pmc_gcManager.PROFILE_MEMORY_NESTED = True
     #    pmc_gcManager.PROFILE_MEMORY_ENTRIES = True
-    if  pmc_mainLoopControl.ENABLE_PROFILE:
-        pmc_mainLoopControl.sayAtStartup("ProjectManager: starting project with profiling enabled")
+    
+    pmc_mainLoopControl.sayAtStartup(f"ProjectManager: starting project, profiling={pmc_mainLoopControl.ENABLE_PROFILE}, useWifi={main.useWifi}")
     
     gc.collect() # collect garbage before starting the project
     gc.disable()

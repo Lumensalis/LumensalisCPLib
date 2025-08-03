@@ -112,12 +112,14 @@ def MainManager_getNextFrame(self:MainManager) ->ProfileFrameBase:
         self._when = now
         self._privateCurrentContext.reset(now)
         context = self._privateCurrentContext
-
-        eSleep = TimeInSeconds( now - self.asyncLoop.priorSleepWhen )
-        newFrame = self.profiler.nextNewFrame(context, eSleep = eSleep ) 
-
-
-        assert isinstance( newFrame, ProfileFrameBase )
+        if self.profiler.disabled:
+            newFrame = self.profiler.stubFrame
+            
+        else:
+            eSleep = TimeInSeconds( now - self.asyncLoop.priorSleepWhen )
+            newFrame = self.profiler.nextNewFrame(context, eSleep = eSleep ) 
+            assert isinstance( newFrame, ProfileFrameBase )
+            
         context.baseFrame  = context.activeFrame = newFrame
         return newFrame
 

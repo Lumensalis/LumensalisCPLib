@@ -77,7 +77,7 @@ class ReloadableClassMeta(object):
         setattr(self._cls, name, method)
 
     def setClass(self, cls: type) -> None:
-        assert self._cls is None, "Class has already been set."
+        assert self._cls is None, f"Class {cls}@{id(cls):X} has already been set to {self._cls}@{id(self._cls):X}."
         __reloadPrint(f"Setting class {cls} for {self.name} ({len(self._methods)} methods)")
         self._cls = cls
         for method_name, method in self._methods.items():

@@ -186,6 +186,16 @@ def addPoolInfo( dest:StrAnyDict,  cls:type[ProfileSnapEntry|ProfileFrame|Profil
     pool = cls.getReleasablePool()
     return dictAddUnique(dest, cls.__name__, dict( a=pool._allocs, r=pool._releases ) ) # type: ignore
 
+def getPools( pools:StrAnyDict ) -> None:
+    from LumensalisCP.Main.Profiler import ProfileSnapEntry, ProfileFrame, ProfileSubFrame, ProfileFrameBase, ProfileWriteConfig
+
+    addPoolInfo(pools, ProfileSnapEntry)
+    addPoolInfo(pools, ProfileFrame)
+    addPoolInfo(pools, ProfileSubFrame)
+    addPoolInfo(pools, ProfileFrameBase)
+
+
+
 @_Profiler.reloadableMethod()
 def getProfilerInfo( self:Profiler, dumpConfig:Optional[ProfileWriteConfig]=None ) -> Any:
     #main 
@@ -220,13 +230,22 @@ def getProfilerInfo( self:Profiler, dumpConfig:Optional[ProfileWriteConfig]=None
         d['minSubF'] = dumpConfig.minSubF
         d['minB'] = dumpConfig.minB
 
+    with dumpConfig.nestDict('profiler'):
+        d = dumpConfig.topDict
+        #d['updateIndex'] = self.updateIndex
+        #d['when'] = self.when
+        d['disabled'] = self.disabled
+        d['timingsLength'] = len(self.timings)
+
+
 
     with dumpConfig.nestDict('pools'):
         d = dumpConfig.topDict
-        addPoolInfo( d, ProfileSnapEntry )
-        addPoolInfo( d, ProfileFrame )
-        addPoolInfo( d, ProfileSubFrame )
-        addPoolInfo( d, ProfileFrameBase )
+        getPools(d)
+        #addPoolInfo( d, ProfileSnapEntry )
+        #addPoolInfo( d, ProfileFrame )
+        #addPoolInfo( d, ProfileSubFrame )
+        #addPoolInfo( d, ProfileFrameBase )
 
     with dumpConfig.nestDict('gc'):
         d = dumpConfig.topDict

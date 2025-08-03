@@ -18,6 +18,7 @@ from LumensalisCP.Triggers.Fire import fireOnRising
 # from LumensalisCP.Audio import Audio
 import board
 
+
 #############################################################################
 printElapsed( "finished from LumensalisCP.Simple import *" )
 ImportProfiler.dumpWorstImports(10)
@@ -26,9 +27,9 @@ ImportProfiler.dumpWorstImports(10)
 
 sayAtStartup( "start project" ) #  http://lumensalis.com/ql/h2Main
 main = ProjectManager(
-        #profile=True,
+        profile=False,
         #  profileMemory=3
-        #useWifi = False,
+        useWifi = True,
     ) 
 
 actOne= main.addScene( ) # http://lumensalis.com/ql/h2Scenes

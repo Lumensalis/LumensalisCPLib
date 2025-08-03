@@ -657,6 +657,7 @@ class Profiler(object):
         
         self.timingsLength = timings
         self.disabled = stub
+        
             
              
         #self.nextNewFrame(0)
@@ -689,10 +690,20 @@ class Profiler(object):
             return None
         return rv 
     
-addReloadableClass(ProfileWriteConfig)
-addReloadableClass(ProfileSnapEntry)
-addReloadableClass(ProfileFrame)
-addReloadableClass(ProfileFrameBase)
-addReloadableClass(ProfileSubFrame)
-addReloadableClass(Profiler)
+    
+def __addProfileClass(cls:type) -> None:
+    assert isinstance(cls,type)
+    addReloadableClass(cls)
+    assert getattr(ProfilerRL, cls.__name__, None) is None, f"Reloadable class {cls.__name__} already exists in ProfilerRL"
+    setattr(ProfilerRL, cls.__name__, cls)
+
+
+__addProfileClass(ProfileWriteConfig)
+__addProfileClass(ProfileSnapEntry)
+__addProfileClass(ProfileFrame)
+__addProfileClass(ProfileFrameBase)
+__addProfileClass(ProfileSubFrame)
+__addProfileClass(Profiler)
+
+
 __sayImport.complete(globals())

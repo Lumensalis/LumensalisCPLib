@@ -103,7 +103,8 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         
         self._refreshables = RootRefreshableList(name='mainRefreshables')
         self.profiler = Profiler(self._privateCurrentContext )
-
+        self.startupOut("profiler created, disabled=%s", self.profiler.disabled )
+        
         self.asyncManager:ManagerAsync = ManagerAsync(main=self)
         
         self.__socketPool:Any = None

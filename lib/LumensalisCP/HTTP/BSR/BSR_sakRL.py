@@ -12,8 +12,6 @@ def getAsyncInfo(main:MainManager) -> dict[str, Any]:
     children = dict( [(getattr(task,'name',None) or task.dbgName, task.asyncTaskStats()) for task in  asyncManager.children] ) 
 
     return {
-
-
         'nextWait': asyncLoop.nextWait,
         'nextRefresh': asyncLoop.nextRefresh,
         'priorWhen': asyncLoop.priorSleepWhen,
@@ -49,6 +47,7 @@ def getStatusInfo(self:BasicServer, request:Request ) -> dict[str, Any]:
                 #priorSleepDuration = main.__priorSleepDuration, # type: ignore
                 latestSleepDuration = main.asyncLoop.latestSleepDuration # type: ignore
             ),
+            'profiler': main.profiler.getProfilerInfo( dumpConfig=None ),
             'monitored': monitored,
             'asyncLoop': getAsyncInfo(main)
         }
