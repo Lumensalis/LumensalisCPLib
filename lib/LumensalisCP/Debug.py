@@ -14,6 +14,9 @@ except ImportError:
     
 import traceback, time
 
+from LumensalisCP.util.CountedInstance import CountedInstance
+
+
 if TYPE_CHECKING:
     class IDebuggable(Protocol):
         
@@ -33,13 +36,17 @@ else:
     class IDebuggable: ...
 
 
-class Debuggable( IDebuggable ):
+class Debuggable( CountedInstance, IDebuggable ):
     
     @staticmethod
     def _getNewNow():
         return time.monotonic()
     
     def __init__(self, enableDbgOut:bool = False):
+        CountedInstance.__init__(self)
+        #IDebuggable.__init__(self)
+        self.__dbgOutEnabled = enableDbgOut
+        #self._DebuggableCachedName = None # type: Optional[str] # pylint: disable=attribute-defined-outside-init
         self.__dbgOutEnabled = enableDbgOut
     
     @staticmethod

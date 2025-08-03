@@ -1,7 +1,6 @@
 
 from LumensalisCP.common import *
 from LumensalisCP.CPTyping import *
-import atexit
 
 import LumensalisCP.Main.Manager
 

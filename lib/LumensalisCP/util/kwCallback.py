@@ -1,14 +1,15 @@
-from LumensalisCP.CPTyping import *
-import re
-
 #############################################################################
 from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayKWCallbackImport = getImportProfiler( globals() ) # "util.kwCallback"
 
+from LumensalisCP.CPTyping import *
+import re
+from LumensalisCP.util.CountedInstance import CountedInstance
+
 
 #############################################################################
 
-class KWCallback(object):
+class KWCallback(CountedInstance):
     """wrapper for a callable, allowing it  be invoked safely(ish) with more 
     positional and/or named parameters than expect.  Extra parameters will
     be silently discarded instead of raising an exception.
@@ -45,6 +46,7 @@ class KWCallback(object):
         return cls( cb, **kwds )
         
     def __init__( self, cb:Callable, name:str|None = None, requiredKwds:List[str]|None = None ):
+        super().__init__()
         self.__cb = cb
         self.__name = name or getattr(cb,'__name__', repr(cb) )
         

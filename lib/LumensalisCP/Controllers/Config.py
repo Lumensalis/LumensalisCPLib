@@ -2,13 +2,14 @@ from __future__ import annotations
 import microcontroller, board # type: ignore # pylint: disable=all
 
 
-from LumensalisCP.common import Any, Optional, TypeAlias, Union, StrAnyDict
+from LumensalisCP.common import Any, Optional, TypeAlias, Union, StrAnyDict, CountedInstance
 # Map from specific controllers actual pins to D1 Mini pin names
-class ControllerPins(object):
+class ControllerPins(CountedInstance):
     
     pinNames = [ "D0","D1","D2","D3","D4","D5","D6","D7","D8","A0","TX","RX" ]
     
     def __init__(self, **kwds:dict[str,Any]): 
+        super().__init__()
 
         for pinName in ControllerPins.pinNames:
             pinTag = kwds.get( pinName, pinName ) 
@@ -35,11 +36,12 @@ class ControllerPins(object):
     def __getattr__(self, tag:str)-> microcontroller.Pin:
         raise AttributeError(f"ControllerPins has no pin {tag!r}")
     
-class ControllerConfig(object):
+class ControllerConfig(CountedInstance):
     
     options:dict[str,Any]
     
     def __init__( self, **kwds:Any ) -> None:
+        super().__init__()
         self.kwds = dict(**kwds)
         self.pins = None
         # self.options = None

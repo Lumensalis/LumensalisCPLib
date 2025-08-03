@@ -16,9 +16,10 @@ def wheel1( val:float ): return rainbowio.colorwheel(val*255.0)
 
 #############################################################################
 
-class LightValueBase(object):
+class LightValueBase(CountedInstance):
     def __init__(self):
-        pass
+        super().__init__()
+        
 
     @property
     def brightness(self)->float: raise NotImplementedError

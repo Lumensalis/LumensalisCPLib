@@ -7,9 +7,12 @@ try:
 except:
     _standardWeakref = None
     #from LumensalisCP.CPTyping import ReferenceType
+    from LumensalisCP.util.CountedInstance import CountedInstance
+
     ReferenceType = None
-    class _ref(object):
+    class _ref(CountedInstance):
         def __init__(self, target:object ):
+            super().__init__()
             self.__referenced = target
             
         def __call__(self) -> object|None:

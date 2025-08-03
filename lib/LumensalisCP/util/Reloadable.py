@@ -30,9 +30,10 @@ def reloadingMethod(func:Callable[...,Any] ) -> Callable[...,Any]:
 
 #############################################################################
 
-class ReloadableModule(object):
+class ReloadableModule(CountedInstance):
 
     def __init__(self, name:Optional[str]=None, moduleGlobals:Optional[dict[str,Any]]=None):
+        super().__init__()
         if name is None: 
             assert moduleGlobals is not None, "Either name or moduleGlobals must be provided."
             name = moduleGlobals.get('__name__' )
@@ -46,12 +47,13 @@ class ReloadableModule(object):
         return rv
 
 
-class ReloadableClassMeta(object):
+class ReloadableClassMeta(CountedInstance):
 
     _metaDict:ClassVar[dict[str, ReloadableClassMeta]] = {}
 
 
     def __init__(self, name: str) -> None:
+        super().__init__()
         __reloadPrint(f"Creating ReloadableClassMeta for {name}")
         self.name = name
         self.index = len(ReloadableClassMeta._metaDict)

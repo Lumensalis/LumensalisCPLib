@@ -24,8 +24,9 @@ if TYPE_CHECKING:
 
 #############################################################################
 
-class I2CFactory(object):
+class I2CFactory(CountedInstance):
     def __init__(self, main:MainManager|None=None):
+        super().__init__()
         assert main is not None
         self.main:MainManager = main
     

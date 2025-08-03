@@ -17,7 +17,7 @@ from LumensalisCP.Controllers.Configs.Core import getConfig
 #    from LumensalisCP.Main.Manager import MainManager
     
 _sayConfigurableBaseImport( "parsing" )    
-class ConfigurableBase(object):
+class ConfigurableBase(CountedInstance):
     class KWDS( TypedDict ):
         config: NotRequired[ControllerConfigArg]
         defaults: NotRequired[dict[str, Any]]
@@ -30,6 +30,7 @@ class ConfigurableBase(object):
         }
             
     def __init__(self, config:Optional[ControllerConfigArg]=None, defaults:Optional[StrAnyDict]=None, **kwds:StrAnyDict ):
+        super().__init__()
         if configSecondary := config == "secondary":
             config = None
             

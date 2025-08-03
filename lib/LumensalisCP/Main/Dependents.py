@@ -48,9 +48,10 @@ class FactoryBase( MainChild ):
         instance.mcPostCreate()
         
         
-class ManagerBase(object):
+class ManagerBase(CountedInstance):
     
     def __init__(self):
+        super().__init__()
         self._registerManager()
         
     def _registerManager( self ):
@@ -73,9 +74,10 @@ class SubManagerBase(ManagerBase,MainChild):
         
         self._registerManager()
 
-class ManagerRef(object):
+class ManagerRef(CountedInstance):
     
     def __init__( self, manager:ManagerBase ):
+        super().__init__()
         assert isinstance(manager,ManagerBase)
         
         # make sure it's the global instance ... this can be expanded 
@@ -87,10 +89,11 @@ class ManagerRef(object):
     def __call__( self ) -> ManagerBase:
         return getattr( self.managerClass, '_theManager', None ) # type: ignore
 
-class MainRef(object):
+class MainRef(CountedInstance):
     _theManager:MainManager
     
     def __init__( self, main:MainManager|Any ):
+        super().__init__()
         assert main is not None and main is MainRef._theManager
 
     def __call__( self ) -> MainManager:

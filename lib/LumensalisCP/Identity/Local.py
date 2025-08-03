@@ -15,7 +15,7 @@ from LumensalisCP.pyCp.collections import GenericList, GenericListT
 
 _sayIdentityLocalImport.parsing()
 
-class LocalIdentifiable(object):
+class LocalIdentifiable(CountedInstance):
     
     __nextId = 1
     __localId:int
@@ -28,6 +28,7 @@ class LocalIdentifiable(object):
         return nextId
 
     def __init__( self ) -> None:
+        super().__init__()
         self.__localId = self.__getNextId()
         
     @property

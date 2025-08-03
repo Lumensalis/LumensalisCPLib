@@ -2,6 +2,7 @@ from LumensalisCP.ImportProfiler import getImportProfiler
 __sayBSR_sakRLImport = getImportProfiler( globals(), reloadable=True )
 
 from LumensalisCP.HTTP.BSR.common import *
+from LumensalisCP.util.CountedInstance import CountedInstance
 
 #from LumensalisCP.Main.Async import AsyncLoop
 
@@ -47,6 +48,9 @@ def getStatusInfo(self:BasicServer, request:Request ) -> dict[str, Any]:
                 #priorSleepDuration = main.__priorSleepDuration, # type: ignore
                 latestSleepDuration = main.asyncLoop.latestSleepDuration # type: ignore
             ),
+            'misc': {
+                'instanceCounts': CountedInstance._getCiInstanceCounts()
+            },
             'profiler': main.profiler.getProfilerInfo( dumpConfig=None ),
             'monitored': monitored,
             'asyncLoop': getAsyncInfo(main)

@@ -14,7 +14,10 @@ from LumensalisCP.CPTyping import *
 
 from LumensalisCP.common import withinZeroToOne_, safeFmt, ZeroToOne
 from LumensalisCP.util.Convertor import Convertor
+from LumensalisCP.util.CountedInstance import CountedInstance
+
 #from LumensalisCP.Eval.Evaluatable import Evaluatable, evaluate
+
 
 #from LumensalisCP.CPTyping import *
 
@@ -36,12 +39,13 @@ AnyRGBValue:TypeAlias = Union[ 'RGB',
     ] 
 
 
-class RGB(object):
-    
+class RGB(CountedInstance):
+
 
     def __init__(self, r:RGBChannel|tuple[float,float,float]|str|RGB=0.0, g:Optional[RGBChannel]=None, b:Optional[RGBChannel]=None ) -> None:
         
         super().__init__()
+
         #self.__rgb:int = 0
         if g is None:
             assert isinstance( b, type(None)), "b must also be None"

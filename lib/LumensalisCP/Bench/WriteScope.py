@@ -9,19 +9,18 @@ a variety of output options including indented printing, json, ...
 
 from __future__ import annotations
 
-
 from LumensalisCP.Bench.simpleCommon import *
     
 #############################################################################
 
-
-class WriteConfig(object):
+class WriteConfig(CountedInstance):
     """_summary_
 
     :param object: _description_
     :type object: _type_
     """
     def __init__(self):
+        super().__init__()
         self.showScopes = False
         self.detailed = True
 
@@ -46,7 +45,7 @@ class WriteConfig(object):
         
         scope.target.write( repr(value) )
 
-class WriteScope(object):
+class WriteScope(CountedInstance):
     """combines config and target, and provides base for writing containers
     """
     target:TextIO
@@ -71,6 +70,7 @@ class WriteScope(object):
             mode (_type_, optional): _description_. Defaults to None.
             indentItems (bool | None, optional): _description_. Defaults to None.
         """
+        super().__init__()
         if ts is not None:
             self.config:WriteConfig = ts.config 
             self.target:TextIO = ts.target
@@ -135,7 +135,9 @@ class WriteScope(object):
             _type_: _description_
         """
         self._addTagBeforeItem(self.nestedTag( tag or instance.name) )
-        return NamedTypeWriteScope( self, instance=instance, indentItems=indentItems)
+    
+        return NamedTypeWriteScope( self, instance=instance, indentItems=indentItems )
+
 
     def startList(self,
                   tag:Optional[str]=None,

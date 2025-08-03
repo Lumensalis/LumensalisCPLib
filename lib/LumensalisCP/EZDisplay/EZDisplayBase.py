@@ -6,14 +6,15 @@ import adafruit_display_text.label  # pyright: ignore[reportMissingImports] # py
 
 from LumensalisCP.I2C.common import *
 
-class EZDisplayBase(object):
+class EZDisplayBase(CountedInstance):
     def __init__(self, displayWidth = 128, displayHeight = 64 ):
         self.displayWidth = displayWidth or 128
         self.displayHeight = displayHeight or 64
 
 
-class EZDisplayElement(object):
+class EZDisplayElement(CountedInstance):
     def __init__(self):
+        super().__init__()
         pass
     
 class EZI2cDisplayIoBase(I2CDevice, EZDisplayBase):

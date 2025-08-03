@@ -12,11 +12,12 @@ from LumensalisCP.CPTyping import *
 
 #############################################################################
 
-class ReleasablePool(object):
+class ReleasablePool(CountedInstance):
     
     _freeHead:"Releasable|None"
     
     def __init__(self, cls:type ):
+        super().__init__()
         self._freeHead = None
         self._allocs = 0
         self._releases = 0
@@ -34,7 +35,7 @@ class ReleasablePool(object):
     def releases(self) -> int:
         return self._releases
     
-class Releasable(object):
+class Releasable(CountedInstance):
     """ Base for cacheable / reusable objects
     """
     # pylint: disable=protected-access
@@ -45,6 +46,7 @@ class Releasable(object):
     _rIndex:int
 
     def __init__(self):
+        super().__init__()
         self._inUse = False
         self._nextFree = None
 

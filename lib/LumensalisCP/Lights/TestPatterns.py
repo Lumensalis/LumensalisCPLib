@@ -121,13 +121,14 @@ class Spinner( OnOffPattern ):
                 v = offValue 
             target[px] = v
 
-class PatternTemplate(object):
+class PatternTemplate(CountedInstance):
     """ shorthand for creating patterns with consistent options
 
     :param object: _description_
     :type object: _type_
     """
     def __init__( self, patternClass:Type[Pattern], *args, **kwds ):
+        super().__init__()
         self.patternClass = patternClass
         self.args = args
         self.kwds = kwds

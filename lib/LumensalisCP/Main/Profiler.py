@@ -36,7 +36,7 @@ def ptToSeconds(v: TimePT|float) -> TimeInSeconds:
 
 PWJsonNestDataType:TypeAlias = Union[StrAnyDict,List[Any]]
 
-class ProfileWriteConfig(object):
+class ProfileWriteConfig(CountedInstance):
     class KWDS(TypedDict):
         target:Required[TextIO|list[str]|StrAnyDict]
         minE:NotRequired[float]
@@ -52,7 +52,8 @@ class ProfileWriteConfig(object):
                  showMemory:Optional[bool]=None,
                  showMemoryEntries:Optional[bool]=None,
                    **kwds:Any) ->None:
- 
+        
+        super().__init__()
         self.target:Any = target
         self.minB:int = minB if minB is not None else 1024
         self.minEB:int = minEB if minEB is not None else self.minB
@@ -248,8 +249,9 @@ class ProfileSnapEntry(Releasable):
             #rv['nest'] = subFrame.jsonData() # **kwds)
         return rv
 
-class IndexMap(object):
+class IndexMap(CountedInstance):
     def __init__(self, attrPrefix:str, tags:list[str] ):
+        super().__init__()
         self.tags = tags
         self.indices:dict[str,int] = dict( [(tag,x) for x,tag in enumerate(tags)] )
         self.attrNames:dict[str,str] = dict( [(tag,attrPrefix+tag) for tag in tags] )
@@ -260,8 +262,9 @@ class IndexMap(object):
     def attrFor(self,tag:str) -> str|None:
         return self.attrNames.get(tag,None)
     
-class CachedList(object):
+class CachedList(CountedInstance):
     def __init__(self, size:int ):
+        super().__init__()
         self.__maxSize = size
         self.__size = 0
         self.__entries:list[Releasable|None] =  [None for _ in range(size)] 
@@ -632,7 +635,7 @@ class ProfileStubFrame(ProfileFrame):
 
 #############################################################################
 
-class Profiler(object):
+class Profiler(CountedInstance):
     updateIndex: int
     when: TimeInSeconds
     currentSnap: ProfileSnapEntry | None
@@ -643,6 +646,7 @@ class Profiler(object):
     stubFrame:ProfileStubFrame
     
     def __init__(self, context:UpdateContext, timings:Optional[int]=None, stub:Optional[bool]=None ):
+        super().__init__()
         if stub is None:
             stub = not pmc_mainLoopControl.ENABLE_PROFILE
             

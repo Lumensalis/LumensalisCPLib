@@ -35,14 +35,15 @@ import sys
 import time
 import supervisor
 
+from LumensalisCP.util.CountedInstance import CountedInstance
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
 
 
-class _MLCAnnotation:
+class _MLCAnnotation(CountedInstance):
     def __init__(self, message:str, *args:Any, **kwds:Any) -> None:
-
+        super().__init__()
         self.message = message
         if len(args) > 0:
             try:

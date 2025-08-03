@@ -16,9 +16,10 @@ from LumensalisCP.CPTyping import *
 from LumensalisCP.Inputs import InputSource
 
 
-class PanelControlInstanceHelper(object):
+class PanelControlInstanceHelper(CountedInstance):
     
     def __init__(self, panelInstance:PanelControl[Any,Any]|PanelMonitor[Any]):
+        super().__init__()
         self.panelInstance = panelInstance
         if isinstance(panelInstance, PanelMonitor):
             self.input:InputSource  = panelInstance.source

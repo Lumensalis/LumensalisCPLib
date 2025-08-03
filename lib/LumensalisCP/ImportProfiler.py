@@ -10,9 +10,10 @@ except ImportError:
 import time
 
 from LumensalisCP.Main.PreMainConfig import sayAtStartup, pmc_mainLoopControl, pmc_gcManager
-
+from LumensalisCP.util.CountedInstance import CountedInstance
 #############################################################################
-class ImportProfiler(object):
+
+class ImportProfiler(CountedInstance):
     """ A simple profiler for imports, to help identify slow imports """
     SHOW_IMPORTS:ClassVar[bool] = False
     RECORD_IMPORTS:ClassVar[bool|None] = True
@@ -22,8 +23,8 @@ class ImportProfiler(object):
     NESTING:ClassVar[list[ActualImportProfiler]] = []
     IMPORTS:ClassVar[list[ActualImportProfiler]] = []
 
-    def __init__(self ) -> None: ...
-        
+    def __init__(self ) -> None: 
+        super().__init__()
 
     def __call__(self, desc:str) -> None: 
         raise NotImplementedError
@@ -65,7 +66,7 @@ class ActualImportProfiler(ImportProfiler):
     """ A simple profiler for imports, to help identify slow imports """
 
     def __init__(self, name:Optional[str|dict[str,Any]]=None, moduleGlobals:Optional[dict[str,Any]]=None ) -> None:
-
+        super().__init__()
         if name is None:
             assert moduleGlobals is not None, "moduleGlobals must be provided if name is not"
             name = moduleGlobals.get('__name__', None) 

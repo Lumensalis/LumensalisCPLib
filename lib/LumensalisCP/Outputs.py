@@ -9,10 +9,10 @@ from LumensalisCP.Eval.Expressions import *
 
 _sayOutputsImport.parsing()
 
-class OutputTarget(object):
+class OutputTarget(CountedInstance):
 
     def __init__(self, name:Optional[str] = None):
-        pass
+        super().__init__()
         
     def set( self, value:Any, context:EvaluationContext ) -> None:
         raise NotImplementedError

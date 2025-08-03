@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 __sayControllersIdentityImport.parsing()
 
-class ControllerNVM(object):
+class ControllerNVM(CountedInstance):
     MAGIC = b"LCP"
     SIZE = 1024
     SPANS = dict(
@@ -30,6 +30,7 @@ class ControllerNVM(object):
     )
     
     def __init__(self, nvm: ByteArray = microcontroller.nvm ): # type: ignore[reportGeneralTypeIssues]
+        super().__init__()
         assert nvm is not None
         self.__nvm: ByteArray = nvm
 
@@ -129,8 +130,9 @@ class ControllerNVM(object):
         print(f"wrote {write_buffer}, read {read_buffer}" )
         return read_buffer
     
-class ControllerIdentity(object):
+class ControllerIdentity(CountedInstance):
     def __init__(self, main:MainManager):
+        super().__init__()
         processorUid = microcontroller.cpu.uid
         if pmc_mainLoopControl.preMainVerbose: print( f"processorUid({type(processorUid)}) = {processorUid}")
         self.processorUid = binascii.hexlify(processorUid).decode('utf-8')

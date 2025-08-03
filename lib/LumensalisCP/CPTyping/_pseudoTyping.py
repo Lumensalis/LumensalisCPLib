@@ -11,12 +11,12 @@ from __future__ import annotations
 # pyright: reportMissingParameterType=false
 # pyright: reportUnusedClass=false
 
-
+from LumensalisCP.util.CountedInstance import CountedInstance
 
 LCPF_TYPING_IMPORTED = False # type: ignore
 TYPE_CHECKING = False
 
-class PseudoTypingExpression(object):
+class PseudoTypingExpression(CountedInstance):
     _typeCache = {}
     @staticmethod
     def makeExpression( arg ): 
@@ -133,7 +133,8 @@ Optional = PseudoTypingModifier("Optional")
 ReferenceType = PseudoTypingModifier("ReferenceType")
 Unpack = PseudoTypingModifier("Unpack")
 
-class GenericBase(object): pass
+
+class GenericBase(CountedInstance): pass
 
 class _GenericMaker:
     def __getitem__(self, args) -> type[GenericBase]:
@@ -166,7 +167,7 @@ class __TDM(object):
 #TypedDict.__mro_entries__ = lambda bases: (_TypedDict,)
 #TypedDict.__mro_entries__ = lambda bases: ()
 
-class TypedDict(object):
+class TypedDict(CountedInstance):
     pass
 
 class Protocol:

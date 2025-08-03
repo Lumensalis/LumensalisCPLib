@@ -175,7 +175,7 @@ centerSpin = Spinner(centerStoneLights)
 
 sceneOpen.addPatterns( frontLidBlink(onValue="GREEN"), aglSpinner, rainbowLeft, rainbowRight )
 #sceneClosed.addPatterns( frontLidBlink(onValue="RED"), closedSpin, centerPattern, rainbowLeft, rainbowRight  )
-sceneClosed.addPatterns( gauge )
+sceneClosed.addPatterns( gauge, centerPattern, rainbowLeft, rainbowRight  )
 sceneMoving.addPatterns( frontLidBlink(onValue="YELLOW"), centerSpin, aglSpinner )
 
 #############################################################################

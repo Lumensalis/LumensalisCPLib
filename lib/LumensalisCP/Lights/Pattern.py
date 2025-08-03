@@ -120,7 +120,7 @@ class OnOffPattern( Pattern ): # pylint: disable=abstract-method
     
 #############################################################################
         
-class PatternGeneratorStep(object):
+class PatternGeneratorStep(CountedInstance):
     class KWDS(TypedDict):
         startValue: Required[AnyRGBValue]
         endValue: NotRequired[AnyRGBValue]
@@ -133,6 +133,7 @@ class PatternGeneratorStep(object):
                  duration: TimeSpanInSeconds=1.0,
                  intermediateRefresh: TimeSpanInSeconds|None = None,
             ):
+        super().__init__()
         self._startValue = startValue
         self._endValue:AnyRGBValue = endValue or startValue
         self.duration = duration

@@ -4,6 +4,11 @@ import re
 
 #############################################################################
 
+# pyright: reportUnknownVariableType=false,reportUnknownMemberType=false,reportUnknownArgumentType=false,reportUnknownParameterType=false,reportUnknownVariableType=false
+# pyright: reportMissingParameterType=false,reportUnusedImport=false,reportUnusedVariable=false
+# pyright: reportArgumentType=false,reportUnusedImport=false,reportUnusedVariable=false,reportUnknownLambdaType=false
+# pyright: reportAttributeAccessIssue=false, reportUndefinedVariable=false, reportUnknownVariableType=false, reportUnknownMemberType=false, reportUnknownArgumentType=false, reportUnknownParameterType=false, reportUnknownVariableType=false
+
 from LumensalisCP.CPTyping import Optional, StrAnyDict
 from LumensalisCP.Bench.simpleCommon import *
 from LumensalisCP.Bench.WriteScope import *
@@ -12,12 +17,13 @@ from LumensalisCP.Bench.WriteScope import *
 
 # type: ignore
 
-class GCTestAllocScopeSample(object):
+class GCTestAllocScopeSample(CountedInstance):
     mem_alloc: int|float
     mem_free: int|float
     when: float
     
     def __init__(self, copy:GCTestAllocScopeSample|None = None ):
+        super().__init__()
         if copy is None:
             self.clear()
         else:
@@ -71,8 +77,9 @@ class GCTestAllocScopeSample(object):
         return rv    
 
 #############################################################################
-class GCTesterTestParameters(object):
+class GCTesterTestParameters(CountedInstance):
     def __init__( self, name:str, args:Optional[tuple[Any]]=None,kwds:Optional[StrAnyDict] = None ):
+        super().__init__()  
         self.args = args
         optimizeArgs = None if kwds is None else kwds.pop('optimizeArgs',None)
         self.kwds = kwds
@@ -96,7 +103,7 @@ class GCTesterTestParameters(object):
 #############################################################################
         
         
-class GCTestAllocScopeData(object):
+class GCTestAllocScopeData(CountedInstance):
     before: GCTestAllocScopeSample
     after: GCTestAllocScopeSample
     
@@ -104,6 +111,7 @@ class GCTestAllocScopeData(object):
         return f"e:{self.elapsed}"
     
     def __init__(self, copy:GCTestAllocScopeData|None = None ):
+        super().__init__()
         if copy is None:
             self.before = GCTestAllocScopeSample()
             self.after = GCTestAllocScopeSample()
@@ -138,8 +146,9 @@ class GCTestAllocScope(GCTestAllocScopeData):
         self.finish()
 
 #############################################################################
-class GCTestTarget(object):
+class GCTestTarget(CountedInstance):
     def __init__(self, name:str, cb:Callable[..., None] ):
+        super().__init__()
         self.name = name
         self.target = cb
     
@@ -151,7 +160,7 @@ class GCTestTarget(object):
 
 #############################################################################
         
-class GCTestRunConfig(object):
+class GCTestRunConfig(CountedInstance):
     #args:list | None
     #kwds:dict | None
     
@@ -160,6 +169,7 @@ class GCTestRunConfig(object):
                  #args=None, kwds=None,
                  optimizeArgs:bool = False
                  ):
+        super().__init__()
         self.cycles:int = cycles or 5
         self.innerCycles:int = innerCycles or 1
         #self.args = args
@@ -212,8 +222,10 @@ class GCTestRunConfig(object):
                 return target.invokeWithArgs( *args, **kwds )
 
 
-class GCTestRunResultScope(object):
+class GCTestRunResultScope(CountedInstance):
+
     def __init__(self, config:GCTestRunConfig):
+        super().__init__()
         self.outerScope = GCTestAllocScope()
         self.preCollectScope = GCTestAllocScope()
         self.postCollectScope = GCTestAllocScope()
@@ -349,8 +361,9 @@ def _getName( f:Any ) -> str:
 
 
 GCTArg_NO_DEFAULT = "NO_DEFAULT"
-class GCTestSignatureArg(object):
+class GCTestSignatureArg(CountedInstance):
     def __init__(self, name:str, kind:Any, default:Any=GCTArg_NO_DEFAULT, **kwds:dict[str, Any] ): # pylint: disable=unused-argument
+        super().__init__()
         self.name:str = name
         self.required:bool = default is GCTArg_NO_DEFAULT
         
@@ -370,8 +383,9 @@ class GCTestSignatureArg(object):
                         
 GCTArg = GCTestSignatureArg        
         
-class GCTestSignature(object):
+class GCTestSignature(CountedInstance):
     def __init__(self, name:str, arguments:List[GCTestSignatureArg] ):
+        super().__init__()
         self.name = name
         self.arguments = arguments
     
@@ -380,7 +394,7 @@ class GCTestSignature(object):
             for arg in self.arguments:
                 selfWriteScope.addTaggedItem( arg.name, arg )
 
-class GCTester(object):
+class GCTester(CountedInstance):
     """ manage gc tests for a common signature
 
     """
@@ -391,6 +405,7 @@ class GCTester(object):
                  signature:Optional[GCTestSignature|list[GCTestSignatureArg]]=None,
                  baseline:Optional[Callable[...,Any]] = None, 
                  ):
+        super().__init__()
         self.targets = [GCTestTarget("baseline", baseline or (lambda *args,**kwds:None) )]
         if not isinstance(signature,GCTestSignature):
             # TODO : this is probably not right? # pylint: disable=fixme
@@ -417,8 +432,9 @@ class GCTester(object):
 
 
 
-class GCTesterAndArgs(object):
+class GCTesterAndArgs(CountedInstance):
     def __init__(self, name:str, tester:GCTester ):
+        super().__init__()
         self.name = name
         self.tester = tester
         self.argsList:List[GCTesterTestParameters] = []
@@ -452,8 +468,9 @@ class GCTesterAndParametersResult(mutableObject):
             selfScope.addTaggedItem('result', self.result)
 
                     
-class GCTesterAndArgsResults(object):
+class GCTesterAndArgsResults(CountedInstance):
     def __init__(self, root:GCTesterAndArgs, config:GCTestRunConfig ):
+        super().__init__()
         self.entries:List [GCTestRunResults] = []
         self.name = root.name
         self.config = config
@@ -467,10 +484,11 @@ class GCTesterAndArgsResults(object):
 
 
 
-class GCTestSet(object):
+class GCTestSet(CountedInstance):
     testers: dict[str,GCTesterAndArgs]
     
     def __init__( self ):
+        super().__init__()
         self.testers = {}
         
     def addTester(self, name:str, 
@@ -487,7 +505,7 @@ class GCTestSet(object):
         return rv
     
     def run( self ):
-        wasEnabled = gc.isenabled()
+        wasEnabled = gc.isenabled() # type: ignore # pylint: disable=no-member
         gc.disable()
         gc.collect()
         outerWriteScope = TargetedWriteScope( sys.stdout )
