@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from LumensalisCP.ImportProfiler import getImportProfiler
+from LumensalisCP.ImportProfiler import getImportProfiler, ImportProfiler
 __sayImport = getImportProfiler( globals(), reloadable=True )
 
 
@@ -96,24 +96,33 @@ def _finishInit(self:MainManager) -> None:
 
 @_mmMeta.reloadableMethod()
 def addBasicWebServer( self:MainManager, *args:Any, **kwds:StrAnyDict ):
-    from LumensalisCP.HTTP.BasicServer import BasicServer
     self.sayAtStartup( "addBasicWebServer %r, %r ", args, kwds )
+    from LumensalisCP.HTTP.BasicServer import BasicServer
+    ImportProfiler.dumpWorstImports(10)
+    
 
     #self.__asyncTaskCreators.append( server.createAsyncTasks )
     
     def startWebServer():
-        self.sayAtStartup( "startWebServer %r", server )
-        if wifi.radio.ipv4_address is not None:
-            address = str(wifi.radio.ipv4_address)
-            self.sayAtStartup( "startWebServer on %r ", address )
-            self._webServer.start(address) # type: ignore
+        self.sayAtStartup( "startWebServer"  )
+        socket = self.socketPool
+        self.sayAtStartup( "socketPool=%r", socket )
 
-            self.sayAtStartup( "creating web server" )
-            server = BasicServer( *args, main=self, **kwds )
-            self._webServer = server
+        server = BasicServer( *args, main=self, **kwds )
+        self._webServer = server
+        self.sayAtStartup( f"self._webServer = {self._webServer}" )
+        if False:
 
-        else:
-            self.sayAtStartup( "no address for startWebServer" )
+            if wifi.radio.ipv4_address is not None:
+                address = str(wifi.radio.ipv4_address)
+
+                self.sayAtStartup( "startWebServer on %r ", address )
+                server = BasicServer( *args, main=self, **kwds )
+                self._webServer = server
+                self._webServer.start(address) # type: ignore
+
+            else:
+                self.sayAtStartup( "no address for startWebServer" )
     self.callLater( startWebServer )
 
 

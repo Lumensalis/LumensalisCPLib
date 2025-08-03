@@ -1,9 +1,9 @@
 from LumensalisCP.ImportProfiler import getImportProfiler
 __sayBSR_cmdRLImport = getImportProfiler( globals(), reloadable=True )
 
-from .common import *
+from LumensalisCP.HTTP.BSR.common import *
 
-def _reloadAll(self:BasicServer.BasicServer ):
+def _reloadAll(self:BasicServer ):
     from LumensalisCP.Main import ManagerRL
     from LumensalisCP.HTTP import BasicServerRL
     from LumensalisCP.Main import ProfilerRL
@@ -17,7 +17,7 @@ def _reloadAll(self:BasicServer.BasicServer ):
 
 from LumensalisCP.Main.PreMainConfig import *
 
-def BSR_cmd(self:BasicServer.BasicServer, request:Request, cmd:Optional[str]=None, **kwds:StrAnyDict ) -> JSONResponse | Response:
+def BSR_cmd(self:BasicServer, request:Request, cmd:Optional[str]=None, **kwds:StrAnyDict ) -> JSONResponse | Response:
     """
     """
     
@@ -55,7 +55,7 @@ def BSR_cmd(self:BasicServer.BasicServer, request:Request, cmd:Optional[str]=Non
                 }
             }
 
-            pmc_gcManager.runCollection( force=True, show=True )
+            pmc_gcManager.checkAndRunCollection( force=True, show=True )
 
             rv['after'] = {
                 'mem_alloc': gc.mem_alloc(),

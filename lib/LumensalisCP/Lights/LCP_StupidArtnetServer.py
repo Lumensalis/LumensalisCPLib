@@ -373,7 +373,7 @@ if __name__ == '__main__':
     # Here we use the simplified default
     UNIVERSE_TO_LISTEN = 1
 
-    # Initilize server, this starts a server in the Art-Net port
+    # Initialize server, this starts a server in the Art-Net port
     a = StupidArtnetServer()
 
     # For every universe we would like to receive,

@@ -34,6 +34,14 @@ class MainAsyncLoop(MainAsyncChild):
         self.priorSleepWhen:float = 0.0
         self.nextWait:float = 0.0
 
+    def asyncTaskStats(self, out:Optional[dict[str,Any]]=None) -> dict[str,Any]:
+        rv = super().asyncTaskStats(out)
+        rv['latestSleepDuration'] = self.latestSleepDuration
+        rv['cycle'] = self.cycle
+        rv['priorSleepWhen'] = self.priorSleepWhen
+        rv['nextWait'] = self.nextWait
+        return rv
+
     async def runAsyncSetup(self) -> None:
         main = self.main
         self.priorSleepWhen = main.getNewNow()
@@ -45,16 +53,21 @@ class MainAsyncLoop(MainAsyncChild):
         main._when = self.nextWait
         
     async def runAsyncSingleLoop(self) -> None:
-        main = self.main
-        with main.getNextFrame(): #  as activeFrame:
-            context = main._privateCurrentContext
+        try:
+            main = self.main
+            with main.getNextFrame(): #  as activeFrame:
+                context = main._privateCurrentContext
 
-            main._refreshables.process(context, context.when)
-            main._timers.update( context )
-            main._scenes.run(context)
-            main.cycleDuration = 1.0 / (main.cyclesPerSecond *1.0)
-            self.priorSleepWhen = main.getNewNow()
-            self.nextWait += mlc.nextWaitPeriod # type: ignore
+                main._refreshables.process(context, context.when)
+                main._timers.update( context )
+                main._scenes.run(context)
+                main.cycleDuration = 1.0 / (main.cyclesPerSecond *1.0)
+                self.priorSleepWhen = main.getNewNow()
+                self.nextWait += mlc.nextWaitPeriod # type: ignore
+        except Exception as inst:
+            print( "Exception in MainAsyncLoop.runAsyncSingleLoop: " + safeRepr(inst) )
+            self.SHOW_EXCEPTION(inst, "error in MainAsyncLoop.runAsyncSingleLoop")
+            raise
 
 #############################################################################
 

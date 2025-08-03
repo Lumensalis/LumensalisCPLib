@@ -43,6 +43,7 @@ def launchProject( self:MainManager, globals:Optional[StrAnyDict]=None, verbose:
     if useWifi:
         self.sayAtStartup( "adding web server" )
         self.addBasicWebServer()
+        self.sayAtStartup( "web server added" )
     self.sayAtStartup( "MainManager.launchProject: starting main loop" )
     self.run()
 
@@ -86,46 +87,6 @@ def MainManager_handleWsChanges( self:MainManager, changes:StrAnyDict ):
             v.setFromWs( val )
         else:
             self.warnOut( f"missing cv {key} in {defaultPanel.controls.keys()} for wsChanges {changes}")
-
-#@_mmMeta.reloadableMethod()
-def ___singleLoop( self:MainManager ): #, activeFrame:ProfileFrameBase):
-    with self.getNextFrame(): #  as activeFrame:
-        context = self._privateCurrentContext
-
-        self._refreshables.process(context, context.when)
-        self._timers.update( context )
-        if not mlc.MINIMUM_LOOP:
-
-
-            #if len( self.__deferredTasks ):
-            #    self.runDeferredTasks(context)
-        
-            #activeFrame.snap( 'scenes' )
-            self._scenes.run(context)
-            
-            #with context.subFrame('i2c'):
-            #    for target in self.__i2cDevices:
-            #        target.updateDevice(context)
-
-            #with context.subFrame('tasks'):
-            #    for task in self._tasks:
-            #        task()
-
-            #with context.subFrame( 'shields' ):
-            #    for shield in self.shields:
-            #        shield.refresh(context)
-                    
- 
-            #self._scenes.run( context )
-            self.cycleDuration = 1.0 / (self.cyclesPerSecond *1.0)
-            
-        #if mlc.ENABLE_PROFILE:
-        #    activeFrame.finish() 
-
-        self.__priorSleepWhen = self.getNewNow()
-        self._nextWait += mlc.nextWaitPeriod # type: ignore
-
-    #self.__cycle += 1        
 
 @_mmMeta.reloadableMethod()
 def dumpLoopTimings( self:MainManager, count:int, minE:Optional[float]=None, minF:Optional[float]=None, **kwds:StrAnyDict ) -> list[Any]:

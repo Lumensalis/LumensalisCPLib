@@ -1,14 +1,21 @@
+from __future__ import annotations
+from LumensalisCP.ImportProfiler import  getImportProfiler
+__sayImport = getImportProfiler( __name__, globals() ) 
 
-import traceback
+# pyright: reportUnusedImport=false, reportUnusedVariable=false
+
+from collections import OrderedDict
+
 from LumensalisCP.IOContext import *
-from LumensalisCP.commonCPWifi import *
+from LumensalisCP.HTTP._httpBits import *
 from LumensalisCP.pyCp.importlib import reload
-#if TYPE_CHECKING:
-#    from LumensalisCP.HTTP.BasicServer import BasicServer
+from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
+
+if TYPE_CHECKING:
+    from LumensalisCP.HTTP.BasicServer import BasicServer
 
 
-#from adafruit_httpserver import DELETE, GET, POST, PUT, JSONResponse, Request, Response  # pyright: ignore[reportMissingImports|reportAttributeAccessIssue]
-from adafruit_httpserver import DELETE, GET, POST, PUT, JSONResponse, Request, Response  # pyright: ignore
+__sayImport.parsing()
 
 v2jSimpleTypes:set[type] = { int, str, bool, float,type(None) }
 
@@ -50,3 +57,6 @@ def inputSourceSnapshot( input:InputSource ) -> dict[str,Any]:
         localId=input.localId,
         cls = input.__class__.__name__,
     )
+
+
+__sayImport.complete(globals())

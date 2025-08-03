@@ -2,8 +2,8 @@
 from LumensalisCP.Main.Manager import MainManager
 
 class Initializer( object ):
-    def __init__(self, **kwds ):
-        self.main = MainManager.initOrGetManager(**kwds)
+    def __init__(self  ):
+        self.main = MainManager.initOrGetManager()
 
     @property
     def espNVM(self): return self.main.identity.controllerNVM
@@ -38,5 +38,5 @@ class Initializer( object ):
         setattr(nvm,tag,value)
             
     @project.setter
-    def project(self,name):
+    def project(self,name:str):
         self._setNVM("project",name)

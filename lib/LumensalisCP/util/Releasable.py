@@ -67,6 +67,7 @@ class Releasable(object):
 
         pmc_mainLoopControl.sayDebugAtStartup( "releasing entries" )
         for entry in entries:
+            assert entry is not None
             assert entry._nextFree is None and not entry._inUse
             entry._releaseBase(rp)
         pmc_mainLoopControl.sayDebugAtStartup( "preloading complete" )

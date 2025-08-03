@@ -1,13 +1,12 @@
-from .common import *
+
 
 from LumensalisCP.ImportProfiler import getImportProfiler
 __sayHTTPBSRProfileRLImport = getImportProfiler( globals(), reloadable=True  )
 
-import LumensalisCP.Main.ProfilerRL
+from LumensalisCP.HTTP.BSR.common import *
 from LumensalisCP.Main.Profiler import ProfileWriteConfig   
-from collections import OrderedDict
 
-def BSR_profile(self:BasicServer.BasicServer, request:Request):
+def BSR_profile(self:BasicServer, request:Request):
     
     try:
         # Get objects
@@ -16,15 +15,15 @@ def BSR_profile(self:BasicServer.BasicServer, request:Request):
             print(f"BSR_profile: printDumpInterval = {pmc_gcManager.printDumpInterval}")
 
             info:StrAnyDict = OrderedDict()
-            settings = dict(
-                    minE = 0.005,
-                    minF=0.01,
-                    minSubF = 0.05,
-                    minB = 0,
-                    minEB = 0,
-            )
-
-            dumpConfig = ProfileWriteConfig(target=info, **settings )
+            settings: ProfileWriteConfig.KWDS = {
+                'target': info,
+                'minE': 0.005,
+                'minF': 0.01,
+                'minSubF': 0.05,
+                'minB': 0,
+                'minEB': 0,
+            }
+            dumpConfig = ProfileWriteConfig( **settings )
 
             print( f"getProfilerInfo: settings = {settings}" )
             self.main.profiler.getProfilerInfo(dumpConfig=dumpConfig)

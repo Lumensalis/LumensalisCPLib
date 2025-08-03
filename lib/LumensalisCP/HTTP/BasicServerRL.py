@@ -76,7 +76,7 @@ def getQueryResult( target:NliInterface|NliContainerBaseMixin, path:list[str], q
          
     return rv        
 
-def BSR_query(self:BasicServer.BasicServer, request:Request, name:str):
+def BSR_query(self:BasicServer, request:Request, name:str):
     """
     """
     
@@ -98,12 +98,16 @@ from LumensalisCP.HTTP.BSR import BSR_profileRL
 from LumensalisCP.HTTP.BSR import BSR_sakRL
 from LumensalisCP.HTTP.BSR import BSR_cmdRL
 
-def _reloadForRoute( name:str ) -> None: # type:ignore[no-untyped-def]
+def _reloadForRoute( self:BasicServer, name:str ) -> None: # type:ignore[no-untyped-def]
+
     from LumensalisCP.HTTP import BasicServerRL
     modules: list[Any] = [  ]
     ImportProfiler.SHOW_IMPORTS = True
     ReloadableImportProfiler.SHOW_IMPORTS = True
-
+    
+    
+    self.infoOut( "_reloadForRoute %s", name )
+    pmc_gcManager.checkAndRunCollection(force=True)
 
     if "profile" in name:
         modules.extend( [ProfilerRL,  BSR_profileRL] )
@@ -115,12 +119,15 @@ def _reloadForRoute( name:str ) -> None: # type:ignore[no-untyped-def]
     
     modules.append( BasicServerRL )
 
-    print(f"_reloadForRoute: {name} : {modules}")
+    self.infoOut( "reloading  %s", modules )
+    
     for module in modules:
         reload( module )
-
+    pmc_gcManager.checkAndRunCollection(force=True)
+    self.infoOut( "_reloadForRoute %s complete", name )
+    
 @_BasicServer.reloadableMethod()
-def handle_websocket_request(self:BasicServer.BasicServer):
+def handle_websocket_request(self:BasicServer):
     if self.websocket is None or self.websocket.closed:
         return
     
@@ -142,7 +149,7 @@ def handle_websocket_request(self:BasicServer.BasicServer):
         self.SHOW_EXCEPTION( inst, "error on incoming websocket data %r", data )
 
 @_BasicServer.reloadableMethod()
-def updateSocketClient(self:BasicServer.BasicServer, useStringIO:bool=False )->None:
+def updateSocketClient(self:BasicServer, useStringIO:bool=False )->None:
     if self.websocket is None or self.websocket.closed:
         return
     

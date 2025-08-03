@@ -37,14 +37,21 @@ def ptToSeconds(v: TimePT|float) -> TimeInSeconds:
 PWJsonNestDataType:TypeAlias = Union[StrAnyDict,List[Any]]
 
 class ProfileWriteConfig(object):
-    
+    class KWDS(TypedDict):
+        target:Required[TextIO|list[str]|StrAnyDict]
+        minE:NotRequired[float]
+        minEB:NotRequired[int]
+        minF:NotRequired[float]
+        minSubF:NotRequired[float]
+        minB:NotRequired[int]
+
     def __init__(self,target:TextIO|list[str]|StrAnyDict|None = None,
                  minE:Optional[float]=None,minEB:Optional[int]=None,
                  minF:Optional[float]=None,minSubF:Optional[float]=None,
                  minB:Optional[int]=None,
                  showMemory:Optional[bool]=None,
                  showMemoryEntries:Optional[bool]=None,
-                   **kwds:StrAnyDict) ->None:
+                   **kwds:Any) ->None:
  
         self.target:Any = target
         self.minB:int = minB if minB is not None else 1024

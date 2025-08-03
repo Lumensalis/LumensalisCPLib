@@ -89,7 +89,13 @@ class DMXManager(MainAsyncChild):
         # a.register_listener(universe, sub=subnet, net=net,
         #                    setSimplified=False, callback_function=test_callback)
 
-
+    def asyncTaskStats(self, out:Optional[dict[str,Any]]=None) -> dict[str,Any]:
+        rv = super().asyncTaskStats(out)
+        rv['settings'] = len(self._settings)
+        rv['inverse'] = self._universe
+        rv['watchers'] = self._watchers
+        return rv
+    
     def addDimmerInput( self, name:str, channel:_DMXChannelArgType ):
         rv = DMXDimmerWatcher( name, self, channel )
         self._watchers.append(rv)
@@ -117,15 +123,3 @@ class DMXManager(MainAsyncChild):
         
     async def runAsyncSingleLoop(self) -> None:
         await self._sasServer._listenSingleLoop()
-        
-
-    def addAsyncTasks(self, am:ManagerAsync) -> None:
-        pass
-        #am.addTaskCreator(  "DMX Listener",self._sasServer._listenLoop)
-
-            
-    #def createAsyncTasks(self) -> list[Task[None]]:
-    #    return [
-    #        #create_task(self._runNode()),
-    #        create_task(self._sasServer._listenLoop()),
-    #        #create_task(self.]

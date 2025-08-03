@@ -2,10 +2,11 @@ from __future__ import annotations
 
 # pyright: reportUnusedImport=false, reportUnusedVariable=false
 
-import math
-
 from LumensalisCP.ImportProfiler import  getImportProfiler
 __sayImport = getImportProfiler( __name__, globals() )
+
+import math
+
 
 from LumensalisCP.Eval.common import *
 from LumensalisCP.Inputs import InputSource

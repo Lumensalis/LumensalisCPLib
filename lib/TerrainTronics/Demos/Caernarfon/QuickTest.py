@@ -28,7 +28,7 @@ sayAtStartup( "start project" ) #  http://lumensalis.com/ql/h2Main
 main = ProjectManager(
         #profile=True,
         #  profileMemory=3
-        useWifi = False,
+        #useWifi = False,
     ) 
 
 actOne= main.addScene( ) # http://lumensalis.com/ql/h2Scenes

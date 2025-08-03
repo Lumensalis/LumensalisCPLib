@@ -23,6 +23,7 @@ if TYPE_CHECKING:
         def setNextRefresh( self, context:'EvaluationContext', when:TimeInSeconds ) -> None: raise NotImplementedError
         def refreshRateChanged(self,context:'EvaluationContext') -> None: ...
         
+        __refreshList:RefreshableListInterface
 else:
     class RefreshableInterface: ...
 
@@ -226,6 +227,7 @@ class RfMxnActivatable(RfMxn):
 #############################################################################
 
 class RfMxnActivatablePeriodic(RfMxnActivatable, RfMxnPeriodic):
+
     class KWDS(RfMxnActivatable.KWDS, RfMxnPeriodic.KWDS):
         pass
         

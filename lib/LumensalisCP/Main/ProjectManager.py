@@ -70,31 +70,6 @@ see http://lumensalis.com/ql/h2Main
     gc.collect() # collect garbage before starting the project
     gc.disable()
 
-    def addProfilingCallbacks():
-        print("\n\nAdding profiling callbacks...\n")
-        import LumensalisCP.Main.ProfilerRL as profilingRL
-        #profilingRL.printDump(rv)
-
-        def getCollectionCheckInterval() -> TimeSpanInSeconds:
-            rv = pmc_gcManager.collectionCheckInterval
-            return rv
-        
-        #timer = PeriodicTimer(manager=main.timers,name="gc-collect",
-         #                     interval=getCollectionCheckInterval, oneShot=False)
-        
-        #@addPeriodicTaskDef( name="gc-collect", interval=getCollectionCheckInterval, main=main )
-        def runCollect(context:EvaluationContext) -> None:
-            #print( f"pmc_gcManager.runCollection {context.updateIndex}..." )
-            pmc_gcManager.runCollection(context, show=pmc_gcManager.showRunCollection)
-
-        #timer.addAction(runCollect)
-        #timer.start()
-        print("\n\n profiling callbacks added...\n")
-        #@addPeriodicTaskDef( "print-dump", period=lambda: profilingRL.printDumpInterval, main=main )
-        #def dump():
-        #    profilingRL.printDump(main)
-
-    #main.callLater( addProfilingCallbacks )
     return main
 
 _saySimpleImport.complete(globals())

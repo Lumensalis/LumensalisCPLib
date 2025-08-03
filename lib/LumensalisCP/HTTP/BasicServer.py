@@ -5,22 +5,14 @@
 
 from __future__ import annotations
 from LumensalisCP.ImportProfiler import  getImportProfiler
-__sayHTTPBasicServerImport = getImportProfiler( globals() ) # "HTTP.BasicServer"
+__sayHTTPBasicServerImport = getImportProfiler( __name__, globals() ) 
 
 # pyright: reportUnusedImport=false, reportUnusedVariable=false
 
 from LumensalisCP.Main.Async import MainAsyncChild, ManagerAsync
 
 
-from adafruit_httpserver.methods import POST, PUT, GET   # type: ignore # pylint: disable=import-error,no-name-in-module
-from adafruit_httpserver import Server, Request, Response, Websocket, Route, JSONResponse  # pylint: disable=import-error,no-name-in-module # type: ignore
-
-
-from LumensalisCP.Main.Async import ManagerAsync, MainAsyncChild
-
 from LumensalisCP.IOContext import *
-
-from LumensalisCP.commonCPWifi import *
 
 
 from LumensalisCP.pyCp.importlib import reload
@@ -33,7 +25,10 @@ from LumensalisCP.HTTP.BSR import BSR_cmdRL
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
 from LumensalisCP.util.Reloadable import addReloadableClass, reloadingMethod
 
+from LumensalisCP.HTTP._httpBits import *
+
 #############################################################################
+__sayHTTPBasicServerImport.parsing()
 
 class BasicServer(Server,MainAsyncChild):
     
@@ -68,7 +63,14 @@ class BasicServer(Server,MainAsyncChild):
             #self.mdns_server.hostname = TTCP_HOSTNAME
             self.mdns_server.instance_name = TTCP_HOSTNAME
             self.mdns_server.advertise_service(service_type="_http", protocol="_tcp", port=5000)
-        
+
+
+    def asyncTaskStats(self, out:Optional[dict[str,Any]]=None) -> dict[str,Any]:
+        rv = super().asyncTaskStats(out)
+        rv['monitoredVariables'] = [v.name for v in self.monitoredVariables]
+        rv['ipAddress'] = str(wifi.radio.ipv4_address)
+        return rv
+            
     def __str__(self) -> str:
         port = f":{self.port}"
         url = f"http://{self.host}{port}"
@@ -113,9 +115,9 @@ class BasicServer(Server,MainAsyncChild):
             if supervisor.runtime.autoreload:
                 self.infoOut( "/%s request disabling autoreload", name )
                 supervisor.runtime.autoreload = False
-            self.infoOut( "reloading BasicServerRL" )
-            reload( ControlVarsRL )
-            BasicServerRL._reloadForRoute(name) # type:ignore[call-arg]
+            
+            #reload( ControlVarsRL )
+            BasicServerRL._reloadForRoute(self,name) # type:ignore[call-arg]
             return handler(request,reloading=True,**kwds)
         
         if params is not None:
@@ -145,9 +147,7 @@ class BasicServer(Server,MainAsyncChild):
             #global websocket  # pylint: disable=global-statement
 
             if self.websocket is not None:
-                
                 self.websocket.close()  # Close any existing connection
-                
 
             self.websocket = Websocket(request, buffer_size=8192)
             self.priorMonitoredValue = {}
@@ -168,45 +168,22 @@ class BasicServer(Server,MainAsyncChild):
     @reloadingMethod
     def handle_websocket_request(self): ...
 
-    async def handleddd_http_requests(self):
-        try:
-            
-            while True:
-                #print( "handle_http_requests poll..")
-                try:
-                    pool_result = self.poll()
-                    if pool_result == adafruit_httpserver.REQUEST_HANDLED_RESPONSE_SENT:
-                        # Do something only after handling a request
-                        self.infoOut( "handle_http_requests handled request")
-                        pass
-
-                except Exception as error:
-                    self.SHOW_EXCEPTION( error, 'handle_http_requests error' )
-                    await self.sleep(0.25)
-                #print( "handle_http_requests sleep..")
-                await self.sleep(0.05)
-    
-        except Exception  as error:
-            self.SHOW_EXCEPTION( error, 'handle_http_requests error' )
-            
-    async def handleddd_websocket_requests(self):
-        try:
-            self.startupOut( 'handle_websocket_requests starting' )
-
-            while True:
-                if self.websocket is not None:
-                    BasicServerRL.handle_websocket_request(self)
-
-                await self.sleep(0.05)
-        except Exception  as error:
-            self.SHOW_EXCEPTION( error, 'handle_websocket_requests error' )
-
     #########################################################################
     async def runAsyncSetup(self) -> None:
         self.startupOut( f"{self.__class__.__name__} serverLoop starting" )
         self.useStringIO = False
-        self._ws_jsonBuffer:io.StringIO|None = io.StringIO(8192) if useStringIO else None # type:ignore[assignment]
+        self._ws_jsonBuffer:io.StringIO|None = io.StringIO(8192) if self.useStringIO else None # type:ignore[assignment]
     
+        socket = self.main.socketPool
+        self.startupOut( "socketPool=%r", socket )
+        address = wifi.radio.ipv4_address
+        assert address is not None, f"wifi.radio.ipv4_address is None, cannot start {self.__class__.__name__} server"
+        address = str(address)
+        self.startupOut( "starting server on %r", address )
+        self.start(address) 
+        self.startupOut( "started server on %r", address )
+
+
     async def runAsyncSingleLoop(self) -> None:
         try:
             if self.websocket is not None and self.websocket.closed:
@@ -221,19 +198,16 @@ class BasicServer(Server,MainAsyncChild):
                 self.infoOut( "handle_http_requests handled request")
                 pass
             await self.sleep(0.05)
-            
+
+        except KeyboardInterrupt as error:
+            self.asyncManager.childExceptionExit(self, error) 
+            raise
         except Exception as error:
             self.SHOW_EXCEPTION( error, 'handle_http_requests error' )
             await self.sleep(0.25)
         #print( "handle_http_requests sleep..")
         await self.sleep(0.05)
 
-
-
-    #########################################################################
-    
-    #def addAsyncTasks(self, am:ManagerAsync) -> None:
-    #    am.addTaskCreator( "serverLoop", self.serverLoop )
 
 addReloadableClass(BasicServer)
 

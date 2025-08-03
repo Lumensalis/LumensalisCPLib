@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from LumensalisCP.Audio import Audio
     from LumensalisCP.Main.Profiler import Profiler, ProfileFrameBase
     from LumensalisCP.Main.MainAsyncLoop import MainAsyncLoop
+    from LumensalisCP.HTTP.BasicServer import BasicServer
 
     
     # from LumensalisCP.Controllers.Config import ControllerConfigArg
@@ -127,7 +128,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         self.cyclesPerSecond = 100
         self.cycleDuration = 0.01
 
-        self._webServer = None
+        self._webServer:BasicServer|None = None
 
         self._rrDeferred:RefreshablePrdInvAct|None = None
         self._rrCollect:RefreshablePrdInvAct|None = None
@@ -357,33 +358,14 @@ see http://lumensalis.com/ql/h2Scenes
     @reloadingMethod
     def renameIdentifiables(self, items:Optional[dict[str,NamedLocalIdentifiable]]=None, verbose:bool = False ): ...
     
-    #@reloadingMethod
-    #def singleLoop(self) -> None: ...
-
     @reloadingMethod
     def _finishInit(self) -> None: ...
 
-    #@reloadingMethod 
-    #async def runAsyncSetup(self) -> None:
-
-    #@reloadingMethod 
-    #async def runAsyncSingleLoop( self ): ...
     _rCollect:RefreshablePrdInvAct
     
     
     def run( self ):
-        if True:
-            self.asyncManager.asyncMainLoop()
-        else:
-            async def main():      
-                asyncTasks = [
-                    asyncio.create_task( self.taskLoop() )
-                ]
-                for atc in self.__asyncTaskCreators:
-                    asyncTasks.extend(atc())
-                await asyncio.gather( *asyncTasks )
-                
-            asyncio.run( main() )
+        self.asyncManager.asyncMainLoop()
         self.__runExitTasks()
 
 

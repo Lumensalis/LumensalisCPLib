@@ -1,10 +1,27 @@
 from LumensalisCP.ImportProfiler import getImportProfiler
 __sayBSR_sakRLImport = getImportProfiler( globals(), reloadable=True )
 
-from .common import *
+from LumensalisCP.HTTP.BSR.common import *
+
+#from LumensalisCP.Main.Async import AsyncLoop
+
+def getAsyncInfo(main:MainManager) -> dict[str, Any]:
+    asyncLoop = main.asyncLoop
+    asyncManager = main.asyncManager
+
+    children = dict( [(getattr(task,'name',None) or task.dbgName, task.asyncTaskStats()) for task in  asyncManager.children] ) 
+
+    return {
 
 
-def getStatusInfo(self:BasicServer.BasicServer, request:Request ) -> dict[str, Any]:
+        'nextWait': asyncLoop.nextWait,
+        'nextRefresh': asyncLoop.nextRefresh,
+        'priorWhen': asyncLoop.priorSleepWhen,
+        'latestSleepDuration': asyncLoop.latestSleepDuration,
+        'children' : children,
+    }
+
+def getStatusInfo(self:BasicServer, request:Request ) -> dict[str, Any]:
     main = self.main
     context = main.getContext()
     monitoredInfo = [ 
@@ -26,17 +43,19 @@ def getStatusInfo(self:BasicServer.BasicServer, request:Request ) -> dict[str, A
             'main': attrsToDict( main, ['cycle','when','newNow'],
                 context = attrsToDict( context, ['updateIndex','when'] ),
                 scenes = attrsToDict( main.scenes,["currentScenes"] ),
-                nextWait = main._nextWait, # type: ignore
+                nextWait = main.asyncLoop.nextWait, # type: ignore
+                nextRefresh  = main.asyncLoop.nextRefresh, # type: ignore
                 priorWhen = main.asyncLoop.priorSleepWhen, # type: ignore
                 #priorSleepDuration = main.__priorSleepDuration, # type: ignore
-                latestSleepDuration = main.__latestSleepDuration # type: ignore
+                latestSleepDuration = main.asyncLoop.latestSleepDuration # type: ignore
             ),
-            'monitored': monitored
+            'monitored': monitored,
+            'asyncLoop': getAsyncInfo(main)
         }
     return rv
 
 
-def BSR_sak(self:BasicServer.BasicServer, request:Request):
+def BSR_sak(self:BasicServer, request:Request):
     """
     Serve a default static plain text message.
     """

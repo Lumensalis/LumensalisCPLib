@@ -228,10 +228,10 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
         return False
 
     
-    def nliAddChild( self, child:_NLIListT ):
+    def nliAddChild( self, child:_NLIListT ) -> None: # type:ignore[override]
         self.append( child )
     
-    def nliRemoveChild( self, child:_NLIListT ):
+    def nliRemoveChild( self, child:_NLIListT ) -> None: # type:ignore[override]
         self.remove( child )
 
     def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None:
