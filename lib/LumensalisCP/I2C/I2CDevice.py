@@ -23,20 +23,9 @@ class I2CDevice( MainChild ):
         i2c: NotRequired[busio.I2C]
         address: NotRequired[int]
     
-    def __init__(self, 
-                 #main:MainManager,
-                 # i2c:Optional[busio.I2C]=None, 
-                 #address:int|None = None, 
-                 # refreshRate:Optional[TimeInSecondsConfigArg] = None,
-                 **kwds:Unpack[KWDS]
-            ) -> None:
-        #main = kwds.get('main')
-        #assert main is not None, "I2CDevice must be created with a main instance"
+    def __init__(self,  **kwds:Unpack[KWDS] ) -> None:
         i2c = kwds.pop('i2c', None)
         address = kwds.pop('address',None)
-        #refreshRate = kwds.get('refreshRate')
-        #kwds.setdefault('autoList',main.refreshables)
-        #Refreshable.__init__(self, mixinKwds=kwds )
         super().__init__(**kwds)
         assert self.main is not None, "I2CDevice must be created with a main instance"  
 
@@ -53,21 +42,15 @@ class I2CDevice( MainChild ):
         self._inputs: NliList[InputSource] = NliList(name='inputs', parent=self)
         self._outputs: NliList[NamedOutputTarget] = NliList(name='outputs', parent=self)
 
-    def nliGetContainers(self)->Iterable[NliContainerBaseMixin]|None:
-        assert isinstance(self._inputs, NliContainerBaseMixin), "inputs must be a NliContainerBaseMixin"
+    def nliGetContainers(self)->Iterable[NliContainerInterface]:
+        assert isinstance(self._inputs, NliContainerInterface), "inputs must be a NliContainerInterface"
         yield self._inputs
-        assert isinstance(self._outputs, NliContainerBaseMixin), "outputs must be a NliContainerBaseMixin"
+        assert isinstance(self._outputs, NliContainerInterface), "outputs must be a NliContainerInterface"
         yield self._outputs
         
             
     @property
     def i2c(self) -> I2C: return self.__i2c
-    
-    @property
-    def main(self) -> MainManager: 
-        rv = self.__main()
-        assert rv is not None
-        return rv
 
     @property
     def address(self) -> int|None: return self.__address

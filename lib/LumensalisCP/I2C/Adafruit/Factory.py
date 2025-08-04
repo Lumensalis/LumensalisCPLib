@@ -7,7 +7,7 @@ from __future__ import annotations
 
 #import LumensalisCP.I2C.Adafruit
 from LumensalisCP.common import *
-from LumensalisCP.I2C.I2CFactory import I2CFactory
+from LumensalisCP.I2C.Factory import I2CFactory
 
 # pylint: disable=unused-import,import-error,reimported,import-outside-toplevel
 

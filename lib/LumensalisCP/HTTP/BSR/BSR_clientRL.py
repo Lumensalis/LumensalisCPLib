@@ -1,20 +1,43 @@
 from __future__ import annotations
 
 
-from LumensalisCP.ImportProfiler import getImportProfiler, getReloadableImportProfiler
-__sayHTTPControlVarsRLImport = getReloadableImportProfiler( "HTTP.ControlVarsRL" )
+from LumensalisCP.ImportProfiler import getReloadableImportProfiler
+__sayHTTPControlVarsRLImport = getReloadableImportProfiler( __name__, globals() )
 
-from adafruit_httpserver import DELETE, GET, POST, PUT, JSONResponse, Request, Response  # pyright: ignore
+#############################################################################
 
-from LumensalisCP.IOContext import *
-from LumensalisCP.commonCPWifi import *
-from LumensalisCP.HTTP import BasicServer
+from LumensalisCP.HTTP.BSR.common import *
 from LumensalisCP.Main.Panel import PanelControl, PanelMonitor
 
+#############################################################################
 
-from LumensalisCP.CPTyping import *
-from LumensalisCP.Inputs import InputSource
+_module = ReloadableModule( 'LumensalisCP.HTTP.BasicServer' )
+_BasicServer = _module.reloadableClassMeta('BasicServer')
 
+# pyright: reportPrivateUsage=false
+
+@_BasicServer.reloadableMethod()
+def BSR_client(self:BasicServer, request: Request):
+
+    monitored = [mv.source for mv in self.main.panel.monitored.values()]
+    print( f"get /client with {[(v.name,type(v)) for v in monitored]}")
+    gc.collect()
+    print( "BSR CLIENT **************************************************" )
+    parts = PanelParts(self.main)
+
+    for v in self.main.panel.controls.values():
+        print( f"  adding control {v.name} ({type(v)})")
+        parts.addControl(v)
+
+    for v in self.main.panel.monitored.values(): 
+        print( f"  adding monitored {v.source.name} ({type(v)})")
+        parts.addMonitored(v)
+
+    parts.finish()
+
+    html = parts.makeHtml()
+    
+    return Response(request, html, content_type="text/html")
 
 class PanelControlInstanceHelper(CountedInstance):
     
@@ -38,8 +61,10 @@ class PanelControlInstanceHelper(CountedInstance):
         <td>{self.panelInstance.name}</td>
         <td>{description}</td>
         <td>{self.panelInstance._min}</td>
-        <td>{self.editCell() if self.editable else self.valueCell()}</td>
+        <td>{self.valueCell()}</td>
+        <td>{self.editCell()}</td>
         <td>{self.panelInstance._max}</td>
+        <td>{self.panelInstance.kind} {self.panelInstance.kindMatch}</td>
     </tr>
         '''
     def valueCell(self)-> str:
@@ -51,6 +76,7 @@ class PanelControlInstanceHelper(CountedInstance):
     def jsSelectBlock(self):
         return f'''
                 const {self.nameId}Selector = document.querySelector("#{self.nameId}");
+                const {self.nameId}EditSelector = document.querySelector("#{self.nameId}_edit");
                 '''
 
     def wsReceivedBlock(self) -> str:
@@ -65,13 +91,7 @@ class PanelControlInstanceHelper(CountedInstance):
         return f'console.log( "..." );'
     
 class BasicPanelControlInstanceHelper(PanelControlInstanceHelper):
-    
-    def oldhtmlBlock(self): 
-        description = getattr(self.panelInstance,'description',None ) or f"{self.panelInstance.name} ({type(self.panelInstance).__name__})"
-        return f'<span>{description}: <div id="{self.panelInstance.name}">-</div></span>'
-    
-    #def valueCell(self)-> str:
-    #    return f'<div id="{self.cv.name}">-</div>'
+
     
     def wsCellUpdate(self) -> str:
         return f'{self.nameId}Selector.textContent = value;'
@@ -84,7 +104,26 @@ class IntPanelControlInstanceHelper(PanelControlInstanceHelper):
     def wsCellUpdate(self):
         return f'{self.nameId}Selector.textContent = value;'
 
+class FloatPanelControlInstanceHelper(PanelControlInstanceHelper):
 
+    def wsCellUpdate(self):
+        return f'{self.nameId}Selector.textContent = value;'
+    
+    def editCell(self)-> str:
+        return f'<input id="{self.nameId}_edit" type="range" min="{self.panelInstance._min}" max="{self.panelInstance._max}" value="{self.panelInstance.controlValue}"/>'
+
+    def jsSelectBlock(self):
+        return super().jsSelectBlock() + \
+            f"""
+            {self.nameId}EditSelector.oninput = ( () => {{
+                const packet = JSON.stringify( 
+                    {{ name: '{self.nameId}', value: {self.nameId}EditSelector.value }}
+                    );
+                console.log( "sending packet", packet );
+                ws.send( packet );
+            }} );
+            """
+    
 class RGBPanelControlInstanceHelper(PanelControlInstanceHelper):
 
     def editCell(self): 
@@ -119,6 +158,8 @@ class PanelParts(object):
                 instanceHelper = IntPanelControlInstanceHelper( input )
             elif kind == "RGB":
                 instanceHelper = RGBPanelControlInstanceHelper( input )
+            elif kind  in ( "float", "TimeSpanInSeconds" ):
+                instanceHelper = FloatPanelControlInstanceHelper( input )                
             else:
                 instanceHelper = BasicPanelControlInstanceHelper( input )
 
@@ -167,7 +208,7 @@ class PanelControlTemplateHelper(object):
         self.main = main
     
     
-    def varBlocks(self, vars:List[InputSource]) -> PanelParts:
+    def varBlocks(self, vars:List[PanelMonitor[Any]]) -> PanelParts:
         parts = PanelParts(self.main)
 
         for v in vars: #self.main._controlVariables.values():
@@ -193,6 +234,8 @@ HTML_TEMPLATE_A = """
                 <th>Min</th>
                 <th>Value</th>
                 <th>Max</th>
+                <th>edit</th>
+                <th>etc</th>
             </tr>
         </thead>
         <tbody>
@@ -249,32 +292,5 @@ HTML_TEMPLATE_Z = """
     </body>
 </html>
 """
-
-def BSR_client(self:BasicServer.BasicServer, request: Request):
-
-    monitored = [mv.source for mv in self.main.panel.monitored.values()]
-    print( f"get /client with {[(v.name,type(v)) for v in monitored]}")
-    gc.collect()
-    #if self.cvHelper is None:
-    #    self.cvHelper = PanelControlTemplateHelper( main=self.main )
-    #assert isinstance(self.cvHelper, PanelControlTemplateHelper), "cvHelper is not a PanelControlTemplateHelper"
-
-    # vb = self.cvHelper.varBlocks(monitored)
-    parts = PanelParts(self.main)
-
-    for v in self.main.panel.controls.values():
-        print( f"  adding control {v.name} ({type(v)})")
-        parts.addControl(v)
-
-    for v in self.main.panel.monitored.values(): 
-        print( f"  adding monitored {v.source.name} ({type(v)})")
-        parts.addMonitored(v)
-
-    parts.finish()
-    
-
-    html = parts.makeHtml()
-    
-    return Response(request, html, content_type="text/html")
     
 __sayHTTPControlVarsRLImport.complete(globals())

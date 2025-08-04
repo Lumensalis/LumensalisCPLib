@@ -1,5 +1,5 @@
 from .GCSimpleBench import *
-
+import supervisor
 # typing: ignore
 
 # pyright: reportUnknownVariableType=false,reportUnknownMemberType=false,reportUnknownArgumentType=false,reportUnknownParameterType=false,reportUnknownVariableType=false
@@ -7,6 +7,8 @@ from .GCSimpleBench import *
 # pyright: reportArgumentType=false,reportUnusedImport=false,reportUnusedVariable=false,reportUnknownLambdaType=false
 
 #############################################################################
+
+supervisor.runtime.autoreload = True
 
 def innerFoo( ):
     return 42
@@ -215,10 +217,10 @@ def timerTest():
     def baseline( l ): return l
     
     def monotonic( l ):
-        return time.monotonic()
+        return getOffsetNow()
     
     def monotonic_ns( l ):
-        return time.monotonic_ns()
+        return getOffsetNow_ns()
 
   
     
@@ -235,6 +237,81 @@ def timerTest():
     s.run()
     
 #############################################################################
+
+
+def mainLoopOptimizeTest():
+    from LumensalisCP.Eval.EvaluationContext import EvaluationContext    
+    from LumensalisCP.Main.Profiler import ProfileStubFrame
+    from LumensalisCP.Temporal.TimeTracker import TimingTracker
+    class FakeMain():
+        def makeRef(self):
+            return weakref.ref(self)
+        @property 
+        def when(self):
+            return getOffsetNow()
+        
+    main = FakeMain()
+    stubFrame =  ProfileStubFrame()
+    context = EvaluationContext(main=main)
+
+    s = GCTestSet()
+    tracker = TimingTracker()
+
+    def baseline( loops:int ):
+        for x in range(loops):
+            pass
+    
+    def offsetNow( loops:int ):
+        for x in range(loops):
+            now = getOffsetNow()
+    
+    def resetContext( loops:int ):
+        for x in range(loops):
+            now = getOffsetNow()
+            
+            context.reset(now,stubFrame)
+
+    def trackedContext( loops:int ):
+        total = 0
+        for x in range(loops):
+            now = getOffsetNow()
+            context.reset(now,stubFrame)
+            total +=  x % 4
+            tracker.addElapsed( getOffsetNow() - now )
+    
+    def managedContext( loops:int ):
+        total = 0
+        for x in range(loops):
+            now = getOffsetNow()
+            context.reset(now,stubFrame)
+            with stubFrame:
+                total +=  x % 4
+
+            tracker.addElapsed( getOffsetNow() - now )            
+
+    def memFree( loops:int ):
+        total = 0
+        for x in range(loops):
+            total +=gc.mem_free()
+
+
+    s.addTester( "timing",
+            signature = [GCTArg("l",int)],
+            baseline = baseline,
+            tests=[
+                    offsetNow,
+                    resetContext,
+                    trackedContext,
+                    managedContext,
+                    memFree
+            ]
+        ).addArgs( "simple",  100
+        )
+
+    s.run()
+
+#############################################################################
+
 
 def waitForReload():
     print( "\r\nwaiting to reload" )

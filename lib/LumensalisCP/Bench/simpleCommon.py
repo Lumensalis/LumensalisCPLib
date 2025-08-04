@@ -1,10 +1,15 @@
 from __future__ import annotations
 
-import gc # type: ignore[reportUnusedImport]
-import time, sys # type: ignore[reportUnusedImport]
-import supervisor # type: ignore[reportUnusedImport]
+# pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
+
+import gc 
+import time, sys 
+import supervisor
 
 from LumensalisCP.util.CountedInstance import CountedInstance
+from LumensalisCP.pyCp import weakref
+from LumensalisCP.Temporal.Time import TimeInSeconds, getOffsetNow
+
 
 class mutableObject(CountedInstance):
     def __init__(self,**kwds:StrAnyDict) -> None:

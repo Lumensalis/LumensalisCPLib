@@ -6,8 +6,8 @@ from LumensalisCP.I2C.common import *
 #############################################################################
 
 class VL53L0XInput(I2CInputSource):
-    def __init__( self, **kwargs ):
-        super().__init__(**kwargs)
+    def __init__( self, target:I2CDevice,**kwargs:Unpack[I2CInputSource.KWDS] ):
+        super().__init__(target,**kwargs)
         self._range:int = 8192
         
     def getDerivedValue(self, context:EvaluationContext) -> int:
@@ -29,8 +29,8 @@ class VL53L0XInput(I2CInputSource):
 class VL53L0X(I2CDevice):
     RFD_refreshRate:ClassVar[TimeSpanInSeconds] = 0.41
 
-    def __init__(self, *args, refreshRate=0.1, **kwds ):
-        I2CDevice.__init__( self, *args, refreshRate=refreshRate, **kwds )
+    def __init__(self, **kwds:Unpack[I2CDevice.KWDS] ) -> None:
+        I2CDevice.__init__( self, **kwds )
         self.__readMode = 'startMeasurement'
         self._sensor = adafruit_vl53l0x.VL53L0X(self.i2c, io_timeout_s=1.0)
         self.__range = VL53L0XInput(target=self,name="range")

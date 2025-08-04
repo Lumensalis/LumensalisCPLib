@@ -20,19 +20,8 @@ _simpleValueTypes = set([int,bool,float])
     
 class EvaluationContext(UpdateContext):    
     
-    #def __init__( self, *args, **kwds ):
-        #super().__init__( *args, **kwds)
-        #self.__changedTerms : List["ExpressionTerm"] = []
         
     fetchCurrentContext = UpdateContext.fetchCurrentContext
-    
-    def reset( self, when:TimeInSeconds|None = None ):
-        UpdateContext.reset(self,when)
-        #self.__changedTerms.clear()
-    
-    # @property
-    #def changedTerms(self) -> List["ExpressionTerm"]:
-    #    return self.__changedTerms
     
     def addChangedTerm( self, changed:ExpressionTerm):
         pass

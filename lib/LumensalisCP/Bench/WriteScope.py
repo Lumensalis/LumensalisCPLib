@@ -71,6 +71,7 @@ class WriteScope(CountedInstance):
             indentItems (bool | None, optional): _description_. Defaults to None.
         """
         super().__init__()
+
         if ts is not None:
             self.config:WriteConfig = ts.config 
             self.target:TextIO = ts.target
@@ -121,7 +122,7 @@ class WriteScope(CountedInstance):
         return nested
 
     
-    def startNamedType(self,instance|Any,
+    def startNamedType(self,instance:Any,
                        tag:Optional[str]=None,
                        indentItems:Optional[bool]=None
             ) -> NamedTypeWriteScope:

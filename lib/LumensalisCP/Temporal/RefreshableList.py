@@ -2,7 +2,7 @@ from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayImport = getImportProfiler( __name__, globals() )
 
 
-from .Refreshable import Refreshable, RefreshableListInterface, RefreshableInterface
+from LumensalisCP.Temporal.Refreshable import Refreshable, RefreshableListInterface
 
 from LumensalisCP.common import *
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable

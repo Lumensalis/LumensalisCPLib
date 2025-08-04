@@ -11,7 +11,7 @@ from LumensalisCP.common import *
 ReloadableMethodType:TypeAlias = Callable[..., Any]
 
 def __reloadPrint( message:str) -> None:
-    #print( message )
+    # print( message )
     pass
 #############################################################################
 
@@ -123,7 +123,7 @@ def reloadableClassMeta(name:str,
 
 # pyright: reportPrivateUsage=false
 
-def addReloadableClass(cls:type) -> type : # type: ignore
+def addReloadableClass(cls:type, modules:Optional[Any]=None ) -> type : # type: ignore
 
     assert isinstance(cls, type), f"Expected a class, got {cls}"
     name = f"{cls.__module__}.{cls.__name__}"

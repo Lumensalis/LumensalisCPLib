@@ -4,7 +4,11 @@ from __future__ import annotations
 from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayUnitsImport = getImportProfiler( globals() ) # "Units"
 
+
+# pyright: reportUnusedImport=false, reportUnusedFunction=false
+
 from LumensalisCP.CPTyping import TypeAlias, NewType, Union,Optional
+from LumensalisCP.Temporal.Time import TimeInSeconds
 
 ZeroToOne:TypeAlias  = float # a value between 0.0 and 1.0 inclusive
 PlusMinusOne:TypeAlias  = float # a value between -1.0 and 1.0 inclusive
@@ -15,7 +19,7 @@ TimeSpanInNS:TypeAlias  = int # Time span in nanoseconds
 TimeInMS:TypeAlias  = int # Time in milliseconds
 TimeSpanInMS:TypeAlias  = int # Time span in milliseconds
 
-TimeInSeconds = NewType('TimeInSeconds', float ) # Time in seconds
+# TimeInSeconds = NewType('TimeInSeconds', float ) # Time in seconds
 TimeSpanInSeconds:TypeAlias  = float #
 
 DegreesPerSecond:TypeAlias  = float # rotation speed  in degrees per second

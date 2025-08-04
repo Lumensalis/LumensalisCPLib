@@ -10,6 +10,8 @@ from LumensalisCP.IOContext import *
 from LumensalisCP.HTTP._httpBits import *
 from LumensalisCP.pyCp.importlib import reload
 from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
+from LumensalisCP.util.Reloadable import ReloadableModule
+
 
 if TYPE_CHECKING:
     from LumensalisCP.HTTP.BasicServer import BasicServer

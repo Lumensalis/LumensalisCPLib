@@ -10,17 +10,13 @@ __sayHTTPBasicServerImport = getImportProfiler( __name__, globals() )
 # pyright: reportUnusedImport=false, reportUnusedVariable=false
 
 from LumensalisCP.Main.Async import MainAsyncChild, ManagerAsync
-
-
 from LumensalisCP.IOContext import *
-
-
 from LumensalisCP.pyCp.importlib import reload
 from LumensalisCP.HTTP import BasicServerRL
-from LumensalisCP.HTTP import ControlVarsRL
 from LumensalisCP.HTTP.BSR import BSR_profileRL
 from LumensalisCP.HTTP.BSR import BSR_sakRL
 from LumensalisCP.HTTP.BSR import BSR_cmdRL
+from LumensalisCP.HTTP.BSR import BSR_clientRL
 
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
 from LumensalisCP.util.Reloadable import addReloadableClass, reloadingMethod
@@ -47,7 +43,7 @@ class BasicServer(Server,MainAsyncChild):
 
         # TODO: make actual client instance for multiple connections...???
         self.websocket: Websocket|None = None
-        self.cvHelper:ControlVarsRL.PanelControlTemplateHelper|None = ControlVarsRL.PanelControlTemplateHelper( main=main )
+        # self.cvHelper:ControlVarsRL.PanelControlTemplateHelper|None = ControlVarsRL.PanelControlTemplateHelper( main=main )
 
         #self.main = main
         self.monitoredVariables:List[InputSource] = []
@@ -84,6 +80,23 @@ class BasicServer(Server,MainAsyncChild):
         # TODO: handle additions after server startup better
         self.monitoredVariables.append(v)
 
+    @reloadingMethod
+    def BSR_query(self:BasicServer, request:Request, name:str)-> JSONResponse| Response: ...
+
+    @reloadingMethod
+    def BSR_sak(self:BasicServer, request:Request) -> JSONResponse | Response: ...
+
+    @reloadingMethod
+    def BSR_profile(self:BasicServer, request:Request) -> JSONResponse | Response: ...
+
+    @reloadingMethod
+    def BSR_client(self:BasicServer, request:Request) -> JSONResponse | Response: ...
+
+    @reloadingMethod
+    def BSR_cmd(self:BasicServer, request:Request) -> JSONResponse | Response: ...
+
+    @reloadingMethod
+    def _reloadForRoute( self:BasicServer, name:str ) -> None:  ...
 
     def addReloadableRouteHandler( self, name:str, 
                         methods:List[str]=[GET,POST,PUT], 
@@ -93,22 +106,17 @@ class BasicServer(Server,MainAsyncChild):
         moduleName = f'BSR_{name}RL'
         
         def handler(request: Request,reloading:bool=False,**kwds:StrAnyDict):
+            self.infoOut( f"handling route {name} with {functionName}, reloading={reloading} params={params}, kwds={kwds}")
             try:
-                module = globals().get(moduleName,None)
-                if module is not None:
-                    c = getattr( module, functionName, None )
-                    assert c is not None, f"missing reloadable {moduleName}.{functionName}" 
-                else:
-                    c = getattr( BasicServerRL, functionName, None )
-                if c is None:
-                    c = getattr( ControlVarsRL, functionName, None )
-
-                ensure( c is not None, "missing reloadable %r", functionName )
+                c = getattr( self, functionName, None )
+ 
+                assert  c is not None, f"missing handler {functionName} for {name} in { [tag for tag in dir(self) if tag.startswith('BSR_') ] }"
                 if self.enableDbgOut: self.dbgOut( f"handling reloadable route {name} with {functionName}, reloading={reloading} params={params}, kwds={kwds}")
-                rv =c(self,request,**kwds) # type:ignore[call-arg]
+                rv =c(request,**kwds) # type:ignore[call-arg]
                 if rv is not None: return rv
                 return JSONResponse(request, {"unhandled request": name } )
             except Exception as inst:
+                self.SHOW_EXCEPTION( inst, "error handling route %r", name )
                 return BasicServerRL.ExceptionResponse(request, inst, "route exception" )
 
         def reloadingHandler(request: Request,**kwds:StrAnyDict):
@@ -117,7 +125,7 @@ class BasicServer(Server,MainAsyncChild):
                 supervisor.runtime.autoreload = False
             
             #reload( ControlVarsRL )
-            BasicServerRL._reloadForRoute(self,name) # type:ignore[call-arg]
+            self._reloadForRoute(name) # type:ignore[call-arg]
             return handler(request,reloading=True,**kwds)
         
         if params is not None:
@@ -179,25 +187,28 @@ class BasicServer(Server,MainAsyncChild):
         address = wifi.radio.ipv4_address
         assert address is not None, f"wifi.radio.ipv4_address is None, cannot start {self.__class__.__name__} server"
         address = str(address)
+        self._asyncStep = 0
         self.startupOut( "starting server on %r", address )
         self.start(address) 
         self.startupOut( "started server on %r", address )
 
-
-    async def runAsyncSingleLoop(self) -> None:
+    async def runAsyncSingleLoop(self, when:TimeInSeconds) -> None:
         try:
-            if self.websocket is not None and self.websocket.closed:
-                self.handle_websocket_request()
-                await self.sleep(0.05)
+            self._asyncStep += 1
+
+            if self._asyncStep == 1:
+                self._asyncStep = 1
+                if self.websocket is not None and not self.websocket.closed:
+                    self.handle_websocket_request()
+            elif self._asyncStep == 2:
                 self.updateSocketClient(self.useStringIO)
-                await self.sleep(0.05)
-            
-            pool_result = self.poll()
-            if pool_result == adafruit_httpserver.REQUEST_HANDLED_RESPONSE_SENT:
-                # Do something only after handling a request
-                self.infoOut( "handle_http_requests handled request")
-                pass
-            await self.sleep(0.05)
+            else:
+                pool_result = self.poll()
+                if pool_result == adafruit_httpserver.REQUEST_HANDLED_RESPONSE_SENT:
+                    # Do something only after handling a request
+                    self.infoOut( "handle_http_requests handled request")
+                    pass
+                self._asyncStep = 0
 
         except KeyboardInterrupt as error:
             self.asyncManager.childExceptionExit(self, error) 
@@ -206,7 +217,6 @@ class BasicServer(Server,MainAsyncChild):
             self.SHOW_EXCEPTION( error, 'handle_http_requests error' )
             await self.sleep(0.25)
         #print( "handle_http_requests sleep..")
-        await self.sleep(0.05)
 
 
 addReloadableClass(BasicServer)

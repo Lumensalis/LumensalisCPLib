@@ -23,7 +23,6 @@ from __future__ import annotations
 # pylint: disable=missing-function-docstring, missing-class-docstring, missing-module-docstring
 # pyright: reportPrivateUsage=false, reportUnusedImport=false, reportUnusedFunction=false
 
-
 try:
     from typing import TYPE_CHECKING, Any,Optional, ClassVar
 except ImportError:
@@ -36,6 +35,7 @@ import time
 import supervisor
 
 from LumensalisCP.util.CountedInstance import CountedInstance
+from LumensalisCP.Temporal.Time import getOffsetNow, TimeInSeconds
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
@@ -64,9 +64,12 @@ class _MLCAnnotation(CountedInstance):
 
 
 class _MainLoopControl(object):
-    
+    __started:int
+
     def __init__(self):
-        self.__started:int = supervisor.ticks_ms()
+        assert getattr(_MainLoopControl,'__started',None) is None, "pmc_mainLoopControl already exists, cannot reinitialize"
+        _MainLoopControl.__started = supervisor.ticks_ms()
+        self.__started:int = _MainLoopControl.__started 
         self.MINIMUM_LOOP:bool = False
         self.ENABLE_PROFILE:bool = False
         self.nextWaitPeriod:float = 0.01
@@ -144,15 +147,15 @@ class GCManager(object):
                       force:bool = False, 
                       show:bool = False): 
 
-        now = time.monotonic()
+        now = getOffsetNow()
         mem_free_before = gc.mem_free()  # pylint: disable=no-member
-        mem_free_beforeelapsed = time.monotonic() - now
+        mem_free_beforeelapsed = getOffsetNow() - now
         if mem_free_before > self.__actualFreeThreshold and not force:
             # print( f"GC free = {mem_free_before}" )
             if show:
-                now = time.monotonic()
+                now = getOffsetNow()
                 mem_alloc_before = gc.mem_alloc()  # pylint: disable=no-member
-                mem_alloc_beforeelapsed = time.monotonic() - now
+                mem_alloc_beforeelapsed = getOffsetNow() - now
                 
                 timeBeforeCollect = self.main.getNewNow()
                 cycle = self.main.cycle
@@ -178,11 +181,11 @@ class GCManager(object):
 
             return
         
-        now = time.monotonic()
+        now = getOffsetNow()
         mem_alloc_before = gc.mem_alloc()  # pylint: disable=no-member
-        mem_alloc_beforeelapsed = time.monotonic() - now
+        mem_alloc_beforeelapsed = getOffsetNow() - now
         if self.verboseCollect:
-            sys.stdout.write( f"{now:.3f} GC collect " )
+            sayAtStartup( f"{now:.3f} GC collect " )
         
         # run collection
         timeBeforeCollect = self.main.getNewNow()
@@ -254,7 +257,7 @@ def printElapsed(desc:str):
     gcFree = gc.mem_free() # pylint: disable=no-member
     print( "%s : %0.3f seconds since start | %r used, %r free | monotonic=%.03f" % 
           (desc,pmc_mainLoopControl.getMsSinceStart()/1000.0, 
-           gcUsed, gcFree, time.monotonic()
+           gcUsed, gcFree, getOffsetNow()
            ) )
 
 def sayAtStartup(desc:str, **kwds:Any) -> None:

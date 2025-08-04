@@ -10,9 +10,10 @@ import wifi, displayio
 import LumensalisCP.Main.Dependents
 from LumensalisCP.commonPreManager import *
 from LumensalisCP.Main import PreMainConfig
+from LumensalisCP.Main.PreMainConfig import sayAtStartup
 from TerrainTronics.Factory import TerrainTronicsFactory
 from LumensalisCP.Shields.Base import ShieldBase
-from LumensalisCP.Main.I2CProvider import I2CProvider
+
 from LumensalisCP.Main.Panel import ControlPanel
 from LumensalisCP.Temporal.Refreshable import Refreshable
 from LumensalisCP.Temporal.RefreshableList import RootRefreshableList
@@ -22,16 +23,16 @@ from LumensalisCP.Temporal.Refreshable import *
 
 from LumensalisCP.Main import ManagerRL
 from LumensalisCP.Main import Manager2RL
-from .Async import ManagerAsync
+from LumensalisCP.Main.Async import ManagerAsync
+from LumensalisCP.Main.I2CProvider import I2CProvider
 
-from . import GetManager
 
 if TYPE_CHECKING:
     from LumensalisCP.Lights.DMXManager import DMXManager
     import LumensalisCP.Main.Manager
     from LumensalisCP.Audio import Audio
     from LumensalisCP.Main.Profiler import Profiler, ProfileFrameBase
-    from LumensalisCP.Main.MainAsyncLoop import MainAsyncLoop
+    from LumensalisCP.Main.MainAsync import MainAsyncLoop, MainGCLoop
     from LumensalisCP.HTTP.BasicServer import BasicServer
 
     
@@ -46,11 +47,11 @@ LumensalisCP.Main.ProfilerRL._rl_setFixedOverheads() # type: ignore
 def _early_collect(tag:str):
     PreMainConfig.pmc_gcManager.checkAndRunCollection(force=True)
 
-class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
+class MainManager(I2CProvider, NamedLocalIdentifiable, ConfigurableBase, ):
     
     class KWDS(ConfigurableBase.KWDS): # type: ignore
         pass
-    
+
     theManager : MainManager|None = None
     ENABLE_EEPROM_IDENTITY = False
     profiler: Profiler
@@ -58,7 +59,7 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
     controlPanels:NliList[ControlPanel]
     _privateCurrentContext:EvaluationContext
     asyncLoop:MainAsyncLoop
-    
+    gcLoop:MainGCLoop
     useWifi:bool
 
     @staticmethod
@@ -77,91 +78,49 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
 
     def __init__(self, **kwds:Unpack[ConfigurableBase.KWDS] ) -> None:
         assert MainManager.theManager is None
-        NamedLocalIdentifiable.__init__(self,"main")
-        
         MainManager.theManager = self
-        PreMainConfig.pmc_gcManager.main = self # type: ignore
+        NamedLocalIdentifiable.__init__(self,"main")
+        self.__earlyInit()
 
-        self.__cycle = 0
-        
-
-        #self.__startNs = time.monotonic_ns()
-        #self.__startNow = time.monotonic()
-        self.__startNow = time.monotonic() - pmc_mainLoopControl.getMsSinceStart()/1000.0
-        self._when:TimeInSeconds = self.getNewNow()
-        getMainManager.set(self)
-
-        from LumensalisCP.Main.Dependents import MainRef  # pylint: disable=
-        MainRef._theManager = self  # type: ignore
-        
-        self._privateCurrentContext = EvaluationContext(self)
-        UpdateContext._patch_fetchCurrentContext(self) # type: ignore
-        
-        def getCurrentEvaluationContext() -> EvaluationContext:
-            return self._privateCurrentContext
-        GetManager.getCurrentEvaluationContext = getCurrentEvaluationContext
-        
-        self._refreshables = RootRefreshableList(name='mainRefreshables')
-        self.profiler = Profiler(self._privateCurrentContext )
-        self.startupOut("profiler created, disabled=%s", self.profiler.disabled )
-        
-        self.asyncManager:ManagerAsync = ManagerAsync(main=self)
-        
-        self.__socketPool:Any = None
-        
-        Debuggable._getNewNow = self.getNewNow # type: ignore
         mainConfigDefaults = dict(
             TTCP_HOSTNAME = os.getenv("TTCP_HOSTNAME")
         )
-        displayio.release_displays()
-        
         kwds.setdefault("defaults", mainConfigDefaults)
         ConfigurableBase.__init__(self, **kwds ) # type: ignore
-
-        
-        _early_collect("mid manager init")
-
         I2CProvider.__init__( self, config=self.config, main=self )
   
         self.__identity = ControllerIdentity(self)
         self._when = self.newNow
-        
-        self.cyclesPerSecond = 100
-        self.cycleDuration = 0.01
+        #self.cyclesPerSecond = 100
+        #self.cycleDuration = 0.01
 
         self._webServer:BasicServer|None = None
-
         self._rrDeferred:RefreshablePrdInvAct|None = None
         self._rrCollect:RefreshablePrdInvAct|None = None
-
         self.__deferredTasks: collections.deque[Callable[[], None]] = collections.deque( [], 99, True ) # type: ignore # pylint: disable=all
         self.__audio = None
         self.__dmx :DMXManager|None = None
-
-        #self._tasks:List[KWCallback] = []
         self.__shutdownTasks:List[ExitTask] = []
         self.shields = NliList(name='shields',parent=self)
-
 
         self.__anonInputs:NliList[InputSource] = NliList(name='inputs',parent=self)
         self.__anonOutputs:NliList[NamedOutputTarget] = NliList(name='outputs',parent=self)
         self.controlPanels = NliList(name='controllers',parent=self)
         self.defaultController = ControlPanel(main=self)
         self.defaultController.nliSetContainer(self.controlPanels)
-
         self._monitored:list[InputSource] = []
-
         self._timers = PeriodicTimerManager(main=self)
-
         self._scenes: SceneManager = SceneManager(main=self)
         self.__TerrainTronics = None
 
         self._finishInit()
 
-
         if pmc_mainLoopControl.preMainVerbose: print( f"MainManager options = {self.config.options}" )
         _early_collect("end manager init")
     
+    @reloadingMethod
+    def __earlyInit(self): ...
+
     def makeRef(self):
         return LumensalisCP.Main.Dependents.MainRef(self)
 
@@ -186,17 +145,18 @@ class MainManager(NamedLocalIdentifiable, ConfigurableBase, I2CProvider):
         return self._when 
     
     @property
-    def cycle(self) -> int : return self.__cycle 
+    def cycle(self) -> int : return self.asyncLoop.cycle 
     @property
     def millis(self) -> TimeInMS : return int(self._when * 1000)
     @property
     def seconds(self) -> TimeInSeconds: return self._when 
     
     def getNewNow( self ) -> TimeInSeconds:
-        #ns = time.monotonic_ns()
+        #ns = getOffsetNow_ns()
         #return (ns - self.__startNs) * 0.000000001
-        now = time.monotonic()
-        return now - self.__startNow # type: ignore # pylint: disable=all
+        return getOffsetNow()
+        #now = getOffsetNow()
+        #return now - self.__startNow # type: ignore # pylint: disable=all
 
 
     @property
@@ -316,10 +276,7 @@ see http://lumensalis.com/ql/h2Scenes
 
     @reloadingMethod
     def handleWsChanges( self, changes:StrAnyDict ): ...
-     
-    #async def msDelay( self, milliseconds:TimeInMS ):
-    #    await asyncio.sleep( milliseconds * 0.001 )
-    
+
     @property
     def audio(self) -> Audio:
         if self.__audio is None:
@@ -345,7 +302,7 @@ see http://lumensalis.com/ql/h2Scenes
     def dumpLoopTimings( self, count:int, minE:Optional[float]=None, minF:Optional[float]=None, **kwds:StrAnyDict ) -> list[Any]: ...
 
     @reloadingMethod
-    def getNextFrame(self) ->ProfileFrameBase: ...
+    def getNextFrame(self, now:TimeInSeconds) ->ProfileFrameBase: ...
 
     @reloadingMethod
     def nliGetContainers(self) -> Iterable[NliContainerMixin[NamedLocalIdentifiable]]|None: ...
@@ -360,17 +317,26 @@ see http://lumensalis.com/ql/h2Scenes
     def renameIdentifiables(self, items:Optional[dict[str,NamedLocalIdentifiable]]=None, verbose:bool = False ): ...
     
     @reloadingMethod
+    def _showLoop(self, context:EvaluationContext) -> None: ...
+
+    @reloadingMethod
     def _finishInit(self) -> None: ...
 
     _rCollect:RefreshablePrdInvAct
-    
+    _showLoopData: dict[str, Any] 
     
     def run( self ):
         self.asyncManager.asyncMainLoop()
         self.__runExitTasks()
 
-
     _renameIdentifiablesItems :dict[str,NamedLocalIdentifiable]
+    __cycle:int
+    #__startNow:TimeInSeconds 
+    _when:TimeInSeconds
+    _refreshables: RootRefreshableList
+    profiler: Profiler
+    asyncManager:ManagerAsync
+    __socketPool:Any 
 
 addReloadableClass(MainManager)
 #addReloadableClass( MainManager )

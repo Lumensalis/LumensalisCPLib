@@ -31,7 +31,7 @@ from LumensalisCP.Triggers.Timer import PeriodicTimerManager
 from LumensalisCP.Main.Profiler import Profiler, ProfileFrameBase, ProfileSnapEntry
 from LumensalisCP.Main.Panel import PanelControl, PanelMonitor
 from LumensalisCP.Main.Shutdown import ExitTask
-from LumensalisCP.Main.I2CProvider import I2CProvider
+#from LumensalisCP.Main.I2CProvider import I2CProvider
 from LumensalisCP.Main import PreMainConfig
 from LumensalisCP.Main.PreMainConfig import pmc_gcManager
 _sayCmPMMImport.parsing()

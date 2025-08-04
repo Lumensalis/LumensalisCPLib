@@ -92,36 +92,31 @@ def MainManager_handleWsChanges( self:MainManager, changes:StrAnyDict ):
 def dumpLoopTimings( self:MainManager, count:int, minE:Optional[float]=None, minF:Optional[float]=None, **kwds:StrAnyDict ) -> list[Any]:
         rv: list[Any] = []
         i = self._privateCurrentContext.updateIndex
-        #count = min(count, len(self.__taskLoopTimings))
-        # count = min(count,self.profiler.timingsLength)
 
-        
         while count and i >= 0:
             count -= 1
             frame = self.profiler.timingForUpdate( i )
-            
             if frame is not None:
-
                 pass
             i -= 1
         return rv
  
 @_mmMeta.reloadableMethod()
-def MainManager_getNextFrame(self:MainManager) ->ProfileFrameBase:
-        now = self.getNewNow()
-        self._when = now
-        self._privateCurrentContext.reset(now)
-        context = self._privateCurrentContext
-        if self.profiler.disabled:
-            newFrame = self.profiler.stubFrame
-            
-        else:
-            eSleep = TimeInSeconds( now - self.asyncLoop.priorSleepWhen )
-            newFrame = self.profiler.nextNewFrame(context, eSleep = eSleep ) 
-            assert isinstance( newFrame, ProfileFrameBase )
-            
-        context.baseFrame  = context.activeFrame = newFrame
+def getNextFrame(self:MainManager,now:TimeInSeconds) ->ProfileFrameBase:
+    self._when = now
+    if self.profiler.disabled:
+        newFrame = self.profiler.stubFrame
+        self._privateCurrentContext.reset(now,newFrame)
         return newFrame
+
+    context = self._privateCurrentContext
+    self._privateCurrentContext.reset(now,None)
+    eSleep = TimeInSeconds( now - self.asyncLoop.priorSleepWhen )
+    newFrame = self.profiler.nextNewFrame(context, eSleep = eSleep ) 
+    assert isinstance( newFrame, ProfileFrameBase )
+    
+    context.baseFrame  = context.activeFrame = newFrame
+    return newFrame
 
 @_mmMeta.reloadableMethod()
 def runDeferredTasks(self:MainManager, context:EvaluationContext) -> None: # type: ignore

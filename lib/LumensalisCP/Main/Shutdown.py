@@ -1,12 +1,20 @@
 
-from LumensalisCP.common import *
-from LumensalisCP.CPTyping import *
+from __future__ import annotations
 
-import LumensalisCP.Main.Manager
+from LumensalisCP.ImportProfiler import  getImportProfiler
+_sayImport = getImportProfiler( __name__, globals() )
+
+import atexit
+
+from LumensalisCP.common import *
+
+if TYPE_CHECKING:
+    from LumensalisCP.Main.Manager import MainManager
+
 
 class ExitTask(object):
     
-    def __init__(self, main:"LumensalisCP.Main.Manager.MainManager", task:Callable, name:Optional[str]=None ):
+    def __init__(self, main:MainManager, task:Callable[...,Any], name:Optional[str]=None ):
         self.name = name or task.__name__
         self.__main = main
         self.__task = task
@@ -27,3 +35,5 @@ class ExitTask(object):
         except:
             print( f"EXITER {self.name} FAILED" )
         self.__called = True
+
+_sayImport.complete()

@@ -113,7 +113,7 @@ class PanelMonitor( NamedLocalIdentifiable, Generic[CVT]   ):
         self._max = kwds.pop('max', None)
         self.description = kwds.pop('description', '')
 
-class PanelPipe( InputSource,  Generic[CVT], OutputTarget ):
+class PanelPipe( InputSource, OutputTarget,  Generic[CVT] ):
     """ combination of OutputTarget and InputSource
 
     changes to the OutputTarget (i.e. set) 
@@ -259,7 +259,7 @@ class ControlPanel( MainChild ):
     #########################################################################
 
 
-    def nliGetContainers(self) -> Iterable[NliContainerMixin[PanelControl[Any, Any]]]|None:
+    def nliGetContainers(self) -> Iterable[NliContainerMixin[PanelControl[Any, Any]]]:
         yield self._controlVariables
         
 __all__ = [ 'ControlPanel', 'PanelControl', 'PanelMonitor' ]

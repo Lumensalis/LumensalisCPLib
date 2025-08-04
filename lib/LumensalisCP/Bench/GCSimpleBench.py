@@ -51,7 +51,7 @@ class GCTestAllocScopeSample(CountedInstance):
     def sample(self):
         self.mem_alloc = gc.mem_alloc() # type: ignore # pylint: disable=no-member
         self.mem_free = gc.mem_free() # type: ignore # pylint: disable=no-member
-        self.when = time.monotonic()
+        self.when = getOffsetNow()
         
     def __sub__(self, rhs:"GCTestAllocScopeSample" ):
         rv = GCTestAllocScopeSample()

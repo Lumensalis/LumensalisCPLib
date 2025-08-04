@@ -6,8 +6,7 @@ try:
 except ImportError:
     
     TYPE_CHECKING = False # type: ignore
-
-import time
+from LumensalisCP.Temporal.Time import getOffsetNow, TimeInSeconds
 
 from LumensalisCP.Main.PreMainConfig import sayAtStartup, pmc_mainLoopControl, pmc_gcManager
 from LumensalisCP.util.CountedInstance import CountedInstance
@@ -84,10 +83,10 @@ class ActualImportProfiler(ImportProfiler):
         self.importIndex = ImportProfiler._importIndex
         ImportProfiler._importIndex += 1
         self.path = "->".join(  [i.name for i in ImportProfiler.NESTING] )
-        self.startTime = time.monotonic()
+        self.startTime:float = getOffsetNow()
         self._endTime:Optional[float] = None
-        self.childElapsed  = 0
-        self.innerElapsed = 999
+        self.childElapsed:float  = 0.0
+        self.innerElapsed:float = 999.0
         self.startParsing:float|None = None
         self( "import starting")
         ImportProfiler.IMPORTS.append( self )
@@ -117,14 +116,14 @@ class ActualImportProfiler(ImportProfiler):
             sayAtStartup( f"IMPORT {self.path} | {self.name} : {desc}", importProfiler=self )
 
     def parsing(self) -> None:
-        self.startParsing = time.monotonic()
+        self.startParsing = getOffsetNow()
         self( "parsing" )
 
     def complete(self, moduleGlobals:Optional[dict[str,Any]]=None) -> None:
 
         end = ImportProfiler.NESTING.pop()
         assert end is self, f"ImportProfiler nesting mismatch: {end.name} != {self.name}"
-        self._endTime = time.monotonic()
+        self._endTime = getOffsetNow()
         self.elapsed = self._endTime - self.startTime
         self.innerElapsed = self.elapsed - self.childElapsed
         if moduleGlobals is None:

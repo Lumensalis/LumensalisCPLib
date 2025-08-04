@@ -31,6 +31,7 @@ main = ProjectManager(
         #  profileMemory=3
         useWifi = True,
     ) 
+sayAtStartup( "main loaded" )
 
 actOne= main.addScene( ) # http://lumensalis.com/ql/h2Scenes
 
@@ -60,8 +61,7 @@ neoPixB = caernarfon.addNeoPixels(servoPin=3,pixelCount=35)
 sceneIndicatorLights    = neoPixB.stick(8)
 angleGaugeLights        = neoPixB.ring(12)
 
-# StemmaQT modules
-# main.panel.monitor( lightSensor )
+
 
 #############################################################################
 
@@ -89,10 +89,6 @@ leftRimTouch, centerRimTouch, rightRimTouch= capTouch.addInputs( 5, 6, 7 )
 # touching leftRimTouch will turn testEffect on and off
 fireOnRising( leftRimTouch, testEffect.toggle )
 
-#############################################################################
-
-#############################################################################
-# Wrap up and launch : http://lumensalis.com/ql/h2Launch
-sayAtStartup( "launch ..." )
-ImportProfiler.dumpWorstImports(10)
+sayAtStartup( "launch ..." ) # http://lumensalis.com/ql/h2Launch
+#ImportProfiler.dumpWorstImports(10)
 main.launchProject( globals() )

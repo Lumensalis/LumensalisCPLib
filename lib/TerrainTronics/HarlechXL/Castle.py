@@ -1,11 +1,11 @@
 
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
-from LumensalisCP.I2C.I2CDevice import I2CDevice, I2CInputSource, UpdateContext
+from LumensalisCP.I2C.I2CDevice import I2CDevice, UpdateContext
 from LumensalisCP.Lights.Light import *
 
 
-from .aw210xx import AW210xx, AW210xxOpenShortDetect
+from TerrainTronics.HarlechXL.aw210xx import AW210xx, AW210xxOpenShortDetect
 
 
 class HarlechXL_LED( DimmableLight ):

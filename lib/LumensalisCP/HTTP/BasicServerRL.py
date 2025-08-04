@@ -3,7 +3,7 @@ __sayHTTPBasicServerRLImport = getImportProfiler( "HTTP.BasicServerRL", globals(
 
 from LumensalisCP.ImportProfiler import ImportProfiler, ReloadableImportProfiler
 
-from .BSR.common import *
+from LumensalisCP.HTTP.BSR.common import *
 import traceback
 from LumensalisCP.IOContext import *
 from LumensalisCP.commonCPWifi import *
@@ -25,14 +25,14 @@ class QueryConfig(object):
     includeId:bool = True
     includeType:bool = True
 
-def getQueryResult( target:NliInterface|NliContainerBaseMixin, path:list[str], qConfig:Optional[QueryConfig]=None ) -> Any: 
+def getQueryResult( target:NamedLocalIdentifiable|NliContainerInterface, path:list[str], qConfig:Optional[QueryConfig]=None ) -> Any: 
     rv = None
     if qConfig is None: qConfig=QueryConfig()
     if len(path):
         assert isinstance(target,NamedLocalIdentifiable)
         child = target.nliFind(path[0])
         if child is None: return { "missing child" : path[0]}
-        assert isinstance(child,NliContainerBaseMixin), f"child {path[0]} is not a NliContainerMixinBaseMixin, but {type(child)}"
+        assert isinstance(child,NliContainerInterface), f"child {path[0]} is not a NliContainerMixinBaseMixin, but {type(child)}"
         rv = { child.containerName : getQueryResult( child, path[1:], qConfig )  }
         if not qConfig.fillParents: return rv
     else: 
@@ -45,26 +45,26 @@ def getQueryResult( target:NliInterface|NliContainerBaseMixin, path:list[str], q
     try:
         if len(path) == 0 and qConfig.recurseChildren is None: qConfig.recurseChildren = True
         localRecurseChildren = qConfig.recurseChildren # and not len(path)
-        containers = target.nliGetContainers() #
-        if containers is not None and len( items:=list(containers)) > 0: 
+        containers = list(target.nliGetContainers() )#
+        if len( containers) > 0: 
             if localRecurseChildren:
-                c:NliContainerBaseMixin
-                for c in items:
+                c:NliContainerInterface
+                for c in containers:
                     cv = getQueryResult(c,[],qConfig=qConfig)
                     if len(cv): 
                         rv[c.name] = cv
             else:
-                rv['containers'] = [(getQueryResult(c,[],qConfig=qConfig) if localRecurseChildren else c.name) for c in items ]
+                rv['containers'] = [(getQueryResult(c,[],qConfig=qConfig) if localRecurseChildren else c.name) for c in containers ]
                 
-        children= target.nliGetChildren()
-        if children is not None and len( items:=list(children)) > 0:
+        children = list( target.nliGetChildren())
+        if len(children) > 0:
             if localRecurseChildren:
-                for c in items:
-                    v= getQueryResult(c,[],qConfig=qConfig)
+                for child in children:
+                    v= getQueryResult(child,[],qConfig=qConfig)
                     #if len(v): 
-                    rv[c.name] = v
+                    rv[child.name] = v
             else:            
-                rv['children'] = [(getQueryResult(c,[],qConfig=qConfig) if localRecurseChildren else c.name) for c in items ]
+                rv['children'] = [(getQueryResult(child,[],qConfig=qConfig) if localRecurseChildren else child.name) for child in children ]
     except Exception as inst:
         rv['exception'] = {
             'message' : str(inst),
@@ -76,6 +76,7 @@ def getQueryResult( target:NliInterface|NliContainerBaseMixin, path:list[str], q
          
     return rv        
 
+@_BasicServer.reloadableMethod()
 def BSR_query(self:BasicServer, request:Request, name:str):
     """
     """
@@ -97,7 +98,9 @@ from LumensalisCP.Main import ProfilerRL
 from LumensalisCP.HTTP.BSR import BSR_profileRL
 from LumensalisCP.HTTP.BSR import BSR_sakRL
 from LumensalisCP.HTTP.BSR import BSR_cmdRL
+from LumensalisCP.HTTP.BSR import BSR_clientRL
 
+@_BasicServer.reloadableMethod()
 def _reloadForRoute( self:BasicServer, name:str ) -> None: # type:ignore[no-untyped-def]
 
     from LumensalisCP.HTTP import BasicServerRL
@@ -115,6 +118,8 @@ def _reloadForRoute( self:BasicServer, name:str ) -> None: # type:ignore[no-unty
         modules.extend( [BSR_sakRL] )
     elif "cmd" in name:
         modules.extend( [BSR_cmdRL] )
+    elif "client" in name:
+        modules.extend( [BSR_clientRL] )
 
     
     modules.append( BasicServerRL )
@@ -142,7 +147,7 @@ def handle_websocket_request(self:BasicServer):
     if data is None:
         return
     try:
-        # print( f'websocket data = {data}' )
+        print( f'websocket data = {data}' )
         jData = json.loads(data)
         self.main.handleWsChanges(jData)
     except Exception as inst:

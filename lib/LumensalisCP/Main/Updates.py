@@ -79,7 +79,6 @@ class UpdateContextDebugManager(Releasable):
         self.context = None
         
 class UpdateContext(Debuggable):
-    activeFrame: ProfileFrameBase
     
     def __init__( self, main:MainManager ):
         super().__init__()
@@ -88,7 +87,7 @@ class UpdateContext(Debuggable):
         #self.__changedSources : list[InputSource] = []
         self.__mainRef = main.makeRef()
         self.__when = main.when
-        #self.activeFrame = None
+        self.activeFrame:ProfileFrameBase|None = None
         self.baseFrame:ProfileFrameBase|None = None
         self.debugEvaluate = False
         self._debugIndent = 0
@@ -107,13 +106,13 @@ class UpdateContext(Debuggable):
         entry.prepare( self,debugEvaluate if debugEvaluate is not None else self.debugEvaluate)
         return entry
     
-    def reset( self, when:Optional[TimeInSeconds] = None ):
+    def reset( self, when:TimeInSeconds, frame:ProfileFrameBase|None ) -> None:
         try:
             self.__updateIndex += 1
-            #self.__changedSources.clear()
             self.__when = when or self.main.when
-            if hasattr(self, 'activeFrame'): del self.activeFrame 
-            self.baseFrame = None
+            #if hasattr(self, 'activeFrame'): del self.activeFrame 
+            self.activeFrame = frame
+            self.baseFrame = frame
             self._debugIndent = 0
         except Exception as inst:
             print( f"UpdateContext.refresh @{id(self):X} failed : {inst}")
@@ -132,12 +131,10 @@ class UpdateContext(Debuggable):
     @property
     def updateIndex(self) -> int: return self.__updateIndex
 
-    #@property
-    #def changedSources(self): 
-    #    raise NotImplementedError
     
     def subFrame(self, name:Optional[str]=None, name2:Optional[str]=None) -> ProfileSubFrame: # pylint: disable=unused-argument
         #rv = self.activeFrame.activeFrame().subFrame(self, name, name2)
+        if self.activeFrame is None: return self._stubFrame # type: ignore[return-value]
         rv = self.activeFrame.subFrame(self, name, name2)
         return rv
     

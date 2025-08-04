@@ -5,12 +5,7 @@ __sayImport = getImportProfiler( globals() )
 from LumensalisCP.IOContext import *
 
 from LumensalisCP.Controllers.ConfigurableBase import ControllerConfigurableChildBase
-#from LumensalisCP.Inputs import InputSource
-from LumensalisCP.Temporal.Refreshable import Refreshable, RfMxnActivatablePeriodic
 
-#from LumensalisCP.Shields.Pins import PinHolder, PinProxy
-#from digitalio import DigitalInOut, Direction
-from LumensalisCP.Identity.Local import NliList, NliContainerMixin
 from LumensalisCP.Inputs import NamedLocalIdentifiable
 from LumensalisCP.Main.I2CProvider import I2CProvider
 
@@ -87,5 +82,11 @@ class ShieldI2CBase(ShieldBase,I2CProvider):  # pylint: disable=abstract-method
             self.i2c.unlock()
 
         print( "i2c scan complete\n")
+
+
+__all__ = [
+    'ShieldBase',
+    'ShieldI2CBase',
+]
 
 __sayImport.complete()

@@ -19,7 +19,7 @@ from LumensalisCP.Temporal.Refreshable import *
 from LumensalisCP.util.Reloadable import ReloadableModule, reloadableMethod, reloadableClassMeta
 #from LumensalisCP.util.Reloadable import ReloadableMethodType, Unpack, KWDS
 
-from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
+from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl, sayAtStartup
 
 
 if TYPE_CHECKING:
@@ -40,6 +40,7 @@ main.launchProject( globals() )
 ```
 see http://lumensalis.com/ql/h2Main
 """
+    sayAtStartup( f"import MainManager" )
     from LumensalisCP.Main.Manager import MainManager
     if profile is not None:
         pmc_mainLoopControl.ENABLE_PROFILE = profile
@@ -52,11 +53,13 @@ see http://lumensalis.com/ql/h2Main
                 if profileMemory & 2: pmc_gcManager.PROFILE_MEMORY_ENTRIES = True
 
     if pmc_mainLoopControl.ENABLE_PROFILE:
+        sayAtStartup( f"preloading profiler releasables" )
         from LumensalisCP.Main.Profiler import ProfileFrame,ProfileSnapEntry,ProfileSubFrame,ProfileFrameBase
         ProfileFrame.releasablePreload( 70 )
         ProfileSubFrame.releasablePreload( 1000 )
         ProfileSnapEntry.releasablePreload( 3000 )
 
+    sayAtStartup( f"Project: get main" )
     main = MainManager.initOrGetManager()
 
     main.useWifi = useWifi

@@ -20,8 +20,8 @@ class OutputTarget(CountedInstance):
     
 class NamedOutputTarget(NamedLocalIdentifiable,OutputTarget):
 
-    def __init__(self, name:Optional[str] = None):
-        NamedLocalIdentifiable.__init__(self, name=name)
+    def __init__(self, **kwds:Unpack[NamedLocalIdentifiable.KWDS]):
+        NamedLocalIdentifiable.__init__(self,**kwds)
         OutputTarget.__init__(self)
 
     @override

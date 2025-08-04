@@ -29,7 +29,7 @@ __sayImport.parsing()
 # pylint: disable=protected-access, pointless-string-statement
 TimePT = TimeInSeconds
 
-getProfilerNow:Callable[[],TimePT] = time.monotonic # type: ignore[reportUnknownVariableType]
+getProfilerNow:Callable[[],TimePT] = getOffsetNow # type: ignore[reportUnknownVariableType]
 
 def ptToSeconds(v: TimePT|float) -> TimeInSeconds:
     return TimeInSeconds(v)
@@ -335,7 +335,7 @@ class ProfileFrameBase(Releasable):
         return self._name
         
     def reset(self, context:UpdateContext ) -> None:
-        #nowPT = time.monotonic_ns()
+        #nowPT = getOffsetNow_ns()
         nowPT = getProfilerNow()
         #assert isinstance(context,UpdateContext)
         self.__context:UpdateContext = context
@@ -367,10 +367,13 @@ class ProfileFrameBase(Releasable):
         try:
             context = self.__context
             assert context is not None 
-            assert ((context.activeFrame is not None) or self.__class__ is ProfileFrame)
-                   
-            self.__priorFrame = context.activeFrame
-            self.depth = self.__priorFrame.depth + 1
+            activeFrame = context.activeFrame
+            if activeFrame is None:
+                assert self.__class__ is ProfileFrame
+                self.depth = 1
+            else:
+                self.__priorFrame = activeFrame
+                self.depth = self.__priorFrame.depth + 1
             context.activeFrame = self
             # print( f"PSF ENTER {self} from {self.__priorFrame}" )
             
@@ -577,7 +580,7 @@ class ProfileFrame(ProfileFrameBase):
         return cls._makeFinish( rp, entry )
 
     def reset(self, context:UpdateContext,  eSleep:TimeSpanInSeconds=0.0):
-        # nowPT = time.monotonic_ns()
+        # nowPT = getOffsetNow_ns()
 
         #self.currentUpdateIndex = 
         self.updateIndex = context.updateIndex
@@ -642,7 +645,7 @@ class Profiler(CountedInstance):
     timingsLength:int 
     timings: List[ProfileFrame]
     currentTiming: ProfileFrame
-    disabled:bool
+    
     stubFrame:ProfileStubFrame
     
     def __init__(self, context:UpdateContext, timings:Optional[int]=None, stub:Optional[bool]=None ):
@@ -660,15 +663,21 @@ class Profiler(CountedInstance):
         self.timings = [ ProfileFrame.makeEntry(context,0) for  _ in range(timings) ]
         
         self.timingsLength = timings
-        self.disabled = stub
-        
-            
-             
-        #self.nextNewFrame(0)
+        self.__disabled = stub
+
+    @property
+    def disabled(self) -> bool:
+        return self.__disabled
+
+    @disabled.setter
+    def disabled(self, value:bool) -> None:
+        self.setProfileDisabled(value)
+
+    @reloadingMethod
+    def setProfileDisabled( self, disabled:bool ) -> None: ...
 
     @reloadingMethod
     def getProfilerInfo( self,  dumpConfig:Optional[ProfileWriteConfig]=None ) -> Any: ...
-
 
     def nextNewFrame(self, context:UpdateContext, eSleep:TimeInSeconds=TimeInSeconds(0) ) -> ProfileFrame:
         updateIndex = context.updateIndex

@@ -7,8 +7,8 @@ import audiomp3, audiobusio, board, audiocore, math, audiomixer
 from microcontroller import Pin
 import array
 
-from  LumensalisCP.Main.Dependents import MainChild
-from .Effect import SoundEffectsManager
+from LumensalisCP.Main.Dependents import MainChild
+from LumensalisCP.Audio.Effect import SoundEffectsManager
 
 # TODO : recheck / fix everything with # type: ignore
 

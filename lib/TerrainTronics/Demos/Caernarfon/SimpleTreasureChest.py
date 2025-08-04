@@ -1,17 +1,17 @@
 from LumensalisCP.ImportProfiler import ImportProfiler
-ImportProfiler.SHOW_IMPORTS = False
-
+ImportProfiler.SHOW_IMPORTS = True
 # ALWAYS START WITH "from LumensalisCP.Simple import *"
+from LumensalisCP.Main.Manager import MainManager
+
+from LumensalisCP.HTTP.BasicServer import BasicServer
+
+ImportProfiler.dumpWorstImports(10)
+
 from LumensalisCP.Simple import * # http://lumensalis.com/ql/h2Start
 
 #############################################################################
 sayAtStartup( "start project" ) #  http://lumensalis.com/ql/h2Main
-main2:MainManager = ProjectManager(
-        # profile=True,
-        #  profileMemory=3
-    ) 
-
-main = getMainManager()
+main = ProjectManager( ) ## profile=True, profileMemory=3    ) 
 
 # setup three different scenes : http://lumensalis.com/ql/h2Scenes
 sceneClosed, sceneOpen, sceneMoving = main.addScenes( 3 ) 
@@ -19,12 +19,11 @@ sceneClosed, sceneOpen, sceneMoving = main.addScenes( 3 )
 # setup Control Inputs : http://lumensalis.com/ql/h2Controller
 rbCycle = main.panel.addSeconds( startingValue=3.1, min=0.1, max=10.0 )
 rbs = main.panel.addFloat( startingValue=0.6, min=0.1, max=3.0 )
-handSafetyRange = main.panel.addMillimeters(startingValue=300, min=10 )
-
+handSafetyRange = main.panel.addMillimeters(startingValue=300, min=10, max=1000 )
 
 #############################################################################
 # HARDWARE : http://lumensalis.com/ql/h2Hardware
-# setup the Caernarfon Castle : http://lumensalis.com/ql/h2Caernarfon
+sayAtStartup( "setup the Caernarfon Castle" )  # http://lumensalis.com/ql/h2Caernarfon
 caernarfon = main.TerrainTronics.addCaernarfon( )
 
 lidServo = caernarfon.initServo( 1, movePeriod=0.05 )
@@ -40,7 +39,11 @@ frontLidStrip           = neoPixA.stick(8)
 sceneIndicatorLights    = neoPixB.stick(8)
 angleGaugeLights        = neoPixB.ring(12)
 
-# StemmaQT modules
+from LumensalisCP.I2C.Factory import I2CFactory
+
+I2CFactory.addVL530lx
+
+sayAtStartup( "setup StemmaQT..." ) # StemmaQT modules
 timeOfFlightSensor = main.i2cFactory.addVL530lx(refreshRate=0.25)
 vcnl4040 = main.adafruitFactory.addVCNL4040()
 

@@ -1,12 +1,20 @@
 
 
+from adafruit_httpserver.response import JSONResponse, Response
 from LumensalisCP.ImportProfiler import getImportProfiler
 __sayHTTPBSRProfileRLImport = getImportProfiler( globals(), reloadable=True  )
 
 from LumensalisCP.HTTP.BSR.common import *
 from LumensalisCP.Main.Profiler import ProfileWriteConfig   
 
-def BSR_profile(self:BasicServer, request:Request):
+
+from LumensalisCP.util.Reloadable import ReloadableModule
+
+_module = ReloadableModule( 'LumensalisCP.HTTP.BasicServer' )
+_BasicServer = _module.reloadableClassMeta('BasicServer')
+
+@_BasicServer.reloadableMethod()
+def BSR_profile(self:BasicServer, request:Request) -> JSONResponse | Response:
     
     try:
         # Get objects

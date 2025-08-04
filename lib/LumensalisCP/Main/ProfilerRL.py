@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 #from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
 
 # pylint: disable=unused-argument, redefined-outer-name, attribute-defined-outside-init,protected-access,bad-indentation
+# pyright: reportRedeclaration=false, reportPrivateUsage=false, reportUnusedImport=false, reportUnusedFunction=false
 
 def _rl_setFixedOverheads():
     LumensalisCP.Main.Profiler.ProfileSnapEntry.gcFixedOverhead = 0
@@ -45,7 +46,7 @@ def _heading( self:ProfileFrameBase|ProfileSnapEntry ) -> str:
     else:
          return f"   {self.e:0.3f}"
 
-# pyright: reportRedeclaration=false
+
 _module = ReloadableModule( 'LumensalisCP.Main.Profiler' )
 _ProfileWriteConfig = _module.reloadableClassMeta('ProfileWriteConfig' )
 _ProfileSnapEntry = _module.reloadableClassMeta('ProfileSnapEntry' )
@@ -54,10 +55,15 @@ _ProfileFrame = _module.reloadableClassMeta('ProfileFrame' )
 _ProfileSubFrame = _module.reloadableClassMeta('ProfileSubFrame' )
 _Profiler = _module.reloadableClassMeta('Profiler' )
 
+#############################################################################
+
+@_Profiler.reloadableMethod()
+def setProfileDisabled( self:Profiler, disabled:bool ) -> None: 
+    self.__disabled = disabled
+
 @_ProfileWriteConfig.reloadableMethod()
 def shouldShowSnap(self:ProfileWriteConfig, snap:ProfileSnapEntry) -> bool:
     return (snap.e >= self.minE) or self.tooMuchMemoryUsed(snap)
-    
 
 @_ProfileWriteConfig.reloadableMethod()
 def shouldShowFrame(self:ProfileWriteConfig, frame:ProfileFrameBase) -> bool:

@@ -33,17 +33,16 @@ class LocalIdentifiable(CountedInstance):
         
     @property
     def localId(self) -> int: return self.__localId
-    
-#############################################################################    
-    
+
+#############################################################################
+
 class NliInterface:
-    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None: ...
+    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]: ...
 
-    def nliGetContainers(self) -> Iterable[NliContainerBaseMixin]|None: ...
-    
+    def nliGetContainers(self) -> Iterable[NliContainerInterface]: ...
 
-#############################################################################    
-class NliContainerBaseMixin(NliInterface):
+#############################################################################
+class NliContainerInterface(NliInterface):
     @property
     def containerName(self) -> str: ...
     @property
@@ -53,8 +52,6 @@ class NliContainerBaseMixin(NliInterface):
     
 ############################################################################# 
 
-                    
-                    
 class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
 
     class KWDS(TypedDict):
@@ -99,21 +96,21 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
     #########################################################################
 
     #__nliContainerRef:ReferenceType["NliContainerMixin"]
-    __nliContaining:list[ReferenceType[NliContainerBaseMixin]]|None = None
+    __nliContaining:list[ReferenceType[NliContainerInterface]]|None = None
     __name:str|None
     
-    def nliGetContaining(self) -> Iterable[NliContainerBaseMixin]|None:
+    def nliGetContaining(self) -> Iterable[NliContainerInterface]|None:
         c = self.__nliContaining
         if c is None: return None
         for i in c:
             v = i()
             if v is not None: yield v
         
-    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None:
-        return None
+    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]:
+        return ()
 
-    def nliGetContainers(self) -> Iterable[NliContainerBaseMixin]|None:
-        return None
+    def nliGetContainers(self) -> Iterable[NliContainerInterface]:
+        return ()
 
     def nliSetContainer(self, container:NliContainerMixin):
         assert container is not None
@@ -121,7 +118,7 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
         #if oldContainer is not None:
         #    oldContainer.nliRemoveChild(self)
         ensure( not container.nliContainsChild(self), "item %s already in %s", safeRepr(self), safeRepr(container) ) 
-        assert isinstance(container, NliContainerBaseMixin), "container must be a NliContainerBaseMixin"        
+        assert isinstance(container, NliContainerInterface), "container must be a NliContainerInterface"        
         if self.__nliContaining is None:
             self.__nliContaining = [ lcpWeakref.lcpfRef( container ) ]
         else:
@@ -139,25 +136,23 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
             self._nliCachedName = cached
         return cached
 
-    def nliFind(self,name:str) -> NamedLocalIdentifiable|NliContainerBaseMixin| None:
+    def nliFind(self,name:str) -> NamedLocalIdentifiable|NliContainerInterface| None:
         containers = self.nliGetContainers() # pylint: disable=assignment-from-none
-        if containers is not None:
-            for container in containers:
-                if container.containerName == name:
-                    return container
-                
+        for container in containers:
+            if container.containerName == name:
+                return container
+            
         children = self.nliGetChildren() # pylint: disable=assignment-from-none
-        if children is not None:
-            for child in children:
-                if child.name == name:
-                    return child
+        for child in children:
+            if child.name == name:
+                return child
         return None
 
     
 #############################################################################
 
 
-class NliContainerMixin( NliContainerBaseMixin ):
+class NliContainerMixin( NliContainerInterface ):
     @property
     def containerName(self) -> str: ...
     @property
@@ -235,8 +230,8 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
     def nliRemoveChild( self, child:_NLIListT ) -> None: # type:ignore[override]
         self.remove( child )
 
-    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None:
-        return None
+    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]:
+        return ()
             
     def nliFind(self,name:str) -> NamedLocalIdentifiable|None:
         for child in self.data:

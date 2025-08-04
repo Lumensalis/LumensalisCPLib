@@ -9,16 +9,21 @@ __sayImport = getImportProfiler( globals(), reloadable=True )
 # pyright: reportPrivateUsage=false, reportUnusedImport=false, reportUnusedFunction=false
 
 import wifi
+import time
+import displayio
 
 from LumensalisCP.commonPreManager import *
-from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl #, pmc_gcManager
+from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl, pmc_gcManager, sayAtStartup
 from LumensalisCP.util.Reloadable import ReloadableModule
 
 from LumensalisCP.Temporal.Refreshable import *
 from LumensalisCP.Temporal.RefreshableList import RefreshableListInterface
 
 from LumensalisCP.Main.Async import MainAsyncChild, ManagerAsync
-from LumensalisCP.Main.MainAsyncLoop import MainAsyncLoop
+from LumensalisCP.Main.MainAsync import MainAsyncLoop, MainGCLoop
+from LumensalisCP.Main import GetManager
+from LumensalisCP.Temporal.RefreshableList import RootRefreshableList
+from LumensalisCP.Temporal.TimeTracker import TimingTracker
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
@@ -30,43 +35,83 @@ mlc = pmc_mainLoopControl
 _module = ReloadableModule( 'LumensalisCP.Main.Manager' )
 _mmMeta = _module.reloadableClassMeta('MainManager', stripPrefix='MainManager_')
 
+@_mmMeta.reloadableMethod()
+def __earlyInit(self:MainManager):
+
+        #self.__startNs = getOffsetNow_ns()
+        #self.__startNow = getOffsetNow()
+        #self.__startNow = TimeInSeconds( getOffsetNow() - pmc_mainLoopControl.getMsSinceStart()/1000.0 )
+        #self._when = TimeInSeconds( self.getNewNow() - self.__startNow )
+        self._when = getOffsetNow() # self.getNewNow()
+        getMainManager.set(self)
+
+        from LumensalisCP.Main.Dependents import MainRef  # pylint: disable=
+        MainRef._theManager = self  # type: ignore
+        
+        self._privateCurrentContext = EvaluationContext(self)
+        UpdateContext._patch_fetchCurrentContext(self) # type: ignore
+        
+        def getCurrentEvaluationContext() -> EvaluationContext:
+            return self._privateCurrentContext
+        GetManager.getCurrentEvaluationContext = getCurrentEvaluationContext
+        sayAtStartup( "context access patched" )
+        
+        self._refreshables = RootRefreshableList(name='mainRefreshables')
+        self.profiler = Profiler(self._privateCurrentContext )
+        sayAtStartup(f"profiler created, disabled={self.profiler.disabled}" )
+
+        PreMainConfig.pmc_gcManager.main = self # type: ignore
+
+        self.__cycle = 0
+
+        
+        self.asyncManager = ManagerAsync(main=self)
+        
+        self.__socketPool = None
+        
+        Debuggable._getNewNow = self.getNewNow # type: ignore
+
+        displayio.release_displays()
+        
+@_mmMeta.reloadableMethod()
+def _showLoop(self:MainManager, context:EvaluationContext) -> None:
+    when = context.when
+    cycle = context.updateIndex
+    try:
+        showLoopData = self._showLoopData
+    except AttributeError:
+        showLoopData:StrAnyDict = {
+            'lastCycle': cycle,
+            'lastWhen': when,
+            'statsBuffer': {}
+        }
+        self._showLoopData = showLoopData
+    
+    elapsedTime = when - showLoopData['lastWhen']
+    perCycle = elapsedTime / max(1, cycle - showLoopData['lastCycle']) 
+    self.infoOut( "cycle %d at %.3f : %.3f %r : scene %s ip=%s, gmf=%d",
+                    self.asyncLoop.cycle, self._when, 
+                    perCycle,
+                    self.asyncLoop.tracker.stats(showLoopData['statsBuffer']),
+                    self.scenes.currentScene, self._webServer,
+                    gc.mem_free()
+            )
+    showLoopData['lastCycle'] = self.asyncLoop.cycle
+    showLoopData['lastWhen'] = self._when
 
 @_mmMeta.reloadableMethod()
 def _finishInit(self:MainManager) -> None: 
 
     self.asyncLoop = MainAsyncLoop(main=self)
     #self.asyncLoop.enableDbgOut = True
+    self.gcLoop = MainGCLoop(main=self)
 
-    def runCollect(context:EvaluationContext) -> None:
-        #print( f"pmc_gcManager.runCollection {context.updateIndex}..." )
-        pmc_gcManager.checkAndRunCollection(context, show=pmc_gcManager.showRunCollection)
-
-    def getRefreshRate() -> TimeSpanInSeconds:
-        """ Get the refresh rate for the collection check interval. """
-        return pmc_gcManager.collectionCheckInterval
-    
-
-    rCollect = RefreshablePrdInvAct(
-        name='runCollect',
-        invocable=runCollect,
-        autoList=self._refreshables,
-        refreshRate=2.3,
-        
-    )
-    self._rrCollect = rCollect
-    #rCollect.enableDbgOut = True
-    rCollect.activate() 
-
-    def showLoop(context:EvaluationContext) -> None:
-        self.infoOut( "cycle %d at %.3f : scene %s ip=%s, gmf=%d cd=%r",
-                        self.__cycle, self._when, 
-                        self.scenes.currentScene, self._webServer,
-                        gc.mem_free(), self.cycleDuration
-                )
+    def callShowLoop(context:EvaluationContext) -> None:
+        self._showLoop(context)
 
     rShowLoop = RefreshablePrdInvAct(
         name='ShowLoop',
-        invocable=showLoop,
+        invocable=callShowLoop,
         autoList=self._refreshables,
         refreshRate=10.0,
         

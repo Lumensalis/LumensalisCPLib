@@ -15,9 +15,13 @@ from LumensalisCP.Controllers.Config import ControllerConfig
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
-    from LumensalisCP.Debug import Debuggable
-    from LumensalisCP.I2C.Adafruit.AdafruitI2CFactory import AdafruitFactory
-    from LumensalisCP.I2C.I2CFactory import I2CFactory
+    #from LumensalisCP.Debug import Debuggable
+    #import LumensalisCP.I2C.Adafruit.Factory
+    #from LumensalisCP.I2C.Adafruit.Factory import AdafruitFactory
+    #import LumensalisCP.I2C.Factory
+
+from LumensalisCP.I2C.Factory import I2CFactory
+from LumensalisCP.I2C.Adafruit.Factory import AdafruitFactory
 
 __sayImport.parsing()
 
@@ -27,7 +31,7 @@ class I2CProvider(Debuggable):
     adafruitFactory: AdafruitFactory
     """ factory to connect Adafruit I2C devices """
     
-    i2cFactory:I2CFactory
+    i2cFactory: I2CFactory
     """ factory to connect to I2C devices """
 
     def __init__(self,config:ControllerConfig, main:'MainManager'):
@@ -37,11 +41,11 @@ class I2CProvider(Debuggable):
         
         self.infoOut( "I2CProvider init %r, %r", config, main )
         # pylint: disable=import-outside-toplevel]
-        from LumensalisCP.I2C import I2CFactory 
-        from LumensalisCP.I2C.Adafruit import AdafruitI2CFactory
+        #from LumensalisCP.I2C.Factory  import I2CFactory 
+        #from LumensalisCP.I2C.Adafruit.Factory import AdafruitFactory
         
-        self.adafruitFactory = AdafruitI2CFactory.AdafruitFactory(main=main)
-        self.i2cFactory = I2CFactory.I2CFactory(main=main)
+        self.adafruitFactory = AdafruitFactory(main=main)
+        self.i2cFactory = I2CFactory(main=main)
         self.__i2cChannels:dict[tuple[int|str,int|str],busio.I2C] = {}
 
         self.__i2cDevices:List[I2CDevice] = []
@@ -64,8 +68,8 @@ class I2CProvider(Debuggable):
                     SHOW_EXCEPTION( inst, "I2C identity exception ")
 
 
-    def asPin(self, pin:Any ) -> microcontroller.Pin: 
-        raise NotImplementedError
+    #def asPin(self, pin:Any ) -> microcontroller.Pin: 
+        # raise NotImplementedError
     
     @property
     def defaultI2C(self) -> busio.I2C: return self.__defaultI2C or board.I2C() # pylint: disable=no-member

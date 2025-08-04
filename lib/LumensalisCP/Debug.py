@@ -5,6 +5,8 @@ from __future__ import annotations
 from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayDebugImport = getImportProfiler( globals() ) # "Debug"
 
+from LumensalisCP.Temporal.Time import getOffsetNow, TimeInSeconds 
+
 try:
     #import typing
     from typing import NoReturn, Never, Optional, Any, TypeAlias, Protocol, TYPE_CHECKING
@@ -40,7 +42,7 @@ class Debuggable( CountedInstance, IDebuggable ):
     
     @staticmethod
     def _getNewNow():
-        return time.monotonic()
+        return getOffsetNow()
     
     def __init__(self, enableDbgOut:bool = False):
         CountedInstance.__init__(self)

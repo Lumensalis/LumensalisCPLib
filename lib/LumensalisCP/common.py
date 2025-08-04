@@ -14,6 +14,8 @@ _sayCommonImport = getImportProfiler( "common" )
 
 #############################################################################
 
+from LumensalisCP.Temporal.Time import getOffsetNow, TimeInSeconds 
+
 from LumensalisCP.Main.PreMainConfig import  pmc_mainLoopControl, pmc_gcManager
 from LumensalisCP.util.CountedInstance import CountedInstance
 import LumensalisCP

@@ -9,7 +9,7 @@ from LumensalisCP.Main.Dependents import *
 #############################################################################
 
 #import stupidArtnet
-from .LCP_StupidArtnetServer import StupidArtnetASIOServer
+from LumensalisCP.Lights.LCP_StupidArtnetServer import StupidArtnetASIOServer
 
 # pyright: reportPrivateUsage=false
 
@@ -120,6 +120,7 @@ class DMXManager(MainAsyncChild):
         self._settings = data
         for watcher in self._watchers:
             watcher.update( )
+
         
-    async def runAsyncSingleLoop(self) -> None:
+    async def runAsyncSingleLoop(self, when:TimeInSeconds) -> None:
         await self._sasServer._listenSingleLoop()
