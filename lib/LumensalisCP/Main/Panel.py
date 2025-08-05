@@ -6,6 +6,7 @@ _sayImport = getImportProfiler( "Main.Panel" )
 from LumensalisCP.IOContext import *
 
 from LumensalisCP.Main.Dependents import MainChild
+from LumensalisCP.Triggers.Trigger import Trigger
 
 # pylint: disable=redefined-builtin,unused-variable,unused-argument,broad-exception-caught
 
@@ -21,6 +22,8 @@ class CVT_KWDS(TypedDict, Generic[CVT,CVT_OUT]):
     max: NotRequired[CVT]
     name: NotRequired[str]
     description: NotRequired[str]
+    kindMatch: NotRequired[type]
+    kind: NotRequired[str|type]
     
 class PanelControl(InputSource, Generic[CVT, CVT_OUT]):
     
@@ -42,10 +45,30 @@ class PanelControl(InputSource, Generic[CVT, CVT_OUT]):
             kind = type(startingValue).__name__
                 
         self.kind = kind
-        self.kindMatch = kindMatch or type if isinstance(kind, str) else kind
+        if kindMatch is not None:
+            self.kindMatch = kindMatch
+        elif isinstance(kind, type):
+            self.kindMatch = kind
+        elif isinstance( kind, str ):
+            kType = globals().get(kind,None)
+            if isinstance(kType,type):
+                self.kindMatch = kType
+            else:
+                assert kType is None, f"kindMatch for {kind} is not a type: {kType}"
+
+        kType = self.kindMatch        
+        assert isinstance(kType, type ), f"kindMatch for {kind} is not a type: {kType}"
+        assert kType is not type(None)
+        assert kType is not type 
 
         if convertor is None:
-            convertor = lambda v: v # type: ignore
+            def convert(v:Any) -> CVT_OUT:
+                if isinstance(v,str):
+                    v = eval(v)
+                if isinstance(v, kType):
+                    return v
+                return kType(v)
+            convertor = convert
         assert convertor is not None
 
         self.convertor = convertor
@@ -71,6 +94,12 @@ class PanelControl(InputSource, Generic[CVT, CVT_OUT]):
         self.set( value )
         
     def set( self, value: Any ):
+        if isinstance(value, str):
+            try:
+                value = self.convertor(value)
+            except Exception as inst:
+                print(f"failed converting {value} to {self.kind} : {inst}")
+                return
         if value != self._controlValue:
             if self._min is not None and value < self._min:
                 value = self._min
@@ -93,6 +122,8 @@ class IVT_KWDS(TypedDict, Generic[CVT]):
     max: NotRequired[CVT]
     name: NotRequired[str]
     description: NotRequired[str]
+    kindMatch: NotRequired[type]
+    kind: NotRequired[str|type]
 
 class PanelMonitor( NamedLocalIdentifiable, Generic[CVT]   ):
     """ combination of OutputTarget and InputSource
@@ -108,7 +139,7 @@ class PanelMonitor( NamedLocalIdentifiable, Generic[CVT]   ):
         self.source = source
         self.__varValue = kwds.pop( 'startingValue', None )
         self.kind = kwds.pop('kind', None)
-        self.kindMatch = kwds.pop('kindMatch', None)
+        self.kindMatch = kwds.pop('kindMatch',  int)
         self._min = kwds.pop('min', None)
         self._max = kwds.pop('max', None)
         self.description = kwds.pop('description', '')
@@ -141,6 +172,18 @@ class PanelPipe( InputSource, OutputTarget,  Generic[CVT] ):
         self.__varValue = value
         self.updateValue( UpdateContext.fetchCurrentContext(context) )
 
+
+#############################################################################
+
+class PanelTrigger(Trigger):
+    class KWDS(Trigger.KWDS):
+        description: NotRequired[str]
+
+    def __init__(self, **kwds:Unpack[KWDS]):
+        self.description = kwds.pop('description', '')
+        super().__init__(**kwds)
+
+
 #############################################################################
 
 class ControlPanel( MainChild ):
@@ -153,6 +196,7 @@ class ControlPanel( MainChild ):
 
         self._controlVariables:NliList[PanelControl[Any,Any]] = NliList(name='controls',parent=self)
         self._monitored:NliList[PanelMonitor[Any]] = NliList(name='monitored',parent=self)
+        self._triggers:NliList[PanelTrigger] = NliList(name='triggers',parent=self)
 
     @property    
     def monitored(self) -> NliList[PanelMonitor[Any]]:
@@ -170,11 +214,11 @@ class ControlPanel( MainChild ):
         ) -> PanelControl[Any,Any]:
 
           
-        variable:PanelControl[Any,Any] = PanelControl( 
+        variable:PanelControl[Any,Any] = PanelControl( # type: ignore
             kind=kind,
             kindMatch=kindMatch,
             convertor=convertor,
-            **kwds )
+            **kwds ) # type: ignore
         variable.nliSetContainer(self._controlVariables)
         self.dbgOut( f"added ControlVariable {variable}")
         return variable
@@ -183,31 +227,36 @@ class ControlPanel( MainChild ):
     #########################################################################
     def addZeroToOne( self, **kwds:Unpack[CVT_KWDS[float,ZeroToOne]] ) -> PanelControl[float,ZeroToOne]:
         """ add control for a value between 0 and 1, see  http://lumensalis.com/ql/h2PanelControl """
-        return self._addControl(  kind='ZeroToOne',kindMatch=float, convertor=lambda v: float(v), **kwds )
+        return self._addControl(  kind='ZeroToOne',kindMatch=float, convertor=lambda v: float(v), **kwds ) # type: ignore
 
     def addRGB( self, **kwds:Unpack[CVT_KWDS[AnyRGBValue, RGB]] ) -> PanelControl[AnyRGBValue,RGB]:
         """ add control for an RGB color value, see  http://lumensalis.com/ql/h2PanelControl """
-        return self._addControl(  kind=RGB,convertor=lambda v: RGB.toRGB(v), **kwds )
+        return self._addControl(  kind=RGB,convertor=lambda v: RGB.toRGB(v), **kwds ) # type: ignore
 
     def addInt( self, **kwds:Unpack[CVT_KWDS[int,int]] ) -> PanelControl[int,int]:
         """ add control for an integer value, see  http://lumensalis.com/ql/h2PanelControl """
-        return self._addControl(  kind=int, convertor=lambda v: int(v), **kwds )
+        return self._addControl(  kind=int, convertor=lambda v: int(v), **kwds ) # type: ignore
 
     def addFloat( self, **kwds:Unpack[CVT_KWDS[float,float]] ) -> PanelControl[float,float]:
         """ add control for a float value, see  http://lumensalis.com/ql/h2PanelControl """
-        return self._addControl(  kind=float, convertor=lambda v: float(v), **kwds )
+        return self._addControl(  kind=float, convertor=lambda v: float(v), **kwds ) # type: ignore
 
     def addSeconds( self, **kwds:Unpack[CVT_KWDS[TimeSpanInSeconds, TimeSpanInSeconds]] ) -> PanelControl[TimeSpanInSeconds, TimeSpanInSeconds]:
         """ add control for a duration (in seconds), see  http://lumensalis.com/ql/h2PanelControl """
-        return self._addControl(  kind='TimeSpanInSeconds', kindMatch=float, convertor=lambda v: TimeSpanInSeconds(v), **kwds )
+        return self._addControl(  kind='TimeSpanInSeconds', kindMatch=float, convertor=lambda v: TimeSpanInSeconds(v), **kwds ) # type: ignore
 
     def addMillimeters( self, **kwds:Unpack[CVT_KWDS[Millimeters,Millimeters]] ) -> PanelControl[Millimeters,Millimeters]:
         """ add control for a distance (in millimeters), see  http://lumensalis.com/ql/h2PanelControl """
-        return self._addControl(  kind='Millimeters', kindMatch=float, convertor=lambda v: Millimeters(v), **kwds )
+        return self._addControl(  kind='Millimeters', kindMatch=float, convertor=lambda v: Millimeters(v), **kwds ) # type: ignore
 
     def addAngle( self, **kwds:Unpack[CVT_KWDS[Degrees,Degrees]] ) -> PanelControl[Degrees,Degrees]:
         """ add control for an angle (in degrees), see  http://lumensalis.com/ql/h2PanelControl """
-        return self._addControl(  kind='Degrees', kindMatch=float, convertor=lambda v: Degrees(v), **kwds )
+        return self._addControl(  kind='Degrees', kindMatch=float, convertor=lambda v: Degrees(v), **kwds ) # type: ignore
+
+    def addTrigger( self, **kwds:Unpack[PanelTrigger.KWDS] ) -> PanelTrigger:
+        trigger = PanelTrigger(**kwds)
+        self._triggers.append(trigger)
+        return trigger
 
     #########################################################################
     def _addMonitor( self,

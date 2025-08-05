@@ -29,6 +29,7 @@ class TimingTracker(CountedInstance):
         now = now or getOffsetNow()
         self.startTime = now
         return now
+    
     def stop(self) -> TimeSpanInSeconds:
         now = getOffsetNow()
         assert self.startTime is not None, "TimingTracker was not started"

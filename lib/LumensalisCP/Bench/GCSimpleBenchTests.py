@@ -217,10 +217,10 @@ def timerTest():
     def baseline( l ): return l
     
     def monotonic( l ):
-        return getOffsetNow()
+        return time.monotonic()
     
     def monotonic_ns( l ):
-        return getOffsetNow_ns()
+        return time.monotonic_ns()
 
   
     

@@ -70,7 +70,7 @@ class BasicServer(Server,MainAsyncChild):
     def __str__(self) -> str:
         port = f":{self.port}"
         url = f"http://{self.host}{port}"
-        return f"{self.__class__.__name__}( {url} addr={wifi.radio.ipv4_address} )"
+        return f"{self.__class__.__name__}({url})"
     
     def monitorControlVariable( self, v:InputSource ):
         # TODO: handle additions after server startup better
@@ -179,7 +179,7 @@ class BasicServer(Server,MainAsyncChild):
     #########################################################################
     async def runAsyncSetup(self) -> None:
         self.startupOut( f"{self.__class__.__name__} serverLoop starting" )
-        self.useStringIO = False
+        self.useStringIO = True
         self._ws_jsonBuffer:io.StringIO|None = io.StringIO(8192) if self.useStringIO else None # type:ignore[assignment]
     
         socket = self.main.socketPool

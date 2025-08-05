@@ -163,13 +163,18 @@ class GCTestTarget(CountedInstance):
 class GCTestRunConfig(CountedInstance):
     #args:list | None
     #kwds:dict | None
-    
+    class KWDS(TypedDict):
+        cycles:NotRequired[int]
+        innerCycles:NotRequired[int]
+        optimizeArgs:NotRequired[bool]
+
     def __init__( self, 
                  cycles:Optional[int]=None, innerCycles:Optional[int]=None, 
                  #args=None, kwds=None,
-                 optimizeArgs:bool = False
+                 optimizeArgs:bool = True
                  ):
         super().__init__()
+        
         self.cycles:int = cycles or 5
         self.innerCycles:int = innerCycles or 1
         #self.args = args
@@ -504,13 +509,13 @@ class GCTestSet(CountedInstance):
         self.testers[name] = rv
         return rv
     
-    def run( self ):
+    def run( self, **kwds:Unpack[GCTestRunConfig.KWDS] ) -> None:
         wasEnabled = gc.isenabled() # type: ignore # pylint: disable=no-member
         gc.disable()
         gc.collect()
         outerWriteScope = TargetedWriteScope( sys.stdout )
         outerWriteScope.config.detailed = False
-        config = GCTestRunConfig(cycles=5, innerCycles=1,optimizeArgs=True)
+        config = GCTestRunConfig(**kwds)
         for _,val in self.testers.items():
             with outerWriteScope.startDict(indentItems=True) as testsScope:
                 result = val.run(config)

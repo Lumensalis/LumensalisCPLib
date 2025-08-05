@@ -76,17 +76,27 @@ def MainManager_monitor( self:MainManager, *inputs:InputSource, enableDbgOut:Opt
         self._monitored.append(i) 
 
 @_mmMeta.reloadableMethod()
-def MainManager_handleWsChanges( self:MainManager, changes:StrAnyDict ):
+def handleWsChanges( self:MainManager, changes:StrAnyDict ):
         
         # print( f"handleWsChanges {changes}")
-        key = changes['name']
-        val = changes['value']
+
         defaultPanel = self.controlPanels[0]
-        v = defaultPanel.controls.get(key,None)
-        if v is not None:
-            v.setFromWs( val )
+        key = changes.get( 'name', None )
+        if key is not None:
+            val = changes['value']
+            v = defaultPanel.controls.get(key,None)
+            if v is not None:
+                v.setFromWs( val )
+            else:
+                self.warnOut( f"missing cv {key} in {defaultPanel.controls.keys()} for wsChanges {changes}")
         else:
-            self.warnOut( f"missing cv {key} in {defaultPanel.controls.keys()} for wsChanges {changes}")
+            triggerName = changes.get( 'trigger', None )
+            if triggerName is not None:
+                trigger = defaultPanel._triggers.get(triggerName,None)
+                self.infoOut( f"wsChanges trigger {triggerName}" )
+                assert trigger is not None, f"trigger {triggerName} not found in {defaultPanel._triggers.keys()}"
+                
+                trigger.fireTrigger( self.getContext() )
 
 @_mmMeta.reloadableMethod()
 def dumpLoopTimings( self:MainManager, count:int, minE:Optional[float]=None, minF:Optional[float]=None, **kwds:StrAnyDict ) -> list[Any]:

@@ -223,12 +223,17 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
             if v is child: return True
         return False
 
-    
+    def append( self, item:_NLIListT ) -> None:
+        assert isinstance(item, NamedLocalIdentifiable), "item must be a NamedLocalIdentifiable"
+        if self.enableDbgOut: self.dbgOut( "append( %r )", item )
+        item.nliSetContainer(self)
+
+
     def nliAddChild( self, child:_NLIListT ) -> None: # type:ignore[override]
-        self.append( child )
+        self.data.append( child )
     
     def nliRemoveChild( self, child:_NLIListT ) -> None: # type:ignore[override]
-        self.remove( child )
+        self.data.remove( child )
 
     def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]:
         return ()

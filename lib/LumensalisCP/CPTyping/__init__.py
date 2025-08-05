@@ -8,6 +8,7 @@ _sayCPTypingImport = getImportProfiler( globals() ) # "CPTyping"
 try:
 	# imports used only for typing
     #import overrides
+    
     from typing import TYPE_CHECKING
     from functools import wraps
     from typing import Any
@@ -26,7 +27,12 @@ try:
     from typing import final, overload, override
     from typing import Coroutine, Awaitable, AsyncGenerator, AsyncIterable, AsyncIterator
     
-    
+    try:
+        from types import ModuleType    
+    except ImportError:
+        pass
+        # ModuleType:TypeAlias = type(sys) # type: ignore
+
     # any imports below this won't happen if the error gets raised
     LCPF_TYPING_IMPORTED = True
     
@@ -63,6 +69,7 @@ TracebackType: TypeAlias = Any
 
 if TYPE_CHECKING:
     from .GenericT import GenericT
+    
 
 else: 
     class _GenericT:

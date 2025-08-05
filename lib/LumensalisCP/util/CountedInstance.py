@@ -3,8 +3,8 @@ class CountedInstance:
     _ciCountedReloadedClasses:dict[str,list[int]] = {}
 
     @staticmethod
-    def getClassName(cls:type) -> str:
-        return cls.__name__ 
+    def getClassName(classInstance:type) -> str:
+        return classInstance.__name__ 
 
     @staticmethod
     def _getCiInstanceCounts() -> dict[str,int]:

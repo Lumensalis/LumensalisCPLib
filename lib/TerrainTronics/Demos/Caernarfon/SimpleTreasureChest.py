@@ -20,6 +20,9 @@ sceneClosed, sceneOpen, sceneMoving = main.addScenes( 3 )
 rbCycle = main.panel.addSeconds( startingValue=3.1, min=0.1, max=10.0 )
 rbs = main.panel.addFloat( startingValue=0.6, min=0.1, max=3.0 )
 handSafetyRange = main.panel.addMillimeters(startingValue=300, min=10, max=1000 )
+webColor = main.panel.addRGB(startingValue=Colors.BLUE )
+stepsControl = main.panel.addInt(startingValue=5, min=1, max= 14 )
+boom = main.panel.addTrigger( description="Jamie Wants..." )
 
 #############################################################################
 # HARDWARE : http://lumensalis.com/ql/h2Hardware
@@ -117,6 +120,7 @@ dot.enableDbgOut = True
 fireDot = fireOnRising( leftRimTouch, dot )
 fireDot.enableDbgOut = True
 leftRimTouch.enableDbgOut = True
+boom.addAction(dot)
 
 main.panel.monitor( leftRimTouch )
 

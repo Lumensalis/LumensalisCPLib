@@ -16,7 +16,7 @@ from LumensalisCP.Main import ProfilerRL
 from LumensalisCP.HTTP.BSR import BSR_profileRL
 from LumensalisCP.HTTP.BSR import BSR_clientRL
 from LumensalisCP.HTTP.BSR import BSR_cmdRL
-_reloadableModules = [ ManagerRL, Manager2RL, MainAsyncRL, ProfilerRL, BSR_profileRL, BSR_clientRL, BasicServerRL, BSR_cmdRL ]
+_reloadableModules:list[ModuleType] = [ ManagerRL, Manager2RL, MainAsyncRL, ProfilerRL, BSR_profileRL, BSR_clientRL, BasicServerRL, BSR_cmdRL ]
 
 def _reloadAll(self:BasicServer ) -> list[Any]:
 
@@ -26,7 +26,7 @@ def _reloadAll(self:BasicServer ) -> list[Any]:
     return _reloadableModules
 
 def _reload(self:BasicServer, module:str ) -> Any:
-    for module in modules:
+    for module in _reloadableModules:
         if module.__name__.endswith(module):
             reload( module )
             return module

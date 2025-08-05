@@ -10,6 +10,11 @@ _BasicServer = _module.reloadableClassMeta('BasicServer')
 
 # pyright: reportPrivateUsage=false, reportUnusedImport=false, reportUnusedFunction=false
 
+import microcontroller
+
+from LumensalisCP.util.ObjToDict import objectToDict
+
+
 def getAsyncInfo(main:MainManager) -> dict[str, Any]:
     asyncLoop = main.asyncLoop
     asyncManager = main.asyncManager
@@ -36,7 +41,7 @@ def resetTrackers(main:MainManager) -> None:
         task.subTracker.reset()
 
 
-def getStatusInfo(self:BasicServer, request:Request ) -> dict[str, Any]:
+def getStatusInfo(self:BasicServer, request:Request, tags:Optional[list[str]] = None) -> dict[str, Any]:
     main = self.main
     context = main.getContext()
     monitoredInfo = [ 
@@ -45,17 +50,32 @@ def getStatusInfo(self:BasicServer, request:Request ) -> dict[str, Any]:
     ]
 
     monitored = dict( monitoredInfo  )
-    rv:StrAnyDict =  {
-            'supervisor': {
+    rv:StrAnyDict =  {}
+
+    def includeTag(tag: str) -> bool:
+        if tags is None: return True
+        return tag in tags
+
+    def addTag(tag: str, val:Optional[Any]=None, **kwds:Any) -> None:
+        if includeTag(tag):
+            if val is not None:
+                assert len(kwds) == 0, "Cannot pass both val and kwds to addTag"
+            else:
+                assert len(kwds) > 0, "Must pass either val or kwds to addTag"
+                val = kwds
+            rv[tag] = val
+            
+    
+    addTag('supervisor', {
                 'runtime': attrsToDict( supervisor.runtime, ['autoreload','run_reason'] ),
                 'ticks_ms': supervisor.ticks_ms()
-            },
-            'request': {
-                'path': request.path,
-                'query_params': str(request.query_params),
-            },
-            'gc': attrsToDict( gc, ['enabled','mem_alloc','mem_free'] ), 
-            'main': attrsToDict( main, ['cycle','when','newNow'],
+            } )
+    addTag( 'microcontroller', 
+           cpu = objectToDict(microcontroller.cpu)
+    )
+    
+    if includeTag('gc'): rv['gc'] =  attrsToDict( gc, ['enabled','mem_alloc','mem_free'] )
+    if includeTag('main'): rv['main'] = attrsToDict( main, ['cycle','when','newNow'],
                 context = attrsToDict( context, ['updateIndex','when'] ),
                 scenes = attrsToDict( main.scenes,["currentScenes"] ),
                 # nextWait = main.asyncLoop.nextWait, # type: ignore
@@ -63,14 +83,19 @@ def getStatusInfo(self:BasicServer, request:Request ) -> dict[str, Any]:
                 priorWhen = main.asyncLoop.priorSleepWhen, # type: ignore
                 #priorSleepDuration = main.__priorSleepDuration, # type: ignore
                 latestSleepDuration = main.asyncLoop.latestSleepDuration # type: ignore
-            ),
-            'misc': {
+            )
+    if includeTag('misc'): rv['misc'] ={
                 'instanceCounts': CountedInstance._getCiInstanceCounts()
-            },
-            'profiler': main.profiler.getProfilerInfo( dumpConfig=None ),
-            'monitored': monitored,
-            'asyncLoop': getAsyncInfo(main)
-        }
+            }
+    if includeTag('profiler'): rv['profiler'] = main.profiler.getProfilerInfo( dumpConfig=None )
+    if includeTag('monitored'): rv['monitored'] = monitored
+    if includeTag('asyncLoop'): rv['asyncLoop'] = getAsyncInfo(main)
+
+    rv['request'] = {
+        'path': request.path,
+        'query_params': str(request.query_params),
+    }
+
     return rv
 
 

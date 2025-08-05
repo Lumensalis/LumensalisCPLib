@@ -7,13 +7,13 @@ from LumensalisCP.common import *
 from LumensalisCP.Lights.RGB import *
 
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
-from LumensalisCP.Main.Updates import UpdateContext
-from LumensalisCP.Lights.Values import LightValueBase
-from LumensalisCP.Outputs import OutputTarget
-from LumensalisCP.Eval.EvaluationContext import EvaluationContext
+#from LumensalisCP.Lights.Values import LightValueBase
+#from LumensalisCP.Outputs import OutputTarget
 
 if TYPE_CHECKING:
     from LumensalisCP.Lights.Light import Light
+    from LumensalisCP.Main.Updates import UpdateContext
+    from LumensalisCP.Eval.EvaluationContext import EvaluationContext
 #
 #############################################################################
 

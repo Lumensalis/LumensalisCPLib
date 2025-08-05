@@ -89,10 +89,13 @@ def _showLoop(self:MainManager, context:EvaluationContext) -> None:
     
     elapsedTime = when - showLoopData['lastWhen']
     perCycle = elapsedTime / max(1, cycle - showLoopData['lastCycle']) 
-    self.infoOut( "cycle %d at %.3f : %.3f %r : scene %s ip=%s, gmf=%d",
+    stats = self.asyncLoop.tracker.stats(showLoopData['statsBuffer'])
+    statsStr = f"([{stats['loops']}] avg:{stats['average']:.3f}  max:{stats['max']:.3f} cfps:{int(stats['cfps'])})"
+
+    self.infoOut( "cycle %d at %.3f : %.3f %s : scene %s ip=%s, gmf=%d",
                     self.asyncLoop.cycle, self._when, 
                     perCycle,
-                    self.asyncLoop.tracker.stats(showLoopData['statsBuffer']),
+                    statsStr,
                     self.scenes.currentScene, self._webServer,
                     gc.mem_free()
             )

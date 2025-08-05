@@ -184,8 +184,8 @@ class GCManager(object):
         now = getOffsetNow()
         mem_alloc_before = gc.mem_alloc()  # pylint: disable=no-member
         mem_alloc_beforeelapsed = getOffsetNow() - now
-        if self.verboseCollect:
-            sayAtStartup( f"{now:.3f} GC collect " )
+        #if self.verboseCollect:
+        #    sayAtStartup( f"{now:.3f} GC collect " )
         
         # run collection
         timeBeforeCollect = self.main.getNewNow()
@@ -209,7 +209,7 @@ class GCManager(object):
         collectRatio = collectElapsed / elapsedSincePriorCollect
         
         if self.verboseCollect :
-            print( f" took {collectElapsed:.3f} of {elapsedSincePriorCollect:.3f} at {pmc_mainLoopControl.getMsSinceStart()/1000.0:0.3f} for {delta_cycles} cycles freeing {delta_alloc} ( {delta_alloc/delta_cycles:.1f} per cycle) leaving {mem_alloc_after} used, {mem_free_after} free t={self.__actualFreeThreshold} cr={collectRatio}  gc.mem_f/a()={mem_free_beforeelapsed:.3f}/{mem_alloc_beforeelapsed:.3f}" )
+            sayAtStartup( f"GC collect took {collectElapsed:.3f} of {elapsedSincePriorCollect:.3f} at {pmc_mainLoopControl.getMsSinceStart()/1000.0:0.3f} for {delta_cycles} cycles freeing {delta_alloc} ( {delta_alloc/delta_cycles:.1f} per cycle) leaving {mem_alloc_after} used, {mem_free_after} free t={self.__actualFreeThreshold} cr={collectRatio}  gc.mem_f/a()={mem_free_beforeelapsed:.3f}/{mem_alloc_beforeelapsed:.3f}" )
 
         if self.targetCollectPeriod is not None and collectElapsed > self.targetCollectPeriod:
             

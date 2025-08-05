@@ -101,6 +101,7 @@ class PseudoTypingModifier(PseudoTypingBracketableExpression):
         self.name = name
     
 Any = PseudoTypingTType("Any")
+
 AsyncGenerator = PseudoTypingTBType("AsyncGenerator")
 AsyncIterable = PseudoTypingTBType("AsyncIterable")
 AsyncIterator = PseudoTypingTBType("AsyncIterator")
@@ -132,7 +133,7 @@ NotRequired = PseudoTypingModifier("NotRequired")
 Optional = PseudoTypingModifier("Optional")
 ReferenceType = PseudoTypingModifier("ReferenceType")
 Unpack = PseudoTypingModifier("Unpack")
-
+ModuleType = PseudoTypingTType("ModuleType")
 
 class GenericBase(CountedInstance): pass
 

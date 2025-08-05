@@ -8,6 +8,7 @@ __sayHTTPControlVarsRLImport = getReloadableImportProfiler( __name__, globals() 
 
 from LumensalisCP.HTTP.BSR.common import *
 from LumensalisCP.Main.Panel import PanelControl, PanelMonitor
+from LumensalisCP.util.ObjToDict import objectToDict
 
 #############################################################################
 
@@ -26,7 +27,7 @@ def BSR_client(self:BasicServer, request: Request):
     parts = PanelParts(self.main)
 
     for v in self.main.panel.controls.values():
-        print( f"  adding control {v.name} ({type(v)})")
+        print( f"  adding control {v.name} ({type(v)}) {v.kindMatch} {v.kind}" )
         parts.addControl(v)
 
     for v in self.main.panel.monitored.values(): 
@@ -41,32 +42,47 @@ def BSR_client(self:BasicServer, request: Request):
 
 class PanelControlInstanceHelper(CountedInstance):
     
+    kindMatch:type
+
     def __init__(self, panelInstance:PanelControl[Any,Any]|PanelMonitor[Any]):
         super().__init__()
         self.panelInstance = panelInstance
         if isinstance(panelInstance, PanelMonitor):
             self.input:InputSource  = panelInstance.source
+            self.kindMatch = None
         else:
             assert isinstance(panelInstance, PanelControl), f"panelInstance must be a PanelControl or PanelMonitor, got {type(panelInstance)}"
             self.input:InputSource = panelInstance
+        
+            assert self.panelInstance.kind is not None, f"panelInstance.kind is None for {self.panelInstance.name} ({type(self.panelInstance)})"
+            assert self.panelInstance.kindMatch is not None, f"panelInstance.kind is None for {self.panelInstance.name} ({type(self.panelInstance)})"
+            self.kindMatch = self.panelInstance.kindMatch
         
         self.nameId = self.input.name
 
         self.editable:bool = isinstance(panelInstance,PanelControl)
 
-    def htmlBlock(self): 
-        description = getattr(self.panelInstance,'description',None ) or f"{self.panelInstance.name} ({type(self.panelInstance).__name__})"
-        return f'''
-    <tr>
-        <td>{self.panelInstance.name}</td>
-        <td>{description}</td>
-        <td>{self.panelInstance._min}</td>
-        <td>{self.valueCell()}</td>
-        <td>{self.editCell()}</td>
-        <td>{self.panelInstance._max}</td>
-        <td>{self.panelInstance.kind} {self.panelInstance.kindMatch}</td>
-    </tr>
-        '''
+    
+    def getCellContent(self,tag:str) -> Iterable[str]:
+            panelInstance = self.panelInstance
+            if tag == 'name':
+                yield panelInstance.name
+            elif tag == 'description':
+                description = getattr(panelInstance,'description',None ) or f"{panelInstance.name} ({type(self).__name__})"
+                yield description
+            elif tag == 'min':
+                yield str(panelInstance._min)
+            elif tag == 'value':
+                yield self.valueCell()
+            elif tag == 'edit':
+                yield self.editCell()
+            elif tag == 'max':
+                yield str(panelInstance._max)
+            elif tag == 'etc':
+                yield f"{repr(self.kindMatch)} / {id(panelInstance)} {panelInstance.dbgName} {repr(panelInstance.kind)}  / {repr(panelInstance.kindMatch)} / {type(self).__name__}"
+            else:
+                yield f"Unknown tag {tag} for {panelInstance.name} ({type(panelInstance)})"
+
     def valueCell(self)-> str:
         return f'<div id="{self.nameId}">-</div>'
     
@@ -83,6 +99,7 @@ class PanelControlInstanceHelper(CountedInstance):
         return   f"""
                         if( receivedMessage.{self.nameId} !== undefined ) {{
                             value = receivedMessage.{self.nameId};
+                            console.log( "received {self.nameId} ", value );
                             {self.wsCellUpdate()}
                         }}
 """ 
@@ -96,52 +113,119 @@ class BasicPanelControlInstanceHelper(PanelControlInstanceHelper):
     def wsCellUpdate(self) -> str:
         return f'{self.nameId}Selector.textContent = value;'
 
-class IntPanelControlInstanceHelper(PanelControlInstanceHelper):
-    
-    #def htmlBlock(self) -> str: 
-    #    return f'<span>{self.cv.description}: <div id="{self.cv.name}">-</div></span>'
-    
-    def wsCellUpdate(self):
-        return f'{self.nameId}Selector.textContent = value;'
-
-class FloatPanelControlInstanceHelper(PanelControlInstanceHelper):
-
-    def wsCellUpdate(self):
-        return f'{self.nameId}Selector.textContent = value;'
-    
-    def editCell(self)-> str:
-        return f'<input id="{self.nameId}_edit" type="range" min="{self.panelInstance._min}" max="{self.panelInstance._max}" value="{self.panelInstance.controlValue}"/>'
+class EditCapablePanelControlInstanceHelper(PanelControlInstanceHelper):
 
     def jsSelectBlock(self):
+        if not self.editable:
+            return super().jsSelectBlock()
         return super().jsSelectBlock() + \
             f"""
-            {self.nameId}EditSelector.oninput = ( () => {{
+            {self.nameId}EditSelector.oninput = ( debounce(() => {{
                 const packet = JSON.stringify( 
                     {{ name: '{self.nameId}', value: {self.nameId}EditSelector.value }}
                     );
                 console.log( "sending packet", packet );
                 ws.send( packet );
-            }} );
+            }},200 ) );
             """
     
-class RGBPanelControlInstanceHelper(PanelControlInstanceHelper):
+
+class IntPanelControlInstanceHelper(EditCapablePanelControlInstanceHelper):
+    
+    def editCell(self)-> str:
+        low = self.panelInstance._min
+        high = self.panelInstance._max
+        assert isinstance(low, int)
+        assert isinstance(high, int)
+        span = high - low
+        assert span > 0, f"span must be positive, got {span} for {self.panelInstance.name} ({type(self.panelInstance)})"
+
+        return f'<input id="{self.nameId}_edit" type="range" min="{low}" max="{high}" value="{self.panelInstance.controlValue}"/>'
+
+
+    def wsCellUpdate(self):
+        return f'{self.nameId}Selector.textContent = value;'
+
+class FloatPanelControlInstanceHelper(EditCapablePanelControlInstanceHelper):
+
+    def wsCellUpdate(self):
+        return f'{self.nameId}Selector.textContent = value;'
+    
+    def editCell(self)-> str:
+        low = self.panelInstance._min
+        high = self.panelInstance._max
+        assert isinstance(low, (int, float)), f"low must be int or float, got {type(low)}"
+        assert isinstance(high, (int, float)), f"high must be int or float, got {type(high)}"
+        span = high - low
+
+        return f'<input id="{self.nameId}_edit" type="range" min="{low}" max="{high}" value="{self.panelInstance.controlValue}" step="{span/100}"/>'
+
+
+    
+class RGBPanelControlInstanceHelper(EditCapablePanelControlInstanceHelper):
 
     def editCell(self): 
-        return f'<input id="{self.nameId}" type="color">'
+        return f'<input id="{self.nameId}_edit" type="color">'
 
-    def jsSelectBlock(self):
-        return super().jsSelectBlock() + \
-            f"""
-            {self.nameId}Selector.oninput = debounce(() => 
-                ws.send( JSON.stringify( {{ name: '{self.nameId}', 
-                    value: {self.nameId}.value
-                }} ) ), 200);
+
+class SimpleTable(CountedInstance):
+
+    def __init__(self, title:str, headers:list[str]):
+        super().__init__()
+        self.title = title
+        self.headers = headers
+        self.rows:list[PanelControlInstanceHelper] = []
+
+    def startTable(self) -> Iterable[str]:
+        yield """
+    
+    <table>
+        <thead>
+            <tr>
             """
+        for h in self.headers:
+            yield "<th>"
+            yield h
+            yield "</th>"
+            
+        yield """        
+            </tr>
+        </thead>
+    <tbody>
 
-class PanelParts(object):
+    """
+    def endTable(self) -> Iterable[str]:
+        yield """
+        </tbody>
+    </table>
+    
+        """
+    def addRow(self, row:PanelControlInstanceHelper ) -> None:
+        self.rows.append(row)
+
+    def htmlBlock(self) -> Iterable[str]: 
+        yield from self.startTable()
+        for row in self.rows:
+            yield "<tr>"
+            for tag in self.headers:
+                yield "<td>"
+                yield from row.getCellContent(tag)
+                yield "</td>"
+            yield "</tr>"
+        yield from self.endTable()
+
+    
+class PanelParts(CountedInstance):
     def __init__(self, main:MainManager):
+        super().__init__()
         self.main = main
         self.htmlParts:list[str] = []
+
+        self.controlHtmlParts = SimpleTable( "Controls",
+                ["name","description","min","value","max","edit","etc"]  )
+        self.monitorHtmlParts = SimpleTable( "Monitor",["name","description","value"] )
+
+        self.triggerHtmlParts:list[str] = []
         self.jsSelectors:list[str] = []
         self.wsReceived:list[str] = []
         self.wsReceived.append( '''
@@ -161,9 +245,16 @@ class PanelParts(object):
             elif kind  in ( "float", "TimeSpanInSeconds" ):
                 instanceHelper = FloatPanelControlInstanceHelper( input )                
             else:
-                instanceHelper = BasicPanelControlInstanceHelper( input )
+                kindMatch = control.kindMatch
+                if kindMatch is RGB:
+                    instanceHelper = RGBPanelControlInstanceHelper( input )
+                elif kindMatch is float:
+                    instanceHelper = FloatPanelControlInstanceHelper( input )
+                else:
+                    instanceHelper = BasicPanelControlInstanceHelper( input )
 
-            self.htmlParts.append( instanceHelper.htmlBlock() )
+            self.controlHtmlParts.addRow( instanceHelper )
+            
             if instanceHelper.editable:
                 self.jsSelectors.append( instanceHelper.jsSelectBlock() )
             else:
@@ -180,7 +271,7 @@ class PanelParts(object):
             else:
                 instanceHelper = BasicPanelControlInstanceHelper( monitored )
 
-            self.htmlParts.append( instanceHelper.htmlBlock() )
+            self.monitorHtmlParts.addRow( instanceHelper )
             self.jsSelectors.append( instanceHelper.jsSelectBlock() )
             self.wsReceived.append( instanceHelper.wsReceivedBlock() )
 
@@ -193,9 +284,48 @@ class PanelParts(object):
                 }
 ''' )
 
+    def _yieldHtml(self) -> Iterable[str]:
+        yield HTML_TEMPLATE_A
+
+        for parts in (self.controlHtmlParts, self.monitorHtmlParts):
+            yield from parts.htmlBlock()
+
+        yield """<div class="triggerHtmlParts">"""
+        for part in self.main.panel._triggers:
+            triggerName = part.name
+            yield f"""
+<button type="button" id="{triggerName}_trigger">{triggerName}</button>
+            """
+            self.jsSelectors.append( f"""
+            const {triggerName}TriggerSelector = document.querySelector("#{triggerName}_trigger");
+            {triggerName}TriggerSelector.onclick = ( () => {{
+                const packet = JSON.stringify( {{ trigger: '{triggerName}' }});
+                console.log( "sending packet", packet );
+                ws.send( packet );
+            }} );
+            """ )
+
+        yield """</div>"""
+        
+        yield  HTML_TEMPLATE_B
+        yield from self.jsSelectors
+        yield from self.wsReceived
+        yield HTML_TEMPLATE_Z
+
     def makeHtml(self) -> str:
+
+        html =  "\n".join(self._yieldHtml())
+        return html
+    
         parts:list[str] = [HTML_TEMPLATE_A]
+
+        
         parts.extend(self.htmlParts)
+        parts.append( """
+        </tbody>
+    </table>
+""" )
+
         parts.append( HTML_TEMPLATE_B )
         parts.extend(self.jsSelectors)
         parts.extend(self.wsReceived)
@@ -226,24 +356,11 @@ HTML_TEMPLATE_A = """
     <body>
     <button type="button" id="myButton">Send REST Request</button>
     <div id="responseContainer"></div>
-    <table>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Min</th>
-                <th>Value</th>
-                <th>Max</th>
-                <th>edit</th>
-                <th>etc</th>
-            </tr>
-        </thead>
-        <tbody>
+
 """
 
 HTML_TEMPLATE_B = """
-        </tbody>
-    </table>
+ 
         <script>
             console.log('client on ' + location.host );
 
