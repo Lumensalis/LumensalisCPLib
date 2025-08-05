@@ -19,6 +19,7 @@ sceneClosed, sceneOpen, sceneMoving = main.addScenes( 3 )
 # setup Control Inputs : http://lumensalis.com/ql/h2Controller
 rbCycle = main.panel.addSeconds( startingValue=3.1, min=0.1, max=10.0 )
 rbs = main.panel.addFloat( startingValue=0.6, min=0.1, max=3.0 )
+volume = main.panel.addFloat( startingValue=0.6, min=0.0, max=1.0 )
 handSafetyRange = main.panel.addMillimeters(startingValue=300, min=10, max=1000 )
 webColor = main.panel.addRGB(startingValue=Colors.BLUE )
 stepsControl = main.panel.addInt(startingValue=5, min=1, max= 14 )
@@ -93,7 +94,7 @@ def updateTestEffect(source:Any=None, context:Optional[EvaluationContext]=None) 
 
 #oscillator.onChange( updateTestEffect  )
 testEffect.bend = oscillator / 10.0
-testEffect.amplitude = 0.14
+testEffect.amplitude = volume
 
 #@addPeriodicTaskDef( interval=0.03, name="updateOscillator" )
 def updateOscillator(context:EvaluationContext) -> None:
@@ -162,7 +163,7 @@ sayAtStartup( "setup patterns" )
 
 frontLidBlink = PatternTemplate( Blink, frontLidStrip, onTime=0.25, offTime=0.25 )
 
-frontLidStripPattern = Cylon2(frontLidStrip,sweepTime=0.5, dimRatio=0.9, onValue=Colors.RED )
+frontLidStripPattern = Cylon2(frontLidStrip,sweepTime=rbCycle, dimRatio=0.9, onValue=webColor )
 centerPattern = ABFade( centerStoneLights, value=oscillator/20, a =Colors.RED, b=Colors.BLUE )
 rainbowLeft = Rainbow(leftStoneLights,colorCycle=rbCycle, spread=rbs )
 rainbowRight = Rainbow(rightStoneLights,colorCycle=1.1, spread=2.0 )
@@ -175,14 +176,16 @@ main.panel.monitor( csWheel, description="Color Wheel based on light sensor" )
 sayAtStartup( "setup LED ring" ) # http://lumensalis.com/ql/h2Touch
 wheel = ColorWheelZ1( Z21Adapted(oscillator2) )
 gauge = Gauge( angleGaugeLights, value=Z21Adapted(oscillator), onValue=wheel )
+controlDemoGauge = Gauge( sceneIndicatorLights, value=Z21Adapted(rbCycle), onValue=webColor )
 
+#close
 
 #closedSpin = Spinner(angleGaugeLights,onValue=csWheel,period=3.49 )
 centerSpin = Spinner(centerStoneLights)
 
 sceneOpen.addPatterns( frontLidBlink(onValue="GREEN"), aglSpinner, rainbowLeft, rainbowRight )
 #sceneClosed.addPatterns( frontLidBlink(onValue="RED"), closedSpin, centerPattern, rainbowLeft, rainbowRight  )
-sceneClosed.addPatterns( gauge, centerPattern, rainbowLeft, rainbowRight  )
+sceneClosed.addPatterns( gauge, centerPattern, frontLidStripPattern , controlDemoGauge )
 sceneMoving.addPatterns( frontLidBlink(onValue="YELLOW"), centerSpin, aglSpinner )
 
 #############################################################################

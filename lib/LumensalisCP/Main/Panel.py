@@ -108,6 +108,7 @@ class PanelControl(InputSource, Generic[CVT, CVT_OUT]):
             
             if value != self._controlValue:
                 self._controlValue = value
+        self.updateValue( UpdateContext.fetchCurrentContext(None) )
     
     def getDerivedValue(self, context:EvaluationContext) -> CVT_OUT|None:
         return self._controlValue
@@ -136,7 +137,7 @@ class PanelMonitor( NamedLocalIdentifiable, Generic[CVT]   ):
     """
     def __init__(self, source:InputSource, **kwds:Unpack[IVT_KWDS[CVT]] ) -> None:
         super().__init__()
-        self.source = source
+        self.source:InputSource = source
         self.__varValue = kwds.pop( 'startingValue', None )
         self.kind = kwds.pop('kind', None)
         self.kindMatch = kwds.pop('kindMatch',  int)

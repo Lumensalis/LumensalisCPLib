@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-
 from LumensalisCP.Lights._common import *
 
+#############################################################################
 
-#############################################################################
-#############################################################################
+from LumensalisCP.Lights.Pattern import MultiLightPatternStep
 
 #############################################################################
 #import LumensalisCP.Eval.Expressions as xm
@@ -82,6 +81,10 @@ class Rainbow( Pattern ):
 
 #############################################################################
 class Gauge( OnOffPattern, NamedOutputTarget ):
+
+    class KWDS(OnOffPattern.KWDS,NamedOutputTarget.KWDS):
+        pass
+    
     def __init__(self,
                 target:LightGroup, 
                 value:ZeroToOne|Evaluatable[ZeroToOne] = 0.0,
@@ -185,7 +188,7 @@ class Random( PatternGenerator ):
         endValues = self._generateRandomValues(context)
         
         #print(f"Random {self.duration} : {startValues} / {endValues}")
-        yield MultiLightPatternStep( self.duration, starts=startValues, ends=endValues )
+        yield MultiLightPatternStep(  starts=startValues, ends=endValues, duration= self.duration )
 
 #############################################################################
     
@@ -238,7 +241,7 @@ class Cylon2( PatternGenerator ):
                 startValues = [(onValue if i2 == index else dimmed(i2)) for i2 in range(self.target.lightCount) ]
                 endValues =startValues
                 prior = startValues
-                step = MultiLightPatternStep( self.__sweepTime/lightCount, starts=startValues, ends=endValues ) 
+                step = MultiLightPatternStep( starts=startValues, ends=endValues, duration= self.__sweepTime/lightCount ) 
                 rv.append( step )
                 #yield step
             frame.snap("forth")
@@ -247,7 +250,7 @@ class Cylon2( PatternGenerator ):
                 startValues = [(onValue if i2 == index else dimmed(i2)) for i2 in range(self.target.lightCount) ]
                 endValues =startValues
                 prior = startValues
-                step = MultiLightPatternStep( self.__sweepTime/lightCount, starts=startValues, ends=endValues )
+                step = MultiLightPatternStep( starts=startValues, ends=endValues, duration=self.__sweepTime/lightCount )
                 rv.append( step )
                 #yield step
         return iter( rv )

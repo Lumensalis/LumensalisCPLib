@@ -128,7 +128,7 @@ class PatternGeneratorStep(CountedInstance):
         intermediateRefresh: NotRequired[TimeSpanInSeconds]
 
     def __init__( self, 
-                 startValue: AnyRGBValue, 
+                 startValue: Optional[AnyRGBValue] = 0, 
                  endValue: Optional[AnyRGBValue] =  None, 
                  duration: TimeSpanInSeconds=1.0,
                  intermediateRefresh: TimeSpanInSeconds|None = None,
@@ -152,10 +152,16 @@ class PatternGeneratorStep(CountedInstance):
 #############################################################################
 
 class MultiLightPatternStep(PatternGeneratorStep):
-    def __init__(self,
-                starts:Sequence[AnyRGBValue],
-                ends:Sequence[AnyRGBValue], 
-                **kwds:Unpack[PatternGeneratorStep.KWDS] ):
+    class KWDS(PatternGeneratorStep.KWDS):
+        starts: Required[Sequence[AnyRGBValue]]
+        ends: Required[Sequence[AnyRGBValue]]
+
+    def __init__(self, **kwds:Unpack[KWDS] ) -> None:
+        starts:Sequence[AnyRGBValue] = kwds.pop("starts")
+        ends:Sequence[AnyRGBValue] = kwds.pop("ends")
+        kwds.setdefault('startValue', starts[0])
+        assert len(starts) == len(ends), "starts and ends must be same length"
+        assert len(starts) > 0, "starts and ends must not be empty"
         super().__init__( **kwds)
         self.__starts = starts
         self.__ends = ends
