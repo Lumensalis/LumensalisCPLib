@@ -66,10 +66,13 @@ class PanelControlInstanceHelper(CountedInstance):
     def getCellContent(self,tag:str) -> Iterable[str]:
             panelInstance = self.panelInstance
             if tag == 'name':
-                yield panelInstance.name
+                if isinstance(panelInstance, PanelMonitor):
+                    yield panelInstance.source.name
+                else:
+                    yield panelInstance.name
             elif tag == 'description':
-                description = getattr(panelInstance,'description',None ) or f"{panelInstance.name} ({type(self).__name__})"
-                yield description
+                description = getattr(panelInstance,'description',None ) # or f"{panelInstance.name} ({type(self).__name__})"
+                yield description or ''
             elif tag == 'min':
                 yield str(panelInstance._min)
             elif tag == 'value':
@@ -79,7 +82,8 @@ class PanelControlInstanceHelper(CountedInstance):
             elif tag == 'max':
                 yield str(panelInstance._max)
             elif tag == 'etc':
-                yield f"{repr(self.kindMatch)} / {id(panelInstance)} {panelInstance.dbgName} {repr(panelInstance.kind)}  / {repr(panelInstance.kindMatch)} / {type(self).__name__}"
+                yield repr(panelInstance.kind)
+                #yield f"{repr(self.kindMatch)} / {id(panelInstance)} {panelInstance.dbgName} {repr(panelInstance.kind)}  / {repr(panelInstance.kindMatch)} / {type(self).__name__}"
             else:
                 yield f"Unknown tag {tag} for {panelInstance.name} ({type(panelInstance)})"
 
@@ -179,7 +183,7 @@ class SimpleTable(CountedInstance):
     def startTable(self) -> Iterable[str]:
         yield """
     
-    <table>
+    <table class="center">
         <thead>
             <tr>
             """
@@ -288,9 +292,11 @@ class PanelParts(CountedInstance):
         yield HTML_TEMPLATE_A
 
         for parts in (self.controlHtmlParts, self.monitorHtmlParts):
+            yield "<h2>" + parts.title + "</h2>"
             yield from parts.htmlBlock()
 
-        yield """<div class="triggerHtmlParts">"""
+        yield """ <p>  <p> <h2> Triggers </h2> """
+        yield """ <span class="triggers"> <div class="triggers">"""
         for part in self.main.panel._triggers:
             triggerName = part.name
             yield f"""
@@ -305,16 +311,29 @@ class PanelParts(CountedInstance):
             }} );
             """ )
 
-        yield """</div>"""
+        yield """</div></span>"""
         
         yield  HTML_TEMPLATE_B
         yield from self.jsSelectors
         yield from self.wsReceived
         yield HTML_TEMPLATE_Z
 
+    def y2(self) -> Iterable[str]:
+        prior:Any = None
+        x = 0
+
+        for s in self._yieldHtml():
+            x +=1
+            if s is None:
+                yield "NONE"
+                continue
+            assert isinstance(s, str), f"cannot yield ({type(s)}) : {repr(s)} at {x}, prior={prior}"
+            yield s
+            prior = s
+
     def makeHtml(self) -> str:
 
-        html =  "\n".join(self._yieldHtml())
+        html =  "\n".join(self.y2())
         return html
     
         parts:list[str] = [HTML_TEMPLATE_A]
@@ -351,6 +370,26 @@ HTML_TEMPLATE_A = """
 <html lang="en">
     <head>
         <title>Websocket Client</title>
+        <style>
+table, th, td {
+  border: 1px solid black;
+  border-radius: 10px;
+padding: 15px;
+}
+h2 {
+  text-align: center;
+}
+table.center {
+  margin-left: auto;
+  margin-right: auto;
+}
+.triggers {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+</style>
     </head>
 
     <body>
