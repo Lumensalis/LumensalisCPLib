@@ -5,12 +5,12 @@ __profileImport = getImportProfiler(__name__,globals())
 
 #############################################################################
 
-from LumensalisCP.common import Optional, Any, TypedDict, NotRequired
+from LumensalisCP.common import Optional, Any, Unpack, NotRequired
 from LumensalisCP.Lights.Groups import LightSource
 from LumensalisCP.Lights.RGB import *
 
 from LumensalisCP.Lights.Values import LightValueBase
-from LumensalisCP.Outputs import OutputTarget
+from LumensalisCP.Outputs import NamedOutputTarget
 from LumensalisCP.Eval.EvaluationContext import EvaluationContext
 
 #############################################################################
@@ -25,15 +25,15 @@ class LightType:
     #LT_TYPES = Required[ LT_SINGLE_SOLID | LT_SINGLE_DIMMABLE | LT_RGB ]
     
 #############################################################################
-class Light(OutputTarget):
+class Light(NamedOutputTarget):
 
-    class KWDS(TypedDict):
+    class KWDS(NamedOutputTarget.KWDS):
         name: NotRequired[str]
         source: NotRequired[LightSource]
         index: NotRequired[int]
 
-    def __init__(self, source:LightSource, index:int = 0, name:Optional[str] = None):
-        super().__init__(name=name)
+    def __init__(self, source:LightSource, index:int = 0, **kwds:Unpack[NamedOutputTarget.KWDS]) -> None:
+        super().__init__(**kwds)
         assert source is not None
         self.__source:LightSource = source
         self.__sourceIndex:int = index
