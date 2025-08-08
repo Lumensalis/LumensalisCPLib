@@ -61,14 +61,17 @@ class CilgerranLED( DimmableLight ):
 
     def setValue(self,value:AnyRGBValue, context: Optional[UpdateContext] = None ):
         context = context or self.__main.latestContext
-        self.__value = value
-        self._brightnessChanged(  )
+        if self.__value != value:
+            if self.enableDbgOut: self.dbgOut("setValue changing from %s to %s", self.__value, value)
+            self.__value = value    
+            self._brightnessChanged(  )
         
     def _brightnessChanged(self) -> None:
         value = withinZeroToOne(self.__value * self.source.brightness)
         dutyCycle = int( value * CilgerranLED.DUTY_CYCLE_RANGE )
         if dutyCycle != self.__dutyCycle:
             try:
+                if self.enableDbgOut: self.dbgOut("dutyCycle changing from %s to %s", self.__dutyCycle, dutyCycle)
                 # print(f"setValue {self.__pin} duty_cycle {dutyCycle}")
                 self.__output.duty_cycle = dutyCycle
                 self.__dutyCycle = dutyCycle
@@ -118,6 +121,7 @@ class CilgerranPixelSource( LightSource, NamedOutputTarget ):
     def brightness(self, level:ZeroToOne):
         constrained = withinZeroToOne(level)
         if self.__brightness != constrained:
+            if self.enableDbgOut: self.dbgOut("brightness changing from %.2f to %.2f", self.__brightness, constrained)
             self.__brightness = constrained
             for led in self.__sourceLeds:
                 led._brightnessChanged(  )

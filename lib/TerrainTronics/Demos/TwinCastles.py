@@ -1,79 +1,56 @@
-from LumensalisCP.Demo.DemoCommon import *
-import wifi
-LED_COUNT = 8
+from LumensalisCP.Simple import * # http://lumensalis.com/ql/h2Start
+#############################################################################
+
+main = ProjectManager(  "TwinCastles"  ) ## profile=True, profileMemory=3    ) 
+
 NEO_PIXEL_COUNT = 40
 
-class TwinCastles( DemoBase ):
-    def setup(self):
-
-        main = self.main
-        # main.timers.enableDbgOut = True
-        #main.addBasicWebServer()
-        #####################################################################
-        # Add a Harlech Castle on primary D1Mini pinout
-        #harlech = main.TerrainTronics.addHarlech( )
-        #self.harlech = harlech
-
-        #####################################################################
-        # Add a CaernarfonCastle on secondary D1Mini pinout
-        self.caernarfon = caernarfon = main.TerrainTronics.addCaernarfon( 
+caernarfon = main.TerrainTronics.addCaernarfon( 
                 config="secondary", 
                 neoPixelCount=NEO_PIXEL_COUNT,
                 refreshRate = 0.05
         )
-        caernarfon.pixels.refreshRate = 0.05 
-         
-        self.ir =  ir = caernarfon.addIrRemote()
-        ir.showUnhandled = True
-        ir.enableDbgOut = True
-    
-        scene = self.main.addScene( "simpleBlink" )
+#@caernarfon.pixels.refreshRate = 0.05 
+f4 = main.panel.addZeroToOne()
+f6 = main.panel.addZeroToOne()
+f8 = main.panel.addZeroToOne()
+ir = caernarfon.addIrRemote()
+#ir.showUnhandled = True
+#ir.enableDbgOut = True
 
-        c1 = caernarfon.pixels.nextNLights(1)
-        ringC = caernarfon.pixels.nextNLights(16)
-        stripA = caernarfon.pixels.nextNLights(8)
-        
-        #self.dmx = main.dmx
-        #dmxA = main.dmx.addDimmerInput( "a", 1 )
-        #dmxB = main.dmx.addRGBInput( "b", 2 )
-        
-        
-        scene.addPatterns(
-                Rainbow(stripA, name="rb2", spread=3.5, colorCycle=1.4),
-            )
-        
-        if 1:
-            ringB = caernarfon.pixels.nextNLights(3)
-            ringA = caernarfon.pixels.nextNLights(6)
-            scene.addPatterns(
-                Cylon2(ringA,),
-                Blink(ringB, onValue=0x804020,offTime=0.25,onTime=0.25),
-                Cylon2(ringC, ),
-                #Rainbow(ringC,  spread=1.4, colorCycle=0.35),
-            )
-        
-        if 0:
-            hxl =  main.TerrainTronics.addHarlechXL(i2c=caernarfon.i2c)
-            reds = hxl.nextNLights(8)
-            scene.addPatterns(
-                Rainbow(stripA, name="rb2", spread=1.4, colorCycle=0.35),
-            )
+scene = main.addScene( ) # "simpleBlink" )
 
-        #doorDrive = caernarfon.initServo( 1, "doorDrive", )
+c1 = caernarfon.pixels.nextNLights(1)
+ringC = caernarfon.pixels.nextNLights(16)
+stripA = caernarfon.pixels.nextNLights(8)
 
-        #@scene.addSimpleTaskDef(period=0.25)
-        def dump():
-            import json
-            timings = dict(
-                i= main.latestContext.updateIndex,
-                timings =  main.dumpLoopTimings(10,minE=0.07) 
-            )
-            print( json.dumps( timings ) )
-            
-        #dt = PeriodicTimer( 3.1, manager=main.timers, name="dump" )
-        #dt.addAction( dump )
-        #dt.start()
-        
+#self.dmx = main.dmx
+#dmxA = main.dmx.addDimmerInput( "a", 1 )
+#dmxB = main.dmx.addRGBInput( "b", 2 )
+
+
+scene.addPatterns(
+        Rainbow(stripA, name="rb2", spread=3.5, colorCycle=1.4),
+    )
+
+if 1:
+    ringB = caernarfon.pixels.nextNLights(3)
+    ringA = caernarfon.pixels.nextNLights(6)
+    scene.addPatterns(
+        Cylon2(ringA,),
+        Blink(ringB, onValue=0x804020,offTime=0.25,onTime=0.25),
+        Cylon2(ringC, ),
+        #Rainbow(ringC,  spread=1.4, colorCycle=0.35),
+    )
+
+if 0:
+    hxl =  main.TerrainTronics.addHarlechXL(i2c=caernarfon.i2c)
+    reds = hxl.nextNLights(8)
+    scene.addPatterns(
+        Rainbow(stripA, name="rb2", spread=1.4, colorCycle=0.35),
+    )
+
+
 
     def __nope(self):
 
@@ -117,3 +94,6 @@ def demoMain(*args,**kwds):
     
     demo = TwinCastles( *args, **kwds )
     demo.run()
+
+#############################################################################
+main.launchProject( globals() ) #  http://lumensalis.com/ql/h2Launch

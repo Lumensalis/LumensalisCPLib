@@ -3,8 +3,9 @@ from LumensalisCP.Simple import * # http://lumensalis.com/ql/h2Start
 #############################################################################
 sayAtStartup( "start project" ) #  http://lumensalis.com/ql/h2Main
 main = ProjectManager(  "TwinCastlesFountain",
-                      useWifi=True
-                      ) ## profile=True, profileMemory=3    ) 
+                      useWifi=True,
+                       profile=True, profileMemory=3   
+            )
 
 scene = main.addScene( ) 
 
@@ -38,8 +39,8 @@ f7 = main.panel.addZeroToOne(startingValue=0.6)
 #ir = caernarfon.addIrRemote()
 
 scene.addPatterns(
-    #Blink(firstTwo,onTime=1.0, offTime=1.0),
-    Blink(firstTwo,onTime=3.3, offTime=3.3),
+    Blink(secondTwo,onTime=1.0, offTime=1.0),
+    #Blink(firstTwo,onTime=3.3, offTime=3.3),
     #Cylon(firstFour, sweepTime=0.7),
     #Blink(lastFour,onTime=15.0, offTime=1.5),
 )
@@ -60,15 +61,19 @@ def brighten():
 def setLeds() -> None:
     leds.brightness = brightness.value
     leds[0].setValue( f0.value )
-    leds[1].setValue( f1.value )
-    leds[2].setValue( f2.value )
-    leds[3].setValue( f3.value )
-    leds[4].setValue( f4.value )
-    leds[5].setValue( f5.value )    
-    leds[5].setValue( f6.value )
+    #leds[1].setValue( f1.value )
+    #leds[2].setValue( f2.value )
+    #leds[3].setValue( f3.value )
+    #leds[4].setValue( f4.value )
+    #leds[5].setValue( f5.value )    
+    #leds[5].setValue( f6.value )
     leds[6].setValue( f7.value )
     
-
+leds.enableDbgOut = True
+fountainFlow = leds[0]
+fountainFlow.enableDbgOut = True
+cil7 = leds[7]
+cil7.enableDbgOut = True
 
 @addSceneTask( scene, period = 1.0 )
 def showBattery():
