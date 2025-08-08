@@ -12,7 +12,7 @@ from LumensalisCP.Identity.Local import *
 from LumensalisCP.Eval.Terms import *
 #from LumensalisCP.CPTyping import TYPE_CHECKING
 #from LumensalisCP.Identity.Local import NamedLocalIdentifiable
-from LumensalisCP.Main.Refreshable import Refreshable
+from LumensalisCP.Temporal.Refreshable import Refreshable
 from LumensalisCP.Main.Updates import UpdateContext
 from LumensalisCP.Eval.EvaluationContext  import EvaluationContext
 from LumensalisCP.Eval.Evaluatable import evaluate, EvaluatableT, Evaluatable

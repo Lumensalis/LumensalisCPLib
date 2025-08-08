@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayScenesSceneImport = getImportProfiler( "Scenes.Scene" )
 
+#############################################################################
 
 from LumensalisCP.common import *
 from LumensalisCP.IOContext import *
@@ -10,20 +13,22 @@ from LumensalisCP.util.bags import NamedList
 from LumensalisCP.Lights.Patterns import Pattern
 from LumensalisCP.Main.Profiler import ProfileFrameBase
 
+if TYPE_CHECKING:
+    from LumensalisCP.Eval.Expressions import ExpressionTerm, Expression
+
 #############################################################################
 
 _sayScenesSceneImport.parsing()
 
-class Setter(object):
-    pass
-
-class SceneTaskKwargs(TypedDict):
-    period:TimeInSeconds 
-    name:Optional[str]
 
 class SceneTask(NamedLocalIdentifiable):
-    def __init__(self, task:Callable[[EvaluationContext,],Any], period:TimeInSecondsConfigArg = 0.02, name:Optional[str] = None ):
-        super().__init__(name=name)
+
+    class KWDS(NamedLocalIdentifiable.KWDS):
+        period:NotRequired[TimeInSeconds]
+
+    def __init__(self, task:Callable[[EvaluationContext,],Any], period:TimeInSecondsConfigArg = 0.02, **kwds:Unpack[NamedLocalIdentifiable.KWDS] ) -> None:
+        
+        super().__init__(**kwds)
         self.task_callback = KWCallback.make( task )
         self.__period:TimeInSeconds = TimeInSeconds(period)
         self.__nextRun:TimeInSeconds = TimeInSeconds(0.0)
@@ -70,7 +75,7 @@ class Scene(MainChild):
         self.__patternRefreshPeriod = 0.02
         self.__nextPatternsRefresh = 0
 
-    def nliGetContainers(self) -> list[NliContainerMixin[NamedLocalIdentifiable]]|None:
+    def nliGetContainers(self) -> list[NliContainerMixin[NamedLocalIdentifiable]]:
         
         return [self.__rulesContainer, self.__tasksContainer, self.__patternsContainer] # type: ignore[return-value]
     
@@ -113,14 +118,14 @@ class Scene(MainChild):
     
         return rv
 
-    def addTask( self, task:Callable[...,Any], **kwds:Unpack[SceneTaskKwargs]  ) -> SceneTask:
+    def addTask( self, task:Callable[...,Any], **kwds:Unpack[Scene.KWDS]  ) -> SceneTask:
         sceneTask = SceneTask( task, **kwds )
         self.__tasks.append( sceneTask )
         sceneTask.nliSetContainer(self.__tasksContainer)
         return sceneTask
     
     
-    def addSimpleTaskDef( self, **kwds:Unpack[SceneTaskKwargs]  )  -> Callable[..., Any]:
+    def addSimpleTaskDef( self, **kwds:Unpack[Scene.KWDS]  )  -> Callable[..., Any]:
 
         def addTask( callable:Callable[...,Any] ):
             self.addTask(callable, **kwds)
@@ -152,9 +157,10 @@ class Scene(MainChild):
                         SHOW_EXCEPTION( inst, "pattern %r refresh failed in %r", 
                                        getattr(pattern,'name',pattern), self )
 
-def addSceneTask( scene:Scene, **kwds:Unpack[SceneTaskKwargs] ) -> Callable[..., None]:
-    def addTask( callable:Callable[...,Any] ) -> None:
+def addSceneTask( scene:Scene, **kwds:Unpack[Scene.KWDS] )  -> Callable[[Callable[[], Any]], Callable[[], Any]]:
+    def addTask( callable:Callable[...,Any] ) -> Callable[...,Any]:
         scene.addTask(callable, **kwds)
+        return callable
         
     return addTask
 

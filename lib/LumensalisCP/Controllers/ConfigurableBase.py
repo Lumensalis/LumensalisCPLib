@@ -13,8 +13,9 @@ from LumensalisCP.Controllers.Config import ControllerConfig,ControllerConfigArg
 _sayConfigurableBaseImport( "Controllers.Configs.Core" )
 from LumensalisCP.Controllers.Configs.Core import getConfig
 
-#if TYPE_CHECKING:
-#    from LumensalisCP.Main.Manager import MainManager
+if TYPE_CHECKING:
+    from LumensalisCP.Shields.Pins import PinProxy
+
     
 _sayConfigurableBaseImport( "parsing" )    
 class ConfigurableBase(CountedInstance):
@@ -61,7 +62,7 @@ class ConfigurableBase(CountedInstance):
         self.config:ControllerConfig = config
 
 
-    def asPin(self, pin:Union[microcontroller.Pin,str]) -> microcontroller.Pin:
+    def asPin(self, pin:Union[microcontroller.Pin,str,PinProxy]) -> microcontroller.Pin:
         if not isinstance( pin, microcontroller.Pin ):
 
             if isinstance(pin, str): # type: ignore

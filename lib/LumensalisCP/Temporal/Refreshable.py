@@ -136,7 +136,7 @@ class Refreshable( RefreshableInterface, IDebuggable ):
             self.__refreshList.markDirty(context, self)
 
     def derivedRefresh(self,context:'EvaluationContext') -> None:
-        raise NotImplementedError
+        raise NotImplementedError( f"{self.__class__.__name__}.derivedRefresh not implemented")
 
     def refreshRateChanged(self,context:'EvaluationContext') -> None:
         pass

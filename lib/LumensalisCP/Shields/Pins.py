@@ -1,22 +1,34 @@
-import busio
-from LumensalisCP.Controllers.ConfigurableBase import ControllerConfigurableChildBase
-from LumensalisCP.IOContext import * # InputSource, NamedOutputTarget, EvaluationContext, Refreshable, UpdateContext
+from __future__ import annotations
+        
+from LumensalisCP.ImportProfiler import getImportProfiler
+__profileImport = getImportProfiler( __name__, globals() )
 
+#############################################################################
+
+import microcontroller
 from digitalio import DigitalInOut, Direction
 from analogio import AnalogIn
-import microcontroller
 
-# from LumensalisCP.CPTyping import Any, Callable, Generator, List, Mapping, Tuple
+from LumensalisCP.IOContext import * # InputSource, NamedOutputTarget, EvaluationContext, Refreshable, UpdateContext
+from LumensalisCP.Shields.Base import ShieldBase
+
+#############################################################################
+# Tuple
+__profileImport.parsing()
 
 class PinHolder( object ):
     def __init__(self, pin:"PinProxy" ):
         self.pinProxy = pin
         self.actualPinId = getattr( pin.board.config.pins, pin.name )
 
+#############################################################################
+
 class DigitalPinHolder( PinHolder ):
     def __init__(self, pin:"PinProxy" ):
         super().__init__( pin = pin )
         self.pin = DigitalInOut( self.actualPinId )
+
+#############################################################################
 
 class AnalogInputPinProxy( InputSource, PinHolder ):
     def __init__(self, name:str, pin:"PinProxy" ):
@@ -25,9 +37,10 @@ class AnalogInputPinProxy( InputSource, PinHolder ):
         PinHolder.__init__(self, pin=pin)
         self.pin = AnalogIn( self.actualPinId )
 
-        
     def getDerivedValue(self, context:EvaluationContext) -> Any:
         return self.pin.value        
+
+#############################################################################
 
 class DigitalInputPinProxy( InputSource, DigitalPinHolder ):
     def __init__(self, name:str, pin:"PinProxy" ):
@@ -37,7 +50,9 @@ class DigitalInputPinProxy( InputSource, DigitalPinHolder ):
         
     def getDerivedValue(self, context:EvaluationContext) -> Any:
         return self.pin.value
-        
+
+#############################################################################
+
 class DigitalOutputPinProxy( NamedOutputTarget, DigitalPinHolder ):
     def __init__(self, name:str, pin:"PinProxy" ):
         NamedOutputTarget.__init__(self, name=name)
@@ -47,9 +62,10 @@ class DigitalOutputPinProxy( NamedOutputTarget, DigitalPinHolder ):
     def set( self, value:Any, context:EvaluationContext ): 
         self.pin.value = value
 
+#############################################################################
 
 class PinProxy(CountedInstance):
-    def __init__( self, name:str, board:"D1MiniBoardBase" ):
+    def __init__( self, name:str, board:ShieldBase ):
         super().__init__()
         self._name = name
         self._board = board
@@ -62,7 +78,7 @@ class PinProxy(CountedInstance):
     def name(self) -> str: return self._name
     
     @property
-    def board(self) -> "D1MiniBoardBase": return self._board
+    def board(self) -> ShieldBase: return self._board
     
     def addAnalogInput( self, name:str ) -> AnalogInputPinProxy:
         return AnalogInputPinProxy( name=name, pin=self )
@@ -73,3 +89,6 @@ class PinProxy(CountedInstance):
     def addOutput( self, name:str ) -> DigitalOutputPinProxy:
         return DigitalOutputPinProxy( name=name, pin=self )
     
+#############################################################################
+
+__profileImport.complete()

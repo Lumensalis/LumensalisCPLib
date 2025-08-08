@@ -1,24 +1,25 @@
 
-import busio
+
+from __future__ import annotations
+
+from LumensalisCP.ImportProfiler import  getImportProfiler
+__profileImport = getImportProfiler( __name__, globals() )
+
+#############################################################################
 
 from LumensalisCP.CPTyping import Unpack
-#from LumensalisCP.Controllers.ConfigurableBase import ControllerConfigurableChildBase
-#from LumensalisCP.IOContext import NamedOutputTarget, EvaluationContext, InputSource, UpdateContext
-
 from LumensalisCP.Shields.Pins import PinProxy
 from LumensalisCP.Shields.Base import ShieldI2CBase
-#from digitalio import DigitalInOut, Direction
-#from analogio import AnalogIn
-#import microcontroller
 
-#from LumensalisCP.CPTyping import Any, Callable, Generator, List, Mapping, Tuple
-
+#############################################################################
+__profileImport.parsing()
 
 class D1MiniPinProxy(PinProxy):
     pass
   
-    
 class D1MiniBoardBase(ShieldI2CBase): # pylint: disable=abstract-method
+
+
     def __init__(self, **kwds:Unpack[ShieldI2CBase.KWDS] ):
         super().__init__( **kwds )
         
@@ -43,3 +44,5 @@ class D1MiniBoardBase(ShieldI2CBase): # pylint: disable=abstract-method
         self.A0= D1MiniPinProxy( 'A0', self )
         
         
+#############################################################################
+__profileImport.complete()

@@ -39,7 +39,7 @@ class FactoryBase( MainChild ):
     #def __init__(self, main:MainManager):
     #    super().__init__( main, name=self.__class__.__name__ )
 
-    def makeChild( self, cls:type, **kwds:StrAnyDict ):
+    def makeChild( self, cls:type, **kwds:Any ):
         instance = cls( main=self.main, **kwds )
         self.callPostCreate(instance)
         return instance
