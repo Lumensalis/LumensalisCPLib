@@ -38,10 +38,11 @@ class GCTestAllocScopeSample(CountedInstance):
 
 
     def writeOnScope(self, writeScope:WriteScope ):
-        if self.mem_alloc == -self.mem_free:
-            writeScope.addDict( dict( used=self.mem_alloc, e=self.when), indentItems=False ) 
-        else:
-            writeScope.addDict( dict( used=self.mem_alloc, f=self.mem_free, e=self.when), indentItems=False ) 
+        v = dict( a=self.mem_alloc, when=self.when )
+        if self.mem_alloc != -self.mem_free:
+            v['free'] = self.mem_free
+
+        writeScope.addDict( v, indentItems=False ) 
             
     def clear(self):
         self.mem_alloc = 0
@@ -78,23 +79,32 @@ class GCTestAllocScopeSample(CountedInstance):
 
 #############################################################################
 class GCTesterTestParameters(CountedInstance):
-    def __init__( self, name:str, args:Optional[tuple[Any]]=None,kwds:Optional[StrAnyDict] = None ):
+    class KWDS(TypedDict):
+        args: Optional[tuple[Any]]
+        invoke: Optional[Callable[..., None]]
+        kwds: Optional[StrAnyDict]
+
+    def __init__( self, name:str, args:Optional[tuple[Any]]=None,invoke:Optional[Callable[..., None]] = None, kwds:Optional[StrAnyDict] = None ):
         super().__init__()  
         self.args = args
         optimizeArgs = None if kwds is None else kwds.pop('optimizeArgs',None)
+        if invoke is not None:
+            assert (args is None or len(args)==0) and kwds is None, f"invoke requires no args or kwds, got args={args} kwds={kwds}"
+        self.invoke = invoke
         self.kwds = kwds
         self.name = name
         self.optimizeArgs = optimizeArgs
     
     @staticmethod
-    def make( name:str, *args:Any, **kwds:StrAnyDict ):
+    def make( name:str, *args:Any, **kwds:Unpack[GCTesterTestParameters.KWDS] ) -> GCTesterTestParameters:
         
         if len(args) == 1 and len(kwds) == 0 and isinstance(args[0],GCTesterTestParameters):
             return args[0]
         aArgs = args if len(args) > 0 else None
         kKwds = kwds if len(kwds) > 0 else None
 
-        return GCTesterTestParameters( name, aArgs, kKwds )
+        return GCTesterTestParameters( name, args, **(kwds or {}) )
+
 
     def writeOnScope(self, writeScope:WriteScope):
         with writeScope.startDict(indentItems=False) as nested:
@@ -115,18 +125,24 @@ class GCTestAllocScopeData(CountedInstance):
         if copy is None:
             self.before = GCTestAllocScopeSample()
             self.after = GCTestAllocScopeSample()
+            self.exceptions = 0
         else:
             self.before = copy.before
             self.after = copy.after
+            self.exceptions = copy.exceptions
     
     def clear(self):
         self.before.clear()
         self.after.clear()
-        
+        self.exceptions = 0
+
     elapsed = property( lambda self: self.after-self.before )
 
-    def writeOnScope(self, writeScope:WriteScope ):
-        writeScope.write( self.elapsed )
+    def writeOnScope(self, writeScope:WriteScope ) -> None:
+        if self.exceptions > 0:
+            writeScope.addDict( { 'elapsed':self.elapsed,'exceptions':self.exceptions}, indentItems=False )
+        else:
+            writeScope.write( self.elapsed )
                     
 class GCTestAllocScope(GCTestAllocScopeData):
 
@@ -144,6 +160,8 @@ class GCTestAllocScope(GCTestAllocScopeData):
 
     def __exit__(self, excT:Optional[Type[BaseException]], extV:Optional[BaseException], tb:Optional[TracebackType]):
         self.finish()
+        if extV is not None:
+            self.exceptions += 1
 
 #############################################################################
 class GCTestTarget(CountedInstance):
@@ -205,6 +223,8 @@ class GCTestRunConfig(CountedInstance):
         kwds = testArgs.kwds
         optimizeArgs = self.optimizeArgs if testArgs.optimizeArgs is None else testArgs.optimizeArgs 
         cb = target.target
+        if testArgs.invoke is not None:
+            return testArgs.invoke( cb )
         if args is None:
             if kwds is None:
                 return target.invokeTest()
@@ -236,15 +256,19 @@ class GCTestRunResultScope(CountedInstance):
         self.postCollectScope = GCTestAllocScope()
         self.config = config
 
-    def run(self, config:GCTestRunConfig, args:GCTesterTestParameters ):
+    def run(self, config:GCTestRunConfig, args:GCTesterTestParameters ) -> None:
         assert self.config is config
         with self.preCollectScope:
             gc.collect()
-        with self.outerScope:
-            rv = self.runInternal(config, args)
+        with self.outerScope as outerScope:
+            try:
+                self.runInternal(config, args)
+            except Exception as inst:
+                outerScope.exceptions += 1
+                
         with self.postCollectScope:
             gc.collect()            
-        return rv
+        
             
     def runInternal(self, config:GCTestRunConfig, args:GCTesterTestParameters ) -> None:
         raise NotImplementedError
@@ -276,12 +300,17 @@ class GCTestRunResult(GCTestRunResultScope):
     def writeOnScope(self, writeScope:WriteScope ):
         total = GCTestAllocScopeSample()
         with writeScope.startDict(indentItems=False) as selfWriteScope:
+            exceptions = 0
             if self.exc is not None:
                 selfWriteScope.addTaggedItem('exc',repr(self.exc))    
                 return 
             for scope in self.scopes:
                 total = total + scope.elapsed
-                
+                exceptions += scope.exceptions
+
+            if exceptions > 0:
+                selfWriteScope.addTaggedItem('exceptions', exceptions)
+
             selfWriteScope.addTaggedItem('per',total/self.config.totalCycles)
             selfWriteScope.addOrSkipDefaultTaggedItem('totalCycles', self.config.totalCycles)
             if writeScope.config.detailed:
