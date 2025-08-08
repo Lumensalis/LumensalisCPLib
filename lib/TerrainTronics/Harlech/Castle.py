@@ -1,32 +1,41 @@
 
+from __future__ import annotations
+
+from LumensalisCP.ImportProfiler import getImportProfiler
+__profileImport = getImportProfiler(__name__, globals())
+
+#############################################################################
 import pwmio
-import TerrainTronics.D1MiniBoardBase
-from LumensalisCP.IOContext import *
-#from LumensalisCP.Main.Expressions import NamedOutputTarget, EvaluationContext
-#from LumensalisCP.common import *
-#from LumensalisCP.CPTyping import *
 import digitalio
 from adafruit_bus_device import spi_device
-import busio, math, digitalio
+import busio, math, microcontroller
+
+from TerrainTronics.D1MiniBoardBase import D1MiniBoardBase, D1MiniPinProxy
+from LumensalisCP.IOContext import *
 from LumensalisCP.Triggers.Timer import PeriodicTimer
 
+__profileImport.parsing()
+
+#pyright: reportPrivateUsage=false
+
+HarlechPinArg:TypeAlias = Union[ str, microcontroller.Pin, D1MiniPinProxy ]
 class HarlechLED(NamedOutputTarget):
 
-    def __init__(self, name, index, board=None ):
+    def __init__(self, name:str, index:int, board:HarlechCastle ):
         NamedOutputTarget.__init__(self, name=name)
         print(f'HarlechLED {name} [{index}]')
         self.__board:"HarlechCastle" = board
         self.__index = index
         self.__value = 0
         
-    def set(self, level:float, context:EvaluationContext = None):
-        if type(level) is not float:
-            if level is True: level = 1.0
-            elif level is False:  level = 0.0
-            else: level = float(level)
+    def set(self, value:float, context:Optional[EvaluationContext] = None):
+        if type(value) is not float:
+            if value is True: value = 1.0
+            elif value is False:  value = 0.0
+            else: value = float(value)
             
-        self.__value = level
-        self.__board._values[self.__index] = level
+        self.__value = value
+        self.__board._values[self.__index] = value
 
         
     @property
@@ -37,9 +46,9 @@ class HarlechLED(NamedOutputTarget):
 
 class KeepAlive(Debuggable):
     def __init__(self, castle:"HarlechCastle", 
-                keepAlivePin=None,
-                keepAliveCycle:TimeInSeconds = 8.0,
-                keepAlivePulse:TimeInSeconds = 1.0,
+                keepAlivePin:Optional[int]=None,
+                keepAliveCycle:TimeSpanInSeconds = 8.0,
+                keepAlivePulse:TimeSpanInSeconds = 1.0,
             ):
         Debuggable.__init__(self)
         self.castle = castle
@@ -105,29 +114,38 @@ class KeepAlive(Debuggable):
     @property
     def lastPulse(self): return self.__lastPulse
 
-class HarlechCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
+class HarlechCastle(D1MiniBoardBase):
     OE_DUTY_CYCLE = 65535
     OE_PWM_FREQUENCY = 500
         
-    def __init__(self, *args,
-                name=None, 
+    class KWDS(D1MiniBoardBase.KWDS):
+        version: NotRequired[str]
+        brightness: NotRequired[ZeroToOne]
+        ledRefreshRate: NotRequired[float]
+        oePin: NotRequired[str|microcontroller.Pin|D1MiniPinProxy]
+        addKeepAlive: NotRequired[bool]
+        keepAlivePin: NotRequired[str|microcontroller.Pin]
+        keepAliveCycle: NotRequired[TimeInSeconds]
+        keepAlivePulse: NotRequired[TimeInSeconds]
+        oeBrightness: NotRequired[bool]        
+
+    def __init__(self,#*args,
+                #name=None, 
                 version:Optional[str]=None,
                 oePin:Optional[str]=None,
-                brightness = 1.0,
+                brightness:ZeroToOne = 1.0,
                 ledRefreshRate:float = 50.0,
-                refreshRate=0.05,
-                addKeepAlive = True,
-                keepAlivePin=None,
+                #refreshRate=0.05,
+                addKeepAlive:bool = True,
+                keepAlivePin:Optional[str|microcontroller.Pin]=None,
                 keepAliveCycle:Optional[float]=None,
                 keepAlivePulse:Optional[float]=None,
-                baudrate=1000000,
-                oeBrightness=True, 
-                 **kwds ):
+                #baudrate=1000000,
+                oeBrightness:bool=True, 
+                 **kwds:Unpack[D1MiniBoardBase.KWDS] ):
         
-        
-        
-        name = name or "Harlech"
-        super().__init__( *args, name=name, refreshRate=refreshRate, **kwds )
+        super().__init__( **kwds )  #@*args, name=name, refreshRate=refreshRate,  **kwds )
+                         
         c = self.config
         c.updateDefaultOptions( )
         
@@ -141,7 +159,7 @@ class HarlechCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
                 self, keepAlivePin=self.asPin(keepAlivePin or KEEP_ALIVE), keepAliveCycle=keepAliveCycle, keepAlivePulse=keepAlivePulse
             )
         
-        self.__leds:List[HarlechLED] = [None,None,None,None,None,None,None,None]
+        self.__leds:List[HarlechLED|None] = [None,None,None,None,None,None,None,None]
         self._values:List[float] = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
         
         self.__version = version
@@ -265,5 +283,4 @@ class HarlechCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
             assert name is None or name == rv.name
         return rv
 
-
-
+__profileImport.complete()

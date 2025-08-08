@@ -46,7 +46,8 @@ def GCManager_adjustLowerThreshold(self:GCManager, reason:str) -> None:
     after_alloc = gc.mem_alloc()
     self.sayGC(f"  (after free={after_free}, alloc={after_alloc})")
     delta = before_free - after_free
-    newThreshold = after_free - max( delta, 512000 )
+    #newThreshold = after_free - max( delta, 512000 )
+    newThreshold = max( 512000, int(after_free/3) )
     self.sayGC(f"lower threshold set to {newThreshold}: {reason}" )
     self.setFreeThreshold(newThreshold)
 
@@ -129,7 +130,7 @@ def GCManager_checkAndRunCollection(self:GCManager,
     collectRatio = collectElapsed / elapsedSincePriorCollect
     
     if self.verboseCollect :
-        self.sayGC( f"collect took {collectElapsed:.3f} of {elapsedSincePriorCollect:.3f} at {pmc_mainLoopControl.getMsSinceStart()/1000.0:0.3f} for {delta_cycles} cycles freeing {delta_alloc} ( {delta_alloc/delta_cycles:.1f} per cycle) leaving {mem_alloc_after} used, {mem_free_after} free t={self.__actualFreeThreshold} cr={collectRatio}  gc.mem_f/a()={mem_free_beforeelapsed:.3f}/{mem_alloc_beforeelapsed:.3f}" )
+        self.sayGC( f"collect took {collectElapsed:.3f} of {elapsedSincePriorCollect:.3f} ({mem_free_before}) at {pmc_mainLoopControl.getMsSinceStart()/1000.0:0.3f} for {delta_cycles} cycles freeing {delta_alloc} ( {delta_alloc/delta_cycles:.1f} per cycle) leaving {mem_alloc_after} used, {mem_free_after} free t={self.__actualFreeThreshold} cr={collectRatio}  gc.mem_f/a()={mem_free_beforeelapsed:.3f}/{mem_alloc_beforeelapsed:.3f}" )
 
     if False:
         if self.targetCollectPeriod is not None and collectElapsed > self.targetCollectPeriod:
@@ -173,3 +174,4 @@ def _printElapsed(when:float,desc:str):
            ) )
 
 #############################################################################
+
