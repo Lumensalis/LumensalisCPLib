@@ -8,11 +8,20 @@ from LumensalisCP.commonPreManager import *
 #############################################################################
 _sayImport.parsing()
 
-class TimingTracker(CountedInstance):
+class TimingTracker(NamedLocalIdentifiable):
     """ Tracks timing information for async tasks. """
     
-    def __init__(self):
-        super().__init__()
+    def __init__(self,**kwds:Unpack[NamedLocalIdentifiable.KWDS]) -> None:
+        super().__init__(**kwds)
+        self.reset()
+        self.__trackGC:bool = False
+
+    @property
+    def trackGC(self) -> bool:
+        return self.__trackGC
+    @trackGC.setter
+    def trackGC(self, value: bool) -> None:
+        self.__trackGC = value
         self.reset()
 
     def reset(self) -> None:
@@ -24,19 +33,39 @@ class TimingTracker(CountedInstance):
         self.zeroElapsed:int = 0
         self.lastReset:TimeInSeconds = getOffsetNow()
         self.startTime:TimeInSeconds|None
+        
+        self.startMemFree:int = 0
+        self.minMemUsed:int|None = None
+        self.maxMemUsed:int = 0
+        self.totalMemUsed:int = 0
 
     def start(self, now:Optional[TimeInSeconds]=None) -> TimeInSeconds:
+        if self.trackGC:
+            self.startMemFree = gc.mem_free()
+            if self.enableDbgOut: self.dbgOut( "start memFree=%r", self.startMemFree )
         now = now or getOffsetNow()
         self.startTime = now
+            
         return now
     
-    def stop(self) -> TimeSpanInSeconds:
-        now = getOffsetNow()
+    def stop(self, now:Optional[TimeInSeconds]=None) -> TimeInSeconds:
+        if now is None:
+            now = getOffsetNow()
         assert self.startTime is not None, "TimingTracker was not started"
         elapsed = now - self.startTime
         self.addElapsed(elapsed)
         self.startTime = None
-        return elapsed  
+        if self.trackGC:
+            endMemFree = gc.mem_free()
+            memUsed =  self.startMemFree - endMemFree 
+            self.totalMemUsed += memUsed
+            if self.minMemUsed is None or memUsed < self.minMemUsed:
+                self.minMemUsed = memUsed
+            if memUsed > self.maxMemUsed:
+                self.maxMemUsed = memUsed
+            if self.enableDbgOut: self.dbgOut( "stop memUsed=%r", memUsed )
+            
+        return now  
 
     def addElapsed(self, elapsed:TimeSpanInSeconds) -> None:
         """ Add elapsed time to the tracker. """
@@ -56,6 +85,15 @@ class TimingTracker(CountedInstance):
         loops = self.loops
         if loops > 0:
             clockElapsed = getOffsetNow() - self.lastReset
+            out['trackGC'] = self.trackGC
+            if self.trackGC:
+                out['gc'] = {
+                    'avg': self.totalMemUsed / self.loops,
+                    'min': self.minMemUsed,
+                    'max': self.maxMemUsed,
+                    'total': self.totalMemUsed,
+                    'start': self.startMemFree
+                }
             average = self.totalElapsed / loops
             clockedAverage = clockElapsed / loops
             out['average'] = average
@@ -67,6 +105,8 @@ class TimingTracker(CountedInstance):
             out['min'] = self.minElapsed
             out['max'] = self.maxElapsed
             out['zeroElapsed'] = self.zeroElapsed
+
+
         return out  
 
 #############################################################################

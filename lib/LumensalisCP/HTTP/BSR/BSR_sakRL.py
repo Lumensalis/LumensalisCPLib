@@ -139,8 +139,13 @@ def BSR_sak(self:BasicServer, request:Request) -> JSONResponse | Response:
 
                 else:
                     result['error'] = f"Unknown command: {cmd}"
-            if requestJson.get('getStatusInfo',False):
-                result.update( getStatusInfo(self, request) )
+            
+            gsi = requestJson.get('getStatusInfo',False)
+            if gsi is not False:
+                if isinstance(gsi, list):
+                    result.update( getStatusInfo(self, request, tags=gsi) )
+                else:
+                    result.update( getStatusInfo(self, request) )
             return JSONResponse(request, result )
 
         else:

@@ -17,6 +17,8 @@ from LumensalisCP.HTTP.BSR import BSR_profileRL
 from LumensalisCP.HTTP.BSR import BSR_sakRL
 from LumensalisCP.HTTP.BSR import BSR_cmdRL
 from LumensalisCP.HTTP.BSR import BSR_clientRL
+from LumensalisCP.HTTP.BSR import BSR_queryRL
+from LumensalisCP.HTTP import WebsocketsRL
 
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
 from LumensalisCP.util.Reloadable import addReloadableClass, reloadingMethod
@@ -193,6 +195,7 @@ class BasicServer(Server,MainAsyncChild):
         self.startupOut( "started server on %r", address )
 
         pmc_gcManager.adjustLowerThreshold( "WebServerStarted" )
+        self.tracker.trackGC = True
 
     async def runAsyncSingleLoop(self, when:TimeInSeconds) -> None:
         try:
@@ -211,7 +214,7 @@ class BasicServer(Server,MainAsyncChild):
                     self.infoOut( "handle_http_requests handled request")
                     pass
                 self._asyncStep = 0
-
+            
         except KeyboardInterrupt as error:
             self.asyncManager.childExceptionExit(self, error) 
             raise
