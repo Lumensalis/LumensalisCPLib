@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from LumensalisCP.common import Optional, Any
+from LumensalisCP.ImportProfiler import getImportProfiler
+__profileImport = getImportProfiler(__name__,globals())
+
+#############################################################################
+
+from LumensalisCP.common import Optional, Any, TypedDict, NotRequired
 from LumensalisCP.Lights.Groups import LightSource
 from LumensalisCP.Lights.RGB import *
 
@@ -9,6 +14,8 @@ from LumensalisCP.Outputs import OutputTarget
 from LumensalisCP.Eval.EvaluationContext import EvaluationContext
 
 #############################################################################
+
+__profileImport.parsing()
 
 class LightType:
     LT_SINGLE_SOLID=1
@@ -19,7 +26,12 @@ class LightType:
     
 #############################################################################
 class Light(OutputTarget):
-    
+
+    class KWDS(TypedDict):
+        name: NotRequired[str]
+        source: NotRequired[LightSource]
+        index: NotRequired[int]
+
     def __init__(self, source:LightSource, index:int = 0, name:Optional[str] = None):
         super().__init__(name=name)
         assert source is not None
@@ -82,3 +94,5 @@ __all__ = [
     "AnyRGBValue",
     "RGB",  
 ]
+
+__profileImport.complete()

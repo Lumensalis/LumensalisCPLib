@@ -1,52 +1,106 @@
+# SPDX-FileCopyrightText: 2025 James Fowler
+#
+"""
+`LumensalisCP.Lights.RGB`
+====================================================
+provides RGB color class and related utilities
+"""
+
+# #############################################################################
 from __future__ import annotations
 
+from LumensalisCP.ImportProfiler import getImportProfiler
+__profileImport = getImportProfiler( __name__, globals() ) 
 #############################################################################
 
-from random import random as randomZeroToOne, randint # pyright: ignore[reportUnusedImport]
-import re
-
-from LumensalisCP.ImportProfiler import  getImportProfiler
-_sayLightsRGBImport = getImportProfiler( globals() ) # "Lights.RGB"
-
-#from LumensalisCP.CPTyping import TypeAlias, ZeroToOne,Union, Type, Callable, Optional,  Any, Tuple, NewType, ClassVar
-#from LumensalisCP.CPTyping import Generic, TypeVar
 from LumensalisCP.CPTyping import *
-
 from LumensalisCP.common import withinZeroToOne_, safeFmt, ZeroToOne
 from LumensalisCP.util.Convertor import Convertor
+from LumensalisCP.util.Setter import Setter
 from LumensalisCP.util.CountedInstance import CountedInstance
 
-#from LumensalisCP.Eval.Evaluatable import Evaluatable, evaluate
-
-
-#from LumensalisCP.CPTyping import *
-
-_sayLightsRGBImport.parsing()
-
-RGBChannel:TypeAlias = ZeroToOne
-
-RGBTuple:TypeAlias = Tuple[RGBChannel,RGBChannel,RGBChannel]
-
-
 #############################################################################
-NeoPixelRGBInt = NewType('NeoPixelRGBInt', int)
 
+__profileImport.parsing()
+
+# type aliases
+RGBChannel:TypeAlias = ZeroToOne
+RGBTuple:TypeAlias = Tuple[RGBChannel,RGBChannel,RGBChannel]
+NeoPixelRGBInt = NewType('NeoPixelRGBInt', int)
 AnyRGBValue:TypeAlias = Union[ 'RGB',
         int, float, bool,
         RGBTuple,
         # List [float],
         str, 
+        NeoPixelRGBInt,
     ] 
 
+#############################################################################
+class RGBInterface(Protocol):
 
-class RGB(CountedInstance):
+    def __init__(self, 
+                 r:Optional[RGBChannel|tuple[float,float,float]|str|RGB]=None, 
+                 g:Optional[RGBChannel]=None, 
+                 b:Optional[RGBChannel]=None 
+    ) -> None: ...
+
+    @property 
+    def r(self)->RGBChannel: ...
+    @r.setter
+    def r(self,v:RGBChannel) -> None:  ...
+            
+    @property 
+    def g(self)->RGBChannel: ...
+    @g.setter
+    def g(self,v:RGBChannel) -> None:  ...
+
+    @property 
+    def b(self)->RGBChannel: ...
+    @b.setter
+    def b(self,v:RGBChannel) -> None: ...
+
+    @property
+    def brightness(self)->float: ...
+
+    def asNeoPixelRGBInt( self ) -> NeoPixelRGBInt: ...
+    def rgbTuple(self) -> RGBTuple: ...
+    def fadeTowards(self, other:RGB, ratio:ZeroToOne )->RGB: ...
+
+    # MODIFY IN PLACE methods
+    def setFromNeoPixelRGBInt( self, npi:NeoPixelRGBInt ) -> None: ...
+    def setToColorString( self, color:str ) -> None: ...
+    def fadeAB(self, a:RGB, b:RGB, ratio:ZeroToOne )->None: ...
+    
+
+    @staticmethod
+    def lookupColor( color:str )-> RGB|None: ...
+    @staticmethod
+    def toRGB( value:AnyRGBValue )->RGB: ...
+    @staticmethod
+    def fromNeoPixelRGBInt( npi:NeoPixelRGBInt ) ->RGB: ...
+    
+    def _set_r_g_b(self, r:RGBChannel, g:RGBChannel,b:RGBChannel) -> None: ...
+    def _set_Any(self, v:AnyRGBValue) -> None: ...
+    def _set_RGB(self, v:RGBInterface) -> None: ...
+    def __repr__(self) -> str: ...
+    def __str__(self) -> str: ...
+    def __hash__(self) -> int: ...
+    def __eq__(self, value: object) -> bool: ...
 
 
-    def __init__(self, r:RGBChannel|tuple[float,float,float]|str|RGB=0.0, g:Optional[RGBChannel]=None, b:Optional[RGBChannel]=None ) -> None:
-        
-        super().__init__()
+#############################################################################
+__RGB_STORE_AS_INT = True
+# pyright: reportRedeclaration=false
+class RGB(CountedInstance,RGBInterface):
+    """ RGB color with 0.0 to 1.0 float values for each channel (r/g/b)"""
 
-        #self.__rgb:int = 0
+    def __init__(self, 
+                 r:Optional[RGBChannel|tuple[float,float,float]|str|RGB]=None, 
+                 g:Optional[RGBChannel]=None, 
+                 b:Optional[RGBChannel]=None 
+    ) -> None:
+        CountedInstance.__init__(self)
+
         if g is None:
             assert isinstance( b, type(None)), "b must also be None"
             if isinstance(r,str):
@@ -60,15 +114,121 @@ class RGB(CountedInstance):
             elif r is None: # type: ignore
                 r,g,b = 0.0,0.0,0.0
             else:
-                raise TypeError("Invalid type for RGB initialization") 
+                raise TypeError(f"Invalid type ({type(r)}):{r} for RGB initialization") 
         
-        self.__rgb:int = (
-                (int(withinZeroToOne_( r )*255) << 16) +
-                (int(withinZeroToOne_( g )*255) << 8) + 
-                int(withinZeroToOne_( b )*255)
+        self._set_r_g_b(r,g,b) # type: ignore
+
+    def rgbTuple(self) -> RGBTuple:
+        return (self.r, self.g, self.b)
+    
+    def _set_Any(self, v:AnyRGBValue) -> None: 
+        if isinstance(v, RGB):
+            self._set_RGB(v)
+        elif isinstance(v, int ): #(int,NeoPixelRGBInt)):
+            self.setFromNeoPixelRGBInt(v) # type: ignore
+        elif isinstance(v, str):
+            self.setToColorString(v)
+        elif isinstance(v, (list, tuple)):
+            assert len(v) == 3, "List or tuple must have exactly 3 elements for RGB"
+            self._set_r_g_b( v[0], v[1], v[2] )
+        else:
+            other = RGB.toRGB(v)
+            self._set_RGB(other)
+            
+    def _set_RGB(self, v:RGBInterface) -> None: 
+        self._set_r_g_b( v.r, v.g, v.b ) 
+    
+    @staticmethod
+    def fromNeoPixelRGBInt( npi:NeoPixelRGBInt ) ->RGB:
+        return RGB(
+            r=((npi&0xFF0000)>>16)/255.0,
+            g=((npi&0xFF00)>>8)/255.0,
+            b=(npi&0xFF)/255.0
+        )
+    
+    def setFromNeoPixelRGBInt( self, npi:NeoPixelRGBInt ) -> None:
+        self.r=((npi&0xFF0000)>>16)/255.0
+        self.g=((npi&0xFF00)>>8)/255.0
+        self.b=(npi&0xFF)/255.0
+
+    
+    def fadeTowards(self, other:RGB, ratio:ZeroToOne )->RGB:
+        r2 = 1.0 - ratio
+        return RGB(
+            r = self.r * r2 + other.r * ratio,
+            g = self.g * r2 + other.g * ratio,
+            b = self.b * r2 + other.b * ratio,
         )
 
-    if True:
+    def fadeAB(self, a:RGB, b:RGB, ratio:ZeroToOne )->None:
+        r2 = 1.0 - ratio
+        self.r = a.r * r2 + b.r * ratio
+        self.g = a.g * r2 + b.g * ratio
+        self.b = a.b * r2 + b.b * ratio
+        
+    
+    @property
+    def brightness(self)->float: 
+        return (self.r + self.g + self.b) / 3.0
+    
+    def __repr__(self):
+        return safeFmt( "(%.3f,%.3f,%.3f)", self.r, self.g, self.b)
+ 
+    def __str__(self):
+        return safeFmt( "(%.3f,%.3f,%.3f)", self.r, self.g, self.b)
+        
+    # __colorRegex = __regex.compile( r"^#([0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])$" )
+    __hexVal = { '0':0, '1':1, '2':2, '3':3, '4':4, '5':5, '6':6, '7':7,
+                 '8':8, '9':9, 'A':10, 'B':11, 'C':12, 'D':13, 'E':14, 'F':15,
+                 'a':10, 'b':11, 'c':12, 'd':13, 'e':14, 'f':15 }
+    
+    @staticmethod
+    def lookupColor( color:str ):
+        rv = RGB()
+        rv.setToColorString(color)
+        return rv
+    
+    def setToColorString( self, color:str ) -> None:
+
+        if color.startswith("#") and len(color) == 7:
+            # these are easier - but trigger allocations
+            # hexInt = int(color[1:], 16)
+            # match = RGB.__colorRegex.match(color)
+            hexInt = 0
+            for i in range(1,7):
+                cv = RGB.__hexVal.get(color[i], None)
+                assert cv is not None, safeFmt("Invalid hex digit %r", color[i])
+                hexInt = (hexInt << 4) | cv
+            self.setFromNeoPixelRGBInt( hexInt ) # type: ignore
+        else:
+            rv = getattr(Colors,color,None)
+            if rv is None:
+                raise KeyError( safeFmt("unknown color %r",color) )
+            self._set_RGB(rv)
+        
+    def setFrom( self, value:AnyRGBValue) -> None:
+        RGB.Setters(value, self)
+
+    @staticmethod
+    def toRGB( value:AnyRGBValue )->RGB:
+        return RGB.Convertors(value)
+    
+    @staticmethod
+    def toRGB( value:AnyRGBValue )->RGB:
+        return RGB.Convertors(value)
+        
+    #########################################################################
+    Convertors:ClassVar[Convertor[AnyRGBValue,RGB]] 
+    Convertors = Convertor()
+
+    Setters:ClassVar[Setter[AnyRGBValue,RGB]]   
+    Setters = Setter() 
+
+    #########################################################################
+    # define r/g/b properties - using RGBChannel but internally storing as 
+    # either three RGBChannels or a single int
+    
+    if __RGB_STORE_AS_INT:
         @property 
         def r(self)->RGBChannel: return (self.__rgb>>16 & 0xFF)/255.0
         @r.setter
@@ -99,6 +259,14 @@ class RGB(CountedInstance):
             if isinstance(value, RGB):
                 return self.__rgb == value.__rgb
             return False
+        
+        def _set_r_g_b(self, r:RGBChannel, g:RGBChannel,b:RGBChannel) -> None:
+            self.__rgb:int = (
+                    (int(withinZeroToOne_( r )*255) << 16) +
+                    (int(withinZeroToOne_( g )*255) << 8) + 
+                    int(withinZeroToOne_( b )*255)
+            )
+        
     else:
         @property 
         def r(self)->RGBChannel: return self._r
@@ -118,106 +286,13 @@ class RGB(CountedInstance):
         def asNeoPixelRGBInt( self ) -> NeoPixelRGBInt:
             return (int(255*self.r) << 16) + (int(255*self.g) << 8) + (int(255*self.b)) # type: ignore
 
+        def _set_r_g_b(self, r:RGBChannel, g:RGBChannel,b:RGBChannel) -> None:
+            self.r = r
+            self.g = g
+            self.b = b
 
-    def _set(self, r:RGBChannel, g:RGBChannel,b:RGBChannel):
-        self.r = r
-        self.g = g
-        self.b = b
-    
-    def rgbTuple(self) -> RGBTuple:
-        return (self.r, self.g, self.b)
-        
-    @staticmethod
-    def fromNeoPixelRGBInt( npi:NeoPixelRGBInt ) ->RGB:
-        #npi = int(npi)
-        return RGB(
-            r=((npi&0xFF0000)>>16)/255.0,
-            g=((npi&0xFF00)>>8)/255.0,
-            b=(npi&0xFF)/255.0
-        )
-    
-    def setFromNeoPixelRGBInt( self, npi:NeoPixelRGBInt ) -> None:
-        self.r=((npi&0xFF0000)>>16)/255.0
-        self.g=((npi&0xFF00)>>8)/255.0
-        self.b=(npi&0xFF)/255.0
-        
-    
-    def fadeTowards(self, other:RGB, ratio:ZeroToOne )->RGB:
-        r2 = 1.0 - ratio
-        return RGB(
-            r = self.r * r2 + other.r * ratio,
-            g = self.g * r2 + other.g * ratio,
-            b = self.b * r2 + other.b * ratio,
-        )
 
-    def fadeAB(self, a:RGB, b:RGB, ratio:ZeroToOne )->None:
-        r2 = 1.0 - ratio
-        self.r = a.r * r2 + b.r * ratio
-        self.g = a.g * r2 + b.g * ratio
-        self.b = a.b * r2 + b.b * ratio
-        
-    
-    @property
-    def brightness(self)->float: 
-        return (self.r + self.g + self.b) / 3.0
-    
-    def __repr__(self):
-        return safeFmt( "(%.3f,%.3f,%.3f)", self.r, self.g, self.b)
-        #    return safeFmt( "(%.3f,%.3f,%.3f)", self.r, self.g, self.b)
-
-    def __str__(self):
-        return safeFmt( "(%.3f,%.3f,%.3f)", self.r, self.g, self.b)
-    #Point = namedtuple('Point', ['x', 'y'])
-        
-    __colorRegex = re.compile( r"^#([0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])$" )
-    __hexVal = { '0':0, '1':1, '2':2, '3':3, '4':4, '5':5, '6':6, '7':7,
-                 '8':8, '9':9, 'A':10, 'B':11, 'C':12, 'D':13, 'E':14, 'F':15,
-                 'a':10, 'b':11, 'c':12, 'd':13, 'e':14, 'f':15 }
-    
-    @staticmethod
-    def lookupColor( color:str ):
-        #try:
-        #    return getattr(Colors,color)
-        #except (NameError,AttributeError): pass
-        if True:
-
-            if color.startswith("#") and len(color) == 7:
-                if True:
-                    hexInt = int(color[1:], 16)
-                    return RGB.fromNeoPixelRGBInt( hexInt ) # type: ignore
-
-                    r = (hexInt >> 16) & 0xFF
-                    g = (hexInt >> 8) & 0xFF
-                    b = hexInt & 0xFF
-                else:
-                    r = RGB.__hexVal[color[1]]*16 + RGB.__hexVal[color[2]]
-                    g = RGB.__hexVal[color[3]]*16 + RGB.__hexVal[color[4]]
-                    b = RGB.__hexVal[color[5]]*16 + RGB.__hexVal[color[6]]
-
-                return RGB(r/255.0,g/255.0,b/255.0)
-        else:
-            m = RGB.__colorRegex.match( color )
-            if m:
-                hexColor = m.group(1)
-                rv = RGB.fromNeoPixelRGBInt( int(hexColor, 16) ) # type: ignore
-                return rv
-
-            
-        rv = getattr(Colors,color,None)
-        if rv is not None:
-            return rv 
-
-        raise KeyError( safeFmt("unknown color %r",color) )
-        
-    @staticmethod
-    def toRGB( value:AnyRGBValue )->RGB:
-
-        #convertor = Colors.Convertors.get(type(value).__name__,None)
-        return RGB.Convertors(value)
-        
-    #########################################################################
-    Convertors:ClassVar[Convertor[AnyRGBValue,RGB]] 
-    Convertors = Convertor()
+#############################################################################
 
 class Colors:
     BLACK = RGB("#000000")
@@ -261,8 +336,34 @@ def intToRGB( v:int ) -> RGB: return RGB.fromNeoPixelRGBInt( v ) # pyright: igno
 @RGB.Convertors.defineRegisterConvertor( str )
 def strToRGB( v:str ) -> RGB: return RGB.lookupColor( v )
 
-_sayLightsRGBImport.complete(globals())
+# pyright: reportRedeclaration=false, reportPrivateUsage=false
+#############################################################################
+
+@RGB.Setters.defineRegisterSetter( tuple )
+def _( v:tuple[float,float,float], target:RGB ) -> None:
+    assert len(v) == 3
+    target._set_r_g_b( v[0], v[1], v[2] )
+
+@RGB.Setters.defineRegisterSetter( list )
+def _( v:list[float], target:RGB ) -> None:
+    assert len(v) == 3
+    target._set_r_g_b( v[0], v[1], v[2] )
+
+@RGB.Setters.defineRegisterSetter( RGB )
+def _( v:RGB, target:RGB ) -> None:
+    target._set_RGB(v)
+
+@RGB.Setters.defineRegisterSetter( int )
+def _( v:int, target:RGB ) -> None:
+    target.setFromNeoPixelRGBInt(int)
+
+@RGB.Setters.defineRegisterSetter( str )
+def _( v:str, target:RGB ) -> None:
+    target.setToColorString(v)
+
 
 __all__ = [
     'RGB', 'Colors', 'RGBChannel', 'RGBTuple', 'NeoPixelRGBInt', 'AnyRGBValue',
 ]
+
+__profileImport.complete()

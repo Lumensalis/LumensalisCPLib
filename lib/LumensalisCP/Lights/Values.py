@@ -52,7 +52,7 @@ class LightValueRGB(RGB, LightValueBase ):
         
     def setLight(self, value:AnyRGBValue) -> None:
         v = RGB.toRGB( value )
-        self._set( *v.rgbTuple() ) # pyright: ignore[reportPrivateUsage]
+        self._set_r_g_b( *v.rgbTuple() ) # pyright: ignore[reportPrivateUsage]
 
     @staticmethod
     def randomRGB( brightness:ZeroToOne=1) -> RGB:

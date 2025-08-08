@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import neopixel 
 
+#import adafruit_fancyled
+
 import microcontroller
 
 from LumensalisCP.Lights._common import *
