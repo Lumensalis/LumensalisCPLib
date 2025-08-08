@@ -36,32 +36,38 @@ import supervisor
 
 from LumensalisCP.util.CountedInstance import CountedInstance
 from LumensalisCP.Temporal.Time import getOffsetNow, TimeInSeconds
+from  LumensalisCP.Main import PreMainConfigRL as _pmc_rl
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
 
 
 class _MLCAnnotation(CountedInstance):
-    def __init__(self, message:str, *args:Any, **kwds:Any) -> None:
+    def __init__(self, message:str, *args:Any, prefix:Optional[str]=None, **kwds:Any) -> None:
         super().__init__()
+        self.msecSinceStart = pmc_mainLoopControl.getMsSinceStart()
         self.message = message
+        if len(kwds) > 0:
+            self.kwds = kwds
+        if prefix is not None:
+            self.prefix = prefix
+    
         if len(args) > 0:
             try:
                 self.message = message % args
             except : 
                 self.message = self.message + " (could not format args)"
-                
-        self.kwds = kwds
-        self.msecSinceStart = pmc_mainLoopControl.getMsSinceStart()
-        if len(kwds) > 0:
-            self.kwds = kwds
 
+    @property
+    def when(self) -> float:
+        return self.msecSinceStart / 1000.0
+    
     def elapsedMs(self, prior:_MLCAnnotation) -> int:
         return prior.msecSinceStart - self.msecSinceStart
 
     def __repr__(self) -> str:
-        return f"STARTUP @ {self.msecSinceStart/1000.0:0.3f}ms) : {self.message}"
-
+        return _pmc_rl._MLCAnnotation__repr__(self)
+        
 
 class _MainLoopControl(object):
     __started:int
@@ -86,6 +92,12 @@ class _MainLoopControl(object):
             self.__started = now
         return now - self.__started
 
+    def _sayMain(self, desc:str, *args:Any, **kwds:Any) -> _MLCAnnotation:
+        annotation = _MLCAnnotation( desc, *args, **kwds ) 
+        self.annotations.append( annotation )
+        print( annotation )
+        return annotation
+
     def sayAtStartup(self, desc:str, *args:Any, **kwds:Any) -> _MLCAnnotation:
         annotation = _MLCAnnotation( desc, *args, **kwds ) 
         self.annotations.append( annotation )
@@ -99,7 +111,8 @@ class _MainLoopControl(object):
             print( annotation )
         return annotation
 
-        
+pmc_mainLoopControl = _MainLoopControl()
+
 class GCManager(object):
     main:MainManager # type: ignore   # pylint: disable=no-member 
     
@@ -117,12 +130,12 @@ class GCManager(object):
         self.priorMs = 0
         self.prior_mem_alloc = 0
         self.prior_mem_free = 0
-        self.prior_collect_period = None
+        self.prior_collect_period:float|None = None
         #self.main: = None
         
         self.min_delta_free = 32768
-        self.__absoluteMinimumThreshold:int = 256000
-        self.__actualFreeThreshold:int = 256000
+        self.__absoluteMinimumThreshold:int = 512000
+        self.__actualFreeThreshold:int = 512000
         
         self.freeBuffer = None
         self.targetCollectPeriod:float|None = 0.15
@@ -135,130 +148,33 @@ class GCManager(object):
     def _setMain( self, main:MainManager ):
         self.main = main
     
-    def setFreeThreshold(self, threshold:int ):
-        self.__actualFreeThreshold = max( threshold, self.__absoluteMinimumThreshold )
+    def setFreeThreshold(self, threshold:int ) -> None:
+        _pmc_rl.GCManager_setFreeThreshold(self,threshold)
         
-    def setMinimumThreshold(self, threshold:int ):
-        self.__absoluteMinimumThreshold  = threshold
-        self.__actualFreeThreshold = max( self.__actualFreeThreshold, self.__absoluteMinimumThreshold )
+    def setMinimumThreshold(self, threshold:int ) -> None:
+        _pmc_rl.GCManager_setMinimumThreshold(self,threshold)
+
+    def adjustLowerThreshold(self, reason:str) -> None:
+        _pmc_rl.GCManager_adjustLowerThreshold(self, reason)
+
+    def sayGC( self, message:str) -> None:
+        _pmc_rl.GCManager_sayGC(self, message)
+
 
     def checkAndRunCollection(self,
                       context:Optional[Any]=None,     # [unused-argument] # pylint: disable=unused-argument
                       force:bool = False, 
-                      show:bool = False): 
-
-        now = getOffsetNow()
-        mem_free_before = gc.mem_free()  # pylint: disable=no-member
-        mem_free_beforeelapsed = getOffsetNow() - now
-        if mem_free_before > self.__actualFreeThreshold and not force:
-            # print( f"GC free = {mem_free_before}" )
-            if show:
-                now = getOffsetNow()
-                mem_alloc_before = gc.mem_alloc()  # pylint: disable=no-member
-                mem_alloc_beforeelapsed = getOffsetNow() - now
-                
-                timeBeforeCollect = self.main.getNewNow()
-                cycle = self.main.cycle
-                delta_cycles = max( 1, cycle - self.priorCycle )
-                currentMs = pmc_mainLoopControl.getMsSinceStart()
-                elapsedSincePriorCollectMS = currentMs - self.priorMs
-                delta_alloc = mem_alloc_before - self.prior_mem_alloc 
-                delta_free = mem_free_before - self.prior_mem_free
-                #print( f"cycle {cycle}, {len(main.timers.timers)}")
-                elapsedSeconds = elapsedSincePriorCollectMS/1000.0
-                if self.verboseCollect:
-                    print( f"""GC per cycle = {
-        elapsedSeconds/delta_cycles:0.03f}s, alloc={
-        delta_alloc/delta_cycles:0.1f}, free={
-        delta_free/delta_cycles:0.1f} skipping at {
-        pmc_mainLoopControl.getMsSinceStart()/1000.0:0.3f} / {
-        timeBeforeCollect:0.3f} [{cycle}],  free={
-        mem_free_before} alloc={mem_alloc_before}, since last collect = {
-        elapsedSincePriorCollectMS/1000.0:.3f} [{delta_cycles}] {
-        delta_alloc} alloc, {delta_free} free gc.mem_f/a()={
-        mem_free_beforeelapsed:.3f}/{mem_alloc_beforeelapsed:.3f}"""
-                  )
-
-            return
-        
-        now = getOffsetNow()
-        mem_alloc_before = gc.mem_alloc()  # pylint: disable=no-member
-        mem_alloc_beforeelapsed = getOffsetNow() - now
-        #if self.verboseCollect:
-        #    sayAtStartup( f"{now:.3f} GC collect " )
-        
-        # run collection
-        timeBeforeCollect = self.main.getNewNow()
-        gc.collect()
-        timeAfterCollect = self.main.getNewNow()
-        
-        currentMs = pmc_mainLoopControl.getMsSinceStart()
-        mem_alloc_after = gc.mem_alloc()  # pylint: disable=no-member
-        mem_free_after = gc.mem_free()  # pylint: disable=no-member
-        
-        # calculate elapsed / deltas
-        collectElapsed = timeAfterCollect-timeBeforeCollect
-        
-        elapsedSincePriorCollectMS = currentMs - self.priorMs
-        elapsedSincePriorCollect = elapsedSincePriorCollectMS/1000.0
-
-        cycle = self.main.cycle
-        delta_alloc = mem_alloc_before-mem_alloc_after
-        delta_free = mem_free_before - mem_free_after 
-        delta_cycles = max( 1, cycle - self.priorCycle )
-        collectRatio = collectElapsed / elapsedSincePriorCollect
-        
-        if self.verboseCollect :
-            sayAtStartup( f"GC collect took {collectElapsed:.3f} of {elapsedSincePriorCollect:.3f} at {pmc_mainLoopControl.getMsSinceStart()/1000.0:0.3f} for {delta_cycles} cycles freeing {delta_alloc} ( {delta_alloc/delta_cycles:.1f} per cycle) leaving {mem_alloc_after} used, {mem_free_after} free t={self.__actualFreeThreshold} cr={collectRatio}  gc.mem_f/a()={mem_free_beforeelapsed:.3f}/{mem_alloc_beforeelapsed:.3f}" )
-
-        if self.targetCollectPeriod is not None and collectElapsed > self.targetCollectPeriod:
-            
-
-            newThreshold = self.__actualFreeThreshold
-            reason = "" # pylint: disable=unused-variable # type: ignore
-            if - delta_free < self.min_delta_free:
-                reason, newThreshold = "min_delta_free", mem_free_before - self.min_delta_free
-                
-            elif collectRatio > self.minCollectRatio:
-                reason, newThreshold = "collect_ratio", mem_free_before + delta_free * 0.5
-            #elif collectElapsed > self.prior_collect_period:
-            #    reason, newThreshold = "prior_collect_period", mem_free_after - delta_free / 2 
-            else:
-                reason, newThreshold = "just cuz", newThreshold-1
-                
-            newThreshold = int( max( self.__absoluteMinimumThreshold, newThreshold ) )
-            if  newThreshold != self.__actualFreeThreshold:
-                try:
-                    if self.main.enableDbgOut:
-                        self.main.dbgOut( f"  (threshold changing {newThreshold - self.__actualFreeThreshold } from {self.__actualFreeThreshold} to {newThreshold} for {reason} df={delta_free}, cr={collectRatio})")
-                except: pass # pylint: disable=bare-except
-                
-                self.__actualFreeThreshold = newThreshold
-
-
-        self.priorMs = currentMs
-        self.prior_mem_alloc = mem_alloc_after
-        self.prior_mem_free = mem_free_after
-        self.priorCycle = cycle
-        self.prior_collect_period = collectElapsed
-        
-
-        #print( f"cycle {cycle}, {len(main.timers.timers)}")
-        #print( f"GC collection at {timeBeforeCollect:0.3f} took {timeAfterCollect-timeBeforeCollect:.3f} of {elapsedSincePriorCollectMS/1000.0:.3f} for {delta_cycles} cycles freeing {delta_alloc} ( {delta_alloc/delta_cycles:.1f} per cycle) leaving {mem_alloc_after} used, {mem_free_after} free" )
-
+                      show:bool = False) -> None: 
+        _pmc_rl.GCManager_checkAndRunCollection(self, context,force,show)
 
 assert globals().get('pmc_gcManager',None) is None, "pmc_gcManager already exists, cannot reinitialize"    
 
 pmc_gcManager = GCManager()
-pmc_mainLoopControl = _MainLoopControl()
+
+_pmc_rl._setPMCGlobals( pmc_gcManager, pmc_mainLoopControl )
 
 def printElapsed(desc:str):
-    gcUsed = gc.mem_alloc()  # pylint: disable=no-member
-    gcFree = gc.mem_free() # pylint: disable=no-member
-    print( "%s : %0.3f seconds since start | %r used, %r free | monotonic=%.03f" % 
-          (desc,pmc_mainLoopControl.getMsSinceStart()/1000.0, 
-           gcUsed, gcFree, getOffsetNow()
-           ) )
+    _pmc_rl._printElapsed(pmc_mainLoopControl.getMsSinceStart()/1000.0, desc)
 
 def sayAtStartup(desc:str, **kwds:Any) -> None:
     pmc_mainLoopControl.sayAtStartup(desc,**kwds)

@@ -25,7 +25,8 @@ from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl, 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
 
-def ProjectManager( profile:Optional[bool]=None,
+def ProjectManager( name:Optional[str]=None,
+                        profile:Optional[bool]=None,
                     profileMemory:Optional[bool|int]=None,
                     useWifi:bool = True,
     ) -> MainManager:

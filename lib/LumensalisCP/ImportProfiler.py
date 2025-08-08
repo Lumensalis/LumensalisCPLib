@@ -1,3 +1,36 @@
+# SPDX-FileCopyrightText: 2025 James Fowler
+#
+"""
+`LumensalisCP.ImportProfiler`
+====================================================
+
+support tracking/logging/profiling of imports 
+
+Usage:
+```python
+# start of module
+
+# before any other imports...
+from LumensalisCP.ImportProfiler import getImportProfiler
+__profileImport = getImportProfiler( __name__, globals() )
+
+##############
+# imports, etc...
+
+__profileImport.parsing()  # mark the start of parsing
+
+
+####################
+# classes, functions, etc...
+# ...
+# __all__ = [ ... ]
+
+__profileImport.complete()  # last line - end of module
+
+```
+
+"""
+
 ############################################################################
 from __future__ import annotations
 
@@ -14,11 +47,17 @@ from LumensalisCP.util.CountedInstance import CountedInstance
 
 class ImportProfiler(CountedInstance):
     """ A simple profiler for imports, to help identify slow imports """
+
+
     SHOW_IMPORTS:ClassVar[bool] = False
+    """ If True, will print import profiling messages to the console.
+    """
+
     RECORD_IMPORTS:ClassVar[bool|None] = True
+    """ If false, disables import tracking (and reduces the overhead to __almost__ zero)
+    """
+
     _importIndex:ClassVar[int] = 0
-
-
     NESTING:ClassVar[list[ActualImportProfiler]] = []
     IMPORTS:ClassVar[list[ActualImportProfiler]] = []
 
@@ -116,10 +155,18 @@ class ActualImportProfiler(ImportProfiler):
             sayAtStartup( f"IMPORT {self.path} | {self.name} : {desc}", importProfiler=self )
 
     def parsing(self) -> None:
+        """ call to indicate the start of parsing """
         self.startParsing = getOffsetNow()
         self( "parsing" )
 
     def complete(self, moduleGlobals:Optional[dict[str,Any]]=None) -> None:
+        """ call at the end of the module
+         
+        `moduleGlobals` is optional, but must be provided to complete() if it was 
+        not provided in the `getImportProfiler(...)` call
+
+        :param moduleGlobals: the globals dictionary for the module being imported (if name provided)
+        """
 
         end = ImportProfiler.NESTING.pop()
         assert end is self, f"ImportProfiler nesting mismatch: {end.name} != {self.name}"
@@ -162,7 +209,16 @@ def getReloadableImportProfiler(name:Optional[str|dict[str,Any]]=None, moduleGlo
 
 
 def getImportProfiler(name:Optional[str|dict[str,Any]]=None, moduleGlobals:Optional[dict[str,Any]]=None,reloadable:bool=False) -> ImportProfiler:
-    """ returns an import profiler for the given name """
+    """  returns an import profiler for the given name 
+    
+    .. code-block:: python
+        __profileImport = getImportProfiler( __name__, globals() )
+    
+    :param name: the name of the module being imported, or a dict containing the module globals
+    :param moduleGlobals: the globals dictionary for the module being imported (if name provided)
+    :param reloadable: if True, indicates that this module may be reloaded
+    """
+
     if reloadable:
         return getReloadableImportProfiler(name, moduleGlobals=moduleGlobals)
     if ImportProfiler.RECORD_IMPORTS is True or ImportProfiler.SHOW_IMPORTS is True:
