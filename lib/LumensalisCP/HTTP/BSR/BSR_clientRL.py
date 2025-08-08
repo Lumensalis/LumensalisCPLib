@@ -5,6 +5,7 @@ from LumensalisCP.ImportProfiler import getReloadableImportProfiler
 __sayHTTPControlVarsRLImport = getReloadableImportProfiler( __name__, globals() )
 
 #############################################################################
+# pyright: reportPrivateUsage=false, reportUnusedImport=false
 
 from LumensalisCP.HTTP.BSR.common import *
 from LumensalisCP.Main.Panel import PanelControl, PanelMonitor
@@ -42,7 +43,7 @@ def BSR_client(self:BasicServer, request: Request):
 
 class PanelControlInstanceHelper(CountedInstance):
     
-    kindMatch:type
+    kindMatch:type|None
 
     def __init__(self, panelInstance:PanelControl[Any,Any]|PanelMonitor[Any]):
         super().__init__()
@@ -143,7 +144,7 @@ class IntPanelControlInstanceHelper(EditCapablePanelControlInstanceHelper):
         assert isinstance(high, int)
         span = high - low
         assert span > 0, f"span must be positive, got {span} for {self.panelInstance.name} ({type(self.panelInstance)})"
-
+        assert isinstance( self.panelInstance, PanelControl)
         return f'<input id="{self.nameId}_edit" type="range" min="{low}" max="{high}" value="{self.panelInstance.controlValue}"/>'
 
 
@@ -161,7 +162,7 @@ class FloatPanelControlInstanceHelper(EditCapablePanelControlInstanceHelper):
         assert isinstance(low, (int, float)), f"low must be int or float, got {type(low)}"
         assert isinstance(high, (int, float)), f"high must be int or float, got {type(high)}"
         span = high - low
-
+        assert isinstance( self.panelInstance, PanelControl)
         return f'<input id="{self.nameId}_edit" type="range" min="{low}" max="{high}" value="{self.panelInstance.controlValue}" step="{span/100}"/>'
 
 
@@ -324,7 +325,7 @@ class PanelParts(CountedInstance):
 
         for s in self._yieldHtml():
             x +=1
-            if s is None:
+            if s is None: # type: ignore
                 yield "NONE"
                 continue
             assert isinstance(s, str), f"cannot yield ({type(s)}) : {repr(s)} at {x}, prior={prior}"

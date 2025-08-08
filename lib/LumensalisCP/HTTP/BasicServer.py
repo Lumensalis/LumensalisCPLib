@@ -192,6 +192,8 @@ class BasicServer(Server,MainAsyncChild):
         self.start(address) 
         self.startupOut( "started server on %r", address )
 
+        pmc_gcManager.adjustLowerThreshold( "WebServerStarted" )
+
     async def runAsyncSingleLoop(self, when:TimeInSeconds) -> None:
         try:
             self._asyncStep += 1

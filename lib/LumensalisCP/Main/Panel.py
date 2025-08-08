@@ -228,7 +228,9 @@ class ControlPanel( MainChild ):
     #########################################################################
     def addZeroToOne( self, **kwds:Unpack[CVT_KWDS[float,ZeroToOne]] ) -> PanelControl[float,ZeroToOne]:
         """ add control for a value between 0 and 1, see  http://lumensalis.com/ql/h2PanelControl """
-        return self._addControl(  kind='ZeroToOne',kindMatch=float, convertor=lambda v: float(v), **kwds ) # type: ignore
+        return self._addControl(  kind='ZeroToOne',kindMatch=float,
+                                 convertor=lambda v: float(v), 
+                                min=0.0, max=1.0, **kwds ) # type: ignore
 
     def addRGB( self, **kwds:Unpack[CVT_KWDS[AnyRGBValue, RGB]] ) -> PanelControl[AnyRGBValue,RGB]:
         """ add control for an RGB color value, see  http://lumensalis.com/ql/h2PanelControl """
