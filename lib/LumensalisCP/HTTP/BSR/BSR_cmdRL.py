@@ -12,11 +12,18 @@ from LumensalisCP.Main import ManagerRL
 from LumensalisCP.Main import Manager2RL
 from LumensalisCP.Main import MainAsyncRL
 from LumensalisCP.HTTP import BasicServerRL
+from LumensalisCP.Temporal import RefreshableRL, RefreshableListRL
+
 from LumensalisCP.Main import ProfilerRL
 from LumensalisCP.HTTP.BSR import BSR_profileRL
 from LumensalisCP.HTTP.BSR import BSR_clientRL
 from LumensalisCP.HTTP.BSR import BSR_cmdRL
-_reloadableModules:list[ModuleType] = [ ManagerRL, Manager2RL, MainAsyncRL, ProfilerRL, BSR_profileRL, BSR_clientRL, BasicServerRL, BSR_cmdRL ]
+_reloadableModules:list[ModuleType] = [ 
+    ManagerRL, Manager2RL, MainAsyncRL, 
+    RefreshableRL, RefreshableListRL,
+    ProfilerRL, BSR_profileRL, BSR_clientRL,  BSR_cmdRL,
+     BasicServerRL,
+       ]
 
 def _reloadAll(self:BasicServer ) -> list[Any]:
 
@@ -26,10 +33,10 @@ def _reloadAll(self:BasicServer ) -> list[Any]:
     return _reloadableModules
 
 def _reload(self:BasicServer, module:str ) -> Any:
-    for module in _reloadableModules:
-        if module.__name__.endswith(module):
-            reload( module )
-            return module
+    for realModule in _reloadableModules:
+        if realModule.__name__.endswith(module):
+            reload( realModule )
+            return realModule
 
     raise ValueError(f"Module {module} not found in reloadable modules.")
 

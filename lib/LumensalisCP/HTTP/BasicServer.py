@@ -36,6 +36,7 @@ class BasicServer(Server,MainAsyncChild):
     def __init__( self, **kwds:Unpack[MainAsyncChild.KWDS] ) -> None:
 
         kwds.setdefault('name', 'LCPFWebServer')
+        kwds.setdefault('loopSleepDuration', 20)
         MainAsyncChild.__init__(self, **kwds )
         assert self.main is not None
         main = self.main 
