@@ -25,8 +25,8 @@ class ReloadingMethodStub():
 _rmStub = ReloadingMethodStub( lambda: None)
 
 def reloadingMethod(func:Callable[...,Any] ) -> Callable[...,Any]:
-    return _rmStub
-    # return ReloadingMethodStub(func)
+    #return _rmStub
+    return ReloadingMethodStub(func)
 
 #############################################################################
 
@@ -123,19 +123,20 @@ def reloadableClassMeta(name:str,
 
 # pyright: reportPrivateUsage=false
 
-def addReloadableClass(cls:type, modules:Optional[Any]=None ) -> type : # type: ignore
+def addReloadableClass(cls:type, modules:Optional[Any]=None, checkMethods:bool=True ) -> type : # type: ignore
 
     assert isinstance(cls, type), f"Expected a class, got {cls}"
     name = f"{cls.__module__}.{cls.__name__}"
     meta = reloadableClassMeta(name)
     meta.setClass(cls)
-    for method_name, method in cls.__dict__.items():
-        #assert not isinstance(method, ReloadingMethodStub),
-        if method is not _rmStub: continue
+    if checkMethods:
+        for method_name, method in cls.__dict__.items():
+            #assert not isinstance(method, ReloadingMethodStub),
+            if method is not _rmStub: continue
 
-        assert method is not _rmStub, f"""Method {name}.{method_name} in {meta} has not been given a reloadable implementation ({
-            ",\n   ".join( [ key + ":" + str(val.index) for key, val in ReloadableClassMeta._metaDict.items() ] )
-            })."""
+            assert method is not _rmStub, f"""Method {name}.{method_name} in {meta} has not been given a reloadable implementation ({
+                ",\n   ".join( [ key + ":" + str(val.index) for key, val in ReloadableClassMeta._metaDict.items() ] )
+                })."""
     return cls
 
 def reloadableMethod( meta:ReloadableClassMeta, 
@@ -147,6 +148,16 @@ def reloadableMethod( meta:ReloadableClassMeta,
         return func
     return decorator
 
+_CLASS_T = TypeVar("_CLASS_T", bound=type)
+class ReloadableClass:
+    def __init__(self, modules:Optional[Any]=None, checkMethods:bool=True ) -> None:
+        self.modules = modules
+        self.checkMethods = checkMethods
+
+    def __call__(self, cls:_CLASS_T) -> _CLASS_T:
+        # This method is called with the class being decorated
+        addReloadableClass(cls, self.modules, self.checkMethods)
+        return cls
 
 
 #############################################################################

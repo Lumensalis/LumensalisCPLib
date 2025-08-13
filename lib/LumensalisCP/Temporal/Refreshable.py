@@ -7,7 +7,8 @@ _sayImport = getImportProfiler( __name__, globals() )
 
 from LumensalisCP.common import *
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
-
+from LumensalisCP.util.Reloadable import ReloadableClass, reloadingMethod
+from . import RefreshableRL
 if TYPE_CHECKING:
     from  LumensalisCP.Eval.Expressions import EvaluationContext
     from LumensalisCP.Triggers.Invocable import Invocable, InvocableOrContextCB
@@ -15,15 +16,18 @@ if TYPE_CHECKING:
 #############################################################################
 
 if TYPE_CHECKING:
+    from LumensalisCP.Temporal.RefreshableList import RefreshableListImplementation
+
     class RefreshableInterface(IDebuggable):
         @property
         def nextRefresh(self) -> TimeInSeconds|None: raise NotImplementedError
 
-        def refreshableCalculateNextRefresh(self, context:'EvaluationContext', when:TimeInSeconds) -> TimeInSeconds|None: raise NotImplementedError
-        def setNextRefresh( self, context:'EvaluationContext', when:TimeInSeconds ) -> None: raise NotImplementedError
+        def refreshableCalculateNextRefresh(self, context:'EvaluationContext', when:TimeInSeconds) -> TimeInSeconds|None: ...
+        def setNextRefresh( self, context:'EvaluationContext', when:TimeInSeconds|None ) -> None: ...
         def refreshRateChanged(self,context:'EvaluationContext') -> None: ...
         
-        __refreshList:RefreshableListInterface
+        __refreshList:RefreshableListInterface|None
+
 else:
     class RefreshableInterface: ...
 
@@ -31,38 +35,42 @@ else:
 
 if TYPE_CHECKING:
     class RefreshableListInterface( IDebuggable ):
-        class KWDS(NamedLocalIdentifiable.KWDS  ):
-            pass
 
-        def add( self,  context:EvaluationContext, item:RefreshableInterface|Refreshable, nextRefresh:Optional[TimeInSeconds]=None ) -> None:
+
+        def add( self,  context:EvaluationContext, item:Refreshable, nextRefresh:Optional[TimeInSeconds]=None ) -> None:
             raise NotImplementedError( f"{self.__class__.__name__}.add not implemented" )
 
-        def remove( self,  context:EvaluationContext, item:RefreshableInterface|Refreshable ) -> None:
+        def remove( self,  context:EvaluationContext, item:Refreshable ) -> None:
             raise NotImplementedError( f"{self.__class__.__name__}.remove not implemented" )
 
-        def markDirty( self, context:EvaluationContext, item:RefreshableInterface|Refreshable ) -> None:
+        def markDirty( self, context:EvaluationContext, item:Refreshable ) -> None:
             raise NotImplementedError( f"{self.__class__.__name__}.markDirty not implemented" )
         
-        def nextRefreshChanged( self, context:EvaluationContext, item:RefreshableInterface|Refreshable ) -> None:
+        def nextRefreshChanged( self, context:EvaluationContext, item:Refreshable ) -> None:
             raise NotImplementedError( f"{self.__class__.__name__}.markDirty not implemented" )
         
         
         def process( self, context:EvaluationContext, when:TimeInSeconds ) -> None:
-                raise NotImplementedError( f"{self.__class__.__name__}.markDirty not implemented" )
+            raise NotImplementedError( f"{self.__class__.__name__}.markDirty not implemented" )
+        
+        def cleanup( self, context:EvaluationContext, when:TimeInSeconds) -> None:
+            raise NotImplementedError( f"{self.__class__.__name__}.cleanup not implemented" )
 else:
     class RefreshableListInterface: ...
     
 #############################################################################
 
+@ReloadableClass([RefreshableRL])
 class Refreshable( RefreshableInterface, IDebuggable ):
     RFD_autoRefresh:ClassVar[bool] = False
 
     class KWDS(TypedDict):
         autoRefresh:NotRequired[bool]
-        mixinKwds:NotRequired[StrAnyDict|Any]
+        mixinKwds:NotRequired[StrAnyDict]
 
-    def __init__(self, autoRefresh:Optional[bool]=None, mixinKwds:Optional[StrAnyDict|Any]=None ) -> None:
-        self.__refreshList:Optional[RefreshableListInterface] = None
+    def __init__(self, autoRefresh:Optional[bool]=None, mixinKwds:Optional[StrAnyDict]=None ) -> None:
+
+        self.__refreshList:RefreshableListImplementation|None = None
         self.__nextRefresh:TimeInSeconds|None = None
         self.__refreshCount = 0
         self.__exceptionCount = 0
@@ -72,74 +80,75 @@ class Refreshable( RefreshableInterface, IDebuggable ):
         self.__latestRefreshComplete:TimeInSeconds|None = None
 
 
-        self.__autoRefresh:bool = self.RFD_autoRefresh if autoRefresh is None else autoRefresh
         if mixinKwds is not None:
             assert isinstance(mixinKwds, dict), "Mixin keywords must be a dictionary"
-            self._mixins_init(mixinKwds) # type: ignore[call-arg]
+            if autoRefresh is None: 
+                autoRefresh:bool = mixinKwds.pop('autoRefresh', self.RFD_autoRefresh)
 
+            self._mixins_init(mixinKwds) # type: ignore[call-arg]
+        else:
+            if autoRefresh is None:
+                autoRefresh = self.RFD_autoRefresh
+            
+        self.__autoRefresh:bool = autoRefresh
+
+    @property
+    def refreshCount(self) -> int:
+        return self.__refreshCount
+
+    @property
+    def exceptionCount(self) -> int:
+        return self.__exceptionCount
+
+    @reloadingMethod
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({getattr(self, 'name',self.dbgName)}, nextRefresh={self.__nextRefresh}, refreshCount={self.__refreshCount}, latestRefresh={self.__latestRefresh})"
+        return f"{self.__class__.__name__}({getattr(self, 'name',self.dbgName)}, nextRefresh={self.nextRefresh}, refreshCount={self.__refreshCount}, latestRefresh={self.__latestRefresh})"
     #def refreshableCalculateNextRefresh(self, context:'EvaluationContext', when:TimeInSeconds) -> TimeInSeconds|None:
     #    """ Calculate the next refresh time based on the current time and the refresh rate.
     #    """
     #    raise NotImplementedError
 
     @final
-    def _refresh( self, context:EvaluationContext, when:TimeInSeconds ) -> bool:
-        assert self.__nextRefresh is not None
-        if when >= self.__nextRefresh:
-            assert self.__refreshList is not None
-            self.__priorRefresh = self.__latestRefresh
-            self.__latestRefresh = when
-            self.__refreshCount += 1
-            self.__nextRefresh = None
-            self.__refreshList.markDirty(context, self)
-            refreshList = self.__refreshList
-            try:
-                self.derivedRefresh(context)
-            except Exception as inst:
-                refreshList.SHOW_EXCEPTION( inst, "derivedRefresh exception on %s", self )
-                self.__latestException = inst
-                self.__exceptionCount += 1
-            now = context.newNow
-            self.__latestRefreshComplete = now 
-            if  self.__nextRefresh is None:
-                assert self.__refreshList is refreshList
-                if self.__autoRefresh:
-                    nextRefresh = self.refreshableCalculateNextRefresh( context, now)
-                    if self.enableDbgOut: self.dbgOut( "autoRefresh : %s", nextRefresh )
-                    if nextRefresh is not None:
-                        assert nextRefresh > now
-                        self.__nextRefresh = nextRefresh
-                        self.__refreshList.nextRefreshChanged(context, self)
-
-            if  self.__nextRefresh is None:
-                refreshList.remove(context, self)
-                
-            return True # was processed
-        
-        assert self.__refreshList is not None
-        return False
+    @reloadingMethod
+    def _refresh( self, context:EvaluationContext, when:TimeInSeconds ) -> bool: ...
+  
+    @property
+    def nextRefresh(self) -> TimeInSeconds|None: 
+        return self.__nextRefresh
     
     @property
-    def nextRefresh(self) -> TimeInSeconds|None: return self.__nextRefresh
+    def priorRefresh(self) -> TimeInSeconds|None: 
+        return self.__priorRefresh
+    
     @property
-    def priorRefresh(self) -> TimeInSeconds|None: return self.__priorRefresh
+    def latestRefresh(self) -> TimeInSeconds|None: 
+        return self.__latestRefresh
+    
     @property
-    def latestRefresh(self) -> TimeInSeconds|None: return self.__latestRefresh
+    def latestRefreshComplete(self) -> TimeInSeconds|None:
+        return self.__latestRefreshComplete
+    
     @property
-    def latestRefreshComplete(self) -> TimeInSeconds|None: return self.__latestRefreshComplete
+    def refreshList(self) -> RefreshableListImplementation|None:
+        return self.__refreshList
 
-    def setNextRefresh( self, context:'EvaluationContext', when:TimeInSeconds ) -> None:
-        self.__nextRefresh = when
-        if self.__refreshList is not None:
-            self.__refreshList.markDirty(context, self)
+    @reloadingMethod
+    def setNextRefresh( self, context:'EvaluationContext', when:TimeInSeconds|None ) -> None: ...
+
+    @reloadingMethod
+    def _clearNextRefresh( self, context:'EvaluationContext' ) -> None: ...
+
+    @reloadingMethod
+    def _setRefreshList( self, context:'EvaluationContext', rl:RefreshableListImplementation ) -> None: ...
 
     def derivedRefresh(self,context:'EvaluationContext') -> None:
         raise NotImplementedError( f"{self.__class__.__name__}.derivedRefresh not implemented")
 
     def refreshRateChanged(self,context:'EvaluationContext') -> None:
         pass
+
+    def refreshableCalculateNextRefresh(self, context:'EvaluationContext', when:TimeInSeconds) -> TimeInSeconds|None:
+        return None
 
     def __mixins_init_base(self, cls:type, kwargs:StrAnyDict):
         if cls.__dict__.get( '_mixin_init',None) is not None:
@@ -186,8 +195,14 @@ class RfMxnPeriodic(RfMxn):
         """ Calculate the next refresh time based on the current time and the refresh rate.
         """
         if callable(self.__refreshRate):
-            return when + self.__refreshRate() # type: ignore[return-value]    
-        return when + self.__refreshRate # type: ignore[return-value]
+            rr = self.__refreshRate()  # type: ignore[call-arg]
+        else:
+            rr = self.__refreshRate
+        rv = TimeInSeconds(rr + when)
+        if self.enableDbgOut:
+            self.dbgOut( "refreshableCalculateNextRefresh %.3f + %.3f = %.3f", when, rr, rv)
+            
+        return rv 
 
 #############################################################################
 
@@ -197,6 +212,7 @@ class RfMxnActivatable(RfMxn):
 
     def _mixin_init(self,kwargs:StrAnyDict) -> None:
         self.__autoList:RefreshableListInterface|None =  kwargs.pop('autoList', None)
+        #assert self.__autoList is not None, f"{self.__class__.__name__} requires an autoList"
         self.__refreshIsActive:bool = False
 
     @property
@@ -206,6 +222,7 @@ class RfMxnActivatable(RfMxn):
     
     @property
     def isActiveRefreshable(self) -> bool:
+
         return self.__refreshIsActive
     
     def activate( self, context:Optional[EvaluationContext]=None, nextRefresh:Optional[TimeInSeconds]=None ) -> None:
@@ -219,10 +236,14 @@ class RfMxnActivatable(RfMxn):
         self.__autoList.add( context, self, nextRefresh=nextRefresh )
         self.__refreshIsActive = True
     
-    def deactivate( self, context:'EvaluationContext' ) -> None:
+    def deactivate( self, context:Optional[EvaluationContext]=None ) -> None:
+        if context is None:
+            context = getCurrentEvaluationContext()
+        if self.enableDbgOut:  self.dbgOut(f"deactivate")
         assert self.__refreshList is not None
         self.__refreshList.remove( context, self )
         self.__refreshIsActive = False
+        self.__refreshList = None
 
 #############################################################################
 
@@ -310,6 +331,22 @@ class RefreshablePrdInvAct( RfMxnInvocable,
         #RfMxnPeriodic._mixin_init(self, kwargs)
         Refreshable.__init__(self, mixinKwds=kwargs)
 
+#############################################################################
+
+class RefreshableNAP( RfMxnActivatable, 
+                RfMxnPeriodic, 
+                RfMxnNamed,
+                Refreshable ):
+
+    RFD_autoRefresh:ClassVar[bool] = True
+    class KWDS(Refreshable.KWDS, 
+               RfMxnNamed.KWDS,
+               RfMxnActivatable.KWDS,
+               RfMxnPeriodic.KWDS):
+        task:NotRequired[Callable[[],None]]
+
+    def __init__(self, **kwds:Unpack[KWDS] ) -> None:
+        Refreshable.__init__(self, mixinKwds=kwds)
 
 #############################################################################
 
@@ -354,6 +391,7 @@ __all__ = [
     'RfMxnActivatablePeriodic',
     'RfMxnInvocable',
     'RfMxnNamed',
+    'RefreshableNAP'
 ]
 
 _sayImport.complete()

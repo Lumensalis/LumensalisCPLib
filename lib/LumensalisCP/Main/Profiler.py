@@ -29,6 +29,8 @@ __sayImport.parsing()
 # pylint: disable=protected-access, pointless-string-statement
 TimePT = TimeInSeconds
 
+NestDict = dict
+
 getProfilerNow:Callable[[],TimePT] = getOffsetNow # type: ignore[reportUnknownVariableType]
 
 def ptToSeconds(v: TimePT|float) -> TimeInSeconds:
@@ -117,7 +119,7 @@ class ProfileWriteConfig(CountedInstance):
         return self.nest( [], tag=tag )
 
     def nestDict( self, tag:Optional[str] = None ) -> Self:
-        return self.nest( OrderedDict(), tag=tag )
+        return self.nest( NestDict(), tag=tag )
 
     def __enter__(self) -> ProfileWriteConfig:
         if self.__makingJson:

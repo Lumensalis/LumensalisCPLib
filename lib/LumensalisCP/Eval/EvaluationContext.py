@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     #from LumensalisCP.Inputs import InputSource
     from LumensalisCP.Eval.ExpressionTerm import ExpressionTerm
     #from LumensalisCP.Inputs import InputSource
-    
+
 
 _sayEvalEvaluationContextImport.parsing()
 

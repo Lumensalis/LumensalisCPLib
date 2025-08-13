@@ -29,7 +29,7 @@ class SceneManager(NamedLocalIdentifiable):
         scene = Scene( **kwds )
         scene.nliSetContainer(self._scenes)
         if self.__currentScene is None:
-            self.__currentScene = scene
+            self.setScene(scene)
         return scene
     
     def run(self, context:EvaluationContext):
@@ -37,7 +37,7 @@ class SceneManager(NamedLocalIdentifiable):
             #self.warnOut( "no current scene active" )
             return
         
-        self.__currentScene.runTasks(context)
+        #self.__currentScene.runTasks(context)
 
     def nliGetContainers(self) -> list[NliContainerMixin[Any]]:
         return [self._scenes]
@@ -49,14 +49,17 @@ class SceneManager(NamedLocalIdentifiable):
     def currentScene(self, scene:Scene|str):  self.setScene(scene)
         
     def setScene(self, scene:Scene|str ):
-        if type(scene) is str:
+        if isinstance(scene, str):
             actualScene = self._scenes.get(scene,None)
             assert actualScene is not None, safeFmt("unknown scene %r", scene )
             scene = actualScene
         
         if scene  != self.__currentScene:
+            if self.__currentScene is not None:
+                self.__currentScene.deactivate()
             if self.enableDbgOut: self.dbgOut( "switching from scene %r to scene %r", self.__currentScene, scene )
             self.__currentScene = scene # type: ignore
+            scene.activate()
             
     def switchToNextIn( self, sceneList:list[str] ):
         matched = False

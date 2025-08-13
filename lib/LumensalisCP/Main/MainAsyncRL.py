@@ -46,21 +46,33 @@ async def runAsyncSingleLoop(self:MainAsyncLoop, when:TimeInSeconds) -> None:
     if self.loopMode == 99: return
     try:
         main = self.main
+        
         now = self.innerTracker.start()
         
         self._step += 1
+        if self.enableDbgOut:self.infoOut( "runAsyncSingleLoop @%.3f step=%d loopMode=%d", now, self._step, self.loopMode)
         if self.loopMode < 5:
             with main.getNextFrame(now): #  as activeFrame:
                 context = main._privateCurrentContext
-                if self.loopMode < 3:
-                    if self._step == 1:
-                        main._refreshables.process(context, context.when)
-                    elif self._step == 2:
+                if True:
+                    main._refreshables.process(context, context.when)
+                    if main._timers is not None:
                         main._timers.update( context )
-                    elif self._step == 3:
+                    if main._scenes is not None:
                         main._scenes.run(context)
-                    else:
-                        self._step = 0
+                
+                else:
+                    if self.loopMode < 3:
+                        if self._step == 1:
+                            main._refreshables.process(context, context.when)
+                        elif self._step == 2:
+                            if main._timers is not None:
+                                main._timers.update( context )
+                        elif self._step == 3:
+                            if main._scenes is not None:
+                                main._scenes.run(context)
+                        else:
+                            self._step = 0
 
         if self.loopMode < 10:
             self.cycle += 1

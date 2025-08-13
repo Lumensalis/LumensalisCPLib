@@ -1,138 +1,168 @@
 from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayImport = getImportProfiler( __name__, globals() )
 
+# pyright: reportPrivateUsage=false,reportUnusedImport=false
 
-from LumensalisCP.Temporal.Refreshable import Refreshable, RefreshableListInterface
+from LumensalisCP.Temporal.Refreshable import Refreshable, \
+    RefreshableListInterface, RfMxnActivatable, RfMxnPeriodic
+
+from LumensalisCP.Temporal import RefreshableListRL
 
 from LumensalisCP.common import *
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
+from LumensalisCP.util.Reloadable import ReloadableClass, reloadingMethod
 
-# pyright: reportPrivateUsage=false
 
 if TYPE_CHECKING:
     from  LumensalisCP.Eval.Expressions import EvaluationContext
 
 #############################################################################
 
-def _refreshableSortKey(item:Refreshable) -> TimeInSeconds:
-    return item.__nextRefresh or 9999999999999.9 # type: ignore[return-value]
+@ReloadableClass([RefreshableListRL])
+class RefreshableListImplementation(RefreshableListInterface ):
 
-class RefreshableListImplementation( NamedLocalIdentifiable, RefreshableListInterface ):
-    
-    class KWDS(NamedLocalIdentifiable.KWDS):
-        maxLen: NotRequired[int]
-
-    def __init__(self, maxLen:int=100, **kwds:Unpack[RefreshableListInterface.KWDS] ) -> None:
-        super().__init__(**kwds)
-        self._dirtyCount = 0
-        self._sortCount = 0
-        #self._refreshables:deque[Refreshable] = deque(maxlen=maxLen,flag=True)
-        self._refreshables:list[Refreshable] = []
-        
-
-        self._nextListRefresh:TimeInSeconds|None = None
-
-    def process( self, context:EvaluationContext, when:TimeInSeconds ) -> None:
-        if len(self._refreshables) == 0: return 
-        if self._dirtyCount > 0:
-            if self.enableDbgOut: self.dbgOut( "sorting, dirtyCount = %d", self._dirtyCount )
-            self._sort()
-        
-        top = self._refreshables[0]
-        assert top.__nextRefresh is not None, f"Top item {top} has no next refresh time"
-        if top.__nextRefresh < when:
-            top._refresh(context, when)
-    
-    def add( self, context:EvaluationContext, item:Refreshable, nextRefresh:Optional[TimeInSeconds]=None ) -> None:
-        if item.__refreshList is not None:
-            raise ValueError( f"Item {item} already in a refresh list {item.__refreshList}" )
-        
-        if nextRefresh is None:
-            nextRefresh = item.refreshableCalculateNextRefresh(context, context.when)
-            assert nextRefresh is not None, f"Refreshable {item} did not calculate a next refresh time"
-        
-        # call BEFORE setting item.__refreshList
-        item.setNextRefresh(context, nextRefresh)
-        item.__refreshList = self
-
-
-        if self._nextListRefresh is None:
-            # adding to an empty list
-            assert len(self._refreshables) == 0, "Adding to an empty list but list is not empty"
-            self._refreshables.append(item)
-            self._setNextListRefreshChanged(nextRefresh)
-
-        elif nextRefresh < self._nextListRefresh:
-            # adding to the front of the list
-            self._refreshables.insert(0, item)  # insert at the front
-            self._setNextListRefreshChanged(nextRefresh)
-        else:
-
-            assert self._refreshables[-1].__nextRefresh is not None
-            if nextRefresh >= self._refreshables[-1].__nextRefresh: # type: ignore[reportAttributeAccessIssue]
-                # adding to the end of the list
-                self._refreshables.append(item)
-            else:
-                # adding somewhere in the middle, mark dirty
-                self._refreshables.append(item)
-                self.markDirty(context, item)
-
-    def _setNextListRefreshChanged(self,nextRefresh:Optional[TimeInSeconds]=None) -> None:
-        """ Called when the next refresh time for the list changes. """
-        self._nextListRefresh = nextRefresh
-
-    def remove( self,  context:EvaluationContext, item:Refreshable ) -> None:
-        assert len(self._refreshables) > 0, "Cannot remove from empty refresh list"
-        assert item.__refreshList is self, f"Item {item} is in a different refresh list {item.__refreshList}"
-
-        # remove should not change the sort order, so we don't need
-        # to mark dirty...
-        
-        if self._refreshables[0] is item:
-            # removing from the front of the list
-            self._refreshables.pop(0)
-            if len(self._refreshables) > 0:
-                nextListRefresh = self._refreshables[0].__nextRefresh
-                self._setNextListRefreshChanged(nextListRefresh)
-        else:
-            self._refreshables.remove(item)
-            item.__refreshList = None
-
-    def nextRefreshChanged( self, context:EvaluationContext, item:Refreshable ) -> None:
-        if len(self._refreshables) == 1:
-            assert self._refreshables[0] is item, f"Next refresh changed but only one item in list {self._refreshables[0]} is not {item}"
-            self._setNextListRefreshChanged(item.nextRefresh)
-            return 
+    class KWDS(TypedDict):
         pass
 
-    def markDirty( self, context:EvaluationContext, item:Refreshable|None ) -> None:
-        self._dirtyCount += 1
-
-    def _sort(self) -> None:
-        self._refreshables.sort(key=_refreshableSortKey)
+    def __init__(self, **kwds:Unpack[KWDS]) -> None:
+        super().__init__()#**kwds)
         self._dirtyCount = 0
-        self._sortCount += 1
+        self._sortCount = 0
+        self.__processCount = 0
+        self.__extraCount = 0
+        self._refreshables:list[Refreshable] = []
+        self._nextListRefresh:TimeInSeconds|None = None
+
+    def __len__(self) -> int:
+        return len(self._refreshables)
+    
+    def __iter__(self) -> Iterator[Refreshable]:
+        return iter(self._refreshables)
+    
+    @reloadingMethod
+    def __processOne( self, context:EvaluationContext, when:TimeInSeconds, item:Refreshable, index:int ) -> None:  ...
+    
+
+    def __assertSorted(self) -> None:
+        refreshForSortedTest = 0
+        for item in self._refreshables:
+            assert item.nextRefresh is not None
+            assert item.nextRefresh >=  refreshForSortedTest
+            refreshForSortedTest = item.nextRefresh
+
+    def processFinishedDirty( self, context:EvaluationContext ) -> None:
+        if self.enableDbgOut: self.dbgOut( "processFinishedDirty, dirtyCount = %d", self._dirtyCount )
+
+    @property
+    def processCount(self) -> int:
+        return self.__processCount
+
+    @reloadingMethod
+    def process( self, context:EvaluationContext, when:TimeInSeconds ) -> None: ...
+
+    def addActive( self, context:EvaluationContext, item:Refreshable, 
+                  nextRefresh:Optional[TimeInSeconds]=None ) -> None: ...
+
+    def add( self, context:EvaluationContext, item:Refreshable, nextRefresh:Optional[TimeInSeconds]=None ) -> None: ...
+    
+    def _setNextListRefreshChanged(self,context:EvaluationContext,nextRefresh:Optional[TimeInSeconds]=None) -> None: ...
+
+    def remove( self,  context:EvaluationContext, item:Refreshable ) -> None: ...
+
+    def nextRefreshChanged( self, context:EvaluationContext, item:Refreshable ) -> None: ...
+
+    def getNextRefreshForList(self, context:EvaluationContext, when:TimeInSeconds) -> TimeInSeconds|None: ...
+
+    def markDirty( self, context:EvaluationContext, item:Refreshable|None ) -> None: ...
+
+    def _sort(self, context:EvaluationContext, when:TimeInSeconds) -> None: ...
 
 #############################################################################
 
-class RootRefreshableList(RefreshableListImplementation):
-    pass
+class RootRefreshableList(RefreshableListImplementation, NamedLocalIdentifiable):
 
-class NestedRefreshableList(RefreshableListImplementation, Refreshable):
-    class KWDS(Refreshable.KWDS,NamedLocalIdentifiable.KWDS):
+    class KWDS(NamedLocalIdentifiable.KWDS, RefreshableListImplementation.KWDS):
         pass
 
-    def __init__(self, parent:RefreshableListInterface, **kwds:Unpack[RefreshableListInterface.KWDS] ):
+    def __init__(self, **kwds:Unpack[KWDS]) -> None:
+        nliKwds = NamedLocalIdentifiable.extractInitArgs(kwds)
+        RefreshableListImplementation.__init__(self, **kwds)
+        NamedLocalIdentifiable.__init__(self, **nliKwds)
 
-        name = kwds.get("name", None)
-        temporaryName = kwds.pop("temporaryName", None)
-        Refreshable().__init__(**kwds)
-        RefreshableListImplementation.__init__(self, name=name, temporaryName=temporaryName)
+
+#############################################################################
+
+class NestedRefreshableList(RefreshableListImplementation,
+                RfMxnActivatable, 
+                Refreshable ):
+    
+    RFD_autoRefresh:ClassVar[bool] = True
+
+    class KWDS(Refreshable.KWDS, RefreshableListImplementation.KWDS,
+               RfMxnActivatable.KWDS):
+        pass
+
+    def __init__(self, parent:RefreshableListInterface, **kwds:Unpack[KWDS] ):
+
+        #name = kwds.get("name", None)
+        #temporaryName = kwds.pop("temporaryName", None)
+        assert parent is not None, "NestedRefreshableList requires a parent RefreshableListInterface"
+        kwds.setdefault('autoList',parent)
+        Refreshable.__init__(self,mixinKwds=kwds)
+        RefreshableListImplementation.__init__(self) #, name=name, temporaryName=temporaryName)
         self.__parent = parent
 
+    def cleanup( self, context:EvaluationContext, when:TimeInSeconds) -> None:
+        if self._dirtyCount > 0:
+            self._sort(context,when)
+    @property
+    def nextRefreshAtTop(self) -> TimeInSeconds|None:
+        if len(self._refreshables) == 0:
+            return None
+        return self._refreshables[0].nextRefresh
+    
+    def _nestedChanged(self, context:EvaluationContext) -> None:
+        if len(self._refreshables) == 0:
+            self.deactivate(context)
+        else:
+             self._dirtyCount += 1
 
-    def derivedRefresh(self,context:'EvaluationContext') -> None:
-        raise NotImplementedError        
+    def _setNextListRefreshChanged(self,context:EvaluationContext,nextRefresh:Optional[TimeInSeconds]=None) -> None:
+        """ Called when the next refresh time for the list changes. """
+        super()._setNextListRefreshChanged(context, nextRefresh )
+
+        self._nestedChanged( context )
+
+    def refreshableCalculateNextRefresh(self, context:EvaluationContext, when:TimeInSeconds) -> TimeInSeconds|None:
+        """ Calculate the next refresh time based on the current time and the refresh rate.
+        """
+        if len(self._refreshables) == 0:
+            return None
+        if self._dirtyCount > 0:
+            self._sort(context,when)
+        return self._refreshables[0].nextRefresh
+
+    def derivedRefresh(self,context:EvaluationContext) -> None:
+        if self._dirtyCount > 0:
+            self._sort(context,context.when)
+        
+        self.process(context, context.when)
+        if self._dirtyCount > 0:
+            if self.refreshList:
+                self.refreshList.markDirty(context,self)
+            
+        
+#############################################################################
+
+class NamedNestedRefreshableList(NestedRefreshableList,NamedLocalIdentifiable):
+    
+    class KWDS(NestedRefreshableList.KWDS,NamedLocalIdentifiable.KWDS):
+        pass
+
+    def __init__(self, parent:RefreshableListInterface, **kwds:Unpack[KWDS] ):
+        nliKwds = NamedLocalIdentifiable.extractInitArgs(kwds)
+        NestedRefreshableList.__init__(self, parent, **kwds)
+        NamedLocalIdentifiable.__init__(self, **nliKwds)
 
 #############################################################################
 

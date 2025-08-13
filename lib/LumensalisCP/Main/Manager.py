@@ -11,32 +11,33 @@ import LumensalisCP.Main.Dependents
 from LumensalisCP.commonPreManager import *
 from LumensalisCP.Main import PreMainConfig
 from LumensalisCP.Main.PreMainConfig import sayAtStartup
-from TerrainTronics.Factory import TerrainTronicsFactory
-from LumensalisCP.Shields.Base import ShieldBase
 
-from LumensalisCP.Main.Panel import ControlPanel
+
 from LumensalisCP.Temporal.Refreshable import Refreshable
 from LumensalisCP.Temporal.RefreshableList import RootRefreshableList
 from LumensalisCP.util.Reloadable import addReloadableClass, reloadingMethod
-
+from LumensalisCP.Main import GetManager 
 from LumensalisCP.Temporal.Refreshable import *
 
-from LumensalisCP.Main import ManagerRL
-from LumensalisCP.Main import Manager2RL
-from LumensalisCP.Main.Async import ManagerAsync
-from LumensalisCP.Main.I2CProvider import I2CProvider
-
+#from LumensalisCP.Main import ManagerRL
+#from LumensalisCP.Main import Manager2RL
+#from LumensalisCP.Main.Async import ManagerAsync
 
 if TYPE_CHECKING:
     from LumensalisCP.Lights.DMXManager import DMXManager
-    import LumensalisCP.Main.Manager
+    from LumensalisCP.Main.Manager import MainManager
     from LumensalisCP.Audio import Audio
     from LumensalisCP.Main.Profiler import Profiler, ProfileFrameBase
     from LumensalisCP.Main.MainAsync import MainAsyncLoop, MainGCLoop
     from LumensalisCP.HTTP.BasicServer import BasicServer
-
-    
-    # from LumensalisCP.Controllers.Config import ControllerConfigArg
+    from TerrainTronics.Factory import TerrainTronicsFactory
+    from LumensalisCP.Shields.Base import ShieldBase
+    from LumensalisCP.Main.I2CProvider import I2CProvider
+    from LumensalisCP.Main.Panel import ControlPanel
+    from LumensalisCP.I2C.Factory import I2CFactory
+    from LumensalisCP.I2C.Adafruit.Factory import AdafruitFactory
+    from LumensalisCP.Main.Async import MainAsyncChild, ManagerAsync
+    from LumensalisCP.Controllers.ConfigurableBase import ConfigurableBase, ControllerConfig
 
 import LumensalisCP.Main.ProfilerRL
 
@@ -47,9 +48,10 @@ LumensalisCP.Main.ProfilerRL._rl_setFixedOverheads() # type: ignore
 def _early_collect(tag:str):
     PreMainConfig.pmc_gcManager.checkAndRunCollection(force=True)
 
-class MainManager(I2CProvider, NamedLocalIdentifiable, ConfigurableBase, ):
+class MainManager( NamedLocalIdentifiable ): #, I2CProvider, ConfigurableBase, ):
     
-    class KWDS(ConfigurableBase.KWDS): # type: ignore
+    #class KWDS(ConfigurableBase.KWDS): # type: ignore
+    class KWDS(NamedLocalIdentifiable.KWDS): # type: ignore        
         pass
 
     theManager : MainManager|None = None
@@ -61,6 +63,9 @@ class MainManager(I2CProvider, NamedLocalIdentifiable, ConfigurableBase, ):
     asyncLoop:MainAsyncLoop
     gcLoop:MainGCLoop
     useWifi:bool
+    configuration:ConfigurableBase
+    config:ControllerConfig 
+    
 
     @staticmethod
     def initOrGetManager() -> "MainManager":
@@ -76,24 +81,15 @@ class MainManager(I2CProvider, NamedLocalIdentifiable, ConfigurableBase, ):
         assert rv is not None
         return rv
 
-    def __init__(self, **kwds:Unpack[ConfigurableBase.KWDS] ) -> None:
+    def __init__(self, unitTesting:bool=False, **kwds:Unpack[KWDS] ) -> None:
         assert MainManager.theManager is None
         MainManager.theManager = self
         NamedLocalIdentifiable.__init__(self,"main")
-        self.__earlyInit()
+        self.unitTesting = unitTesting
+        self.__installManager()
 
-        mainConfigDefaults = dict(
-            TTCP_HOSTNAME = os.getenv("TTCP_HOSTNAME")
-        )
-        kwds.setdefault("defaults", mainConfigDefaults)
-        ConfigurableBase.__init__(self, **kwds ) # type: ignore
-        I2CProvider.__init__( self, config=self.config, main=self )
-  
-        self.__identity = ControllerIdentity(self)
+
         self._when = self.newNow
-        #self.cyclesPerSecond = 100
-        #self.cycleDuration = 0.01
-
         self._webServer:BasicServer|None = None
         self._rrDeferred:RefreshablePrdInvAct|None = None
         self._rrCollect:RefreshablePrdInvAct|None = None
@@ -106,20 +102,51 @@ class MainManager(I2CProvider, NamedLocalIdentifiable, ConfigurableBase, ):
         self.__anonInputs:NliList[InputSource] = NliList(name='inputs',parent=self)
         self.__anonOutputs:NliList[NamedOutputTarget] = NliList(name='outputs',parent=self)
         self.controlPanels = NliList(name='controllers',parent=self)
-        self.defaultController = ControlPanel(main=self)
-        self.defaultController.nliSetContainer(self.controlPanels)
+        self.__rootPanel:ControlPanel|None = None
         self._monitored:list[InputSource] = []
-        self._timers = PeriodicTimerManager(main=self)
-        self._scenes: SceneManager = SceneManager(main=self)
+        self._timers:PeriodicTimerManager|None = None
+        self._scenes: SceneManager|None = None
+        self.__i2cProvider:I2CProvider|None = None
+        
         self.__TerrainTronics = None
 
-        self._finishInit()
+        if not self.unitTesting:
+            from LumensalisCP.Main import ManagerRL
+            from LumensalisCP.Main import Manager2RL
+            self.__liveInit(**kwds)
 
-        if pmc_mainLoopControl.preMainVerbose: print( f"MainManager options = {self.config.options}" )
+            self._finishInit()
+
         _early_collect("end manager init")
-    
+
+    def __installManager(self):
+        self._when = getOffsetNow() # self.getNewNow()
+        getMainManager.set(self)
+
+        from LumensalisCP.Main.Dependents import MainRef  # pylint: disable=
+        MainRef._theManager = self  # type: ignore
+        
+        self._privateCurrentContext = EvaluationContext(self)
+        UpdateContext._patch_fetchCurrentContext(self) # type: ignore
+        
+        def getCurrentEvaluationContext() -> EvaluationContext:
+            return self._privateCurrentContext
+        GetManager.getCurrentEvaluationContext = getCurrentEvaluationContext
+        sayAtStartup( "context access patched" )
+        
+        self._refreshables = RootRefreshableList(name='mainRefreshables')
+        self.profiler = Profiler(self._privateCurrentContext )
+        sayAtStartup(f"profiler created, disabled={self.profiler.disabled}" )
+
+        PreMainConfig.pmc_gcManager.main = self # type: ignore
+        self.__socketPool = None
+        
+        Debuggable._getNewNow = self.getNewNow # type: ignore
+
+        self.__cycle = 0
+
     @reloadingMethod
-    def __earlyInit(self): ...
+    def __liveInit(self, **kwds:Any): ...
 
     def makeRef(self):
         return LumensalisCP.Main.Dependents.MainRef(self)
@@ -130,7 +157,21 @@ class MainManager(I2CProvider, NamedLocalIdentifiable, ConfigurableBase, ):
         return self._refreshables
 
     @property
-    def identity(self) -> ControllerIdentity: return self.__identity
+    def identity(self) -> ControllerIdentity: 
+        return self.__identity
+
+    @property
+    def i2cProvider(self) -> I2CProvider:
+        assert self.__i2cProvider is not None
+        return self.__i2cProvider
+
+    @property
+    def adafruitFactory(self) -> AdafruitFactory:
+        return self.i2cProvider.adafruitFactory
+
+    @property
+    def i2cFactory(self) -> I2CFactory:
+        return self.i2cProvider.i2cFactory
 
     @property
     def TerrainTronics(self:'MainManager') -> TerrainTronicsFactory:
@@ -145,7 +186,12 @@ class MainManager(I2CProvider, NamedLocalIdentifiable, ConfigurableBase, ):
         return self._when 
     
     @property
-    def cycle(self) -> int : return self.asyncLoop.cycle 
+    def cycle(self) -> int : 
+        try:
+            return self.asyncLoop.cycle 
+        except AttributeError:
+            return self.__cycle
+    
     @property
     def millis(self) -> TimeInMS : return int(self._when * 1000)
     @property
@@ -163,10 +209,18 @@ class MainManager(I2CProvider, NamedLocalIdentifiable, ConfigurableBase, ):
     def newNow( self ) -> TimeInSeconds: return self.getNewNow()
 
     @property
-    def scenes(self) -> SceneManager: return self._scenes
+    def scenes(self) -> SceneManager:
+        if self._scenes is None:
+            from LumensalisCP.Scenes.Manager import SceneManager
+            self._scenes = SceneManager(main=self)
+        return self._scenes
     
     @property
-    def timers(self) -> PeriodicTimerManager: return self._timers
+    def timers(self) -> PeriodicTimerManager: 
+        if self._timers is None:
+            from LumensalisCP.Triggers.Timer import PeriodicTimerManager
+            self._timers = PeriodicTimerManager(main=self)
+        return self._timers
     
     @property
     def latestContext(self)->EvaluationContext: return  self._privateCurrentContext
@@ -177,7 +231,14 @@ class MainManager(I2CProvider, NamedLocalIdentifiable, ConfigurableBase, ):
     @property
     def panel(self) -> ControlPanel:
         """ the default control panel """
-        return self.defaultController
+        if self.__rootPanel is not None:
+            return self.__rootPanel
+        from LumensalisCP.Main.Panel import ControlPanel
+
+        self.__rootPanel = ControlPanel(main=self)
+        self.__rootPanel.nliSetContainer(self.controlPanels)
+        
+        return self.__rootPanel
     
     @property
     def dmx(self):
@@ -219,8 +280,8 @@ class MainManager(I2CProvider, NamedLocalIdentifiable, ConfigurableBase, ):
             
         return self.__socketPool # type: ignore
         
-    def callLater( self, task:KWCallbackArg ) -> None:
-        self.__deferredTasks.append( KWCallback.make( task ) )
+    def callLater( self, task:Callable[[],None] ) -> None:
+        self.__deferredTasks.append( task )
         assert self._rrDeferred is not None
         if not self._rrDeferred.isActiveRefreshable:
             self._rrDeferred.activate(self.getContext())
@@ -230,7 +291,7 @@ class MainManager(I2CProvider, NamedLocalIdentifiable, ConfigurableBase, ):
         for task in self.__shutdownTasks:
             task.shutdown()
             
-    def addExitTask(self,task:ExitTask|Callable[[], None]|KWCallbackArg):
+    def addExitTask(self,task:ExitTask|Callable[[], None]):
         if not isinstance( task, ExitTask ):
             task = ExitTask( main=self,task=task)
             
@@ -247,7 +308,7 @@ scene = main.addScene( )
 
         
 """
-        scene = self._scenes.addScene( **kwds )
+        scene = self.scenes.addScene( **kwds )
         return scene
 
     def addScenes( self, n:int ):
@@ -337,8 +398,9 @@ see http://lumensalis.com/ql/h2Scenes
     profiler: Profiler
     asyncManager:ManagerAsync
     __socketPool:Any 
+    __identity: ControllerIdentity
 
-addReloadableClass(MainManager)
+addReloadableClass(MainManager, checkMethods=False)
 #addReloadableClass( MainManager )
 
 _sayMainImport.complete(globals())

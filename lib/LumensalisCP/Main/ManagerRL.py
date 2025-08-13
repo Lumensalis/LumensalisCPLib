@@ -25,7 +25,8 @@ _mmMeta = _module.reloadableClassMeta('MainManager', stripPrefix='MainManager_')
 @_mmMeta.reloadableMethod()
 def MainManager_nliGetContainers(self:MainManager) -> Iterable[NliContainerMixin[Any]]|None:
     yield self.shields
-    yield self.i2cDevicesContainer
+    if self.i2cDevicesContainer is not None:
+        yield self.i2cDevicesContainer
     yield self.controlPanels
 
 @_mmMeta.reloadableMethod()

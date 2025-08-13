@@ -1,16 +1,14 @@
 
 from __future__ import annotations
 
-import rainbowio
-import gc
-
 # pyright: ignore[reportUnusedImport]
 # pylint: disable=unused-import,import-error,unused-argument 
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 
-
 from LumensalisCP.ImportProfiler import  getImportProfiler
 _saySimpleImport = getImportProfiler( __name__, globals() )
+
+import gc
 
 from LumensalisCP.common import *
 #from LumensalisCP.Triggers.Timer import PeriodicTimer
@@ -20,7 +18,6 @@ from LumensalisCP.util.Reloadable import ReloadableModule, reloadableMethod, rel
 #from LumensalisCP.util.Reloadable import ReloadableMethodType, Unpack, KWDS
 
 from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl, sayAtStartup
-
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager

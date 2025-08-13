@@ -31,8 +31,9 @@ class MainGCLoop(MainAsyncChild):
         raise NotImplementedError
 
 class MainAsyncLoop(MainAsyncChild):
-
+    
     def __init__(self, **kwds:Unpack[MainAsyncChild.KWDS]):
+        kwds.setdefault('loopSleepDuration', 0)
         super().__init__(**kwds)
         self.latestSleepDuration:float = 0.0
         self.cycle:int = 0

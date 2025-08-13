@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from  LumensalisCP.Eval.Expressions import EvaluationContext
     from LumensalisCP.Inputs import InputSource
     from LumensalisCP.Lights.RGB import *
+    from LumensalisCP.Temporal.Refreshable import RefreshableListInterface
 
 OptionalContextArg = Optional["EvaluationContext"]
 DirectValue = Type[ Union[int,bool,float,'RGB' ] ]
@@ -37,10 +38,14 @@ class UpdateContextDebugManager(Releasable):
         self.prior_debugEvaluate = False
         self.debugIndent = 0
         self.prior_debugIndent = -0
+        self._dirtyLists: list[RefreshableListInterface] = []
 
     def prepare( self, context:UpdateContext, debugEvaluate:bool = True ):
         self.context = context # type: ignore
         self.debugEvaluate = debugEvaluate
+    
+    def addDirtyList(self, lst: RefreshableListInterface) -> None:
+        self._dirtyLists.append(lst)
 
     def __enter__(self):
         assert self.context is not None

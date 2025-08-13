@@ -24,6 +24,9 @@ from LumensalisCP.Main.MainAsync import MainAsyncLoop, MainGCLoop
 from LumensalisCP.Main import GetManager
 from LumensalisCP.Temporal.RefreshableList import RootRefreshableList
 from LumensalisCP.Temporal.TimeTracker import TimingTracker
+from LumensalisCP.Controllers.ConfigurableBase import ConfigurableBase, ControllerConfig
+from LumensalisCP.Main.I2CProvider import I2CProvider
+from LumensalisCP.Controllers.Identity import ControllerIdentity
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
@@ -36,42 +39,29 @@ _module = ReloadableModule( 'LumensalisCP.Main.Manager' )
 _mmMeta = _module.reloadableClassMeta('MainManager', stripPrefix='MainManager_')
 
 @_mmMeta.reloadableMethod()
-def __earlyInit(self:MainManager):
+def __liveInit(self:MainManager, **kwds:Any):
 
         #self.__startNs = getOffsetNow_ns()
         #self.__startNow = getOffsetNow()
         #self.__startNow = TimeInSeconds( getOffsetNow() - pmc_mainLoopControl.getMsSinceStart()/1000.0 )
         #self._when = TimeInSeconds( self.getNewNow() - self.__startNow )
-        self._when = getOffsetNow() # self.getNewNow()
-        getMainManager.set(self)
 
-        from LumensalisCP.Main.Dependents import MainRef  # pylint: disable=
-        MainRef._theManager = self  # type: ignore
-        
-        self._privateCurrentContext = EvaluationContext(self)
-        UpdateContext._patch_fetchCurrentContext(self) # type: ignore
-        
-        def getCurrentEvaluationContext() -> EvaluationContext:
-            return self._privateCurrentContext
-        GetManager.getCurrentEvaluationContext = getCurrentEvaluationContext
-        sayAtStartup( "context access patched" )
-        
-        self._refreshables = RootRefreshableList(name='mainRefreshables')
-        self.profiler = Profiler(self._privateCurrentContext )
-        sayAtStartup(f"profiler created, disabled={self.profiler.disabled}" )
-
-        PreMainConfig.pmc_gcManager.main = self # type: ignore
-
-        self.__cycle = 0
 
         
         self.asyncManager = ManagerAsync(main=self)
-        
-        self.__socketPool = None
-        
-        Debuggable._getNewNow = self.getNewNow # type: ignore
+    
+        mainConfigDefaults = dict(
+            TTCP_HOSTNAME = os.getenv("TTCP_HOSTNAME")
+        )
+        kwds.setdefault("defaults", mainConfigDefaults)
+        self.configuration = ConfigurableBase(**kwds)
+        ConfigurableBase.__init__(self, **kwds ) # type: ignore
+        self.config  = self.configuration.config
+        self.__i2cProvider = I2CProvider( config=self.config, main=self )
 
+        self.__identity = ControllerIdentity(self)
         displayio.release_displays()
+        if pmc_mainLoopControl.preMainVerbose: print( f"MainManager options = {self.config.options}" )
         
 @_mmMeta.reloadableMethod()
 def _showLoop(self:MainManager, context:EvaluationContext) -> None:
@@ -103,6 +93,7 @@ def _showLoop(self:MainManager, context:EvaluationContext) -> None:
     showLoopData['lastWhen'] = self._when
 
 @_mmMeta.reloadableMethod()
+
 def _finishInit(self:MainManager) -> None: 
 
     self.asyncLoop = MainAsyncLoop(main=self)
