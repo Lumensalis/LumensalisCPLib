@@ -92,7 +92,8 @@ class Gauge( OnOffPattern, NamedOutputTarget ):
             ):
         self.__value = value
         OnOffPattern.__init__( self, target , **kwargs)
-        NamedOutputTarget.__init__(self, name=kwargs.get('name',None))
+        notArgs = NamedOutputTarget.extractInitArgs(kwargs)
+        NamedOutputTarget.__init__(self, **notArgs )
         self._mix = RGB(Colors.BLACK)
 
     @property
@@ -126,22 +127,58 @@ class Gauge( OnOffPattern, NamedOutputTarget ):
 
 #############################################################################
 
-class Blink( PatternGenerator ):
+class Blink( OnOffPattern ):
     def __init__(self,
-                 *args,
+                target:LightGroup, 
+                 onTime:TimeInSecondsEvalArg = 1.0,
+                 offTime:TimeInSecondsEvalArg = 1.0,
+                 **kwargs:Unpack[OnOffPattern.KWDS]
+            ) -> None:
+        self.onTime = onTime
+        self.offTime = offTime
+        self.lastToggleTime:TimeInSeconds = TimeInSeconds(0.0)
+        self.lastToggleValue:bool = False
+
+        super().__init__(target,**kwargs)
+        
+
+
+    def refresh( self, context:EvaluationContext ):
+        if self.lastToggleValue:
+            duration = context.valueOf(self.onTime)
+        else:
+            duration = context.valueOf(self.offTime)
+
+        if context.when <= self.lastToggleTime + duration:
+            return
+    
+        self.lastToggleTime = context.when
+        self.lastToggleValue = not self.lastToggleValue
+
+        if self.lastToggleValue: value = self.getOnValue(context)
+        else: value = self.getOffValue(context)    
+        
+        for led in self.target:
+            led.set(value,context)
+
+#############################################################################
+
+class BlinkG( PatternGenerator ):
+    def __init__(self,
+                target:LightGroup, 
                  onTime:TimeInSecondsEvalArg = 1.0,
                  offTime:TimeInSecondsEvalArg = 1.0,
                  onValue:AnyRGBValue = 1.0,
                  offValue:AnyRGBValue = 0.0,
                  intermediateRefresh:Optional[TimeInSeconds]=None,
-                 **kwargs
-            ):
+                 **kwargs:Unpack[PatternGenerator.KWDS]
+            ) -> None:
         self.onTime = onTime
         self.offTime = offTime
         self.onValue = prepRGBValue(onValue)
         self.offValue = prepRGBValue(offValue)
         self.intermediateRefresh = intermediateRefresh
-        super().__init__(*args,**kwargs)
+        super().__init__(target,**kwargs)
         
     def regenerate(self, context:EvaluationContext):
         
@@ -283,7 +320,7 @@ class CylonPatternStep(PatternGeneratorStep):
 class Cylon( PatternGenerator ):
     def __init__(self,
                  *args,
-                 sweepTime:TimeInSeconds = 1.0,
+                 sweepTime:TimeInSecondsEvalArg = 1.0,
                  onValue:AnyRGBValue = 1.0,
                  offValue:AnyRGBValue = 0.0,
                  intermediateRefresh:TimeInSeconds = 0.1,

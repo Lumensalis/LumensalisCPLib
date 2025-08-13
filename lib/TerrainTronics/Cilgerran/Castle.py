@@ -44,7 +44,7 @@ class CilgerranLED( DimmableLight ):
         self.__pin = pin
         self.__main = board.main
         #self.__index = index
-        self.__value = 0
+        self.__value:ZeroToOne = 0.0
         self.__output = pwmio.PWMOut(pin=board.asPin(pin), frequency= CilgerranLED.PWM_FREQUENCY,duty_cycle=0 ) 
         self.__dutyCycle = 0
 
@@ -61,13 +61,22 @@ class CilgerranLED( DimmableLight ):
 
     def setValue(self,value:AnyRGBValue, context: Optional[UpdateContext] = None ):
         context = context or self.__main.latestContext
+        if not isinstance(value, float):
+            if isinstance(value, int) and value >= 0 and value <= 1:
+                value = float(value)
+            else:
+                if isinstance(value, RGB):
+                    value = value.brightness
+                else:
+                    value = RGB.toRGB(value).brightness
+                
         if self.__value != value:
             if self.enableDbgOut: self.dbgOut("setValue changing from %s to %s", self.__value, value)
             self.__value = value    
             self._brightnessChanged(  )
         
     def _brightnessChanged(self) -> None:
-        value = withinZeroToOne(self.__value * self.source.brightness)
+        value = withinZeroToOne(self.__value *( self.source.brightness.latestValue or 0.0) )
         dutyCycle = int( value * CilgerranLED.DUTY_CYCLE_RANGE )
         if dutyCycle != self.__dutyCycle:
             try:
@@ -88,6 +97,34 @@ class CilgerranLED( DimmableLight ):
         return f"Clg({self.__pin},{self.__value},{self.__output.duty_cycle})"
 
 #############################################################################
+T=TypeVar('T')  
+class NotifyingOutputTarget( OutputTarget, Generic[T] ):
+
+    def __init__(self,onChange:Callable[[EvaluationContext,T], None],initialValue:Optional[T]=None) -> None:
+        self.__latestValue:T|None = initialValue
+        self.onChange = onChange
+
+    @property
+    def latestValue(self) -> T | None:
+        return self.__latestValue
+
+    def set( self, value:T, context:EvaluationContext ) -> None:
+        self.__latestValue = value
+        self.onChange(context,value)
+
+NotifyingOutputTargetT = GenericT(NotifyingOutputTarget)
+
+class NamedNotifyingOutputTarget(Generic[T],NotifyingOutputTargetT[T],NamedLocalIdentifiable):
+    def __init__(self,
+                 onChange:Callable[[EvaluationContext,T], None],initialValue:Optional[T]=None, 
+                 **kwds:Unpack[NamedLocalIdentifiable.KWDS]
+                 ) -> None:
+        NotifyingOutputTargetT[T].__init__(self, onChange=onChange,initialValue=initialValue)
+        NamedLocalIdentifiable.__init__(self, **kwds)
+
+NamedNotifyingOutputTargetT = GenericT(NamedNotifyingOutputTarget)
+#############################################################################
+
 
 class CilgerranPixelSource( LightSource, NamedOutputTarget ):
 
@@ -102,6 +139,11 @@ class CilgerranPixelSource( LightSource, NamedOutputTarget ):
         LightSource.__init__(self, **kwargs)
         NamedOutputTarget.__init__(self, name=kwargs.get("name","CilgerranCastleLEDs") )
 
+        def onChange(context:EvaluationContext, value:Any) -> None:
+            if self.enableDbgOut: self.dbgOut("brightness changed to %.2f", value)
+            self.__brightness = withinZeroToOne(value)
+        self.__brightnessTarget = NamedNotifyingOutputTargetT[ZeroToOne]( onChange=onChange, initialValue=1.0, name="brightness")
+        
         self.__board = board
         self.__LED_PINS=[ 
                         board.D5,
@@ -115,10 +157,11 @@ class CilgerranPixelSource( LightSource, NamedOutputTarget ):
                         ]
 
     @property
-    def brightness(self) -> ZeroToOne: return self.__brightness
+    def brightness(self): return self.__brightnessTarget
 
-    @brightness.setter
-    def brightness(self, level:ZeroToOne):
+
+    #@brightness.setter
+    def setBrightness(self, level:ZeroToOne):
         constrained = withinZeroToOne(level)
         if self.__brightness != constrained:
             if self.enableDbgOut: self.dbgOut("brightness changing from %.2f to %.2f", self.__brightness, constrained)

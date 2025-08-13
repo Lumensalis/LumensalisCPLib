@@ -9,7 +9,7 @@ from LumensalisCP.Temporal.Time import getOffsetNow, TimeInSeconds
 
 try:
     #import typing
-    from typing import NoReturn, Never, Optional, Any, TypeAlias, Protocol, TYPE_CHECKING
+    from typing import NoReturn, Never, Optional, ClassVar, Any, TypeAlias, Protocol, TYPE_CHECKING
     KWDS_TYPE: TypeAlias = dict[str, Any]  # keyword arguments dictionary
 except ImportError:
     TYPE_CHECKING = False # type: ignore
@@ -39,7 +39,8 @@ else:
 
 
 class Debuggable( CountedInstance, IDebuggable ):
-    
+    DBG_HEADER_FORMAT: ClassVar[str] = "%.3f %s %s : "
+
     @staticmethod
     def _getNewNow():
         return getOffsetNow()
@@ -66,7 +67,7 @@ class Debuggable( CountedInstance, IDebuggable ):
     
     
     def __header( self, kind:str )->str:
-        return "%.3f %s %s : " % (Debuggable._getNewNow(), kind, self.dbgName )
+        return Debuggable.DBG_HEADER_FORMAT % (Debuggable._getNewNow(), kind, self.dbgName )
         #return "%.3f %s %s : " % (LumensalisCP.Main.Manager.MainManager.theManager.newNow, kind, self.dbgName )
     
     def __format( self, kind:str, fmtString:str, args:tuple[Any], kwds:KWDS_TYPE ) -> str: # pylint: disable=unused-argument

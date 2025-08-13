@@ -152,7 +152,7 @@ class ControllerIdentity(CountedInstance):
 
         
         if 1:
-            self.i2cNVM = main.identityI2C
+            self.i2cNVM = main.i2cProvider.identityI2C
         else:
             try:
                 i2c = main.defaultI2C

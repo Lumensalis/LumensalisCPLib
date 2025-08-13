@@ -11,22 +11,26 @@ from LumensalisCP.Eval.EvaluationContext import EvaluationContext
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.common import *
 from LumensalisCP.util.bags import Bag
+from LumensalisCP.Temporal.Refreshable import RefreshableNAP
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
 #############################################################################
 
-class Pattern(NamedLocalIdentifiable):
+class Pattern(RefreshableNAP):
 
-    class KWDS(TypedDict):
-        name: NotRequired[str]
+    RFD_refreshRate:ClassVar[TimeSpanInSeconds] = 0.041 
+    class KWDS(RefreshableNAP.KWDS):
         whenOffset: NotRequired[TimeInSecondsConfigArg]
         startingSpeed: NotRequired[TimeInSecondsConfigArg]
     
     
-    def __init__(self,  target:LightGroup, name:Optional[str]=None, 
-                 whenOffset:TimeInSecondsConfigArg=0.0, startingSpeed:TimeInSecondsEvalArg=1.0 ):
-        super().__init__(name=name)
+    def __init__(self,  target:LightGroup, 
+                 whenOffset:TimeInSecondsConfigArg=0.0,
+                   startingSpeed:TimeInSecondsEvalArg=1.0, 
+                   **kwargs:Unpack[RefreshableNAP.KWDS] 
+                ) -> None:
+        super().__init__(**kwargs)
         self.__running = False
         self.__speed:TimeInSecondsEval =toTimeInSecondsEval( startingSpeed)
         assert target is not None, f"target LightGroup must be provided when creating {self.__class__.__name__} Pattern"
@@ -67,6 +71,10 @@ class Pattern(NamedLocalIdentifiable):
     def refresh( self, context:EvaluationContext ) -> None:
         raise NotImplementedError
 
+    def derivedRefresh(self, context: EvaluationContext) -> None:
+        #if self.enableDbgOut:
+        self.refresh(context)
+    
     def main(self) -> MainManager:
         return getMainManager()
     
@@ -177,6 +185,7 @@ class MultiLightPatternStep(PatternGeneratorStep):
 #############################################################################
 
 class PatternGenerator(Pattern):
+    RFD_refreshRate:ClassVar[TimeSpanInSeconds] = 0.041 # 24 FPS
     class KWDS(Pattern.KWDS):
         intermediateRefresh: NotRequired[TimeSpanInSeconds]
         
@@ -185,7 +194,7 @@ class PatternGenerator(Pattern):
                  **kwargs:Unpack[Pattern.KWDS] ): # pylint: disable=unused-argument
         super().__init__( target, **kwargs )
         self.__nextStep = 0.0
-        self.__nextRefresh = 0.0
+        self.__nextPatternRefresh = 0.0
         self.__step:PatternGeneratorStep|None = None
         self.__gen: Iterator[PatternGeneratorStep]|None = None
         self.__stepCount = 0
@@ -194,14 +203,14 @@ class PatternGenerator(Pattern):
     def stats(self)->Bag:
         return Bag(
                     nextStep = self.__nextStep, 
-                    nextRefresh = self.__nextRefresh, 
+                    nextRefresh = self.__nextPatternRefresh, 
                      # = self.__step, 
                     stepCount = self.__stepCount, 
                     intermediateCount = self.__intermediateCount,
         )
         
     def refresh( self, context:EvaluationContext ):
-        if self.__nextRefresh < context.when:
+        if self.__nextPatternRefresh < context.when:
             context.activeFrame.snap("PGRefresh", self.name)
             if self.__nextStep < context.when:
                 self.stepForward( context )
@@ -211,7 +220,7 @@ class PatternGenerator(Pattern):
                 when = self.offsetWhen( context )
                 duration = context.valueOf(self.__step.duration)
                 progression = (self.__nextStep - when) / duration
-                self.__nextRefresh = min(  self.__nextStep,
+                self.__nextPatternRefresh = min(  self.__nextStep,
                             when + self.__step.intermediateRefresh )
                 self.__intermediateCount += 1
                 for lx, _ in enumerate(self.target.lights): # pylint: disable=unused-variable
@@ -231,9 +240,9 @@ class PatternGenerator(Pattern):
         self.__stepCount += 1
         
         if self.__step.intermediateRefresh is not None:
-            self.__nextRefresh = context.when + self.__step.intermediateRefresh
+            self.__nextPatternRefresh = context.when + self.__step.intermediateRefresh
         else:
-            self.__nextRefresh = self.__nextStep
+            self.__nextPatternRefresh = self.__nextStep
 
         for lx, _ in enumerate(self.target.lights):  # pylint: disable=unused-variable
             self.target[lx].set( self.__step.startValue(lx,context) , context )
