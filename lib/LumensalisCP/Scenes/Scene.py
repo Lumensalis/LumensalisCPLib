@@ -16,7 +16,9 @@ from LumensalisCP.Main.Profiler import ProfileFrameBase
 from LumensalisCP.Temporal.Refreshable import Refreshable, \
         RfMxnActivatable, RfMxnPeriodic, RfMxnNamed
 
+from LumensalisCP.Eval.Evaluatable import NamedEvaluatableProtocolT
 from LumensalisCP.Temporal.RefreshableList import NamedNestedRefreshableList
+
 
 if TYPE_CHECKING:
     from LumensalisCP.Eval.Expressions import ExpressionTerm, Expression
@@ -57,7 +59,7 @@ class SceneTask( RfMxnActivatable,
             frame.snap( "runSceneTask", self.name )
             self.task_callback(context=context) # type: ignore[call-arg]
 
-class SceneRule( NamedLocalIdentifiable, Expression,  ):
+class SceneRule( NamedLocalIdentifiable, Expression,  NamedEvaluatableProtocolT[Any] ):
     def __init__( self, target:NamedOutputTarget, term:ExpressionTerm, name:Optional[str]=None ):
         #super().__init__(term)
         Expression.__init__(self,term)
@@ -144,7 +146,7 @@ class Scene(MainChild):
             self.addPattern(pattern)
         return patterns
     
-    def addRule(self, target:NamedOutputTarget, 
+    def addRule(self, target:OutputTarget, 
                 term:ExpressionTerm, 
                 name:Optional[str]=None ) ->SceneRule:
             assert isinstance( term, ExpressionTerm )

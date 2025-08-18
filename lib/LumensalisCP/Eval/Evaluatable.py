@@ -3,16 +3,32 @@ from __future__ import annotations
 from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayEvalEvaluatableImport = getImportProfiler( globals() ) # "Eval.Evaluatable"
 
-from LumensalisCP.common import Debuggable,TypeVar, Generic, TYPE_CHECKING, Any, Iterable
+from LumensalisCP.common import Debuggable,TypeVar, Generic, GenericT, TYPE_CHECKING, Any, Iterable, Protocol
 #from LumensalisCP.Debug import Debuggable
 from LumensalisCP.Main.Updates import UpdateContext, OptionalContextArg, DirectValue
-   
-    
+
+
 #############################################################################
 
 _sayEvalEvaluatableImport.parsing()
 
-ET = TypeVar('ET' )
+ET = TypeVar('ET',covariant=True) 
+
+
+   
+if TYPE_CHECKING:
+    class NamedEvaluatableProtocol(Protocol, Generic[ET]):
+        @property
+        def name(self) -> str: ...
+        def getValue(self, context:OptionalContextArg) -> ET:
+            """ current value of term"""
+            raise NotImplementedError
+        
+else:
+    class NamedEvaluatableProtocol: ...
+
+NamedEvaluatableProtocolT = GenericT(NamedEvaluatableProtocol)
+    
 
 
 class Evaluatable(Debuggable, Generic[ET]):
@@ -39,7 +55,8 @@ else:
             return Evaluatable
         def __getitem__(self, item): # pylint: disable=unused-argument
             return Evaluatable        
-    EvaluatableT = _EvaluatableT()
+    #EvaluatableT = _EvaluatableT()
+    EvaluatableT = GenericT(Evaluatable)
         
 def evaluate( value:Evaluatable[DirectValue]|DirectValue, context:OptionalContextArg = None ):
     if isinstance( value, Evaluatable ):

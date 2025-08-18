@@ -8,6 +8,7 @@ from LumensalisCP.common import *
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.Main.Updates import UpdateContext
 
+from LumensalisCP.Eval.Evaluatable import NamedEvaluatableProtocolT
 from LumensalisCP.Eval.Expressions import ExpressionTerm    
 from LumensalisCP.Eval.EvaluationContext import EvaluationContext
 from LumensalisCP.CPTyping import Protocol
@@ -19,7 +20,7 @@ class _InputSourceChangedCallback(Protocol):
     def __call__(self, source:InputSource, context:EvaluationContext) -> None:
         pass
 
-class InputSource(NamedLocalIdentifiable, ExpressionTerm):
+class InputSource(NamedLocalIdentifiable, ExpressionTerm, NamedEvaluatableProtocolT[Any]):
     
     def __init__(self, **kwds:Unpack[NamedLocalIdentifiable.KWDS]) -> None:
         NamedLocalIdentifiable.__init__(self, **kwds)
