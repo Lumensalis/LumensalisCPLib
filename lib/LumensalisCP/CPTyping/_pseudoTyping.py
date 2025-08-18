@@ -143,7 +143,12 @@ class _GenericMaker:
 
 Generic = _GenericMaker()
 
-def TypeVar(tag:str,bound=None): 
+def TypeVar(  name: str,
+            *constraints,  # AnnotationForm
+            bound  = None,  # AnnotationForm
+            covariant: bool = False,
+            contravariant: bool = False,
+            infer_variance: bool = False,): 
     return GenericBase
 
 def ParamSpec(tag:str): return tag
