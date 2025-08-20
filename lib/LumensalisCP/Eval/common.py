@@ -16,6 +16,7 @@ from LumensalisCP.Temporal.Refreshable import Refreshable
 from LumensalisCP.Main.Updates import UpdateContext
 from LumensalisCP.Eval.EvaluationContext  import EvaluationContext
 from LumensalisCP.Eval.Evaluatable import evaluate, EvaluatableT, Evaluatable
+from LumensalisCP.Eval.Evaluatable import NamedEvaluatableProtocol, NamedEvaluatableProtocolT
 from LumensalisCP.Eval.Expressions import Expression
 from LumensalisCP.Eval.ExpressionTerm import ExpressionTerm, rising, EVAL_VALUE_TYPES
 from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
@@ -37,7 +38,14 @@ RGBEvalArg:TypeAlias = Union[AnyRGBValue, EvaluatableT[RGB]]
 RGBEval:TypeAlias = Union[RGB, EvaluatableT[RGB]]
 
 
-FloatEval:TypeAlias = Union[float, EvaluatableT[float]]    
+FloatEvalArg:TypeAlias = Union[float, EvaluatableT[float]]    
+FloatEval:TypeAlias = Union[float, EvaluatableT[float]]   
+
+ZeroToOneEvalArg:TypeAlias = Union[ZeroToOne, EvaluatableT[ZeroToOne]]
+ZeroToOneEval:TypeAlias = Union[ZeroToOne, EvaluatableT[ZeroToOne]]
+PlusMinusOneEvalArg:TypeAlias = Union[PlusMinusOne, EvaluatableT[PlusMinusOne]]
+PlusMinusOneEval:TypeAlias = Union[PlusMinusOne, EvaluatableT[PlusMinusOne]]
+
 
 def toTimeInSecondsEval(value:  TimeInSecondsEvalArg|None, default:Optional[TimeInSecondsEvalArg] = None) -> TimeInSecondsEval:
     if value is None: 
@@ -52,5 +60,29 @@ def toRGBEval(value:  RGBEvalArg) -> RGBEval:
     if isinstance(value, Evaluatable):
         return value # type: ignore
     return RGB.toRGB(value)
+
+def toPlusMinusOneEval(value:  PlusMinusOneEvalArg|None, default:Optional[PlusMinusOneEvalArg] = None) -> PlusMinusOneEval:
+    if value is None: 
+        value = default
+        assert value is not None, "toPlusMinusOneEval requires a value or default"
+    if isinstance(value, Evaluatable):
+        return value # type: ignore
+    return PlusMinusOne(value) # type: ignore
+
+def toZeroToOneEval(value:  ZeroToOneEvalArg|None, default:Optional[ZeroToOneEvalArg] = None) -> ZeroToOneEval:
+    if value is None: 
+        value = default
+        assert value is not None, "toZeroToOneEval requires a value or default"
+    if isinstance(value, Evaluatable):
+        return value # type: ignore
+    return ZeroToOne(value) # type: ignore
+
+def toFloatEval(value:  FloatEvalArg|None, default:Optional[FloatEvalArg] = None) -> FloatEval:
+    if value is None: 
+        value = default
+        assert value is not None, "toFloatEval requires a value or default"
+    if isinstance(value, Evaluatable):
+        return value # type: ignore
+    return float(value) # type: ignore
 
 __sayImport.complete()

@@ -71,4 +71,12 @@ def evaluate( value:Evaluatable[DirectValue]|DirectValue, context:OptionalContex
     
     return value
 
+__all__ = [ 
+    "NamedEvaluatableProtocol",
+    "NamedEvaluatableProtocolT",
+    "Evaluatable",
+    "EvaluatableT",
+    "evaluate"
+]
+
 _sayEvalEvaluatableImport.complete(globals())
