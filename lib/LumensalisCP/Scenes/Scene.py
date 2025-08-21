@@ -60,7 +60,7 @@ class SceneTask( RfMxnActivatable,
             self.task_callback(context=context) # type: ignore[call-arg]
 
 class SceneRule( NamedLocalIdentifiable, Expression,  NamedEvaluatableProtocolT[Any] ):
-    def __init__( self, target:NamedOutputTarget, term:ExpressionTerm, name:Optional[str]=None ):
+    def __init__( self, target:OutputTarget, term:ExpressionTerm, name:Optional[str]=None ):
         #super().__init__(term)
         Expression.__init__(self,term)
         NamedLocalIdentifiable.__init__(self,name=name)

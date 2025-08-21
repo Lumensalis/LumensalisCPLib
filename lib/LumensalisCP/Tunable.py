@@ -9,27 +9,10 @@ from LumensalisCP.Eval.Expressions import *
 from LumensalisCP.Outputs import NamedNotifyingOutputTarget, NotifyingOutputTargetT,OutputTarget
 from LumensalisCP.Interactable import Interactable, InteractableT, INTERACTABLE_ARG_T, INTERACTABLE_T, INTERACTABLE_ARG_T_KWDST
 
+from LumensalisCP.TunableKWDS import *
 #############################################################################
 
 __profileImport.parsing()
-
-
-#############################################################################
-TUNABLE_ARG_T=TypeVar('TUNABLE_ARG_T')
-TUNABLE_T=TypeVar('TUNABLE_T')
-TUNABLE_SELF_T=TypeVar('TUNABLE_SELF_T', bound='Tunable')
-
-
-#############################################################################
-
-class TUNABLE_SETTING_KWDS(INTERACTABLE_ARG_T_KWDST[TUNABLE_ARG_T, TUNABLE_T], 
-                           NamedNotifyingOutputTarget.KWDS,
-                           Generic[TUNABLE_ARG_T, TUNABLE_T,TUNABLE_SELF_T]
-                    ):
-    onChange: NotRequired[
-         Callable[[TUNABLE_SELF_T, TunableSetting[TUNABLE_ARG_T, TUNABLE_T,TUNABLE_SELF_T], EvaluationContext], None] ]
-
-TUNABLE_SETTING_KWDS_T = GenericT(TUNABLE_SETTING_KWDS)
 
 #############################################################################
 
@@ -40,9 +23,15 @@ class TunableSetting(NamedLocalIdentifiable,OutputTarget,
 
 
     def __init__(self, tunable:TUNABLE_SELF_T, **kwargs:Unpack[TUNABLE_SETTING_KWDS[TUNABLE_ARG_T,TUNABLE_T,TUNABLE_SELF_T]]) -> None:
-        self.onChange = kwargs.pop('onChange', None)
         value = kwargs.get('startingValue', None)
         assert value is not None, "TunableSetting must have a startingValue"
+
+        self.onChange:Callable[[TUNABLE_SELF_T, TunableSetting[TUNABLE_ARG_T, TUNABLE_T,TUNABLE_SELF_T], 
+                                EvaluationContext], None]|None = kwargs.pop('onChange', None)
+        
+        if self.onChange is None:
+            self.warnOut("TunableSetting has no onChange handler %r", kwargs )
+
 
         self.__tunable = weakref.ref(tunable)
         nliArgs = NamedLocalIdentifiable.extractInitArgs(kwargs)
@@ -52,25 +41,32 @@ class TunableSetting(NamedLocalIdentifiable,OutputTarget,
         self.__value:TUNABLE_T = value # type: ignore
 
     def set( self, value:Any, context:EvaluationContext ) -> None:
+        self.infoOut( "set (OutputTarget) to %s", value)
         # from OutputTarget
         self.settingUpdate(value, context)
         
 
     def settingUpdate( self, value:TUNABLE_ARG_T, context:Optional[EvaluationContext]=None ) -> None:
-        v = self.interactConvert(value)
-        if v == self.__value:
-            if self.enableDbgOut: self.dbgOut("settingUpdate no change: %s", v)
-            return
-        self.__value = v
-        if self.enableDbgOut: self.dbgOut("settingUpdate changed: %s", v)
+        try:
+            if self.enableDbgOut: self.dbgOut("settingUpdate : %s", value)
+            v = self.interactConvert(value)
+            if v == self.__value:
+                if self.enableDbgOut: self.dbgOut("settingUpdate no change: %s", v)
+                return
+            self.__value = v
+            if self.enableDbgOut: self.dbgOut("settingUpdate changed: %s", v)
 
-        if context is None:
-            context = UpdateContext.fetchCurrentContext(context)
+            if context is None:
+                context = UpdateContext.fetchCurrentContext(context)
 
-        if self.onChange:
-            self.onChange(self.__tunable(), self, context)
+            if self.onChange:
+                if self.enableDbgOut: self.dbgOut("settingUpdate onChange...")
 
-
+                self.onChange(self.__tunable(), self, context)
+        except Exception as e:
+            self.SHOW_EXCEPTION( e, "settingUpdate %s error", value )
+            raise
+            
 
     @property
     def value(self) -> TUNABLE_T:
@@ -181,7 +177,7 @@ class TunableZeroToOneSetting_KWDS(TUNABLE_SETTING_KWDS_T[ZeroToOne,ZeroToOne,TU
     pass
 
 class TunableZeroToOneSetting(TunableSettingT[ZeroToOne,ZeroToOne,TUNABLE_SELF_T]):
-    def __init__(self, tunable: TUNABLE_SELF_T, **kwargs:Unpack[TunableZeroToOneSetting_KWDS[TUNABLE_SELF_T]]) -> None:
+    def __init__(self, tunable: TUNABLE_SELF_T, **kwargs:Unpack[TUNABLE_SETTING_KWDS[ZeroToOne,ZeroToOne,TUNABLE_SELF_T]]) -> None:
         kwargs.setdefault('kind', ZeroToOne)
         kwargs.setdefault('kindMatch', ZeroToOne)
         kwargs.setdefault('min', ZeroToOne(0.0))
@@ -195,16 +191,18 @@ class TunableZeroToOneDescriptor(TunableDescriptorT[ZeroToOne,ZeroToOne,TUNABLE_
 
 TunableZeroToOneDescriptorT = GenericT(TunableZeroToOneDescriptor)
 
-def tunableZeroToOne(  default:ZeroToOne, **kwds:Unpack[TunableZeroToOneSetting.KWDS]
+def tunableZeroToOne(  default:ZeroToOne, **kwds:Unpack[TUNABLE_SETTING_KWDS
+                                                        [ZeroToOne,ZeroToOne,TUNABLE_SELF_T]
+                                                        ]
                 ) -> Callable[ 
                         [Callable[[TUNABLE_SELF_T,TunableZeroToOneSetting[TUNABLE_SELF_T],EvaluationContext], None]],
                   TunableZeroToOneDescriptor[TUNABLE_SELF_T]]:
     def decorated( onChange:Callable[
-                        [TUNABLE_SELF_T,TunableZeroToOneSetting[TUNABLE_SELF_T], EvaluationContext],
-             None] ) -> TunableZeroToOneDescriptor[TUNABLE_SELF_T]:
-        kwds.setdefault('name', onChange.__name__)
+                        [TUNABLE_SELF_T,TunableZeroToOneSetting[TUNABLE_SELF_T], EvaluationContext], None] 
+                        ) -> TunableZeroToOneDescriptor[TUNABLE_SELF_T]:
         kwds.setdefault('startingValue', default)
-        #kwds.setdefault('onChange', onChange)
+        kwds.setdefault('name', onChange.__name__)
+        kwds.setdefault('onChange', onChange)
         descriptor:TunableZeroToOneDescriptor[TUNABLE_SELF_T] = TunableZeroToOneDescriptorT[TUNABLE_SELF_T](  TunableZeroToOneSettingT[TUNABLE_SELF_T], **kwds )
         return descriptor
     return decorated
@@ -231,8 +229,11 @@ TunablePlusMinusOneDescriptorT = GenericT(TunablePlusMinusOneDescriptor)
 
 def tunablePlusMinusOne(  default:PlusMinusOne,
                          **kwds:Unpack[TunablePlusMinusOneSetting_KWDS[TUNABLE_SELF_T]]
-        ) -> Callable[ [Callable[[TUNABLE_SELF_T,TunablePlusMinusOneSetting[TUNABLE_SELF_T],EvaluationContext], None]],  TunablePlusMinusOneDescriptor[TUNABLE_SELF_T]]:
-    def decorated( onChange:Callable[[TUNABLE_SELF_T,TunablePlusMinusOneSetting[TUNABLE_SELF_T],EvaluationContext], None] 
+        ) -> Callable[
+             [Callable[[TUNABLE_SELF_T,TunablePlusMinusOneSetting[TUNABLE_SELF_T],EvaluationContext], None]], 
+             TunablePlusMinusOneDescriptor[TUNABLE_SELF_T]]:
+    def decorated( onChange:Callable[
+                [TUNABLE_SELF_T,TunablePlusMinusOneSetting[TUNABLE_SELF_T],EvaluationContext], None] 
                   ) -> TunablePlusMinusOneDescriptor[TUNABLE_SELF_T]:
         kwds.setdefault('startingValue', default)
         kwds.setdefault('name', onChange.__name__)

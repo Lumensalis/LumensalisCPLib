@@ -104,11 +104,6 @@ class CilgerranPixelSource( LightSource, NamedOutputTarget, Tunable ):
 
     motorChannels = [6, 7]
 
-    @tunableZeroToOne(0.5)
-    def brightness(self, setting:TunableZeroToOneSetting[Self], context:EvaluationContext ) -> None:
-        if self.enableDbgOut: self.dbgOut("brightness changed to %.2f", setting.value)
-        self.setBrightness(setting.value)
-
     def __init__( self, board:"CilgerranCastle",  maxLeds:int = 8, **kwargs:Unpack[LightSource.KWDS] ) -> None:
         self.__leds:List[CilgerranLED|None] = [None] * maxLeds
         self.__sourceLeds:List[CilgerranLED] = []
@@ -140,7 +135,12 @@ class CilgerranPixelSource( LightSource, NamedOutputTarget, Tunable ):
                         board.D2
                         ]
 
-    
+    @tunableZeroToOne(0.5)
+    def brightness(self, setting:TunableZeroToOneSetting[Self], context:EvaluationContext ) -> None:
+        if self.enableDbgOut: self.dbgOut("brightness changed to %.2f", setting.value)
+        self.setBrightness(setting.value)
+
+  
     #@brightness.setter
     def setBrightness(self, level:ZeroToOne):
         constrained = withinZeroToOne(level)
@@ -231,8 +231,8 @@ class CilgerranBatterMonitor(InputSource):
 class CilgerranCastle(D1MiniBoardBase):
     class KWDS(D1MiniBoardBase.KWDS):
         version: NotRequired[str]
-        brightness: NotRequired[float]
-        ledCount: NotRequired[int]
+        #brightness: NotRequired[float]
+        #ledCount: NotRequired[int]
         withMotor: NotRequired[bool]
         monitorBattery: NotRequired[bool]
         #neoPixelPin: NotRequired[microcontroller.Pin|str]
@@ -240,8 +240,8 @@ class CilgerranCastle(D1MiniBoardBase):
     def __init__(self,
                 #name=None, 
                 version:Optional[str]=None,
-                brightness:Optional[float] = 1.0,
-                ledCount:int|None = None,
+                #brightness:Optional[float] = 1.0,
+                #ledCount:int|None = None,
                 withMotor:bool = False,
                 monitorBattery:bool = True,
                  **kwds:Unpack[D1MiniBoardBase.KWDS] ) -> None:
@@ -256,12 +256,13 @@ class CilgerranCastle(D1MiniBoardBase):
         self.__batteryMonitor = CilgerranBatterMonitor( self ) if monitorBattery else None
 
         self.__version = version
-        self.__brightness:float = brightness or 1.0
+        #self.__brightness:float = brightness or 1.0
 
         self.__ledEnable = digitalio.DigitalInOut(self.asPin(self.D0))
         self.__ledEnable.direction = digitalio.Direction.OUTPUT
         self.__ledEnable.value = False
         self.__motor:DCMotorSpinner|None = None
+        if withMotor: self.motor  # force motor creation
 
     @property
     def batteryMonitor(self) -> CilgerranBatterMonitor | None:

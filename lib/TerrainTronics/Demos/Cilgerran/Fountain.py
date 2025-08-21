@@ -8,9 +8,11 @@ caernarfon = main.TerrainTronics.addCaernarfon(  config="secondary",  neoPixelCo
 cilgerran = main.TerrainTronics.addCilgerran()
 
 fountainTurret = cilgerran.motor
+fountainTurret.minSpeed = 0.35
 # assign Cilgerran Castle output / LED channels
 cilgerranChannels = cilgerran.ledSource
 cilgerranChannels.enableDbgOut=True
+cilgerranChannels.brightness.enableDbgOut = True
 cilgerranChannels.addLeds(6)
 fountainChannels = cilgerranChannels.nextNLights(2) # skip 0/1 - reserved for fountain controls
 cilLeds = cilgerranChannels.nextNLights(4)
@@ -39,7 +41,10 @@ actOne.addRule( fountainChannels[0], flowRate )
 actOne.addRule( cilgerranChannels.brightness, brightness )
 
 #fountainTurret.setEnableDebugWithChildren( True )
+#fountainTurret.enableDbgOut = True
+#fountainTurret.manualSpeed.enableDbgOut = True
 setManualSpeed = actOne.addRule( fountainTurret.manualSpeed, motorSpeed )
+setManualSpeed.enableDbgOut = True
 setManualOverride = actOne.addRule( fountainTurret.manualOverride, manualSpeedControl )
 
 main.panel.monitor(setManualSpeed)

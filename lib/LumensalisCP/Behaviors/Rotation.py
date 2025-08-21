@@ -17,7 +17,7 @@ class Spinner(Actor,Tunable):
     def __init__(self, **kwds:Unpack[Actor.KWDS]):
         Actor.__init__( self, **kwds )
         Tunable.__init__(self)
-        #self.defaultJogSpeed:ZeroToOneEval = 0.5
+
         #self.manualSpeed = TunableSettingT[PlusMinusOne](startingValue=0,onChange=self._onManualSpeedChange)
         self.manualOverride = TunableBoolSettingT[Self](self, startingValue=False, onChange=Spinner._onManualOverrideChange)
         self._inManualControl = False
@@ -33,7 +33,7 @@ class Spinner(Actor,Tunable):
         return 
 
     @tunablePlusMinusOne(0.0)
-    def manualSpeed(self, setting:TunablePlusMinusOneSetting[Spinner], context:EvaluationContext ) -> None:
+    def manualSpeed(self, setting:TunablePlusMinusOneSetting[Self], context:EvaluationContext ) -> None:
         if self._inManualControl:
             if self.enableDbgOut: self.dbgOut("manualSpeed changed to %s", setting.value)
             self._setManualSpeed( setting.value, context=context )
@@ -202,7 +202,7 @@ class DCMotorSpinner(Spinner):
         if self.enableDbgOut: self.dbgOut("maxSpeed changed to %s", setting.value)
         return
 
-    @tunableZeroToOne(1.0)
+    @tunableZeroToOne(0.0)
     def minSpeed(self, setting:TunableZeroToOneSetting[Self], context:EvaluationContext) -> None:
         if self.enableDbgOut: self.dbgOut("minSpeed changed to %s", setting.value)
         return
@@ -310,8 +310,9 @@ class DCMotorSpinner(Spinner):
     def _setSpeed( self, directionalSpeed:PlusMinusOne, context:EvaluationContext) -> None:
         self.__targetSpeed = directionalSpeed
         if abs(directionalSpeed) < self.minSpeed.value:
-            directionalSpeed = 0
-        if directionalSpeed < 0:
+            self.infoOut(f"_setSpeed: {directionalSpeed} min/deadband {self.minSpeed.value} exceeded")
+            inA, inB = (0, 0)
+        elif directionalSpeed < 0:
             inA, inB = (-min(self.maxSpeed.value, directionalSpeed), 0)
         elif directionalSpeed > 0:
             inA, inB = (0, min(self.maxSpeed.value, directionalSpeed))

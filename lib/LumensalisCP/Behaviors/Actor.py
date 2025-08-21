@@ -36,7 +36,7 @@ class Actor(RefreshableNAP):
         main = main or getMainManager()
         assert main is not None
         self.main = main 
-        kwds.setdefault('autoList',main._refreshables )
+        kwds.setdefault('autoList',main._refreshables ) # type: ignore[assignment]
         kwds.setdefault('temporaryName', self.__class__.__name__ )
         super().__init__(**kwds)
         self.__currentBehavior = None
