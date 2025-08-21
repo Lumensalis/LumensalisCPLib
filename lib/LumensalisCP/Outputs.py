@@ -48,6 +48,8 @@ class NotifyingOutputTarget( OutputTarget, Generic[T] ):
 
 NotifyingOutputTargetT = GenericT(NotifyingOutputTarget)
 
+#############################################################################
+
 class NamedNotifyingOutputTarget(Generic[T],NotifyingOutputTargetT[T],NamedLocalIdentifiable):
     def __init__(self,
                  onChange:Callable[[EvaluationContext,T], None],initialValue:Optional[T]=None, 
@@ -58,11 +60,13 @@ class NamedNotifyingOutputTarget(Generic[T],NotifyingOutputTargetT[T],NamedLocal
 
 NamedNotifyingOutputTargetT = GenericT(NamedNotifyingOutputTarget)
 
+
 #############################################################################
 
 _sayOutputsImport.complete(globals())
     
 __all__ = [ 'OutputTarget', 'NamedOutputTarget',
            'NotifyingOutputTarget', 'NamedNotifyingOutputTarget',
-            'NotifyingOutputTargetT', 'NamedNotifyingOutputTargetT'
+            'NotifyingOutputTargetT', 'NamedNotifyingOutputTargetT',
+
            ]

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-
 from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayBehaviorImport = getImportProfiler( globals() ) # "Behaviors.Behavior"
 
+# pyright: reportUnusedImport=false
 
 _sayBehaviorImport( "Expression" )
 from LumensalisCP.Eval.Expressions import EvaluationContext, UpdateContext 
@@ -16,58 +16,18 @@ from LumensalisCP.Debug import Debuggable
 if TYPE_CHECKING:
     #import weakref
     from LumensalisCP.Main.Manager import MainManager
+    from LumensalisCP.Behaviors.Actor import Actor
 
 _sayBehaviorImport( "parsing" )
-class Actor(Debuggable):
-    """
-    Base class for actors in the scene.
-    
-    """
-    
-    __currentBehavior:Behavior|None = None
-    class KWDS(TypedDict):
-        name: NotRequired[str]
-        main: NotRequired[MainManager]
-        
-    def __init__(self, name:str|None = None, main:MainManager|None = None ):
-        
-        super().__init__()
-        self.name = name if name else self.__class__.__name__
-        main = main or getMainManager()
-        assert main is not None
-        self.main = main 
-        self.__currentBehavior = None
-        
-    @property
-    def currentBehavior(self) -> Behavior|None:
-        """Current behavior of the actor."""
-        #assert self.__currentBehavior is not None
-        return self.__currentBehavior
 
-    @currentBehavior.setter
-    def currentBehavior(self, behavior:Behavior ) -> None:
-        """Set the current behavior of the actor."""
-        self.setCurrentBehavior( behavior )
-        
-    def setCurrentBehavior(self, behavior:Behavior|None, reset:bool=False, context:Optional[EvaluationContext]=None ) -> None:
-        """Set the current behavior of the actor."""
-        assert behavior is not None, "Behavior must not be None"
-        if self.__currentBehavior is behavior and reset is False:   
-            if self.enableDbgOut: self.dbgOut("Behavior %s is already current, not changing", behavior.name)
-            return
-        
-        if self.enableDbgOut: self.dbgOut("Setting current behavior to %s", behavior.name)
-        context = UpdateContext.fetchCurrentContext(context)
-        if self.__currentBehavior is not None:
-            self.__currentBehavior.exit(context)
-        self.__currentBehavior = behavior
-        if self.__currentBehavior is not None: # pylint: disable=protected-access # pyright: ignore[reportUnnecessaryComparison]
-            self.__currentBehavior.enter(context)
-        
 class Behavior(Debuggable):
     __name: str
     __actor: weakref.ReferenceType[Actor] 
     __scene: str|Scene|None
+
+    class KWDS(TypedDict):
+        name:NotRequired[str]
+        scene:NotRequired[str|Scene]
     
     def __init__(self, actor:Actor, name:Optional[str] = None, scene:Optional[str|Scene] = None ):
         super().__init__()
@@ -86,16 +46,24 @@ class Behavior(Debuggable):
         if scene is not None and self.isActive:
             context = UpdateContext.fetchCurrentContext(None)
             context.main.scenes.currentScene = scene
-        
+
+    def derivedEnter(self, context:EvaluationContext) -> None:
+        pass
+
     def enter(self, context:EvaluationContext) -> None:
         """Enter the behavior. This is called when the behavior is activated."""
         if self.enableDbgOut: self.dbgOut("Entering behavior %s", self.name)
         if self.__scene is not None:
             context.main.scenes.currentScene = self.__scene
-    
+        self.derivedEnter(context)
+
+    def derivedExit(self, context:EvaluationContext) -> None:
+        pass
+
     def exit(self, context:EvaluationContext) -> None: # pylint: disable=unused-argument
         """Exit the behavior. This is called when the behavior is deactivated."""
         if self.enableDbgOut: self.dbgOut("Exiting behavior %s", self.name)    
+        self.derivedExit(context)
         
     @property
     def actor(self) -> Actor:

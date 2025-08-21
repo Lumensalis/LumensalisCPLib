@@ -10,7 +10,11 @@ import math
 
 from LumensalisCP.Eval.common import *
 from LumensalisCP.Inputs import InputSource
-from LumensalisCP.Outputs import OutputTarget, NamedOutputTarget, NotifyingOutputTarget, NamedNotifyingOutputTarget, NotifyingOutputTargetT, NamedNotifyingOutputTargetT
+from LumensalisCP.Outputs import OutputTarget, NamedOutputTarget, \
+        NotifyingOutputTarget,  NotifyingOutputTargetT, \
+        NamedNotifyingOutputTarget, NamedNotifyingOutputTargetT
+        
+from LumensalisCP.Tunable import *
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager

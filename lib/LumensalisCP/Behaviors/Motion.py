@@ -4,7 +4,8 @@ from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayMotionImport = getImportProfiler( globals() ) # "Motion"
 
 from LumensalisCP.Behaviors._common import *
-from LumensalisCP.Behaviors.Behavior import Behavior, Actor
+from LumensalisCP.Behaviors.Actor import Actor
+from LumensalisCP.Behaviors.Behavior import Behavior
 from LumensalisCP.Gadgets.Servos import LocalServo
 
 class Motion(Behavior):
@@ -12,8 +13,8 @@ class Motion(Behavior):
     Base class for motion behaviors.
     """
 
-    def __init__(self, actor:Actor, name:str|None = None):
-        super().__init__(actor, name)
+    def __init__(self, actor:Actor, **kwds:Unpack[Behavior.KWDS]):
+        super().__init__(actor, **kwds)
 
 class Door(Actor):
     
@@ -46,9 +47,10 @@ class ServoMovement(Motion):
     speed:DegreesPerSecond = 10
     nextBehavior:"ServoMovement|None"
         
-    def __init__(self, actor:"ServoDoor", name:str|None = None,
-            target:Degrees|None = None, speed:DegreesPerSecond|None = None ):
-        super().__init__(actor, name)
+    def __init__(self, actor:"ServoDoor", 
+            target:Degrees|None = None, speed:DegreesPerSecond|None = None,
+            **kwds:Unpack[Motion.KWDS] ) -> None:
+        super().__init__(actor, **kwds)
         self.reset( target=target, speed=speed)
         self.nextBehavior = None
         
@@ -123,12 +125,12 @@ class ServoDoor(Door):
         self.defaultSpeed = toTimeInSecondsEval( defaultSpeed, 5.0 )
         self.openedSensor = openedSensor
         self.closedSensor = closedSensor
-        self.opening = ServoMovement(self, "Opening", target=self.openPosition  )   
-        self.closing = ServoMovement(self, "Closing", target=self.closedPosition )
-        self.opened = ServoMovement(self, "Opened", target=self.openPosition )
-        self.closed = ServoMovement(self, "Closed", target=self.closedPosition )
-        self.moving = ServoMovement(self, "Moving")
-        self.stopped = ServoMovement(self, "Stopped")
+        self.opening = ServoMovement(self, name="Opening", target=self.openPosition  )   
+        self.closing = ServoMovement(self, name="Closing", target=self.closedPosition )
+        self.opened = ServoMovement(self, name="Opened", target=self.openPosition )
+        self.closed = ServoMovement(self, name="Closed", target=self.closedPosition )
+        self.moving = ServoMovement(self, name="Moving")
+        self.stopped = ServoMovement(self, name="Stopped")
         self.opening.nextBehavior = self.opened
         self.closing.nextBehavior = self.closed
         if self.enableDbgOut:

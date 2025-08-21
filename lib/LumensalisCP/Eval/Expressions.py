@@ -4,7 +4,7 @@ from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayEvalExpressionsImport = getImportProfiler( globals() ) # "Eval.Expressions"
 
 from LumensalisCP.Eval._common import *
-from LumensalisCP.Eval.Evaluatable import Evaluatable
+from LumensalisCP.Eval.Evaluatable import Evaluatable, EvaluatableT
 from LumensalisCP.Eval.EvaluationContext import EvaluationContext
 from LumensalisCP.Eval.ExpressionTerm import ExpressionTerm, ensureIsTerm
 

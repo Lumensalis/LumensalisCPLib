@@ -3,13 +3,15 @@ from __future__ import annotations
 from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayImport = getImportProfiler( "Main.Panel" )
 
+# pylint: disable=redefined-builtin,unused-variable,unused-argument,broad-exception-caught
+# pyright: reportUnusedImport=false
+
 from LumensalisCP.IOContext import *
 
 from LumensalisCP.Main.Dependents import MainChild
 from LumensalisCP.Triggers.Trigger import Trigger
-from LumensalisCP.Eval.Evaluatable import NamedEvaluatableProtocolT
+from LumensalisCP.Eval.Evaluatable import NamedEvaluatableProtocolT, NamedEvaluatableProtocol
 
-# pylint: disable=redefined-builtin,unused-variable,unused-argument,broad-exception-caught
 
 _sayImport.parsing()
 
@@ -43,6 +45,7 @@ class PanelControl(InputSource, Generic[CVT, CVT_OUT]):
                  kind:Optional[str|type]=None,
                  convertor:Optional[Callable[[CVT],CVT_OUT]]=None,
                  kindMatch: Optional[type]=None,
+                 adjuster: Optional[Callable[[CVT_OUT], CVT_OUT]] = None,
                  **kwds:Unpack[InputSource.KWDS]
                  ) -> None:
         super().__init__(**kwds)
@@ -51,13 +54,13 @@ class PanelControl(InputSource, Generic[CVT, CVT_OUT]):
         if kind is None:
             assert startingValue is not None
             kind = type(startingValue).__name__
-                
+        self.adjuster = adjuster
         self.kind = kind
         if kindMatch is not None:
             self.kindMatch = kindMatch
         elif isinstance(kind, type):
             self.kindMatch = kind
-        elif isinstance( kind, str ):
+        elif isinstance( kind, str ): # pyright: ignore
             kType = globals().get(kind,None)
             if isinstance(kType,type):
                 self.kindMatch = kType
@@ -108,6 +111,12 @@ class PanelControl(InputSource, Generic[CVT, CVT_OUT]):
             except Exception as inst:
                 print(f"failed converting {value} to {self.kind} : {inst}")
                 return
+            
+        
+        if value != self._controlValue:
+            if self.adjuster is not None:
+                value = self.adjuster(value)
+
         if value != self._controlValue:
             if self._min is not None and value < self._min:
                 value = self._min
@@ -150,9 +159,9 @@ class PanelMonitor( NamedLocalIdentifiable, Generic[CVT]   ):
     :param NamedOutputTarget: _description_
     :type NamedOutputTarget: _type_
     """
-    def __init__(self, source:NamedEvaluatableProtocolT[CVT], **kwds:Unpack[IVT_KWDS[CVT]] ) -> None:
+    def __init__(self, source:NamedEvaluatableProtocol[CVT], **kwds:Unpack[IVT_KWDS[CVT]] ) -> None:
         super().__init__()
-        self.source:NamedEvaluatableProtocolT[CVT] = source
+        self.source:NamedEvaluatableProtocol[CVT] = source
         self.__varValue = kwds.pop( 'startingValue', None )
         self.kind = kwds.pop('kind', None)
         self.kindMatch = kwds.pop('kindMatch',  int)
@@ -227,6 +236,7 @@ class ControlPanel( MainChild ):
                 kindMatch: Optional[type]=None,
                 convertor : Callable[[Any],Any]|None = None,
                 defaultStartingValue: Optional[Any]=0.0,
+                controlCls = PanelControl,
                 **kwds:Unpack[CVT_ADD_KWDS[Any,Any]]
         ) -> PanelControl[Any,Any]:
 
@@ -248,7 +258,7 @@ class ControlPanel( MainChild ):
             if max is not None and defaultStartingValue > max:  defaultStartingValue = max
             kwds['startingValue'] = defaultStartingValue
 
-        variable:PanelControl[Any,Any] = PanelControl( # type: ignore
+        variable:PanelControl[Any,Any] = controlCls( # type: ignore
             kind=kind,
             kindMatch=kindMatch,
             convertor=convertor,
@@ -265,11 +275,19 @@ class ControlPanel( MainChild ):
                                  convertor=lambda v: float(v),  defaultStartingValue=0.0,
 
                                 min=0.0, max=1.0, **kwds ) # type: ignore
-    def addPlusMinusOne( self, argOne:Optional[Any]=None,**kwds:Unpack[CVT_ADD_KWDS[float,PlusMinusOne]] ) -> PanelControl[float,PlusMinusOne]:
+    def addPlusMinusOne( self, argOne:Optional[Any]=None,deadband:Optional[float]=0.1, **kwds:Unpack[CVT_ADD_KWDS[float,PlusMinusOne]] ) -> PanelControl[float,PlusMinusOne]:
         """ add control for a value between -1 and 1, see  http://lumensalis.com/ql/h2PanelControl """
+        if deadband is not None:
+            def adjuster(v:PlusMinusOne) -> PlusMinusOne:
+                if abs(v) < deadband:
+                    return 0.0
+                return v
+        else:
+            adjuster = None
+
         return self._addControl( argOne, kind='PlusMinusOne',kindMatch=float,
                                  convertor=lambda v: float(v), defaultStartingValue=0.0,
-                                min=-1.0, max=1.0, **kwds ) # type: ignore
+                                min=-1.0, max=1.0, adjuster=adjuster, **kwds ) # type: ignore
 
     def addRGB( self, argOne:Optional[Any]=None,**kwds:Unpack[CVT_ADD_KWDS[AnyRGBValue, RGB]] ) -> PanelControl[AnyRGBValue,RGB]:
         """ add control for an RGB color value, see  http://lumensalis.com/ql/h2PanelControl """
@@ -278,6 +296,10 @@ class ControlPanel( MainChild ):
     def addInt( self, argOne:Optional[Any]=None, **kwds:Unpack[CVT_ADD_KWDS[int,int]] ) -> PanelControl[int,int]:
         """ add control for an integer value, see  http://lumensalis.com/ql/h2PanelControl """
         return self._addControl( argOne, kind=int, convertor=lambda v: int(v), defaultStartingValue=0,**kwds ) # type: ignore
+
+    def addSwitch( self, argOne:Optional[Any]=None, **kwds:Unpack[CVT_ADD_KWDS[bool,bool]] ) -> PanelControl[bool,bool]:
+        """ add control for a boolean value, see  http://lumensalis.com/ql/h2PanelControl """
+        return self._addControl( argOne, kind=bool, convertor=lambda v: bool(v), defaultStartingValue=False,**kwds ) # type: ignore
 
     def addFloat( self, argOne:Optional[Any]=None, **kwds:Unpack[CVT_ADD_KWDS[float,float]] ) -> PanelControl[float,float]:
         """ add control for a float value, see  http://lumensalis.com/ql/h2PanelControl """
@@ -302,7 +324,7 @@ class ControlPanel( MainChild ):
 
     #########################################################################
     def _addMonitor( self,
-                input:InputSource,
+                input:NamedEvaluatableProtocol[Any],
                 kind:str|type,
                 kindMatch: Optional[type]=None,
                 convertor : Callable[[Any],Any]|None = None,
@@ -315,35 +337,35 @@ class ControlPanel( MainChild ):
         return variable
     
     #########################################################################
-    def monitorZeroToOne( self, input:InputSource,**kwds:Unpack[IVT_ADD_KWDS[ZeroToOne]] ) -> PanelMonitor[ZeroToOne]:
+    def monitorZeroToOne( self, input:NamedEvaluatableProtocol[ZeroToOne],**kwds:Unpack[IVT_ADD_KWDS[ZeroToOne]] ) -> PanelMonitor[ZeroToOne]:
         """ add monitor for a value between 0 and 1, see  http://lumensalis.com/ql/h2PanelMonitor """
         return self._addMonitor(  input, kind='ZeroToOne', kindMatch=float, **kwds )
 
-    def monitorRGB( self, input:InputSource,**kwds:Unpack[IVT_ADD_KWDS[RGB]] ) -> PanelMonitor[RGB]:
+    def monitorRGB( self, input:NamedEvaluatableProtocol[RGB],**kwds:Unpack[IVT_ADD_KWDS[RGB]] ) -> PanelMonitor[RGB]:
         """ add monitor for a RGB color value, see  http://lumensalis.com/ql/h2PanelMonitor """
         return self._addMonitor(  input, kind=RGB, **kwds )
 
-    def monitorInt( self, input:InputSource,**kwds:Unpack[IVT_ADD_KWDS[int]] ) -> PanelMonitor[int]:
+    def monitorInt( self, input:NamedEvaluatableProtocol[int],**kwds:Unpack[IVT_ADD_KWDS[int]] ) -> PanelMonitor[int]:
         """ add monitor for an integer value, see  http://lumensalis.com/ql/h2PanelMonitor """
         return self._addMonitor(  input, kind=int, **kwds )
 
-    def monitorFloat( self, input:InputSource,**kwds:Unpack[IVT_ADD_KWDS[float]] ) -> PanelMonitor[float]:
+    def monitorFloat( self, input:NamedEvaluatableProtocol[float],**kwds:Unpack[IVT_ADD_KWDS[float]] ) -> PanelMonitor[float]:
         """ add monitor for a float value, see  http://lumensalis.com/ql/h2PanelMonitor """
         return self._addMonitor(  input, kind=float, **kwds )
 
-    def monitorSeconds( self, input:InputSource,**kwds:Unpack[IVT_ADD_KWDS[TimeInSeconds]] ) -> PanelMonitor[TimeInSeconds]:
+    def monitorSeconds( self, input:NamedEvaluatableProtocol[TimeInSeconds],**kwds:Unpack[IVT_ADD_KWDS[TimeInSeconds]] ) -> PanelMonitor[TimeInSeconds]:
         """ add monitor for a duration (in seconds), see  http://lumensalis.com/ql/h2PanelMonitor """
         return self._addMonitor(  input, kind='TimeInSeconds', kindMatch=float, **kwds )
 
-    def monitorMillimeters( self, input:InputSource,**kwds:Unpack[IVT_ADD_KWDS[Millimeters]] ) -> PanelMonitor[Millimeters]:
+    def monitorMillimeters( self, input:NamedEvaluatableProtocol[Millimeters],**kwds:Unpack[IVT_ADD_KWDS[Millimeters]] ) -> PanelMonitor[Millimeters]:
         """ add monitor for a distance (in millimeters), see  http://lumensalis.com/ql/h2PanelMonitor """
         return self._addMonitor(  input, kind='Millimeters', kindMatch=float, **kwds )
     
-    def monitorAngle( self, input:InputSource,**kwds:Unpack[IVT_ADD_KWDS[Degrees]] ) -> PanelMonitor[Degrees]:
+    def monitorAngle( self, input:NamedEvaluatableProtocol[Degrees],**kwds:Unpack[IVT_ADD_KWDS[Degrees]] ) -> PanelMonitor[Degrees]:
         """ add monitor for an angle (in degrees), see  http://lumensalis.com/ql/h2PanelMonitor """        
         return self._addMonitor(  input, kind='Degrees', kindMatch=float, **kwds )
     
-    def monitor( self, input:InputSource,**kwds:Unpack[IVT_ADD_KWDS[Any]] ) -> PanelMonitor[Any]:
+    def monitor( self, input:NamedEvaluatableProtocol[Any],**kwds:Unpack[IVT_ADD_KWDS[Any]] ) -> PanelMonitor[Any]:
         """ add monitor for generic input, see  http://lumensalis.com/ql/h2PanelMonitor """        
         return self._addMonitor(  input, kind='Any', **kwds )
     

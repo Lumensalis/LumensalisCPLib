@@ -10,7 +10,7 @@ __sayHTTPControlVarsRLImport = getReloadableImportProfiler( __name__, globals() 
 from LumensalisCP.HTTP.BSR.common import *
 from LumensalisCP.Main.Panel import PanelControl, PanelMonitor
 from LumensalisCP.util.ObjToDict import objectToDict
-
+from LumensalisCP.Eval.Evaluatable import NamedEvaluatableProtocolT, NamedEvaluatableProtocol
 #############################################################################
 
 _module = ReloadableModule( 'LumensalisCP.HTTP.BasicServer' )
@@ -44,17 +44,18 @@ def BSR_client(self:BasicServer, request: Request):
 class PanelControlInstanceHelper(CountedInstance):
     
     kindMatch:type|None
+    input:NamedEvaluatableProtocol[Any]
 
     def __init__(self, panelInstance:PanelControl[Any,Any]|PanelMonitor[Any]):
         super().__init__()
         self.panelInstance = panelInstance
         if isinstance(panelInstance, PanelMonitor):
-            self.input:InputSource  = panelInstance.source
+            self.input = panelInstance.source
             self.kindMatch = None
         else:
             assert isinstance(panelInstance, PanelControl), f"panelInstance must be a PanelControl or PanelMonitor, got {type(panelInstance)}"
-            self.input:InputSource = panelInstance
-        
+            self.input = panelInstance
+
             assert self.panelInstance.kind is not None, f"panelInstance.kind is None for {self.panelInstance.name} ({type(self.panelInstance)})"
             assert self.panelInstance.kindMatch is not None, f"panelInstance.kind is None for {self.panelInstance.name} ({type(self.panelInstance)})"
             self.kindMatch = self.panelInstance.kindMatch
@@ -131,9 +132,13 @@ class EditCapablePanelControlInstanceHelper(PanelControlInstanceHelper):
                     );
                 console.log( "sending packet", packet );
                 ws.send( packet );
+                {self.nameId}Selector.textContent = {self.nameId}EditSelector.value;
+
             }},200 ) );
             """
     
+    def valueCell(self)-> str:
+        return f'<div id="{self.nameId}">{self.panelInstance.controlValue}</div>'
 
 class IntPanelControlInstanceHelper(EditCapablePanelControlInstanceHelper):
     
@@ -151,6 +156,15 @@ class IntPanelControlInstanceHelper(EditCapablePanelControlInstanceHelper):
     def wsCellUpdate(self):
         return f'{self.nameId}Selector.textContent = value;'
 
+class BoolPanelControlInstanceHelper(EditCapablePanelControlInstanceHelper):
+    
+    def editCell(self)-> str:
+        assert isinstance( self.panelInstance, PanelControl)
+        return f'<input id="{self.nameId}_edit" type="checkbox" value="{self.panelInstance.controlValue}"/>'
+
+    def wsCellUpdate(self):
+        return f'{self.nameId}Selector.textContent = value;'
+
 class FloatPanelControlInstanceHelper(EditCapablePanelControlInstanceHelper):
 
     def wsCellUpdate(self):
@@ -159,8 +173,8 @@ class FloatPanelControlInstanceHelper(EditCapablePanelControlInstanceHelper):
     def editCell(self)-> str:
         low = self.panelInstance._min
         high = self.panelInstance._max
-        assert isinstance(low, (int, float)), f"low must be int or float, got {type(low)}"
-        assert isinstance(high, (int, float)), f"high must be int or float, got {type(high)}"
+        assert isinstance(low, (int, float)), f"low for {self.nameId} must be int or float, got {type(low)}"
+        assert isinstance(high, (int, float)), f"high for {self.nameId}must be int or float, got {type(high)}"
         span = high - low
         assert isinstance( self.panelInstance, PanelControl)
         return f'<input id="{self.nameId}_edit" type="range" min="{low}" max="{high}" value="{self.panelInstance.controlValue}" step="{span/100}"/>'
@@ -248,13 +262,21 @@ class PanelParts(CountedInstance):
             elif kind == "RGB":
                 instanceHelper = RGBPanelControlInstanceHelper( input )
             elif kind  in ( "float", "TimeSpanInSeconds" ):
-                instanceHelper = FloatPanelControlInstanceHelper( input )                
+                instanceHelper = FloatPanelControlInstanceHelper( input )
+            elif kind  in ( "bool","switch" ):
+                instanceHelper = BoolPanelControlInstanceHelper(input)
+
             else:
                 kindMatch = control.kindMatch
                 if kindMatch is RGB:
                     instanceHelper = RGBPanelControlInstanceHelper( input )
                 elif kindMatch is float:
                     instanceHelper = FloatPanelControlInstanceHelper( input )
+                elif kindMatch is bool:
+                    instanceHelper = BoolPanelControlInstanceHelper(input)
+                elif kindMatch is int:
+                    instanceHelper = IntPanelControlInstanceHelper(input)
+
                 else:
                     instanceHelper = BasicPanelControlInstanceHelper( input )
 

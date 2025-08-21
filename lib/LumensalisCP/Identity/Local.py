@@ -36,7 +36,7 @@ class LocalIdentifiable(CountedInstance):
 
 #############################################################################
 
-class NliInterface:
+class NliInterface(Protocol):
     def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]: ...
 
     def nliGetContainers(self) -> Iterable[NliContainerInterface]: ...
@@ -45,8 +45,7 @@ class NliInterface:
 class NliContainerInterface(NliInterface):
     @property
     def containerName(self) -> str: ...
-    @property
-    def name(self) -> str: ...
+
 
     def __getitem__(self, key:str|int) -> NamedLocalIdentifiable: ...
     

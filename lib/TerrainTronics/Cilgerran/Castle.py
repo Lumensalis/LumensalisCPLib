@@ -15,6 +15,7 @@ from LumensalisCP.IOContext import *
 from LumensalisCP.commonCP import *
 from LumensalisCP.Lights.Light import *
 from LumensalisCP.Lights.Light import LightSource
+from LumensalisCP.Behaviors.Rotation import DCMotorSpinner
 
 #############################################################################
 if TYPE_CHECKING:
@@ -76,7 +77,7 @@ class CilgerranLED( DimmableLight ):
             self._brightnessChanged(  )
         
     def _brightnessChanged(self) -> None:
-        value = withinZeroToOne(self.__value *( self.source.brightness.latestValue or 0.0) )
+        value = withinZeroToOne(self.__value *( self.source.brightness.value or 0.0) )
         dutyCycle = int( value * CilgerranLED.DUTY_CYCLE_RANGE )
         if dutyCycle != self.__dutyCycle:
             try:
@@ -97,52 +98,35 @@ class CilgerranLED( DimmableLight ):
         return f"Clg({self.__pin},{self.__value},{self.__output.duty_cycle})"
 
 #############################################################################
-T=TypeVar('T')  
-class NotifyingOutputTarget( OutputTarget, Generic[T] ):
-
-    def __init__(self,onChange:Callable[[EvaluationContext,T], None],initialValue:Optional[T]=None) -> None:
-        self.__latestValue:T|None = initialValue
-        self.onChange = onChange
-
-    @property
-    def latestValue(self) -> T | None:
-        return self.__latestValue
-
-    def set( self, value:T, context:EvaluationContext ) -> None:
-        self.__latestValue = value
-        self.onChange(context,value)
-
-NotifyingOutputTargetT = GenericT(NotifyingOutputTarget)
-
-class NamedNotifyingOutputTarget(Generic[T],NotifyingOutputTargetT[T],NamedLocalIdentifiable):
-    def __init__(self,
-                 onChange:Callable[[EvaluationContext,T], None],initialValue:Optional[T]=None, 
-                 **kwds:Unpack[NamedLocalIdentifiable.KWDS]
-                 ) -> None:
-        NotifyingOutputTargetT[T].__init__(self, onChange=onChange,initialValue=initialValue)
-        NamedLocalIdentifiable.__init__(self, **kwds)
-
-NamedNotifyingOutputTargetT = GenericT(NamedNotifyingOutputTarget)
-#############################################################################
 
 
-class CilgerranPixelSource( LightSource, NamedOutputTarget ):
+class CilgerranPixelSource( LightSource, NamedOutputTarget, Tunable ):
+
+    motorChannels = [6, 7]
+
+    @tunableZeroToOne(0.5)
+    def brightness(self, setting:TunableZeroToOneSetting[Self], context:EvaluationContext ) -> None:
+        if self.enableDbgOut: self.dbgOut("brightness changed to %.2f", setting.value)
+        self.setBrightness(setting.value)
 
     def __init__( self, board:"CilgerranCastle",  maxLeds:int = 8, **kwargs:Unpack[LightSource.KWDS] ) -> None:
         self.__leds:List[CilgerranLED|None] = [None] * maxLeds
         self.__sourceLeds:List[CilgerranLED] = []
         self.__maxLeds = maxLeds
         self.__brightness:ZeroToOne = 1.0
+        self._motorPinsReserved: bool = False
+
 
         kwargs["lights"] = self.__sourceLeds # type: ignore
 
         LightSource.__init__(self, **kwargs)
         NamedOutputTarget.__init__(self, name=kwargs.get("name","CilgerranCastleLEDs") )
+        Tunable.__init__(self)
 
-        def onChange(context:EvaluationContext, value:Any) -> None:
-            if self.enableDbgOut: self.dbgOut("brightness changed to %.2f", value)
-            self.__brightness = withinZeroToOne(value)
-        self.__brightnessTarget = NamedNotifyingOutputTargetT[ZeroToOne]( onChange=onChange, initialValue=1.0, name="brightness")
+        #def onChange(context:EvaluationContext, value:Any) -> None:
+        #    if self.enableDbgOut: self.dbgOut("brightness changed to %.2f", value)
+        #    self.__brightness = withinZeroToOne(value)
+        #self.__brightnessTarget = TunableSetting[ZeroToOne]( onChange=onChange, initialValue=1.0, name="brightness")
         
         self.__board = board
         self.__LED_PINS=[ 
@@ -156,10 +140,7 @@ class CilgerranPixelSource( LightSource, NamedOutputTarget ):
                         board.D2
                         ]
 
-    @property
-    def brightness(self): return self.__brightnessTarget
-
-
+    
     #@brightness.setter
     def setBrightness(self, level:ZeroToOne):
         constrained = withinZeroToOne(level)
@@ -188,6 +169,9 @@ class CilgerranPixelSource( LightSource, NamedOutputTarget ):
             
         ensure( ledNumber > 0 and ledNumber <= self.__maxLeds, "invalid LED index" )
         zIndex = ledNumber - 1
+        if self._motorPinsReserved:
+            ensure( zIndex not in self.motorChannels, "motor pins are reserved" )
+
         ensure( self.__leds[zIndex] is None, "LED %r already added", ledNumber )
         rv = CilgerranLED( #name=name, 
                           index = ledNumber, 
@@ -197,6 +181,22 @@ class CilgerranPixelSource( LightSource, NamedOutputTarget ):
         self.__leds[ledNumber-1] = rv
         self.__sourceLeds.append( rv )
         return rv
+    
+    def _reserveMotorPins(self):
+        rv:list[CilgerranLED] = []
+        for zIndex in self.motorChannels:
+            assert self.__leds[zIndex] is None, f"motor channel {zIndex} already used"
+            channel = CilgerranLED( #name=name, 
+                          index = zIndex + 1, 
+                          pin = self.__board.asPin(self.__LED_PINS[zIndex]),
+                          board = self.__board, source=self
+                          )
+            
+            rv.append(channel)
+            self.__leds[zIndex] = channel
+        self._motorPinsReserved = True
+        return rv
+        
 
     def led(self, ledIndex:int
             #, name:Optional[str] = None 
@@ -261,6 +261,7 @@ class CilgerranCastle(D1MiniBoardBase):
         self.__ledEnable = digitalio.DigitalInOut(self.asPin(self.D0))
         self.__ledEnable.direction = digitalio.Direction.OUTPUT
         self.__ledEnable.value = False
+        self.__motor:DCMotorSpinner|None = None
 
     @property
     def batteryMonitor(self) -> CilgerranBatterMonitor | None:
@@ -276,6 +277,17 @@ class CilgerranCastle(D1MiniBoardBase):
                 self.__batteryMonitor.check(context)
         except Exception as inst:
             self.SHOW_EXCEPTION( inst, f"Cilgerran update exception")
+
+
+    @property
+    def motor(self) -> DCMotorSpinner:
+        if self.__motor is None:
+            motorPins = self.ledSource._reserveMotorPins()
+            self.__motor = DCMotorSpinner(
+                inA = motorPins[0],
+                inB = motorPins[1]
+            )
+        return self.__motor
 
 #############################################################################
 

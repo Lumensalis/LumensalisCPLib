@@ -118,8 +118,8 @@ def _processInner( self:RefreshableListImplementation, context:EvaluationContext
                 self._setNextListRefreshChanged(context, nextRefresh)
 
         if show:
-            self.infoOut("process finished, nextRefresh = %s", nextRefresh)
-            assert nextRefresh == self._nextListRefresh
+            self.infoOut("process finished, nextRefresh = %s, dirty=%s", nextRefresh, self._dirtyCount)
+            assert nextRefresh == self._nextListRefresh or self._dirtyCount > 0, f"nextRefresh {nextRefresh} != _nextListRefresh {self._nextListRefresh} dirty={self._dirtyCount}"
 
 @_RefreshableListImplementation.reloadableMethod()
 def process( self:RefreshableListImplementation, context:EvaluationContext, when:TimeInSeconds ) -> None:
@@ -127,10 +127,11 @@ def process( self:RefreshableListImplementation, context:EvaluationContext, when
     if self._nextListRefresh is None or self._nextListRefresh > when: return 
 
     extra = 0 
-    while extra < 3 and self._nextListRefresh <= when:
+    while extra < 3 and self._nextListRefresh <= when :
         extra += 1
         if self.enableDbgOut: self.infoOut("process extra %r: nextListRefresh %s <= when %s ...", extra, self._nextListRefresh, when)
         self.__extraCount += 1
+
         _processInner(self, context, when)
         
 
@@ -148,7 +149,9 @@ def addActive( self:RefreshableListImplementation, context:EvaluationContext, it
 @_RefreshableListImplementation.reloadableMethod()
 def add( self:RefreshableListImplementation, context:EvaluationContext, item:Refreshable, nextRefresh:Optional[TimeInSeconds]=None ) -> None:
     if item.refreshList is not None:
-        raise ValueError( f"Item {item} already in a refresh list {item.refreshList}" )
+        if item.refreshList is not self:
+            raise ValueError( f"Item {item} already in a refresh list {item.refreshList}" )
+        self.warnOut( "add ... Item %s already in this refresh list", item )
     
     if nextRefresh is None:
         nextRefresh = item.refreshableCalculateNextRefresh(context, context.when)

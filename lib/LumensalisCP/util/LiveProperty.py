@@ -14,7 +14,7 @@ class LivePropertyHolder:
             f"{self.__class__.__name__} does not implement onDescriptorSet")
         
 _LPT = TypeVar('_LPT' )
-_LCT = TypeVar('_LCT' )
+_LCT = TypeVar('_LCT',contravariant=True )
 
 #############################################################################
 
