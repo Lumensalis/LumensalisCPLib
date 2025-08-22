@@ -50,6 +50,7 @@ class NliContainerInterface(NliInterface):
     def __getitem__(self, key:str|int) -> NamedLocalIdentifiable: ...
     
 ############################################################################# 
+FULL_KWDS=TypeVar("FULL_KWDS")
 
 class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
 
@@ -69,11 +70,12 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
         Debuggable.__init__(self)
 
     @staticmethod 
-    def extractInitArgs(kwds:dict[str,Any]|Any) -> dict[str,Any]:
-        return {
-            'name': kwds.pop('name', None),
-            'temporaryName': kwds.pop('temporaryName', None)
+    def extractInitArgs(kwds:FULL_KWDS) -> Tuple[FULL_KWDS,KWDS]:
+        nliKwds:NamedLocalIdentifiable.KWDS = {
+            'name': kwds.pop('name', None), # type: ignore
+            'temporaryName': kwds.pop('temporaryName', None) # type: ignore
         }
+        return kwds, nliKwds
 
     @property
     def name(self) -> str: return self.__name or self.__temporaryName or self.nliDynamicName()

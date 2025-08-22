@@ -19,28 +19,28 @@ class Spinner(Actor,Tunable):
         Tunable.__init__(self)
 
         #self.manualSpeed = TunableSettingT[PlusMinusOne](startingValue=0,onChange=self._onManualSpeedChange)
-        self.manualOverride = TunableBoolSettingT[Self](self, startingValue=False, onChange=Spinner._onManualOverrideChange)
+        self.manualOverride = TunableBoolSettingT[Spinner](self, startingValue=False, onChange=Spinner._onManualOverrideChange)
         self._inManualControl = False
 
     @tunableZeroToOne(0.5)
-    def defaultJogSpeed(self, setting:TunableZeroToOneSetting[Spinner], context:EvaluationContext ) -> None:
+    def defaultJogSpeed(self, setting: ZeroToOneSetting, context:EvaluationContext ) -> None:
         if self.enableDbgOut: self.dbgOut("defaultJogSpeed changed to %s", setting.value)
         return
 
     @tunablePlusMinusOne(0.0)
-    def defaultDirectionalSpeed(self, setting:TunablePlusMinusOneSetting[Spinner], context:EvaluationContext ) -> None:
+    def defaultDirectionalSpeed(self, setting:PlusMinusOneSetting, context:EvaluationContext ) -> None:
         if self.enableDbgOut: self.dbgOut("defaultDirectionalSpeed changed to %s", setting.value)
         return 
 
     @tunablePlusMinusOne(0.0)
-    def manualSpeed(self, setting:TunablePlusMinusOneSetting[Self], context:EvaluationContext ) -> None:
+    def manualSpeed(self, setting:PlusMinusOneSetting, context:EvaluationContext ) -> None:
         if self._inManualControl:
             if self.enableDbgOut: self.dbgOut("manualSpeed changed to %s", setting.value)
             self._setManualSpeed( setting.value, context=context )
         else:
             if self.enableDbgOut: self.dbgOut("manualSpeed changed to %s, (ignored)", setting.value)
 
-    def _onManualOverrideChange(self, setting:TunableSetting[bool,bool,Self], context:EvaluationContext ) -> None:
+    def _onManualOverrideChange(self, setting:TunableSetting[bool,Self], context:EvaluationContext ) -> None:
         if self.enableDbgOut: self.dbgOut("manualOverride changed to %s", setting.value)
         self._inManualControl = setting.value
         if not setting.value:
@@ -198,17 +198,17 @@ class DCMotorSpinner(Spinner):
         defaultDirectionalSpeed:NotRequired[PlusMinusOneEvalArg]
 
     @tunableZeroToOne(1.0)
-    def maxSpeed(self, setting:TunableZeroToOneSetting[Self], context:EvaluationContext) -> None:
+    def maxSpeed(self, setting:ZeroToOneSetting, context:EvaluationContext) -> None:
         if self.enableDbgOut: self.dbgOut("maxSpeed changed to %s", setting.value)
         return
 
     @tunableZeroToOne(0.0)
-    def minSpeed(self, setting:TunableZeroToOneSetting[Self], context:EvaluationContext) -> None:
+    def minSpeed(self, setting:ZeroToOneSetting, context:EvaluationContext) -> None:
         if self.enableDbgOut: self.dbgOut("minSpeed changed to %s", setting.value)
         return
     
     @tunablePlusMinusOne(0.0)
-    def defaultDirectionalSpeed(self, setting:TunablePlusMinusOneSetting[Self], context:EvaluationContext) -> None:
+    def defaultDirectionalSpeed(self, setting:PlusMinusOneSetting, context:EvaluationContext) -> None:
         if self.enableDbgOut: self.dbgOut("defaultDirectionalSpeed changed to %s", setting.value)
         return 
 
@@ -223,7 +223,7 @@ class DCMotorSpinner(Spinner):
         super().__init__(**kwds)
         self.inA = inA
         self.inB = inB
-        self.defaultDirectionalSpeed = toPlusMinusOneEval(defaultDirectionalSpeed, 0.0)
+        self.defaultDirectionalSpeed = toPlusMinusOne(defaultDirectionalSpeed, 0.0)
 
         self.lowerLimit = lowerLimit
         self.upperLimit = upperLimit
@@ -272,8 +272,9 @@ class DCMotorSpinner(Spinner):
 
             
 
-    def _complete(self, movement:SpinMovement, context:EvaluationContext):
+    def _complete(self, movement:Behavior, context:EvaluationContext):
         self.infoOut( f"_complete {movement}" )
+        assert isinstance(movement, SpinMovement), "movement must be a SpinMovement"
         if movement.nextBehavior is not None:
             self.setCurrentBehavior(movement.nextBehavior)
         else:
@@ -298,7 +299,7 @@ class DCMotorSpinner(Spinner):
         self.__moveStartTime = getOffsetNow()
         if duration is not None:
             duration = context.valueOf(duration)
-            self.__moveEndTime = self.__moveStartTime + duration
+            self.__moveEndTime = TimeInSeconds(self.__moveStartTime + duration) # type: ignore
         else:
             self.__moveEndTime = None
 

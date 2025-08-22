@@ -1,4 +1,4 @@
-
+"""
 // Caernarfon_WS2812_Modes_D678.ino
 // Wemos D1 Mini + TerrainTronics Caernarfon Castle
 // Inputs: D6 (DAY), D7 (NIGHT) — switches to GND (active-LOW, INPUT_PULLUP)
@@ -234,3 +234,4 @@ void loop() {
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
   }
 }
+"""

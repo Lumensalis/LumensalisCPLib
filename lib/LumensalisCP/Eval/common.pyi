@@ -37,11 +37,15 @@ FloatEval:TypeAlias = Union[float, Evaluatable[float]]
 FloatEvalArg:TypeAlias = Union[float, Evaluatable[float]]
 ZeroToOneEval:TypeAlias = Union[ZeroToOne, Evaluatable[ZeroToOne]]
 ZeroToOneEvalArg:TypeAlias = Union[ZeroToOne, Evaluatable[ZeroToOne]]
-PlusMinusOneEval:TypeAlias = Union[PlusMinusOne, Evaluatable[PlusMinusOne]]
-PlusMinusOneEvalArg:TypeAlias = Union[PlusMinusOne, Evaluatable[PlusMinusOne]]
+
 
 
 def toTimeInSecondsEval(value: Optional[TimeInSecondsEvalArg] = None, default:Optional[TimeInSecondsEvalArg] = None) -> TimeInSecondsEval:...
 def toFloatEval(value: Optional[FloatEvalArg] = None, default:Optional[FloatEvalArg] = None) -> FloatEval: ...
 def toZeroToOneEval(value: Optional[ZeroToOneEvalArg] = None, default:Optional[ZeroToOneEvalArg] = None) -> ZeroToOneEval: ...
+
+PlusMinusOneEval:TypeAlias = Union[PlusMinusOne, Evaluatable[PlusMinusOne]]
+PlusMinusOneEvalArg:TypeAlias = Union[PlusMinusOne, Evaluatable[PlusMinusOne]]
+
+def toPlusMinusOne(value: Optional[PlusMinusOneEvalArg] = None, default:Optional[PlusMinusOneEvalArg] = None) -> PlusMinusOne: ...
 def toPlusMinusOneEval(value: Optional[PlusMinusOneEvalArg] = None, default:Optional[PlusMinusOneEvalArg] = None) -> PlusMinusOneEval: ...

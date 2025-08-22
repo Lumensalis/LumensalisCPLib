@@ -2,6 +2,15 @@ from __future__ import annotations
 
 from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayEvalExpressionsImport = getImportProfiler( globals() ) # "Eval.Expressions"
+    
+# TODO: tighten up type hints / lint
+# pylint: disable=unused-argument,super-init-not-called
+# pyright: reportUnusedVariable=false,reportUnusedFunction=false,reportUnusedClass=false
+# pyright: reportUnknownParameterType=false,  reportUnknownVariableType=false
+# pyright: reportMissingParameterType=false, reportMissingTypeArgument=false
+# pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false
+# pyright: reportOperatorIssue=false, reportUnusedImport=false
+
 
 from LumensalisCP.Eval._common import *
 from LumensalisCP.Eval.Evaluatable import Evaluatable, EvaluatableT
@@ -13,14 +22,6 @@ if TYPE_CHECKING:
     from LumensalisCP.Eval.Evaluatable import Evaluatable
     from LumensalisCP.Inputs import InputSource
     
-    
-# TODO: tighten up type hints / lint
-# pylint: disable=unused-argument,super-init-not-called
-# pyright: reportUnusedVariable=false,reportUnusedFunction=false,reportUnusedClass=false
-# pyright: reportUnknownParameterType=false,  reportUnknownVariableType=false
-# pyright: reportMissingParameterType=false, reportMissingTypeArgument=false
-# pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false
-# pyright: reportOperatorIssue=false
 
 #############################################################################
 _sayEvalExpressionsImport( "parsing" )

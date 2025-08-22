@@ -19,7 +19,7 @@ class MainChild( NamedLocalIdentifiable, ActivatablePeriodicRefreshable ):
         main = kwds.pop('main', None) or getMainManager()
         assert main is not None
         
-        nliKwds = NamedLocalIdentifiable.extractInitArgs(kwds)
+        kwds,nliKwds = NamedLocalIdentifiable.extractInitArgs(kwds)
         NamedLocalIdentifiable.__init__( self, **nliKwds )
         kwds.setdefault( 'autoList', main.refreshables )
         ActivatablePeriodicRefreshable.__init__(self, **kwds)

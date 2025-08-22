@@ -16,7 +16,7 @@ from LumensalisCP.util.Reloadable import ReloadableModule
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
     from LumensalisCP.HTTP.BasicServer import BasicServer
-
+    from LumensalisCP.Eval.Evaluatable import NamedEvaluatableProtocol, NamedEvaluatableProtocolT
 
 __sayImport.parsing()
 
@@ -52,14 +52,19 @@ def ExceptionResponse( request: Request, inst:Exception, message:Optional[str]=N
     )
     
 #############################################################################
-def inputSourceSnapshot( input:InputSource ) -> dict[str,Any]:
+def inputSourceSnapshot( input:InputSource|NamedEvaluatableProtocol[Any] ) -> dict[str,Any]:
+    if isinstance(input, InputSource):
+        return dict(
+            value= valToJson( input.getValue() ),
+            lc=input.latestChangeIndex,
+            lu=input.latestUpdateIndex,
+            localId=input.localId,
+            cls = input.__class__.__name__,
+        )
     return dict(
-        value= valToJson( input.getValue() ),
-        lc=input.latestChangeIndex,
-        lu=input.latestUpdateIndex,
-        localId=input.localId,
-        cls = input.__class__.__name__,
-    )
+            value= valToJson( input.getValue(UpdateContext.fetchCurrentContext(None)) ),
+            cls = input.__class__.__name__,
+        )
 
 #############################################################################
 

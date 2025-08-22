@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tkinter import N
 
 from LumensalisCP.ImportProfiler import  getImportProfiler
 __profileImport = getImportProfiler( __name__, globals()) 
@@ -136,7 +137,11 @@ class CilgerranPixelSource( LightSource, NamedOutputTarget, Tunable ):
                         ]
 
     @tunableZeroToOne(0.5)
-    def brightness(self, setting:TunableZeroToOneSetting[Self], context:EvaluationContext ) -> None:
+    def brightness(self, 
+                   #setting:TunableSetting[ZeroToOne,CilgerranPixelSource],
+                   setting:TunableZeroToOneSetting[Tunable],
+                   
+                     context:EvaluationContext ) -> None:
         if self.enableDbgOut: self.dbgOut("brightness changed to %.2f", setting.value)
         self.setBrightness(setting.value)
 
@@ -232,7 +237,7 @@ class CilgerranCastle(D1MiniBoardBase):
     class KWDS(D1MiniBoardBase.KWDS):
         version: NotRequired[str]
         #brightness: NotRequired[float]
-        #ledCount: NotRequired[int]
+        ledCount: NotRequired[int]
         withMotor: NotRequired[bool]
         monitorBattery: NotRequired[bool]
         #neoPixelPin: NotRequired[microcontroller.Pin|str]
@@ -241,7 +246,7 @@ class CilgerranCastle(D1MiniBoardBase):
                 #name=None, 
                 version:Optional[str]=None,
                 #brightness:Optional[float] = 1.0,
-                #ledCount:int|None = None,
+                ledCount:int|None = None,
                 withMotor:bool = False,
                 monitorBattery:bool = True,
                  **kwds:Unpack[D1MiniBoardBase.KWDS] ) -> None:
@@ -263,6 +268,9 @@ class CilgerranCastle(D1MiniBoardBase):
         self.__ledEnable.value = False
         self.__motor:DCMotorSpinner|None = None
         if withMotor: self.motor  # force motor creation
+        if ledCount is not None:
+            ensure( ledCount > 0, "ledCount must be greater than 0" )
+            self.__ledSource.addLeds(ledCount)  
 
     @property
     def batteryMonitor(self) -> CilgerranBatterMonitor | None:

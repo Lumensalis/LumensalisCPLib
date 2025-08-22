@@ -162,6 +162,7 @@ def getInstance( request:BSRRequest, path:str ) -> Any:
     assert v is not None, f"getInstance: {path} : {tag} not found"
     while leftover != '':
         m = __pathRx.match(leftover)
+        assert m is not None, f"getInstance: {path} : {leftover} does not match pathRx"
         groups = m.groups()
         tag = groups[0]
         leftover = groups[-1]
@@ -251,7 +252,7 @@ def BSR_sak(self:BasicServer, request:Request) -> JSONResponse | Response:
                     else:    
                         sakRequest.result['instance'] = {
                             'repr' : repr(instance),
-                            'type' : str(type(instance)),
+                            'type' : str(type(instance)),# type: ignore
                             'id': id(instance),
                         } 
 

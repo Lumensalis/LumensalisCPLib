@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
 _sayScenesSceneImport.parsing()
 
+# pyright: reportPrivateUsage=false
 
 class SceneTask( RfMxnActivatable, 
                 RfMxnPeriodic, 
@@ -44,7 +45,7 @@ class SceneTask( RfMxnActivatable,
         
         task = kwds.pop('task',None)
         assert task is not None, "SceneTask requires a task callable"
-        Refreshable.__init__(self, mixinKwds=kwds)
+        Refreshable.__init__(self, mixinKwds=kwds) # type: ignore
         self.task_callback = task
 
     def derivedRefresh(self, context: EvaluationContext) -> None:
@@ -64,13 +65,13 @@ class SceneRule( NamedLocalIdentifiable, Expression,  NamedEvaluatableProtocolT[
         #super().__init__(term)
         Expression.__init__(self,term)
         NamedLocalIdentifiable.__init__(self,name=name)
-        self.target = target
+        self.target:OutputTarget = target
 
     def run( self, context:EvaluationContext, frame:ProfileFrameBase):
         #if self.enableDbgOut: self.dbgOut( "running rule" )
         if self.updateValue( context ): # or len(context.changedTerms):
-            if self.enableDbgOut: self.dbgOut( f"setting target {self.target.name} to {self.value} in rule {self.name}")
-            frame.snap( "ruleSet", self.target.name )
+            if self.enableDbgOut: self.dbgOut( f"setting target {self.target.name} to {self.value} in rule {self.name}") # type: ignore
+            frame.snap( "ruleSet", self.target.name ) # type: ignore
             self.target.set(self.value,context=context)
 
 class SceneRefreshables(NamedNestedRefreshableList):
@@ -78,16 +79,6 @@ class SceneRefreshables(NamedNestedRefreshableList):
         super().__init__(parent=scene.main.refreshables,name="sceneRefreshables")
         self.scene = scene
 
-    def dsdsrefreshableCalculateNextRefresh(self, context: EvaluationContext, when: TimeInSeconds) -> TimeInSeconds | None:
-        if self.enableDbgOut: self.dbgOut( "refreshableCalculateNextRefresh for scene %s at %.3f...", self.scene.name, when )
-        nextRefresh = super().refreshableCalculateNextRefresh(context,when)
-        nextList = self.getNextRefreshForList(context, when)
-        if nextList is not None:
-            if nextRefresh is None or nextList < nextRefresh:
-                nextRefresh = nextList
-
-        if self.enableDbgOut: self.dbgOut( "refreshableCalculateNextRefresh for scene %s is %.3f", nextRefresh )
-        return nextRefresh
     
 class Scene(MainChild):
     

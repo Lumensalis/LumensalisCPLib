@@ -3,11 +3,11 @@ from __future__ import annotations
 from LumensalisCP.ImportProfiler import  getImportProfiler
 __profileImport = getImportProfiler( globals() ) # "Outputs"
 
-# pyright: reportUnusedImport=false
+# pyright: reportUnusedImport=false, reportPrivateUsage=false
 
 from LumensalisCP.Eval.Expressions import *
 from LumensalisCP.Outputs import NamedNotifyingOutputTarget, NotifyingOutputTargetT,OutputTarget
-from LumensalisCP.Interactable import Interactable, InteractableT, INTERACTABLE_ARG_T, INTERACTABLE_T, INTERACTABLE_ARG_T_KWDST
+from LumensalisCP.Interactable import Interactable, InteractableT, INTERACTABLE_ARG_T, INTERACTABLE_T
 
 from LumensalisCP.TunableKWDS import *
 #############################################################################
@@ -15,38 +15,43 @@ from LumensalisCP.TunableKWDS import *
 __profileImport.parsing()
 
 #############################################################################
+TUNABLE_SELF_T=TypeVar('TUNABLE_SELF_T', bound='Tunable')
+
 
 class TunableSetting(NamedLocalIdentifiable,OutputTarget,
-                     InteractableT[TUNABLE_ARG_T,TUNABLE_T],
+                     InteractableT[TUNABLE_T],
                      EvaluatableT[TUNABLE_T],
-                     Generic[TUNABLE_ARG_T, TUNABLE_T,TUNABLE_SELF_T]):
+                     Generic[ TUNABLE_T,TUNABLE_SELF_T]):
 
+    TUNABLE_DEFAULTS:ClassVar[StrAnyDict] = {}
 
-    def __init__(self, tunable:TUNABLE_SELF_T, **kwargs:Unpack[TUNABLE_SETTING_KWDS[TUNABLE_ARG_T,TUNABLE_T,TUNABLE_SELF_T]]) -> None:
+    def __init__(self, tunable:TUNABLE_SELF_T, **kwargs:Unpack[TUNABLE_SETTING_KWDS[TUNABLE_T,TUNABLE_SELF_T]]) -> None:
+        for key,val in self.TUNABLE_DEFAULTS.items():
+            kwargs.setdefault(key, val) # type: ignore
+
         value = kwargs.get('startingValue', None)
         assert value is not None, "TunableSetting must have a startingValue"
 
-        self.onChange:Callable[[TUNABLE_SELF_T, TunableSetting[TUNABLE_ARG_T, TUNABLE_T,TUNABLE_SELF_T], 
-                                EvaluationContext], None]|None = kwargs.pop('onChange', None)
+        self.onChange:Callable[[TUNABLE_SELF_T, TunableSetting[ TUNABLE_T,TUNABLE_SELF_T], 
+                                EvaluationContext], None]|None = kwargs.pop('onChange', None) # type: ignore
         
         if self.onChange is None:
             self.warnOut("TunableSetting has no onChange handler %r", kwargs )
 
-
         self.__tunable = weakref.ref(tunable)
-        nliArgs = NamedLocalIdentifiable.extractInitArgs(kwargs)
+        kwargs,nliArgs = NamedLocalIdentifiable.extractInitArgs(kwargs)
         NamedLocalIdentifiable.__init__(self, **nliArgs)
-        InteractableT[TUNABLE_ARG_T,TUNABLE_T].__init__(self, **kwargs)
-        
+        InteractableT[TUNABLE_T].__init__(self, **kwargs) # type: ignore
+        EvaluatableT[TUNABLE_T].__init__(self)
+
         self.__value:TUNABLE_T = value # type: ignore
 
     def set( self, value:Any, context:EvaluationContext ) -> None:
         self.infoOut( "set (OutputTarget) to %s", value)
         # from OutputTarget
         self.settingUpdate(value, context)
-        
 
-    def settingUpdate( self, value:TUNABLE_ARG_T, context:Optional[EvaluationContext]=None ) -> None:
+    def settingUpdate( self, value:TUNABLE_T, context:Optional[EvaluationContext]=None ) -> None:
         try:
             if self.enableDbgOut: self.dbgOut("settingUpdate : %s", value)
             v = self.interactConvert(value)
@@ -62,7 +67,7 @@ class TunableSetting(NamedLocalIdentifiable,OutputTarget,
             if self.onChange:
                 if self.enableDbgOut: self.dbgOut("settingUpdate onChange...")
 
-                self.onChange(self.__tunable(), self, context)
+                self.onChange(self.__tunable(), self, context) # type: ignore
         except Exception as e:
             self.SHOW_EXCEPTION( e, "settingUpdate %s error", value )
             raise
@@ -79,171 +84,86 @@ TunableSettingT = GenericT(TunableSetting)
 
 
 #############################################################################
-class TunableDescriptor(Generic[TUNABLE_ARG_T,TUNABLE_T,TUNABLE_SELF_T]):
-    def __init__(self, settingClass:type, 
-                 **settingKwds:Unpack[TUNABLE_SETTING_KWDS[TUNABLE_ARG_T,TUNABLE_T,TUNABLE_SELF_T]] # type: ignore
+class TunableDescriptor(Generic[TUNABLE_T,TUNABLE_SELF_T]):
+    SETTING_CLASS:ClassVar[type]
+
+    def __init__(self, settingClass:Optional[type]=None, 
+                 **settingKwds:Unpack[TUNABLE_SETTING_KWDS[TUNABLE_T,TUNABLE_SELF_T]] # type: ignore
                  ) -> None:
         name = settingKwds.get('name', None)
         default = settingKwds.get('startingValue', None)
         assert name is not None and default is not None, "TunableDescriptor must have a name and default value"
         self.name = name
-        self.settingClass = settingClass
+        self.settingClass = settingClass or self.SETTING_CLASS
         self.settingName = f"_ts_{name}"
         self.default:TUNABLE_T = default # type: ignore
-        self._settingKwds = settingKwds 
+        self._settingKwds:TUNABLE_SETTING_KWDS[TUNABLE_T,TUNABLE_SELF_T] = settingKwds 
 
-    def __makeSetting(self, instance:TUNABLE_SELF_T) -> TunableSetting[TUNABLE_ARG_T,TUNABLE_T,TUNABLE_SELF_T]:
+    def __makeSetting(self, instance:TUNABLE_SELF_T) -> TunableSetting[TUNABLE_T,TUNABLE_SELF_T]:
         assert getattr(instance, self.settingName, None) is None
-        settings:TUNABLE_SETTING_KWDS[TUNABLE_ARG_T,TUNABLE_T,TUNABLE_SELF_T] = dict(self._settingKwds)
-        #settings['name'] = self.name
-        #settings.setdefault('startingValue', self.default)
-        setting:TunableSetting[TUNABLE_ARG_T,TUNABLE_T,TUNABLE_SELF_T] = \
+        # need to copy because constructor mutates kwargs
+        settings:TUNABLE_SETTING_KWDS[TUNABLE_T,TUNABLE_SELF_T] = dict(self._settingKwds) # type: ignore
+
+        setting:TunableSetting[TUNABLE_T,TUNABLE_SELF_T] = \
                                 self.settingClass( instance, **settings )
         setattr(instance, self.settingName, setting)
         return setting
 
-    def __getSetting(self, instance:TUNABLE_SELF_T) -> TunableSetting[TUNABLE_ARG_T,TUNABLE_T,TUNABLE_SELF_T]:
+    def __getSetting(self, instance:TUNABLE_SELF_T) -> TunableSetting[TUNABLE_T,TUNABLE_SELF_T]:
         setting = getattr(instance, self.settingName, None)
         if setting is None:
             setting = self.__makeSetting(instance)
             instance._tunableSettings[self.name] = setting
         return setting
 
-    def __get__(self, instance:TUNABLE_SELF_T, owner:Any=None) -> TunableSetting[TUNABLE_ARG_T,TUNABLE_T,TUNABLE_SELF_T]:
+    def __get__(self, instance:TUNABLE_SELF_T, owner:Any=None) -> TunableSetting[TUNABLE_T,TUNABLE_SELF_T]:
         #setting = getattr(instance, self.settingName, None)
         #if setting is None: return self.default
         setting = self.__getSetting( instance )
         return setting
 
-    def __set__(self, instance:TUNABLE_SELF_T, value:TUNABLE_ARG_T) -> None:
+    def __set__(self, instance:TUNABLE_SELF_T, value:TUNABLE_T) -> None:
         assert instance is not None,  f"Cannot set {self.name} "
         setting =  self.__getSetting( instance )
         setting.settingUpdate(value)
 
 TunableDescriptorT = GenericT(TunableDescriptor)
+
+TUNABLE_DESCRIPTOR_T=TypeVar('TUNABLE_DESCRIPTOR_T' ) #, bound='TunableDescriptor')
 #############################################################################
 
 class Tunable(NliInterface):
     
     def __init__(self) -> None:
-        self._tunableSettings:Dict[str,TunableSetting[Any,Any,Self]] = {}
+        self._tunableSettings:Dict[str,TunableSetting[Any,Self]] = {}
         
-    def onSettingUpdate( self, setting:TunableSetting[TUNABLE_ARG_T,TUNABLE_T,Self]) -> None:
+    def onSettingUpdate( self, setting:TunableSetting[TUNABLE_T,Self]) -> None:
         pass
         
 
 #############################################################################
 
-class TunableBoolSetting_KWDS(TUNABLE_SETTING_KWDS_T[bool,bool,TUNABLE_SELF_T]):
-    pass
-
-class TunableBoolSetting(TunableSettingT[bool,bool,TUNABLE_SELF_T]):
-
-    def __init__(self, tunable: TUNABLE_SELF_T, **kwargs:Unpack[TunableBoolSetting_KWDS[TUNABLE_SELF_T]]) -> None:
-        kwargs.setdefault('kind', bool)
-        kwargs.setdefault('kindMatch', bool)
-        super().__init__( tunable, **kwargs)
-
-TunableBoolSettingT = GenericT(TunableBoolSetting)
-
-#############################################################################
-
-class TunableFloatSetting_KWDS(TUNABLE_SETTING_KWDS_T[Union[int,float],float,TUNABLE_SELF_T]):
-    pass
-
-class TunableFloatSetting(TunableSettingT[Union[int,float],float,TUNABLE_SELF_T]):
-
-    def __init__(self, tunable: TUNABLE_SELF_T, **kwargs:Unpack[TunableFloatSetting_KWDS[TUNABLE_SELF_T]]) -> None:
-        kwargs.setdefault('kind', float)
-        kwargs.setdefault('kindMatch', float)
-        super().__init__( tunable, **kwargs)
-
-TunableFloatSettingT = GenericT(TunableFloatSetting)
-
-#############################################################################
-
-class TunableIntSetting_KWDS(TUNABLE_SETTING_KWDS_T[int,int,TUNABLE_SELF_T]):
-    pass
-
-class TunableIntSetting(TunableSettingT[int,int,TUNABLE_SELF_T]):
-
-    def __init__(self, tunable: TUNABLE_SELF_T, **kwargs:Unpack[TunableIntSetting_KWDS[TUNABLE_SELF_T]]) -> None:
-        kwargs.setdefault('kind', int)
-        kwargs.setdefault('kindMatch', int)
-        super().__init__( tunable, **kwargs)
-
-#############################################################################
-class TunableZeroToOneSetting_KWDS(TUNABLE_SETTING_KWDS_T[ZeroToOne,ZeroToOne,TUNABLE_SELF_T]):
-    pass
-
-class TunableZeroToOneSetting(TunableSettingT[ZeroToOne,ZeroToOne,TUNABLE_SELF_T]):
-    def __init__(self, tunable: TUNABLE_SELF_T, **kwargs:Unpack[TUNABLE_SETTING_KWDS[ZeroToOne,ZeroToOne,TUNABLE_SELF_T]]) -> None:
-        kwargs.setdefault('kind', ZeroToOne)
-        kwargs.setdefault('kindMatch', ZeroToOne)
-        kwargs.setdefault('min', ZeroToOne(0.0))
-        kwargs.setdefault('max', ZeroToOne(1.0))
-        super().__init__( tunable, **kwargs)
-
-TunableZeroToOneSettingT = GenericT(TunableZeroToOneSetting)
-
-class TunableZeroToOneDescriptor(TunableDescriptorT[ZeroToOne,ZeroToOne,TUNABLE_SELF_T]):
-    pass
-
-TunableZeroToOneDescriptorT = GenericT(TunableZeroToOneDescriptor)
-
-def tunableZeroToOne(  default:ZeroToOne, **kwds:Unpack[TUNABLE_SETTING_KWDS
-                                                        [ZeroToOne,ZeroToOne,TUNABLE_SELF_T]
-                                                        ]
-                ) -> Callable[ 
-                        [Callable[[TUNABLE_SELF_T,TunableZeroToOneSetting[TUNABLE_SELF_T],EvaluationContext], None]],
-                  TunableZeroToOneDescriptor[TUNABLE_SELF_T]]:
+def tunableProperty(  default:TUNABLE_T, 
+            descriptorClass:Type[TUNABLE_DESCRIPTOR_T],
+            **kwds:Unpack[TUNABLE_SETTING_KWDS[TUNABLE_T,TUNABLE_SELF_T]]
+    ) -> Callable[ 
+            [Callable[[TUNABLE_SELF_T,TunableSetting[TUNABLE_T,TUNABLE_SELF_T],EvaluationContext],
+                         None]],
+                  TUNABLE_DESCRIPTOR_T]:
     def decorated( onChange:Callable[
-                        [TUNABLE_SELF_T,TunableZeroToOneSetting[TUNABLE_SELF_T], EvaluationContext], None] 
-                        ) -> TunableZeroToOneDescriptor[TUNABLE_SELF_T]:
+                        [TUNABLE_SELF_T,TunableSetting[TUNABLE_T, TUNABLE_SELF_T], EvaluationContext], None] 
+                        ) -> TUNABLE_DESCRIPTOR_T:
         kwds.setdefault('startingValue', default)
         kwds.setdefault('name', onChange.__name__)
-        kwds.setdefault('onChange', onChange)
-        descriptor:TunableZeroToOneDescriptor[TUNABLE_SELF_T] = TunableZeroToOneDescriptorT[TUNABLE_SELF_T](  TunableZeroToOneSettingT[TUNABLE_SELF_T], **kwds )
-        return descriptor
+        kwds.setdefault('onChange', onChange) # type: ignore
+        descriptor:TUNABLE_DESCRIPTOR_T = descriptorClass(  
+                **kwds  # type: ignore
+            ) 
+        return descriptor # type: ignore
     return decorated
 
-#############################################################################
 
-class TunablePlusMinusOneSetting_KWDS(TUNABLE_SETTING_KWDS_T[PlusMinusOne,PlusMinusOne,TUNABLE_SELF_T]):
-    pass
-
-class TunablePlusMinusOneSetting(TunableSettingT[PlusMinusOne,PlusMinusOne,TUNABLE_SELF_T]):
-    def __init__(self, tunable: TUNABLE_SELF_T, **kwargs:Unpack[TunablePlusMinusOneSetting_KWDS[TUNABLE_SELF_T]]) -> None:
-        kwargs.setdefault('kind', PlusMinusOne)
-        kwargs.setdefault('kindMatch', PlusMinusOne)
-        kwargs.setdefault('min', PlusMinusOne(-1))
-        kwargs.setdefault('max', PlusMinusOne(1))
-        super().__init__( tunable, **kwargs)
-
-TunablePlusMinusOneSettingT = GenericT(TunablePlusMinusOneSetting)
-
-class TunablePlusMinusOneDescriptor(TunableDescriptorT[PlusMinusOne,PlusMinusOne,TUNABLE_SELF_T]):
-    pass
-
-TunablePlusMinusOneDescriptorT = GenericT(TunablePlusMinusOneDescriptor)
-
-def tunablePlusMinusOne(  default:PlusMinusOne,
-                         **kwds:Unpack[TunablePlusMinusOneSetting_KWDS[TUNABLE_SELF_T]]
-        ) -> Callable[
-             [Callable[[TUNABLE_SELF_T,TunablePlusMinusOneSetting[TUNABLE_SELF_T],EvaluationContext], None]], 
-             TunablePlusMinusOneDescriptor[TUNABLE_SELF_T]]:
-    def decorated( onChange:Callable[
-                [TUNABLE_SELF_T,TunablePlusMinusOneSetting[TUNABLE_SELF_T],EvaluationContext], None] 
-                  ) -> TunablePlusMinusOneDescriptor[TUNABLE_SELF_T]:
-        kwds.setdefault('startingValue', default)
-        kwds.setdefault('name', onChange.__name__)
-        kwds.setdefault('onChange', onChange)
-        descriptor:TunablePlusMinusOneDescriptor[TUNABLE_SELF_T] = TunablePlusMinusOneDescriptorT[TUNABLE_SELF_T](
-             TunablePlusMinusOneSettingT[TUNABLE_SELF_T], **kwds )
-        return descriptor
-    return decorated
-
-tunablePlusMinusOneT = GenericT(tunablePlusMinusOne)
+tunablePropertyT = GenericT(tunableProperty)
 #############################################################################
 
 __profileImport.complete(globals())
@@ -251,8 +171,7 @@ __profileImport.complete(globals())
 __all__ = [
             'Tunable', 'TunableSetting', 'TunableSettingT',
             'TunableDescriptor','TunableDescriptorT',
-            'TunableFloatSetting', 'TunableFloatSettingT',
-            'TunableBoolSetting', 'TunableBoolSettingT',
-            'tunableZeroToOne', 'TunableZeroToOneDescriptor', 'TunableZeroToOneSetting',
-            'tunablePlusMinusOne', 'tunablePlusMinusOneT', 'TunablePlusMinusOneDescriptor', 'TunablePlusMinusOneSetting',
+            'TUNABLE_SELF_T',
+            'tunableProperty', 'tunablePropertyT'
+         
            ]

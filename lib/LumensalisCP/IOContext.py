@@ -15,6 +15,7 @@ from LumensalisCP.Outputs import OutputTarget, NamedOutputTarget, \
         NamedNotifyingOutputTarget, NamedNotifyingOutputTargetT
         
 from LumensalisCP.Tunable import *
+from LumensalisCP.Tunables import *
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
@@ -25,6 +26,7 @@ if TYPE_CHECKING:
     from LumensalisCP.Debug import Debuggable
     from LumensalisCP.Eval.EvaluationContext import EvaluationContext
     from LumensalisCP.Eval.Evaluatable import evaluate, Evaluatable, EvaluatableT
+    from LumensalisCP.Eval.Evaluatable import NamedEvaluatableProtocol, NamedEvaluatableProtocolT
     from LumensalisCP.Main.Updates import UpdateContext
 
 __sayImport.complete(globals())

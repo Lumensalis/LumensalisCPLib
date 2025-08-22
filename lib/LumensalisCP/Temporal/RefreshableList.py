@@ -2,6 +2,7 @@ from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayImport = getImportProfiler( __name__, globals() )
 
 # pyright: reportPrivateUsage=false,reportUnusedImport=false
+# pyright: reportUnusedFunction=false
 
 from LumensalisCP.Temporal.Refreshable import Refreshable, \
     RefreshableListInterface, RfMxnActivatable, RfMxnPeriodic
@@ -85,7 +86,7 @@ class RootRefreshableList(RefreshableListImplementation, NamedLocalIdentifiable)
         pass
 
     def __init__(self, **kwds:Unpack[KWDS]) -> None:
-        nliKwds = NamedLocalIdentifiable.extractInitArgs(kwds)
+        kwds,nliKwds = NamedLocalIdentifiable.extractInitArgs(kwds)
         RefreshableListImplementation.__init__(self, **kwds)
         NamedLocalIdentifiable.__init__(self, **nliKwds)
 
@@ -108,7 +109,7 @@ class NestedRefreshableList(RefreshableListImplementation,
         #temporaryName = kwds.pop("temporaryName", None)
         assert parent is not None, "NestedRefreshableList requires a parent RefreshableListInterface"
         kwds.setdefault('autoList',parent)
-        Refreshable.__init__(self,mixinKwds=kwds)
+        Refreshable.__init__(self,mixinKwds=kwds) # type: ignore
         RefreshableListImplementation.__init__(self) #, name=name, temporaryName=temporaryName)
         self.__parent = parent
 
@@ -160,7 +161,7 @@ class NamedNestedRefreshableList(NestedRefreshableList,NamedLocalIdentifiable):
         pass
 
     def __init__(self, parent:RefreshableListInterface, **kwds:Unpack[KWDS] ):
-        nliKwds = NamedLocalIdentifiable.extractInitArgs(kwds)
+        kwds,nliKwds = NamedLocalIdentifiable.extractInitArgs(kwds)
         NestedRefreshableList.__init__(self, parent, **kwds)
         NamedLocalIdentifiable.__init__(self, **nliKwds)
 

@@ -83,13 +83,13 @@ class Refreshable( RefreshableInterface, IDebuggable ):
         if mixinKwds is not None:
             assert isinstance(mixinKwds, dict), "Mixin keywords must be a dictionary"
             if autoRefresh is None: 
-                autoRefresh:bool = mixinKwds.pop('autoRefresh', self.RFD_autoRefresh)
+                autoRefresh = mixinKwds.pop('autoRefresh', self.RFD_autoRefresh)
 
             self._mixins_init(mixinKwds) # type: ignore[call-arg]
-        else:
-            if autoRefresh is None:
-                autoRefresh = self.RFD_autoRefresh
-            
+        
+        if autoRefresh is None:
+            autoRefresh = self.RFD_autoRefresh
+        
         self.__autoRefresh:bool = autoRefresh
 
     @property
@@ -233,7 +233,7 @@ class RfMxnActivatable(RfMxn):
         if nextRefresh is None:
             nextRefresh = self.refreshableCalculateNextRefresh(context, context.when)
 
-        self.__autoList.add( context, self, nextRefresh=nextRefresh )
+        self.__autoList.add( context, self, nextRefresh=nextRefresh ) # type: ignore
         self.__refreshIsActive = True
     
     def deactivate( self, context:Optional[EvaluationContext]=None ) -> None:
@@ -241,7 +241,7 @@ class RfMxnActivatable(RfMxn):
             context = getCurrentEvaluationContext()
         if self.enableDbgOut:  self.dbgOut(f"deactivate")
         assert self.__refreshList is not None
-        self.__refreshList.remove( context, self )
+        self.__refreshList.remove( context, self ) # type: ignore
         self.__refreshIsActive = False
         self.__refreshList = None
 
@@ -275,7 +275,7 @@ class RfMxnInvocable(RfMxn):
 class RfMxnNamed( NamedLocalIdentifiable, RfMxn ):
 
     def _mixin_init(self,  kwargs:StrAnyDict ):
-        nliKwds = NamedLocalIdentifiable.extractInitArgs(kwargs)
+        kwargs,nliKwds = NamedLocalIdentifiable.extractInitArgs(kwargs)
         NamedLocalIdentifiable.__init__(self, **nliKwds)
 
 #############################################################################
@@ -288,7 +288,7 @@ class PeriodicRefreshable( RfMxnPeriodic,Refreshable ):
     
     def __init__(self, **kwargs:Unpack[KWDS] ) -> None:
         #RfMxnPeriodic._mixin_init(self, kwargs)
-        Refreshable.__init__(self, mixinKwds=kwargs)
+        Refreshable.__init__(self, mixinKwds=kwargs) # type: ignore[call-arg]
 
 
 #############################################################################
@@ -303,7 +303,7 @@ class ActivatablePeriodicRefreshable( RfMxnActivatable, RfMxnPeriodic, Refreshab
     def __init__(self, **kwargs:Unpack[KWDS] ) -> None:
         #RfMxnActivatable._mixin_init(self, kwargs)
         #RfMxnPeriodic._mixin_init(self, kwargs)
-        Refreshable.__init__(self, mixinKwds=kwargs)
+        Refreshable.__init__(self, mixinKwds=kwargs) # type: ignore[call-arg]
 
 #############################################################################
 
@@ -329,7 +329,7 @@ class RefreshablePrdInvAct( RfMxnInvocable,
         #RfMxnInvocable._mixin_init(self, kwargs)
         #RfMxnActivatable._mixin_init(self, kwargs)
         #RfMxnPeriodic._mixin_init(self, kwargs)
-        Refreshable.__init__(self, mixinKwds=kwargs)
+        Refreshable.__init__(self, mixinKwds=kwargs) # type: ignore[call-arg]
 
 #############################################################################
 
@@ -346,7 +346,7 @@ class RefreshableNAP( RfMxnActivatable,
         task:NotRequired[Callable[[],None]]
 
     def __init__(self, **kwds:Unpack[KWDS] ) -> None:
-        Refreshable.__init__(self, mixinKwds=kwds)
+        Refreshable.__init__(self, mixinKwds=kwds) # type: ignore[call-arg]
 
 #############################################################################
 
@@ -370,7 +370,7 @@ class NamedPeriodicRefreshable( NamedLocalIdentifiable, PeriodicRefreshable ):
         pass
     def __init__(self,  **kwargs:Unpack[PeriodicRefreshable.KWDS] ):
 
-        nliKwds = NamedLocalIdentifiable.extractInitArgs(kwargs)
+        kwargs,nliKwds = NamedLocalIdentifiable.extractInitArgs(kwargs)
         NamedLocalIdentifiable.__init__(self, **nliKwds)
         PeriodicRefreshable.__init__(self, **kwargs)
 

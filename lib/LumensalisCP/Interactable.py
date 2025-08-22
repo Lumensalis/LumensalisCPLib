@@ -12,44 +12,23 @@ from LumensalisCP.Main.Dependents import MainChild
 from LumensalisCP.Triggers.Trigger import Trigger
 from LumensalisCP.Eval.Evaluatable import NamedEvaluatableProtocolT, NamedEvaluatableProtocol
 
+from LumensalisCP.InteractableKWDS import *
 
 __importProfile.parsing()
 
-
-#############################################################################
-INTERACTABLE_ARG_T = TypeVar('INTERACTABLE_ARG_T')
-INTERACTABLE_T = TypeVar('INTERACTABLE_T')
-
-class INTERACTABLE_ARG_T_ADD_KWDS(TypedDict, Generic[INTERACTABLE_ARG_T,INTERACTABLE_T]):
-    startingValue: NotRequired[INTERACTABLE_ARG_T]
-    min: NotRequired[INTERACTABLE_ARG_T]
-    max: NotRequired[INTERACTABLE_ARG_T]
-    name: NotRequired[str]
-    description: NotRequired[str]
-    
-class INTERACTABLE_ARG_T_KWDS(TypedDict, Generic[INTERACTABLE_ARG_T,INTERACTABLE_T]):
-    startingValue: NotRequired[INTERACTABLE_ARG_T]
-    min: NotRequired[INTERACTABLE_ARG_T]
-    max: NotRequired[INTERACTABLE_ARG_T]
-    name: NotRequired[str]
-    description: NotRequired[str]
-    kindMatch: NotRequired[type]
-    kind: NotRequired[str|type]
-
-
-
-INTERACTABLE_ARG_T_KWDST = GenericT(INTERACTABLE_ARG_T_KWDS)
 #############################################################################
 
-class Interactable( Generic[INTERACTABLE_ARG_T, INTERACTABLE_T]):
+#############################################################################
+
+class Interactable( Generic[INTERACTABLE_T]):
     
     def __init__(self,  
-                 startingValue:INTERACTABLE_ARG_T,
-                 min:Optional[INTERACTABLE_ARG_T] = None,
-                 max:Optional[INTERACTABLE_ARG_T] = None,
+                 startingValue:Optional[INTERACTABLE_T] = None,
+                 min:Optional[INTERACTABLE_T] = None,
+                 max:Optional[INTERACTABLE_T] = None,
                  description:str="",
                  kind:Optional[str|type]=None,
-                 convertor:Optional[Callable[[INTERACTABLE_ARG_T|str],INTERACTABLE_T]]=None,
+                 convertor:Optional[Callable[[INTERACTABLE_T|str],INTERACTABLE_T]]=None,
                  kindMatch: Optional[type]=None,
                  adjuster: Optional[Callable[[INTERACTABLE_T], INTERACTABLE_T]] = None
                  ) -> None:
@@ -77,21 +56,21 @@ class Interactable( Generic[INTERACTABLE_ARG_T, INTERACTABLE_T]):
         assert kType is not type 
 
         if convertor is None:
-            def convert(v:INTERACTABLE_ARG_T|str) -> INTERACTABLE_T:
+            def convert(v:INTERACTABLE_T|str) -> INTERACTABLE_T:
                 if isinstance(v,str):
                     v = eval(v)
                 if isinstance(v, kType):
-                    return v
+                    return v # type: ignore
                 return kType(v)
             convertor = convert
         assert convertor is not None
 
-        self.convertor:Callable[[INTERACTABLE_ARG_T|str],INTERACTABLE_T] = convertor
+        self.convertor:Callable[[INTERACTABLE_T|str],INTERACTABLE_T] = convertor
 
         self._min:INTERACTABLE_T|None = convertor(min) if min is not None else None
         self._max:INTERACTABLE_T|None = convertor(max) if max is not None else None
         self._interactValue:INTERACTABLE_T|None = None
-        self._interactValue = convertor(startingValue) 
+        self._interactValue = convertor(startingValue)  # type: ignore
 
     def interactConvert( self, value: Any ) -> INTERACTABLE_T:
         if isinstance(value, str):

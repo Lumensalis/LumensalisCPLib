@@ -22,30 +22,12 @@ from LumensalisCP.Eval.ExpressionTerm import ExpressionTerm, rising, EVAL_VALUE_
 from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg
 from LumensalisCP.Lights.RGB import *
 
-
 __sayImport.parsing()
 
 #_EvaluatableTimeInSecondsConfigArg:TypeAlias = Evaluatable
 
 TimeInSecondsEvalArg:TypeAlias = Union[TimeInSecondsConfigArg, EvaluatableT[TimeInSeconds]]
 TimeInSecondsEval:TypeAlias = Union[TimeInSeconds, float, EvaluatableT[TimeInSeconds]]
-
-RGBConfigArg:TypeAlias = AnyRGBValue
-
-# value or Evaluatable convertible to RGB
-RGBEvalArg:TypeAlias = Union[AnyRGBValue, EvaluatableT[RGB]]
-
-RGBEval:TypeAlias = Union[RGB, EvaluatableT[RGB]]
-
-
-FloatEvalArg:TypeAlias = Union[float, EvaluatableT[float]]    
-FloatEval:TypeAlias = Union[float, EvaluatableT[float]]   
-
-ZeroToOneEvalArg:TypeAlias = Union[ZeroToOne, EvaluatableT[ZeroToOne]]
-ZeroToOneEval:TypeAlias = Union[ZeroToOne, EvaluatableT[ZeroToOne]]
-PlusMinusOneEvalArg:TypeAlias = Union[PlusMinusOne, EvaluatableT[PlusMinusOne]]
-PlusMinusOneEval:TypeAlias = Union[PlusMinusOne, EvaluatableT[PlusMinusOne]]
-
 
 def toTimeInSecondsEval(value:  TimeInSecondsEvalArg|None, default:Optional[TimeInSecondsEvalArg] = None) -> TimeInSecondsEval:
     if value is None: 
@@ -55,11 +37,42 @@ def toTimeInSecondsEval(value:  TimeInSecondsEvalArg|None, default:Optional[Time
         return value # type: ignore
     return TimeInSeconds(value) # type: ignore
 
+RGBConfigArg:TypeAlias = AnyRGBValue
+
+# value or Evaluatable convertible to RGB
+RGBEvalArg:TypeAlias = Union[AnyRGBValue, EvaluatableT[RGB]]
+
+RGBEval:TypeAlias = Union[RGB, EvaluatableT[RGB]]
+
 
 def toRGBEval(value:  RGBEvalArg) -> RGBEval:
     if isinstance(value, Evaluatable):
         return value # type: ignore
     return RGB.toRGB(value)
+
+
+FloatEvalArg:TypeAlias = Union[float, EvaluatableT[float]]    
+FloatEval:TypeAlias = Union[float, EvaluatableT[float]]   
+
+def toFloatEval(value:  FloatEvalArg|None, default:Optional[FloatEvalArg] = None) -> FloatEval:
+    if value is None: 
+        value = default
+        assert value is not None, "toFloatEval requires a value or default"
+    if isinstance(value, Evaluatable):
+        return value # type: ignore
+    return float(value) # type: ignore
+
+
+PlusMinusOneEvalArg:TypeAlias = Union[PlusMinusOne, EvaluatableT[PlusMinusOne]]
+PlusMinusOneEval:TypeAlias = Union[PlusMinusOne, EvaluatableT[PlusMinusOne]]
+
+def toPlusMinusOne(value:  PlusMinusOneEvalArg|None, default:Optional[PlusMinusOneEvalArg] = None) -> PlusMinusOne:
+    if value is None: 
+        value = default
+        assert value is not None, "toPlusMinusOne requires a value or default"
+    if isinstance(value, Evaluatable):
+        value = UpdateContext.fetchCurrentContext(None).valueOf(value)
+    return PlusMinusOne(value) # type: ignore
 
 def toPlusMinusOneEval(value:  PlusMinusOneEvalArg|None, default:Optional[PlusMinusOneEvalArg] = None) -> PlusMinusOneEval:
     if value is None: 
@@ -69,6 +82,9 @@ def toPlusMinusOneEval(value:  PlusMinusOneEvalArg|None, default:Optional[PlusMi
         return value # type: ignore
     return PlusMinusOne(value) # type: ignore
 
+ZeroToOneEvalArg:TypeAlias = Union[ZeroToOne, EvaluatableT[ZeroToOne]]
+ZeroToOneEval:TypeAlias = Union[ZeroToOne, EvaluatableT[ZeroToOne]]
+
 def toZeroToOneEval(value:  ZeroToOneEvalArg|None, default:Optional[ZeroToOneEvalArg] = None) -> ZeroToOneEval:
     if value is None: 
         value = default
@@ -77,12 +93,5 @@ def toZeroToOneEval(value:  ZeroToOneEvalArg|None, default:Optional[ZeroToOneEva
         return value # type: ignore
     return ZeroToOne(value) # type: ignore
 
-def toFloatEval(value:  FloatEvalArg|None, default:Optional[FloatEvalArg] = None) -> FloatEval:
-    if value is None: 
-        value = default
-        assert value is not None, "toFloatEval requires a value or default"
-    if isinstance(value, Evaluatable):
-        return value # type: ignore
-    return float(value) # type: ignore
 
 __sayImport.complete()

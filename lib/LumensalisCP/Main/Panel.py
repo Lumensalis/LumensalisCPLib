@@ -90,8 +90,10 @@ class PanelControl(InputSource, Generic[CVT, CVT_OUT]):
         if startingValue is not None:
             self.set( convertor(startingValue) )
 
-    controlValue = property( lambda self: self._controlValue )
-    
+    @property
+    def controlValue(self) -> CVT_OUT | None:
+        return self._controlValue
+
     def setFromWs( self, value: Any ):
         if self.kind == 'RGB':
             if isinstance(value, str):
@@ -107,7 +109,7 @@ class PanelControl(InputSource, Generic[CVT, CVT_OUT]):
     def set( self, value: Any ):
         if isinstance(value, str):
             try:
-                value = self.convertor(value)
+                value = self.convertor(value) # type: ignore
             except Exception as inst:
                 print(f"failed converting {value} to {self.kind} : {inst}")
                 return
@@ -168,6 +170,10 @@ class PanelMonitor( NamedLocalIdentifiable, Generic[CVT]   ):
         self._min = kwds.pop('min', None)
         self._max = kwds.pop('max', None)
         self.description = kwds.pop('description', '')
+
+    @property
+    def controlValue(self) -> CVT | None:
+        return self.__varValue
 
 class PanelPipe( InputSource, OutputTarget,  Generic[CVT] ):
     """ combination of OutputTarget and InputSource
@@ -232,11 +238,12 @@ class ControlPanel( MainChild ):
         return self._controlVariables
 
     def _addControl( self, argOne:Optional[Any]=None, 
+                     argTwo:Optional[str]=None,
                 kind:Optional[str|type]=None,
                 kindMatch: Optional[type]=None,
                 convertor : Callable[[Any],Any]|None = None,
                 defaultStartingValue: Optional[Any]=0.0,
-                controlCls = PanelControl,
+                controlCls: type  = PanelControl,
                 **kwds:Unpack[CVT_ADD_KWDS[Any,Any]]
         ) -> PanelControl[Any,Any]:
 
@@ -244,6 +251,10 @@ class ControlPanel( MainChild ):
             assert 'description' not in kwds, "cannot specify description and argOne as string"
             kwds['description'] = argOne
             argOne = None
+
+        if argTwo is not None:
+            assert 'description' not in kwds, "cannot specify description and argTwo as string"
+            kwds['description'] = argTwo
 
         if 'startingValue' not in kwds:
             if argOne is not None:
@@ -269,55 +280,63 @@ class ControlPanel( MainChild ):
 
 
     #########################################################################
-    def addZeroToOne( self, argOne:Optional[Any]=None, **kwds:Unpack[CVT_ADD_KWDS[float,ZeroToOne]] ) -> PanelControl[float,ZeroToOne]:
+    def addZeroToOne( self, argOne:Optional[Any]=None,  argTwo:Optional[str]=None, **kwds:Unpack[CVT_ADD_KWDS[float,ZeroToOne]] ) -> PanelControl[float,ZeroToOne]:
         """ add control for a value between 0 and 1, see  http://lumensalis.com/ql/h2PanelControl """
-        return self._addControl(  argOne, kind='ZeroToOne',kindMatch=float,
-                                 convertor=lambda v: float(v),  defaultStartingValue=0.0,
+        return self._addControl(  argOne, argTwo='ZeroToOne',kindMatch=float,
+                                 convertor=lambda v: float(v),   # type: ignore
+                                    defaultStartingValue=0.0,
 
                                 min=0.0, max=1.0, **kwds ) # type: ignore
-    def addPlusMinusOne( self, argOne:Optional[Any]=None,deadband:Optional[float]=0.1, **kwds:Unpack[CVT_ADD_KWDS[float,PlusMinusOne]] ) -> PanelControl[float,PlusMinusOne]:
+    def addPlusMinusOne( self, argOne:Optional[Any]=None,  argTwo:Optional[str]=None,deadband:Optional[float]=0.1, **kwds:Unpack[CVT_ADD_KWDS[float,PlusMinusOne]] ) -> PanelControl[float,PlusMinusOne]:
         """ add control for a value between -1 and 1, see  http://lumensalis.com/ql/h2PanelControl """
+        adjuster:Callable[[PlusMinusOne], PlusMinusOne] |None
+
         if deadband is not None:
-            def adjuster(v:PlusMinusOne) -> PlusMinusOne:
+            def _adjuster(v:PlusMinusOne) -> PlusMinusOne:
                 if abs(v) < deadband:
                     return 0.0
                 return v
+            adjuster = _adjuster
         else:
             adjuster = None
 
-        return self._addControl( argOne, kind='PlusMinusOne',kindMatch=float,
-                                 convertor=lambda v: float(v), defaultStartingValue=0.0,
+        return self._addControl( argOne, argTwo, kind='PlusMinusOne',kindMatch=float,
+                                 convertor=lambda v: float(v),  # type: ignore
+                                 defaultStartingValue=0.0,
                                 min=-1.0, max=1.0, adjuster=adjuster, **kwds ) # type: ignore
 
-    def addRGB( self, argOne:Optional[Any]=None,**kwds:Unpack[CVT_ADD_KWDS[AnyRGBValue, RGB]] ) -> PanelControl[AnyRGBValue,RGB]:
+    def addRGB( self, argOne:Optional[Any]=None,  argTwo:Optional[str]=None, **kwds:Unpack[CVT_ADD_KWDS[AnyRGBValue, RGB]] ) -> PanelControl[AnyRGBValue,RGB]:
         """ add control for an RGB color value, see  http://lumensalis.com/ql/h2PanelControl """
-        return self._addControl( argOne, kind=RGB,convertor=lambda v: RGB.toRGB(v), **kwds ) # type: ignore
+        return self._addControl( argOne, argTwo, kind=RGB,convertor=lambda v: RGB.toRGB(v), **kwds ) # type: ignore
 
-    def addInt( self, argOne:Optional[Any]=None, **kwds:Unpack[CVT_ADD_KWDS[int,int]] ) -> PanelControl[int,int]:
+    def addInt( self, argOne:Optional[Any]=None,  argTwo:Optional[str]=None, **kwds:Unpack[CVT_ADD_KWDS[int,int]] ) -> PanelControl[int,int]:
         """ add control for an integer value, see  http://lumensalis.com/ql/h2PanelControl """
-        return self._addControl( argOne, kind=int, convertor=lambda v: int(v), defaultStartingValue=0,**kwds ) # type: ignore
+        return self._addControl( argOne, argTwo, kind=int, convertor=lambda v: int(v), defaultStartingValue=0,**kwds ) # type: ignore
 
-    def addSwitch( self, argOne:Optional[Any]=None, **kwds:Unpack[CVT_ADD_KWDS[bool,bool]] ) -> PanelControl[bool,bool]:
+    def addSwitch( self, argOne:Optional[Any]=None,  argTwo:Optional[str]=None, **kwds:Unpack[CVT_ADD_KWDS[bool,bool]] ) -> PanelControl[bool,bool]:
         """ add control for a boolean value, see  http://lumensalis.com/ql/h2PanelControl """
-        return self._addControl( argOne, kind=bool, convertor=lambda v: bool(v), defaultStartingValue=False,**kwds ) # type: ignore
+        return self._addControl( argOne, argTwo, kind=bool, convertor=lambda v: bool(v), defaultStartingValue=False,**kwds ) # type: ignore
 
-    def addFloat( self, argOne:Optional[Any]=None, **kwds:Unpack[CVT_ADD_KWDS[float,float]] ) -> PanelControl[float,float]:
+    def addFloat( self, argOne:Optional[Any]=None,  argTwo:Optional[str]=None, **kwds:Unpack[CVT_ADD_KWDS[float,float]] ) -> PanelControl[float,float]:
         """ add control for a float value, see  http://lumensalis.com/ql/h2PanelControl """
-        return self._addControl( argOne, kind=float, convertor=lambda v: float(v), **kwds ) # type: ignore
+        return self._addControl( argOne, argTwo, kind=float, convertor=lambda v: float(v), **kwds ) # type: ignore
 
-    def addSeconds( self, argOne:Optional[Any]=None, **kwds:Unpack[CVT_ADD_KWDS[TimeSpanInSeconds, TimeSpanInSeconds]] ) -> PanelControl[TimeSpanInSeconds, TimeSpanInSeconds]:
+    def addSeconds( self, argOne:Optional[Any]=None,  argTwo:Optional[str]=None, **kwds:Unpack[CVT_ADD_KWDS[TimeSpanInSeconds, TimeSpanInSeconds]] ) -> PanelControl[TimeSpanInSeconds, TimeSpanInSeconds]:
         """ add control for a duration (in seconds), see  http://lumensalis.com/ql/h2PanelControl """
-        return self._addControl( argOne, kind='TimeSpanInSeconds', kindMatch=float, convertor=lambda v: TimeSpanInSeconds(v), **kwds ) # type: ignore
+        return self._addControl( argOne, argTwo, kind='TimeSpanInSeconds', kindMatch=float, convertor=lambda v: TimeSpanInSeconds(v), **kwds ) # type: ignore
 
-    def addMillimeters( self, argOne:Optional[Any]=None, **kwds:Unpack[CVT_ADD_KWDS[Millimeters,Millimeters]] ) -> PanelControl[Millimeters,Millimeters]:
+    def addMillimeters( self, argOne:Optional[Any]=None,  argTwo:Optional[str]=None, **kwds:Unpack[CVT_ADD_KWDS[Millimeters,Millimeters]] ) -> PanelControl[Millimeters,Millimeters]:
         """ add control for a distance (in millimeters), see  http://lumensalis.com/ql/h2PanelControl """
-        return self._addControl( argOne, kind='Millimeters', kindMatch=float, convertor=lambda v: Millimeters(v), **kwds ) # type: ignore
+        return self._addControl( argOne, argTwo, kind='Millimeters', kindMatch=float, convertor=lambda v: Millimeters(v), **kwds ) # type: ignore
 
-    def addAngle( self, argOne:Optional[Any]=None, **kwds:Unpack[CVT_ADD_KWDS[Degrees,Degrees]] ) -> PanelControl[Degrees,Degrees]:
+    def addAngle( self, argOne:Optional[Any]=None,  argTwo:Optional[str]=None, **kwds:Unpack[CVT_ADD_KWDS[Degrees,Degrees]] ) -> PanelControl[Degrees,Degrees]:
         """ add control for an angle (in degrees), see  http://lumensalis.com/ql/h2PanelControl """
-        return self._addControl( argOne, kind='Degrees', kindMatch=float, convertor=lambda v: Degrees(v), **kwds ) # type: ignore
+        return self._addControl( argOne, argTwo, kind='Degrees', kindMatch=float, convertor=lambda v: Degrees(v), **kwds ) # type: ignore
 
-    def addTrigger( self, **kwds:Unpack[PanelTrigger.KWDS] ) -> PanelTrigger:
+    def addTrigger( self, argTwo:Optional[str]=None, **kwds:Unpack[PanelTrigger.KWDS] ) -> PanelTrigger:
+        if argTwo is not None:
+            assert 'description' not in kwds, "cannot specify description and argTwo as string"
+            kwds['description'] = argTwo
         trigger = PanelTrigger(**kwds)
         self._triggers.append(trigger)
         return trigger
