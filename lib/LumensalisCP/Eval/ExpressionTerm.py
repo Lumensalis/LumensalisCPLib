@@ -95,6 +95,7 @@ class ExpressionTerm(EvaluatableT[Any]):
     def __or__( self, other:Any ) -> "ExpressionTerm":      return makeBinaryOperation( self, other, lambda c, a, b: a or b )
 
     def __invert__( self )-> "ExpressionTerm":      return makeUnaryOperation( self, lambda c, a: ~a )
+    def __neg__( self )-> "ExpressionTerm":      return makeUnaryOperation( self, lambda c, a: -a )
     
     def __radd__( self, other:Any ):         return makeBinaryOperation( self, TERM( other ), lambda c, b, a: a + b )
     def __rsub__( self, other:Any ) -> "ExpressionTerm":    return makeBinaryOperation( self, TERM( other ), lambda c, b, a: a - b )
