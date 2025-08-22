@@ -6,8 +6,7 @@ __importProfile = getImportProfiler( __name__, globals() )
 # pylint: disable=redefined-builtin,unused-variable,unused-argument,broad-exception-caught
 # pyright: reportUnusedImport=false
 
-from LumensalisCP.IOContext import *
-
+from LumensalisCP.common import *
 
 __importProfile.parsing()
 

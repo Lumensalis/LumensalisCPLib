@@ -7,13 +7,13 @@ __profileImport = getImportProfiler( globals() ) # "Outputs"
 
 from LumensalisCP.Eval.Expressions import *
 from LumensalisCP.Outputs import NamedNotifyingOutputTarget, NotifyingOutputTargetT,OutputTarget
-from LumensalisCP.Interactable import Interactable, InteractableT, INTERACTABLE_ARG_T, INTERACTABLE_T
+from LumensalisCP.Interactable.Interactable import Interactable, InteractableT, INTERACTABLE_ARG_T, INTERACTABLE_T
 
 #############################################################################
 
 __profileImport.parsing()
 if TYPE_CHECKING:
-   from LumensalisCP.Tunable import TunableSettingT, TunableSetting, Tunable, TUNABLE_SELF_T
+   from LumensalisCP.Tunable.Tunable import TunableSettingT, TunableSetting, Tunable, TUNABLE_SELF_T
 
 #############################################################################
 TUNABLE_ARG_T=TypeVar('TUNABLE_ARG_T')

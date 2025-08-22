@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 from LumensalisCP.ImportProfiler import  getImportProfiler
-__profileImport = getImportProfiler( globals() ) # "Outputs"
+__profileImport = getImportProfiler( __name__, globals() ) 
 
 # pyright: reportUnusedImport=false, reportPrivateUsage=false
 
 from LumensalisCP.Eval.Expressions import *
 from LumensalisCP.Outputs import NamedNotifyingOutputTarget, NotifyingOutputTargetT,OutputTarget
-from LumensalisCP.Interactable import Interactable, InteractableT, INTERACTABLE_ARG_T, INTERACTABLE_T
+from LumensalisCP.Interactable.Interactable import Interactable, InteractableT, INTERACTABLE_ARG_T, INTERACTABLE_T
 
-from LumensalisCP.Tunable import *
-from LumensalisCP.TunableKWDS import *
+from LumensalisCP.Tunable.Tunable import *
+from LumensalisCP.Tunable.TunableKWDS import *
 
 #############################################################################
 
@@ -115,6 +115,63 @@ def tunableFloat(  default:float,
         TunableFloatDescriptor]:
     return tunableProperty( default, TunableFloatDescriptor, **kwds) # type: ignore
 
+
+#############################################################################
+
+class TunableSecondsSetting(TunableSettingT[TimeSpanInSeconds,TUNABLE_SELF_T]):
+    TUNABLE_DEFAULTS:ClassVar[StrAnyDict] = {'kind': TimeSpanInSeconds, 'kindMatch': TimeSpanInSeconds}
+
+TunableSecondsSettingT = GenericT(TunableSecondsSetting)
+class SecondsSetting(TunableSecondsSettingT[Tunable]): ...
+class TunableSecondsDescriptor(TunableDescriptorT[TimeSpanInSeconds,Tunable]):
+    SETTING_CLASS = SecondsSetting
+
+def tunableSeconds(  default:TimeSpanInSeconds,
+        **kwds:Unpack[TUNABLE_SETTING_KWDS[TimeSpanInSeconds,TUNABLE_SELF_T]]
+    ) -> Callable[
+        [   Callable[[TUNABLE_SELF_T, SecondsSetting, EvaluationContext],
+             None]],
+        TunableSecondsDescriptor]:
+    return tunableProperty( default, TunableSecondsDescriptor, **kwds) # type: ignore
+
+#############################################################################
+
+class TunableMillimetersSetting(TunableSettingT[Millimeters,TUNABLE_SELF_T]):
+    TUNABLE_DEFAULTS:ClassVar[StrAnyDict] = {'kind': Millimeters, 'kindMatch': Millimeters}
+
+TunableMillimetersSettingT = GenericT(TunableMillimetersSetting)
+class MillimetersSetting(TunableMillimetersSettingT[Tunable]): ...
+class TunableMillimetersDescriptor(TunableDescriptorT[Millimeters,Tunable]):
+    SETTING_CLASS = MillimetersSetting
+
+def tunableMillimeters(  default:Millimeters,
+        **kwds:Unpack[TUNABLE_SETTING_KWDS[Millimeters,TUNABLE_SELF_T]]
+    ) -> Callable[
+        [   Callable[[TUNABLE_SELF_T, MillimetersSetting, EvaluationContext],
+             None]],
+        TunableMillimetersDescriptor]:
+    return tunableProperty( default, TunableMillimetersDescriptor, **kwds) # type: ignore
+
+
+#############################################################################
+
+class TunableDegreesSetting(TunableSettingT[Degrees,TUNABLE_SELF_T]):
+    TUNABLE_DEFAULTS:ClassVar[StrAnyDict] = {'kind': Degrees, 'kindMatch': Degrees}
+
+TunableDegreesSettingT = GenericT(TunableDegreesSetting)
+class DegreesSetting(TunableDegreesSettingT[Tunable]): ...
+class TunableDegreesDescriptor(TunableDescriptorT[Degrees,Tunable]):
+    SETTING_CLASS = DegreesSetting
+
+def tunableDegrees(  default:Degrees,
+        **kwds:Unpack[TUNABLE_SETTING_KWDS[Degrees,TUNABLE_SELF_T]]
+    ) -> Callable[
+        [   Callable[[TUNABLE_SELF_T, DegreesSetting, EvaluationContext],
+             None]],
+        TunableDegreesDescriptor]:
+    return tunableProperty( default, TunableDegreesDescriptor, **kwds) # type: ignore
+
+#############################################################################
 __profileImport.complete(globals())
     
 __all__ = [
@@ -125,5 +182,8 @@ __all__ = [
             'tunableInt', 'TunableIntSetting', 'TunableIntSettingT', 'TunableIntSetting', 'IntSetting',
             'tunableZeroToOne', 'TunableZeroToOneDescriptor', 'TunableZeroToOneSetting', 'ZeroToOneSetting',
             'tunablePlusMinusOne', 'tunablePlusMinusOneT',  'TunablePlusMinusOneSetting','PlusMinusOneSetting',
+            'tunableDegrees', 'TunableDegreesDescriptor', 'TunableDegreesSetting', 'DegreesSetting',
+            'tunableMillimeters', 'TunableMillimetersDescriptor', 'TunableMillimetersSetting', 'MillimetersSetting',
+            'tunableSeconds', 'TunableSecondsDescriptor', 'TunableSecondsSetting', 'SecondsSetting',
 
            ]

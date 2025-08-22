@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from LumensalisCP.Eval.Expressions import *
 from LumensalisCP.Outputs import NamedNotifyingOutputTarget, NotifyingOutputTargetT,OutputTarget
-from LumensalisCP.Interactable import Interactable, InteractableT, INTERACTABLE_ARG_T, INTERACTABLE_T
+from LumensalisCP.Interactable.Interactable import Interactable, InteractableT, INTERACTABLE_ARG_T, INTERACTABLE_T
 from typing  import TypeVar, Generic, Callable, Any, Optional, Unpack, TypeAlias
-from LumensalisCP.TunableKWDS import *
+from LumensalisCP.Tunable.TunableKWDS import *
 #############################################################################
 
 

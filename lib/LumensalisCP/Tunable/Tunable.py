@@ -6,10 +6,11 @@ __profileImport = getImportProfiler( globals() ) # "Outputs"
 # pyright: reportUnusedImport=false, reportPrivateUsage=false
 
 from LumensalisCP.Eval.Expressions import *
+from LumensalisCP.Eval.ExpressionTerm  import ExpressionTerm,  EVAL_VALUE_TYPES
 from LumensalisCP.Outputs import NamedNotifyingOutputTarget, NotifyingOutputTargetT,OutputTarget
-from LumensalisCP.Interactable import Interactable, InteractableT, INTERACTABLE_ARG_T, INTERACTABLE_T
+from LumensalisCP.Interactable.Interactable import Interactable, InteractableT, INTERACTABLE_ARG_T, INTERACTABLE_T
 
-from LumensalisCP.TunableKWDS import *
+from LumensalisCP.Tunable.TunableKWDS import *
 #############################################################################
 
 __profileImport.parsing()
@@ -20,7 +21,7 @@ TUNABLE_SELF_T=TypeVar('TUNABLE_SELF_T', bound='Tunable')
 
 class TunableSetting(NamedLocalIdentifiable,OutputTarget,
                      InteractableT[TUNABLE_T],
-                     EvaluatableT[TUNABLE_T],
+                     ExpressionTerm,
                      Generic[ TUNABLE_T,TUNABLE_SELF_T]):
 
     TUNABLE_DEFAULTS:ClassVar[StrAnyDict] = {}
@@ -77,6 +78,9 @@ class TunableSetting(NamedLocalIdentifiable,OutputTarget,
     def value(self) -> TUNABLE_T:
         return self.__value
     
+    def getValue(self, context:Optional[EvaluationContext]=None)  -> EVAL_VALUE_TYPES:
+        """ current value of term"""
+        return self.__value
     def __call__(self, context:Optional[EvaluationContext]=None) -> TUNABLE_T:
         return self.__value
     
