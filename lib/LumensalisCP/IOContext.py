@@ -14,8 +14,8 @@ from LumensalisCP.Outputs import OutputTarget, NamedOutputTarget, \
         NotifyingOutputTarget,  NotifyingOutputTargetT, \
         NamedNotifyingOutputTarget, NamedNotifyingOutputTargetT
         
-from LumensalisCP.Tunable import *
-from LumensalisCP.Tunables import *
+from LumensalisCP.Tunable.Tunable import *
+from LumensalisCP.Tunable.Tunables import *
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
