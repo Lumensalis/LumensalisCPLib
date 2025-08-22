@@ -18,8 +18,8 @@ from LumensalisCP.Temporal.Refreshable import Refreshable, \
 
 from LumensalisCP.Eval.Evaluatable import NamedEvaluatableProtocolT
 from LumensalisCP.Temporal.RefreshableList import NamedNestedRefreshableList
-
-
+from LumensalisCP.Triggers.Invocable import *
+from LumensalisCP.Triggers.Trigger import TriggerActionTypeArg
 if TYPE_CHECKING:
     from LumensalisCP.Eval.Expressions import ExpressionTerm, Expression
 
@@ -104,7 +104,20 @@ class Scene(MainChild):
         self.__patternRefreshPeriod = 0.02
         self.__nextPatternsRefresh = 0
 
+        self.__transitionTo:dict[Scene, list[Invocable]] = {}
+        self.__onEnter: list[Invocable] = []
+        self.__onExit: list[Invocable] = []
 
+    def onChangeTo( self, scene:Scene, action:TriggerActionTypeArg ) -> None:
+        if scene not in self.__transitionTo:
+            self.__transitionTo[scene] = []
+        self.__transitionTo[scene].append( Invocable.makeInvocable(action) )
+
+    def onEnter( self, action:TriggerActionTypeArg ) -> None:
+        self.__onEnter.append( Invocable.makeInvocable(action) )
+
+    def onExit( self, action:TriggerActionTypeArg ) -> None:
+        self.__onExit.append( Invocable.makeInvocable(action) )
 
     def nliGetContainers(self) -> list[NliContainerMixin[NamedLocalIdentifiable]]:
         return [self.__rulesContainer, self.__tasksContainer, self.__patternsContainer] # type: ignore[return-value]

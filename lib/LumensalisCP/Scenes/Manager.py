@@ -16,6 +16,8 @@ if TYPE_CHECKING:
     
 _sayScenesManagerImport.parsing()
 
+# pyright: reportPrivateUsage=false
+
 class SceneManager(NamedLocalIdentifiable):
     def __init__(self, main: MainManager) -> None:
         super().__init__("SceneManager")
@@ -55,10 +57,21 @@ class SceneManager(NamedLocalIdentifiable):
             scene = actualScene
         
         if scene  != self.__currentScene:
-            if self.__currentScene is not None:
-                self.__currentScene.deactivate()
-            if self.enableDbgOut: self.dbgOut( "switching from scene %r to scene %r", self.__currentScene, scene )
+            oldScene = self.__currentScene
+            newScene = scene
+            if oldScene is not None:
+                oldScene.deactivate()
+                for invocable in oldScene.__onExit:
+                    invocable(context)
+
+                transitions = oldScene.__transitionTo.get(newScene, None)
+                if transitions is not None:
+                    for invocable in transitions:
+                        invocable(context)
+            if self.enableDbgOut: self.dbgOut( "switching from scene %r to scene %r", oldScene, newScene )
             self.__currentScene = scene # type: ignore
+            for invocable in newScene.__onEnter:
+                invocable(context)
             scene.activate()
             
     def switchToNextIn( self, sceneList:list[str] ):
