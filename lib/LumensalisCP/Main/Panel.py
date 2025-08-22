@@ -393,6 +393,10 @@ class ControlPanel( MainChild ):
 
     def nliGetContainers(self) -> Iterable[NliContainerMixin[PanelControl[Any, Any]]]:
         yield self._controlVariables
+
+    def nliHasContainers(self) -> bool:
+        return True
+
         
 __all__ = [ 'ControlPanel', 'PanelControl', 'PanelMonitor' ]
 

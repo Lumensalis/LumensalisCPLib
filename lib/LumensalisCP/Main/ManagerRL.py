@@ -25,13 +25,17 @@ _mmMeta = _module.reloadableClassMeta('MainManager', stripPrefix='MainManager_')
 @_mmMeta.reloadableMethod()
 def MainManager_nliGetContainers(self:MainManager) -> Iterable[NliContainerMixin[Any]]|None:
     yield self.shields
-    if self.i2cDevicesContainer is not None:
-        yield self.i2cDevicesContainer
+    if self.__i2cProvider is not None:#  and self.__i2cProvider.i2cDevicesContainer is not None:
+        yield self.__i2cProvider.i2cDevicesContainer
+
+    #if self._scenes is not None:
+    #    yield self._scenes._scenes
     yield self.controlPanels
 
 @_mmMeta.reloadableMethod()
-def MainManager_nliGetChildren(self:MainManager) -> Iterable[NamedLocalIdentifiable]|None:
-    yield self._scenes
+def MainManager_nliGetChildren(self:MainManager) -> Iterable[NamedLocalIdentifiable]:
+    if self._scenes is not None:
+        yield self._scenes
     #yield self.defaultController
     if self.__dmx is not None:
         yield self.__dmx

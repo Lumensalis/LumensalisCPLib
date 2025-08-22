@@ -122,6 +122,9 @@ class Scene(MainChild):
     def nliGetContainers(self) -> list[NliContainerMixin[NamedLocalIdentifiable]]:
         return [self.__rulesContainer, self.__tasksContainer, self.__patternsContainer] # type: ignore[return-value]
     
+    def nliHasContainers(self) -> bool:
+        return True
+
     def refreshableCalculateNextRefresh(self, context: EvaluationContext, when: TimeInSeconds) -> TimeInSeconds | None:
         if self.enableDbgOut: self.dbgOut( "Scene.refreshableCalculateNextRefresh at %.3f...", when )
         nextRefresh = super().refreshableCalculateNextRefresh(context,when)

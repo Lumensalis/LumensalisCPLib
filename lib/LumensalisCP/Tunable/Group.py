@@ -80,6 +80,9 @@ class TunableGroup( Tunable, NamedLocalIdentifiable, InteractableGroup ):
 
     def nliGetContainers(self) -> Iterable[NliContainerMixin[TunableSetting[Any,TunableGroup]]]:
         yield self._tunables
+
+    def nliHasContainers(self) -> bool:
+        return True
         
 __all__ = [ 'TunableGroup' ]
 

@@ -47,8 +47,10 @@ class I2CDevice( MainChild ):
         yield self._inputs
         assert isinstance(self._outputs, NliContainerInterface), "outputs must be a NliContainerInterface"
         yield self._outputs
-        
-            
+    
+    def nliHasContainers(self) -> bool:
+        return True
+
     @property
     def i2c(self) -> I2C: return self.__i2c
 

@@ -36,7 +36,7 @@ try:
     # any imports below this won't happen if the error gets raised
     LCPF_TYPING_IMPORTED = True
     
-    KWDS_TYPE: TypeAlias = dict[str, Any]  # keyword arguments dictionary
+    KWDS_TYPE:TypeAlias = Any # TypeAlias = dict[str, Any]  # keyword arguments dictionary
     class PseudoTypingExpression(object): # type: ignore
         def __init__(self,*args:Any,**kwds:KWDS_TYPE):
             raise NotImplementedError    

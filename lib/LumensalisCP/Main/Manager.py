@@ -5,7 +5,7 @@ _sayMainImport = getImportProfiler( "Main.Manager", globals() )
 
 # pyright: reportUnusedImport=false
 
-import wifi, displayio
+import wifi, displayio, random, os
 
 import LumensalisCP.Main.Dependents
 from LumensalisCP.commonPreManager import *
@@ -72,8 +72,16 @@ class MainManager( NamedLocalIdentifiable ): #, I2CProvider, ConfigurableBase, )
     useWifi:bool
     configuration:ConfigurableBase
     config:ControllerConfig 
-    
+    sessionUuid:str
 
+
+    @staticmethod
+    def initManager(*args,**kwargs) -> "MainManager":
+        assert MainManager.theManager is None
+        rv = MainManager()
+        assert MainManager.theManager is rv
+        return rv
+    
     @staticmethod
     def initOrGetManager() -> "MainManager":
         rv = MainManager.theManager
@@ -117,6 +125,7 @@ class MainManager( NamedLocalIdentifiable ): #, I2CProvider, ConfigurableBase, )
         
         self.__TerrainTronics = None
         self.__tunables = TunableGroup(name='tunables')
+        self.sessionUuid = f"{self.name}_{os.urandom(4).hex()}" 
 
         if not self.unitTesting:
             from LumensalisCP.Main import ManagerRL
@@ -224,7 +233,7 @@ class MainManager( NamedLocalIdentifiable ): #, I2CProvider, ConfigurableBase, )
     def scenes(self) -> SceneManager:
         if self._scenes is None:
             from LumensalisCP.Scenes.Manager import SceneManager
-            self._scenes = SceneManager(main=self)
+            self._scenes = SceneManager(main=self,name="scenes")
         return self._scenes
     
     @property
@@ -380,8 +389,13 @@ see http://lumensalis.com/ql/h2Scenes
     @reloadingMethod
     def nliGetContainers(self) -> Iterable[NliContainerMixin[NamedLocalIdentifiable]]|None: ...
 
+    def nliHasContainers(self) -> bool:
+        return True
+
     @reloadingMethod
-    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]|None: ...
+    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]: ...
+
+    def nliHasChildren(self) -> bool: return True
 
     @reloadingMethod
     def launchProject(self, globals:Optional[StrAnyDict]=None, verbose:bool = False ) -> Any: ...

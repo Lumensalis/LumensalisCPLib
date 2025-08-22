@@ -24,6 +24,7 @@ from LumensalisCP.HTTP.BSR import BSR_sakRL
 from LumensalisCP.HTTP.BSR import BSR_cmdRL
 from LumensalisCP.HTTP.BSR import BSR_clientRL
 from LumensalisCP.HTTP.BSR import BSR_queryRL
+from LumensalisCP.HTTP.BSR import BSR_proxyRL
 from LumensalisCP.HTTP import WebsocketsRL
 
 @_BasicServer.reloadableMethod()
@@ -46,7 +47,10 @@ def _reloadForRoute( self:BasicServer, name:str ) -> None: # type:ignore[no-unty
         modules.extend( [BSR_cmdRL] )
     elif "client" in name:
         modules.extend( [BSR_clientRL] )
-
+    elif "query" in name:
+        modules.extend( [BSR_queryRL] )
+    elif "proxy" in name:
+        modules.extend( [BSR_proxyRL] )
     modules.append( BasicServerRL )
 
     self.infoOut( "reloading  %s", modules )

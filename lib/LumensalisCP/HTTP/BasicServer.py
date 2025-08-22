@@ -18,6 +18,7 @@ from LumensalisCP.HTTP.BSR import BSR_sakRL
 from LumensalisCP.HTTP.BSR import BSR_cmdRL
 from LumensalisCP.HTTP.BSR import BSR_clientRL
 from LumensalisCP.HTTP.BSR import BSR_queryRL
+from LumensalisCP.HTTP.BSR import BSR_proxyRL
 from LumensalisCP.HTTP import WebsocketsRL
 
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
@@ -82,6 +83,9 @@ class BasicServer(Server,MainAsyncChild):
     def monitorInput( self, v:InputSource ):
         # TODO: handle additions after server startup better
         self.monitoredVariables.append(v)
+
+    @reloadingMethod
+    def BSR_proxy(self:BasicServer, request:Request, name:str)-> JSONResponse| Response: ...
 
     @reloadingMethod
     def BSR_query(self:BasicServer, request:Request, name:str)-> JSONResponse| Response: ...
@@ -151,6 +155,7 @@ class BasicServer(Server,MainAsyncChild):
         self.addReloadableRouteHandler( "sak" )
         self.addReloadableRouteHandler( "profile" )
         self.addReloadableRouteHandler( "query", params="<name>" )
+        self.addReloadableRouteHandler( "proxy", params="<name>" )
         self.addReloadableRouteHandler( "cmd", [PUT,POST], params="<cmd>"  )
 
         @self.route("/connect-websocket", GET) # type: ignore[reportUntypedFunctionDecorator,reportUnusedFunction]

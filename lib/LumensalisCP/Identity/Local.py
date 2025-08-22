@@ -19,6 +19,7 @@ class LocalIdentifiable(CountedInstance):
     
     __nextId = 1
     __localId:int
+    localsMap:ClassVar[dict[int,LocalIdentifiable]] = {}
 
     @staticmethod
     def __getNextId(  ): # pylint: disable=unused-argument
@@ -29,23 +30,34 @@ class LocalIdentifiable(CountedInstance):
 
     def __init__( self ) -> None:
         super().__init__()
-        self.__localId = self.__getNextId()
-        
+        localId = self.__getNextId()
+        self.__localId = localId
+        assert( LocalIdentifiable.localsMap.get(localId,None) is None ), f"localId {localId} already exists"
+        LocalIdentifiable.localsMap[localId] = self
+
     @property
     def localId(self) -> int: return self.__localId
 
 #############################################################################
 
-class NliInterface(Protocol):
+class NliInterface(IDebuggable):
+    def nliHasChildren(self) -> bool: ...
+    def nliHasContainers(self) -> bool: ...
+    def nliHasItems(self) -> bool: ...
+
     def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]: ...
 
     def nliGetContainers(self) -> Iterable[NliContainerInterface]: ...
+
+    def isContainer(self) -> bool: ...
 
 #############################################################################
 class NliContainerInterface(NliInterface):
     @property
     def containerName(self) -> str: ...
 
+
+    def values(self) -> Iterable[Any]: ...
 
     def __getitem__(self, key:str|int) -> NamedLocalIdentifiable: ...
     
@@ -94,6 +106,9 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
             return self.nliDynamicName()
         return f"{self.__class__.__name__}({self.__name}@{self.localId})"
 
+    def isContainer(self) -> bool:
+        return False
+
     #########################################################################
 
     #__nliContainerRef:ReferenceType["NliContainerMixin"]
@@ -112,6 +127,16 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
 
     def nliGetContainers(self) -> Iterable[NliContainerInterface]:
         return ()
+    
+    def nliHasChildren(self) -> bool:
+        return False
+
+    def nliHasContainers(self) -> bool:
+        return False
+    
+    def nliHasItems(self) -> bool:
+        return False
+
 
     def nliSetContainer(self, container:NliContainerMixin):
         assert container is not None
@@ -169,6 +194,9 @@ class NliContainerMixin( NliContainerInterface ):
     
     def nliContainsChild( self, child:NamedLocalIdentifiable ) -> bool:
         raise NotImplementedError
+    
+    def isContainer(self) -> bool:
+        return True
 
 #############################################################################
     
@@ -200,12 +228,21 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
         for item in self.data:
             yield item
 
+    def nliHasItems(self) -> bool:
+        return len(self.data) > 0
+
     def iter(self) -> Iterable[_NLIListT]:
         return iter(self.data)
     
     def keys(self) -> list[str]:
         return [v.name for v in self.data] # type: ignore[return-value]
 
+    def __len__(self) -> int:
+        return len(self.data)
+    
+    def isContainer(self) -> bool:
+        return True
+    
     @property
     def containerName(self) -> str: return self.name
 

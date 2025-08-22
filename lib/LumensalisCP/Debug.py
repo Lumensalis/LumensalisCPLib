@@ -10,7 +10,7 @@ from LumensalisCP.Temporal.Time import getOffsetNow, TimeInSeconds
 try:
     #import typing
     from typing import NoReturn, Never, Optional, ClassVar, Any, TypeAlias, Protocol, TYPE_CHECKING
-    KWDS_TYPE: TypeAlias = dict[str, Any]  # keyword arguments dictionary
+    KWDS_TYPE: TypeAlias = Any #dict[str, Any]  # keyword arguments dictionary
 except ImportError:
     TYPE_CHECKING = False # type: ignore
     
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
         def dbgOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ) -> None: ...
         def startupOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ) -> None: ...
-        def infoOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ) -> None: ...
+        def infoOut( self, fmtString:str, *args:Any, **kwds:Any ) -> None: ...
         def errOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ) -> None: ...
         def warnOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ) -> None: ...
         def SHOW_EXCEPTION( self,  inst:Exception, fmtString:str, *args:Any, **kwds:Any) -> None: ...
@@ -42,10 +42,10 @@ class Debuggable( CountedInstance, IDebuggable ):
     DBG_HEADER_FORMAT: ClassVar[str] = "%.3f %s %s : "
 
     @staticmethod
-    def _getNewNow():
+    def _getNewNow() -> TimeInSeconds:
         return getOffsetNow()
     
-    def __init__(self, enableDbgOut:bool = False):
+    def __init__(self, enableDbgOut:bool = False) -> None:
         CountedInstance.__init__(self)
         #IDebuggable.__init__(self)
         self.__dbgOutEnabled = enableDbgOut
@@ -77,21 +77,21 @@ class Debuggable( CountedInstance, IDebuggable ):
         except Exception as inst: # pylint: disable=broad-exception-caught
             return f"error formatting {kind} {fmtString} : {inst}"
     
-    def dbgOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ):
+    def dbgOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ) -> None:
         if self.__dbgOutEnabled:
             print( self.__format("", fmtString, args, kwds ) )
 
     
-    def startupOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ):
+    def startupOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ) -> None:
         print( self.__format("STARTUP", fmtString, args, kwds ) )
             
-    def infoOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ):
+    def infoOut( self, fmtString:str, *args:Any, **kwds:Any ) -> None:
         print( self.__format("INFO", fmtString, args, kwds ) )
         
-    def errOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ):
+    def errOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ) -> None:
         print( self.__format("ERROR", fmtString, args, kwds ) )
 
-    def warnOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ):
+    def warnOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ) -> None:
         print( self.__format("WARNING", fmtString, args, kwds ) )
 
     def SHOW_EXCEPTION( self,  inst:Exception, fmtString:str, *args:Any, **kwds:Any) -> None:
@@ -109,6 +109,6 @@ class Debuggable( CountedInstance, IDebuggable ):
     def enableDbgOut(self) -> bool: return self.__dbgOutEnabled
     
     @enableDbgOut.setter
-    def enableDbgOut(self,enabled:bool): self.__dbgOutEnabled = enabled
+    def enableDbgOut(self,enabled:bool) -> None: self.__dbgOutEnabled = enabled
 
 _sayDebugImport.complete(globals())

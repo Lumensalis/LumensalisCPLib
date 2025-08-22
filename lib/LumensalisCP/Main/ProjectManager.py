@@ -58,7 +58,7 @@ see http://lumensalis.com/ql/h2Main
         ProfileSnapEntry.releasablePreload( 3000 )
 
     sayAtStartup( f"Project: get main" )
-    main = MainManager.initOrGetManager()
+    main = MainManager.initManager(name=name)
 
     main.useWifi = useWifi
 

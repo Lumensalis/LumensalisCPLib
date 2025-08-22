@@ -2,16 +2,29 @@
 
 from LumensalisCP.CPTyping import Iterable, Any, Iterator, Generic, TypeVar
 
-class Bag(dict): # type: ignore
-    
-    def __getattr__(self, name:str) ->Any:
+class Bag(object): # type: ignore
+
+    def __init__(self, *args:Any, **kwargs:Any) -> None:
+        if len(args) > 0:
+            assert len(args) == 1, "Bag can only be initialized with a single argument"
+            assert len(kwargs) == 0, "Bag can only be initialized with a single argument"
+            for key, value in args[0].items():
+                setattr(self, key, value)
+        elif len(kwargs) > 0:
+            for key, value in kwargs.items():
+                setattr(self, key, value)
+
+    def __len__(self) -> int:
+        return len(self.__dict__)
+
+    def __getitem__(self, name:str) ->Any:
         try:
-            return self[name] # type: ignore[return-value]
-        except:
-            return super().__getattribute__(name)
-        
-    def __setattr__(self, name:str, value:Any):
-        self[name] = value
+            return getattr(self, name)
+        except AttributeError:
+            raise KeyError(name)
+
+    def __setitem__(self, name:str, value:Any):
+        setattr(self, name, value)
 
 #############################################################################
 

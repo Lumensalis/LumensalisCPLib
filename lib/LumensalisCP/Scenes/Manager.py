@@ -19,8 +19,8 @@ _sayScenesManagerImport.parsing()
 # pyright: reportPrivateUsage=false
 
 class SceneManager(NamedLocalIdentifiable):
-    def __init__(self, main: MainManager) -> None:
-        super().__init__("SceneManager")
+    def __init__(self, main: MainManager,**kwds:Unpack[NamedLocalIdentifiable.KWDS]) -> None:
+        super().__init__( **kwds)
         self.main = main
         #self._scenes:Mapping[str,Scene] = {}
         self._scenes:NliList[Scene] = NliList("scenes", parent=self)
@@ -43,7 +43,10 @@ class SceneManager(NamedLocalIdentifiable):
 
     def nliGetContainers(self) -> list[NliContainerMixin[Any]]:
         return [self._scenes]
-        
+    
+    def nliHasContainers(self) -> bool:
+        return True
+
     @property
     def currentScene(self): return self.__currentScene
         

@@ -18,10 +18,13 @@ from LumensalisCP.Main import ProfilerRL
 from LumensalisCP.HTTP.BSR import BSR_profileRL
 from LumensalisCP.HTTP.BSR import BSR_clientRL
 from LumensalisCP.HTTP.BSR import BSR_cmdRL
+from LumensalisCP.HTTP.BSR import BSR_queryRL
+from LumensalisCP.HTTP.BSR import BSR_proxyRL
 _reloadableModules:list[ModuleType] = [ 
     ManagerRL, Manager2RL, MainAsyncRL, 
     RefreshableRL, RefreshableListRL,
-    ProfilerRL, BSR_profileRL, BSR_clientRL,  BSR_cmdRL,
+    ProfilerRL, BSR_profileRL, BSR_clientRL,  
+    BSR_cmdRL, BSR_queryRL, BSR_proxyRL,
      BasicServerRL,
        ]
 
