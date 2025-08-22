@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from LumensalisCP.ImportProfiler import  getImportProfiler
-_sayImport = getImportProfiler( "Main.Panel" )
+_sayImport = getImportProfiler( __name__, globals() )
 
 # pylint: disable=redefined-builtin,unused-variable,unused-argument,broad-exception-caught
 # pyright: reportUnusedImport=false

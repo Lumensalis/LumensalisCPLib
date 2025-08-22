@@ -19,6 +19,8 @@ from LumensalisCP.util.Reloadable import addReloadableClass, reloadingMethod
 from LumensalisCP.Main import GetManager 
 from LumensalisCP.Temporal.Refreshable import *
 
+from LumensalisCP.Tunable.Group import TunableGroup
+
 #from LumensalisCP.Main import ManagerRL
 #from LumensalisCP.Main import Manager2RL
 #from LumensalisCP.Main.Async import ManagerAsync
@@ -41,12 +43,17 @@ if TYPE_CHECKING:
 
 import LumensalisCP.Main.ProfilerRL
 
+#############################################################################
+
 _sayMainImport.parsing()
 
 LumensalisCP.Main.ProfilerRL._rl_setFixedOverheads() # type: ignore
 
 def _early_collect(tag:str):
     PreMainConfig.pmc_gcManager.checkAndRunCollection(force=True)
+
+
+#############################################################################
 
 class MainManager( NamedLocalIdentifiable ): #, I2CProvider, ConfigurableBase, ):
     
@@ -109,6 +116,7 @@ class MainManager( NamedLocalIdentifiable ): #, I2CProvider, ConfigurableBase, )
         self.__i2cProvider:I2CProvider|None = None
         
         self.__TerrainTronics = None
+        self.__tunables = TunableGroup(name='tunables')
 
         if not self.unitTesting:
             from LumensalisCP.Main import ManagerRL
@@ -150,6 +158,10 @@ class MainManager( NamedLocalIdentifiable ): #, I2CProvider, ConfigurableBase, )
 
     def makeRef(self):
         return LumensalisCP.Main.Dependents.MainRef(self)
+
+    @property
+    def tunables(self) -> TunableGroup:
+        return self.__tunables
 
     @property
     def refreshables(self) -> RootRefreshableList:
