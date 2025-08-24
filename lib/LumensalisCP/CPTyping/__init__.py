@@ -26,7 +26,7 @@ try:
     from typing import NoReturn
     from typing import final, overload, override
     from typing import Coroutine, Awaitable, AsyncGenerator, AsyncIterable, AsyncIterator
-    
+    from typing import ParamSpec, Concatenate
     try:
         from types import ModuleType    
     except ImportError:

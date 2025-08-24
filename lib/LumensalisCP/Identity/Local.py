@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from LumensalisCP.ImportProfiler import  getImportProfiler
-_sayIdentityLocalImport = getImportProfiler( "Identity.Local" )
+__profileImport = getImportProfiler( "Identity.Local" )
 
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 
@@ -11,9 +11,11 @@ import LumensalisCP.pyCp.weakref as lcpWeakref
 from LumensalisCP.CPTyping import ReferenceType, Optional, Iterable , Generic, TypeVar, GenericT
 from LumensalisCP.pyCp.collections import GenericList, GenericListT
 
+if TYPE_CHECKING:
+    from .Proxy import GenericNamedLocalInstanceProxyAction
 #############################################################################
 
-_sayIdentityLocalImport.parsing()
+__profileImport.parsing()
 
 class LocalIdentifiable(CountedInstance):
     
@@ -66,6 +68,8 @@ FULL_KWDS=TypeVar("FULL_KWDS")
 
 class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
 
+    _proxyActions:ClassVar[dict[str, dict[str,GenericNamedLocalInstanceProxyAction]]] = {}
+    
     class KWDS(TypedDict):
         name:NotRequired[str]
         temporaryName:NotRequired[str]
@@ -294,9 +298,10 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
 
 #############################################################################
 
-_sayIdentityLocalImport.complete(globals())
 
 __all__ = ['LocalIdentifiable',
            'NamedLocalIdentifiable',
            'NamedLocalIdentifiableWithParent',
             'NliContainerMixin','NliList', 'NliInterface']
+
+__profileImport.complete(globals())

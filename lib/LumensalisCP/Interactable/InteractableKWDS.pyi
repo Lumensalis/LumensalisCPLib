@@ -5,7 +5,6 @@ from __future__ import annotations
 
 from LumensalisCP.IOContext import *
 
-
 #############################################################################
 
 INTERACTABLE_ARG_T = TypeVar('INTERACTABLE_ARG_T')
@@ -17,7 +16,9 @@ class INTERACTABLE_ARG_T_ADD_KWDS[INTERACTABLE_ARG_T](TypedDict):
     max: NotRequired[INTERACTABLE_ARG_T]
     name: NotRequired[str]
     description: NotRequired[str]
-    
+
+#############################################################################
+  
 class INTERACTABLE_KWDS[INTERACTABLE_ARG_T](TypedDict):
     startingValue: NotRequired[INTERACTABLE_ARG_T]
     min: NotRequired[INTERACTABLE_ARG_T]
@@ -27,9 +28,6 @@ class INTERACTABLE_KWDS[INTERACTABLE_ARG_T](TypedDict):
     kindMatch: NotRequired[type]
     kind: NotRequired[str|type]
 
-#############################################################################
-
- 
 #############################################################################
 __all__ = [
     "INTERACTABLE_ARG_T",
