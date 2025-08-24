@@ -19,8 +19,26 @@ class Spinner(Actor,Tunable):
         Tunable.__init__(self)
 
         #self.manualSpeed = TunableSettingT[PlusMinusOne](startingValue=0,onChange=self._onManualSpeedChange)
-        self.manualOverride = TunableBoolSettingT[Spinner](self, startingValue=False, onChange=Spinner._onManualOverrideChange)
+        #self.manualOverride = TunableBoolSettingT[Spinner](self, name="manualOverride", startingValue=False, onChange=Spinner._onManualOverrideChange)
         self._inManualControl = False
+
+    @notifyingBoolOutputProperty(False)
+    def manualOverride(self, value:bool, context:EvaluationContext ) -> None:
+        if self.enableDbgOut: self.dbgOut("manualOverride changed to %s", value)
+        assert isinstance(value, bool), f"manualOverride must be a bool, not {type(value)}"
+        self._inManualControl = value
+        if not value:
+            self._clearManualSpeed(context=context)
+
+    @notifyingPlusMinusOneOutputProperty(0.0)
+    def manualSpeed(self, value:PlusMinusOne, context:EvaluationContext ) -> None:
+        assert isinstance(value, PlusMinusOne), f"manualSpeed must be a PlusMinusOne, not {type(value)}"
+        if self._inManualControl:
+            if self.enableDbgOut: self.dbgOut("manualSpeed changed to %s", value)
+            self._setManualSpeed( value, context=context )
+        else:
+            if self.enableDbgOut: self.dbgOut("manualSpeed changed to %s, (ignored)", value)
+
 
     @tunableZeroToOne(0.5)
     def defaultJogSpeed(self, setting: ZeroToOneSetting, context:EvaluationContext ) -> None:
@@ -32,19 +50,6 @@ class Spinner(Actor,Tunable):
         if self.enableDbgOut: self.dbgOut("defaultDirectionalSpeed changed to %s", setting.value)
         return 
 
-    @tunablePlusMinusOne(0.0)
-    def manualSpeed(self, setting:PlusMinusOneSetting, context:EvaluationContext ) -> None:
-        if self._inManualControl:
-            if self.enableDbgOut: self.dbgOut("manualSpeed changed to %s", setting.value)
-            self._setManualSpeed( setting.value, context=context )
-        else:
-            if self.enableDbgOut: self.dbgOut("manualSpeed changed to %s, (ignored)", setting.value)
-
-    def _onManualOverrideChange(self, setting:TunableSetting[bool,Self], context:EvaluationContext ) -> None:
-        if self.enableDbgOut: self.dbgOut("manualOverride changed to %s", setting.value)
-        self._inManualControl = setting.value
-        if not setting.value:
-            self._clearManualSpeed(context=context)
 
     def spin(self, directionalSpeed:Optional[PlusMinusOneEvalArg] = 0, duration:Optional[TimeInSecondsEvalArg]=None, context:Optional[EvaluationContext]=None) -> Behavior:
         raise NotImplementedError("open method must be implemented in subclass")
@@ -167,20 +172,20 @@ class SpinTimedMovement(SpinMovement):
                                             context.valueOf(self.directionalSpeed), self.directionalSpeed,
                                             context.valueOf(self.duration), self.duration)
         if self.actor.currentBehavior is self:
-            self.spinner._move( self, self.directionalSpeed, self.duration, ) # type: ignore
+            self.spinner._move( self, self.directionalSpeed, self.duration, context=context ) # type: ignore
     
     def derivedBeginMove( self,context:EvaluationContext )-> None:
         vds = context.valueOf(self.directionalSpeed)
         vdt = context.valueOf(self.duration)
         if self.enableDbgOut: self.dbgOut("derivedBeginMove(%s,%s)", vds, vdt)
-        self.spinner._move( self, vds, vdt, context )
+        self.spinner._move( self, vds, vdt, context=context )
         self.spinner.activate(context=context)
     
     def derivedEndMove( self,context:EvaluationContext )-> None:
         if self.enableDbgOut: self.dbgOut("derivedEndMove")
         self.spinner.deactivate(context=context)
-        self.spinner._move( self, 0, None, context )
-    
+        self.spinner._move( self, 0, None, context=context )
+
     def __repr__(self) -> str:
         return f"({self.__class__.__name__}@ {hex(id(self))} {self.name!r} directionalSpeed={self.directionalSpeed}, duration={self.duration})"
     # def derivedExit(self, context:EvaluationContext) -> None: ...
