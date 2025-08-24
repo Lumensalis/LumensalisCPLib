@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from LumensalisCP.ImportProfiler import  getImportProfiler
@@ -6,7 +5,9 @@ _sayScenesManagerImport = getImportProfiler( globals() ) # "Scenes.Manager"
 
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable, NliContainerMixin, NliList
 from LumensalisCP.Scenes.Scene import Scene
+from LumensalisCP.Main.Updates import UpdateContext
 from LumensalisCP.Eval.Expressions import EvaluationContext
+from LumensalisCP.Identity.Proxy import proxyMethod, ProxyAccessibleClass
 
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
@@ -18,6 +19,7 @@ _sayScenesManagerImport.parsing()
 
 # pyright: reportPrivateUsage=false
 
+@ProxyAccessibleClass()
 class SceneManager(NamedLocalIdentifiable):
     def __init__(self, main: MainManager,**kwds:Unpack[NamedLocalIdentifiable.KWDS]) -> None:
         super().__init__( **kwds)
@@ -53,13 +55,23 @@ class SceneManager(NamedLocalIdentifiable):
     @currentScene.setter
     def currentScene(self, scene:Scene|str):  self.setScene(scene)
         
-    def setScene(self, scene:Scene|str ):
+
+    @proxyMethod()
+    def remoteGetCurrentSceneName(self) -> str|None:
+        return self.__currentScene.name if self.__currentScene else None
+
+    @proxyMethod()
+    def remoteSetCurrentSceneName(self, name: str) -> None:
+        self.setScene(name)
+
+    def setScene(self, scene:Scene|str, context:Optional[EvaluationContext]=None) -> None:
         if isinstance(scene, str):
             actualScene = self._scenes.get(scene,None)
             assert actualScene is not None, safeFmt("unknown scene %r", scene )
             scene = actualScene
         
         if scene  != self.__currentScene:
+            context = UpdateContext.fetchCurrentContext(context)
             oldScene = self.__currentScene
             newScene = scene
             if oldScene is not None:

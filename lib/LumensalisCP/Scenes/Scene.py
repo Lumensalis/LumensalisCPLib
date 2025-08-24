@@ -20,6 +20,8 @@ from LumensalisCP.Eval.Evaluatable import NamedEvaluatableProtocolT
 from LumensalisCP.Temporal.RefreshableList import NamedNestedRefreshableList
 from LumensalisCP.Triggers.Invocable import *
 from LumensalisCP.Triggers.Trigger import TriggerActionTypeArg
+from LumensalisCP.Identity.Proxy import proxyMethod, ProxyAccessibleClass
+
 if TYPE_CHECKING:
     from LumensalisCP.Eval.Expressions import ExpressionTerm, Expression
     from LumensalisCP.Scenes.Manager import SceneManager
@@ -52,14 +54,6 @@ class SceneTask( RfMxnActivatable,
     def derivedRefresh(self, context: EvaluationContext) -> None:
         if self.enableDbgOut: self.dbgOut("running scene task %r", self.task_callback)
         self.task_callback()
-    
-    if False:
-        def run( self, scene:"Scene", context: EvaluationContext, frame:ProfileFrameBase ):
-            if scene.main.when < self.__nextRun:
-                return
-            self.__nextRun = TimeInSeconds( scene.main.when + self.__period )
-            frame.snap( "runSceneTask", self.name )
-            self.task_callback(context=context) # type: ignore[call-arg]
 
 class SceneRule( NamedLocalIdentifiable, Expression,  NamedEvaluatableProtocolT[Any] ):
     def __init__( self, target:OutputTarget, term:ExpressionTerm, name:Optional[str]=None ):
@@ -80,7 +74,7 @@ class SceneRefreshables(NamedNestedRefreshableList):
         super().__init__(parent=scene.main.refreshables,name="sceneRefreshables")
         self.scene = scene
 
-    
+@ProxyAccessibleClass()
 class Scene(MainChild):
     
     class KWDS( MainChild.KWDS):
@@ -136,6 +130,7 @@ class Scene(MainChild):
         if self.enableDbgOut: self.dbgOut( "Scene.refreshableCalculateNextRefresh is %.3f", nextRefresh )
         return nextRefresh
 
+    @proxyMethod()
     def activateScene(self) -> None:    
         if self.enableDbgOut: self.dbgOut( "Scene.activateScene" )
         self.manager.setScene(self)
@@ -194,17 +189,14 @@ class Scene(MainChild):
         if not sceneTask.isActiveRefreshable:
             sceneTask.activate(context)
         assert sceneTask.isActiveRefreshable, f"SceneTask {sceneTask} on {sceneTask.refreshList} is not active refreshable"
-
         return sceneTask
-    
-    
+
     def addSimpleTaskDef( self, **kwds:Unpack[SceneTask.KWDS]  ) -> Callable[[Callable[[],None]], SceneTask]:
 
         def addTask( callable:Callable[[],None] ) -> SceneTask:
             kwds['task'] = callable
             return self.addTask(**kwds)
         return addTask
-
 
     def derivedRefresh(self, context: EvaluationContext) -> None:
         self.runTasks(context)
