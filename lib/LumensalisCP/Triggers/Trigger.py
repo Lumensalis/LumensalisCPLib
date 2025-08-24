@@ -8,6 +8,7 @@ from LumensalisCP.IOContext import *
 from LumensalisCP.Eval.Expressions import  Expression, ExpressionTerm #, UpdateContext
 from LumensalisCP.util.kwCallback import KWCallback, KWCallbackArg # type: ignore
 from LumensalisCP.Triggers.Invocable import *
+from LumensalisCP.Identity.Proxy import proxyMethod, ProxyAccessibleClass
 
 #############################################################################
 __triggersSayImport( "parsing... " )
@@ -19,6 +20,7 @@ __triggersSayImport( "parsing... " )
 TriggerActionType:TypeAlias = Invocable
 TriggerActionTypeArg:TypeAlias = Union[TriggerActionType, Callable[[EvaluationContext], None]]
 
+@ProxyAccessibleClass()
 class Trigger(NamedLocalIdentifiable, Invocable):
     """Triggers represent a set of actions that can be "fired" upon a condition being met
     
@@ -66,6 +68,9 @@ class Trigger(NamedLocalIdentifiable, Invocable):
 
         self.__actions.append( Invocable.makeInvocable(action) )
 
+    @proxyMethod()
+    def remoteFire(self) -> None:
+        self.fireTrigger(None)
 
     def fireTrigger(self, context:Optional[EvaluationContext] ) -> None:
         if context is None: context = UpdateContext.fetchCurrentContext(None)
