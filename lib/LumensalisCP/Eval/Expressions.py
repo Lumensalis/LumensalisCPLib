@@ -45,7 +45,7 @@ class Expression( Evaluatable ):
                     yield t2
 
     @property
-    def value(self): return self.__latestValue
+    def value(self) -> Any: return self.__latestValue
     
     @property
     def term(self) -> ExpressionTerm: return self.__root

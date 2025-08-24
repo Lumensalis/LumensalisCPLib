@@ -6,6 +6,8 @@ from LumensalisCP.HTTP.BSR.common import *
 from LumensalisCP.util.Reloadable import ReloadableModule
 from LumensalisCP.util.bags import Bag
 from LumensalisCP.util.ObjToDict import objectToDict, objectToVal
+from LumensalisCP.Identity.Proxy import NamedLocalInstanceProxyAction
+
 _module = ReloadableModule( 'LumensalisCP.HTTP.BasicServer' )
 _BasicServer = _module.reloadableClassMeta('BasicServer')
 
@@ -22,6 +24,10 @@ class ProxyRequestConfig(Bag):
     debug:bool = False
     includeInherited:bool = False
     includePrivate:bool = False
+
+    action:str|None = None
+    positionalArgs:tuple[Any,...]|None = None
+    kwdArgs:dict[str,Any]|None = None
 
     def __repr__(self)   -> str: 
         return repr(self.__dict__)
@@ -208,11 +214,31 @@ def _inspect(  config:ProxyRequestConfig, target:NamedLocalIdentifiable|NliConta
         'name': target.name,
         'localId': target.localId,
         'module': target.__class__.__module__,
-        'class': _inspectClass(config, target.__class__),
-        'dir': _inspectDir(config, target)
     }
+    cls = target.__class__
+    actions = getattr(cls,'_clsProxyActions',None) 
+    if actions is not None:
+        rv['actions'] = {name: objectToVal( action) for name, action in actions.items() }
+
+    rv['class'] = _inspectClass(config, cls)
+    rv['dir'] = _inspectDir(config, target)
 
     return rv
+
+def _act(  config:ProxyRequestConfig, target:NamedLocalIdentifiable|NliContainerInterface ) -> Any:
+    actionName = config.action
+    assert actionName is not None, f"Action must be specified for act command"
+    args = config.positionalArgs or ()
+    kwds = config.kwdArgs or {}
+
+    actionDescriptor = getattr(target.__class__, actionName, None)
+    assert actionDescriptor is not None, f"Action '{actionName}' not found in {target.__class__}"
+    assert isinstance(actionDescriptor, NamedLocalInstanceProxyAction), f"Action '{actionName}' in {target.__class__} is not a NamedLocalInstanceProxyAction, but {type(actionDescriptor)}"
+    action = getattr(target, actionName, None)
+    assert action is not None, f"Action '{actionName}' not found in instance of {target.__class__}"
+    result = action( *args, **kwds)
+
+    return objectToVal(result)
 
 #############################################################################
 
@@ -226,7 +252,9 @@ def _tune(  config:ProxyRequestConfig, target:Tunable ) -> dict[str, Any]:
             'active': [{'name': setting.name, 
                         'value': setting.value, 
                         'cls': setting.__class__.__name__, 
+                        'localId': setting.localId,
                         'spec': setting.interactSpec()
+
                     } for setting in target.activeSettings()],
             'inactive': [{
                     'name': descriptor.name, 
@@ -280,6 +308,8 @@ def BSR_proxy(self:BasicServer, request:Request, name:Optional[str]=None):
                 "recurse": qc.recurse,
                 "result":  proxyData( qc, target )
             })
+        elif qc.cmd =="act":
+            rv['act'] = _act(qc,target)
 
         elif qc.cmd =="inspect":
             rv['inspect'] = _inspect(qc,target)

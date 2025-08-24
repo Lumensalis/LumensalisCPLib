@@ -17,7 +17,7 @@ fountainFlow = fountainChannels[0]
 
 # setup tunables
 rotateTimeBetweenPositions = main.tunables.addSeconds( 2.6 )
-rotationSpeedBetweenPositions = main.tunables.addZeroToOne( 0.6 )
+rotationSpeedBetweenPositions = main.tunables.addZeroToOne( 0.9 )
 
 # setup panel controls - will be available in the UI
 ui = main.panel

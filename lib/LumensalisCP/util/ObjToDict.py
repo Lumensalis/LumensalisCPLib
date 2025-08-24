@@ -17,13 +17,15 @@ def objectToVal( obj:Any ) -> Any:
     if isinstance(obj, type ): return repr(obj)
 
     rv:dict[str,Any] = {} # type: ignore
+    typeName =obj.__class__.__name__
     for tag in dir(obj):
         if tag.startswith('_'): continue
         val = objectToVal( getattr(obj, tag) )
-        if callable(val): continue
+        #if callable(val) or: continue
+        if obj.__class__.__name__ in ('function',): continue
         rv[tag] = val
 
-    rv['_type'] = obj.__class__.__name__
+    rv['_type'] = typeName
     return rv
 
 def objectToDict( obj:Any ) -> dict[str,Any]|str:
