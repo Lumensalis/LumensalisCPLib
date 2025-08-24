@@ -13,6 +13,7 @@ from LumensalisCP.Triggers.Trigger import Trigger, TriggerActionTypeArg
 from LumensalisCP.Triggers.Action import do
 from LumensalisCP.Eval.Evaluatable import NamedEvaluatableProtocolT, NamedEvaluatableProtocol
 from LumensalisCP.Scenes.Scene import Scene
+from LumensalisCP.Identity.Proxy import proxyMethod, ProxyAccessibleClass
 
 _sayImport.parsing()
 
@@ -36,6 +37,7 @@ class CVT_KWDS(TypedDict, Generic[CVT,CVT_OUT]):
     kindMatch: NotRequired[type]
     kind: NotRequired[str|type]
     
+@ProxyAccessibleClass()    
 class PanelControl(InputSource, Generic[CVT, CVT_OUT]):
     
     def __init__(self,  
@@ -107,6 +109,15 @@ class PanelControl(InputSource, Generic[CVT, CVT_OUT]):
                 
         self.set( value )
         
+    @proxyMethod()
+    def remoteSet(self, value:Any) -> None:
+        self.infoOut( "remoteSet to %r", value)
+        self.set(value)   
+
+    @proxyMethod()
+    def remoteGet(self) -> Any:
+        return self._controlValue
+
     def set( self, value: Any ):
         if isinstance(value, str):
             try:
@@ -224,6 +235,8 @@ class PanelTrigger(Trigger):
         action = kwds.pop('action', None)
         if action is not None:
             self.addAction(action)
+
+
 
     def setScene(self, scene: Scene) -> None:
         self.addAction( do( scene.manager.setScene, scene ) )

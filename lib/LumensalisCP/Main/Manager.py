@@ -116,7 +116,7 @@ class MainManager( NamedLocalIdentifiable ): #, I2CProvider, ConfigurableBase, )
 
         self.__anonInputs:NliList[InputSource] = NliList(name='inputs',parent=self)
         self.__anonOutputs:NliList[NamedOutputTarget] = NliList(name='outputs',parent=self)
-        self.controlPanels = NliList(name='controllers',parent=self)
+        self.controlPanels = NliList(name='panels',parent=self)
         self.__rootPanel:ControlPanel|None = None
         self._monitored:list[InputSource] = []
         self._timers:PeriodicTimerManager|None = None
