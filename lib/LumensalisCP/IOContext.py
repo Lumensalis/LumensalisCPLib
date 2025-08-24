@@ -12,7 +12,9 @@ from LumensalisCP.Eval.common import *
 from LumensalisCP.Inputs import InputSource
 from LumensalisCP.Outputs import OutputTarget, NamedOutputTarget, \
         NotifyingOutputTarget,  NotifyingOutputTargetT, \
-        NamedNotifyingOutputTarget, NamedNotifyingOutputTargetT
+        NamedNotifyingOutputTarget, NamedNotifyingOutputTargetT, \
+        notifyingOutputProperty, notifyingOutputPropertyT, \
+        notifyingPlusMinusOneOutputProperty, notifyingBoolOutputProperty
         
 from LumensalisCP.Tunable.Tunable import *
 from LumensalisCP.Tunable.Tunables import *
