@@ -286,6 +286,17 @@ class CilgerranCastle(D1MiniBoardBase):
         except Exception as inst:
             self.SHOW_EXCEPTION( inst, f"Cilgerran update exception")
 
+    def nliHasChildren(self) -> bool:
+        return True
+            
+    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]:
+        self.infoOut( "nliGetChildren called")
+        yield self.__ledSource
+        if self.__batteryMonitor is not None:
+            yield self.__batteryMonitor
+        if self.__motor is not None:
+            yield self.motor
+
 
     @property
     def motor(self) -> DCMotorSpinner:

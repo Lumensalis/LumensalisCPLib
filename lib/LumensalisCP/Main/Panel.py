@@ -9,9 +9,10 @@ _sayImport = getImportProfiler( __name__, globals() )
 from LumensalisCP.IOContext import *
 
 from LumensalisCP.Main.Dependents import MainChild
-from LumensalisCP.Triggers.Trigger import Trigger
+from LumensalisCP.Triggers.Trigger import Trigger, TriggerActionTypeArg
+from LumensalisCP.Triggers.Action import do
 from LumensalisCP.Eval.Evaluatable import NamedEvaluatableProtocolT, NamedEvaluatableProtocol
-
+from LumensalisCP.Scenes.Scene import Scene
 
 _sayImport.parsing()
 
@@ -209,10 +210,23 @@ class PanelPipe( InputSource, OutputTarget,  Generic[CVT] ):
 class PanelTrigger(Trigger):
     class KWDS(Trigger.KWDS):
         description: NotRequired[str]
+        scene: NotRequired[Scene]
+        action:  NotRequired[TriggerActionTypeArg]
 
     def __init__(self, **kwds:Unpack[KWDS]):
         self.description = kwds.pop('description', '')
+        scene = kwds.pop('scene', None)
         super().__init__(**kwds)
+        if scene is not None:
+            self.setScene( scene )
+
+
+        action = kwds.pop('action', None)
+        if action is not None:
+            self.addAction(action)
+
+    def setScene(self, scene: Scene) -> None:
+        self.addAction( do( scene.manager.setScene, scene ) )
 
 
 #############################################################################
@@ -390,9 +404,10 @@ class ControlPanel( MainChild ):
     
     #########################################################################
 
-
-    def nliGetContainers(self) -> Iterable[NliContainerMixin[PanelControl[Any, Any]]]:
+    def nliGetContainers(self) -> Iterable[NliContainerMixin[NamedLocalIdentifiable]]:
         yield self._controlVariables
+        yield self._monitored
+        yield self._triggers
 
     def nliHasContainers(self) -> bool:
         return True

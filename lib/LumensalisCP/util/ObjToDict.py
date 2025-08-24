@@ -1,9 +1,33 @@
+
 try:
     from typing import Any
 except ImportError: 
     pass
 
+def objectToVal( obj:Any ) -> Any:
+    if isinstance(obj, (str,bool,int,float,type(None))): return obj
+    if isinstance(obj, (list, tuple)): return [objectToVal(v) for v in obj]
+    if isinstance(obj, dict):
+        rv:dict[str,Any] = {}
+        for k, v in obj.items():
+            if k.startswith('_'): continue
+            rv[k] = objectToVal(v)
+        return rv   
+    if isinstance(obj, set): return [objectToVal(v) for v in obj]
+    if isinstance(obj, type ): return repr(obj)
+
+    rv:dict[str,Any] = {} # type: ignore
+    for tag in dir(obj):
+        if tag.startswith('_'): continue
+        val = objectToVal( getattr(obj, tag) )
+        if callable(val): continue
+        rv[tag] = val
+
+    rv['_type'] = obj.__class__.__name__
+    return rv
+
 def objectToDict( obj:Any ) -> dict[str,Any]|str:
+    if isinstance(obj, dict): return {k: objectToDict(v) for k, v in obj.items()}
     rv:dict[str,Any] = {} # type: ignore
     skip = []
     #if hasattr(obj, '__class__'):

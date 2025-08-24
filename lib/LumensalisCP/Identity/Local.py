@@ -121,19 +121,22 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
         for i in c:
             v = i()
             if v is not None: yield v
-        
-    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]:
-        return ()
 
-    def nliGetContainers(self) -> Iterable[NliContainerInterface]:
-        return ()
     
     def nliHasChildren(self) -> bool:
         return False
+            
+    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]:
+        return tuple()
+
 
     def nliHasContainers(self) -> bool:
         return False
     
+    def nliGetContainers(self) -> Iterable[NliContainerInterface]:
+        return tuple()
+
+
     def nliHasItems(self) -> bool:
         return False
 
@@ -243,6 +246,8 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
     def isContainer(self) -> bool:
         return True
     
+
+    
     @property
     def containerName(self) -> str: return self.name
 
@@ -261,6 +266,11 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
             if v is child: return True
         return False
 
+    def nliContains( self, name:str ) -> bool:
+        for v in self.data:
+            if v.name == name: return True
+        return False
+    
     def append( self, item:_NLIListT ) -> None:
         assert isinstance(item, NamedLocalIdentifiable), "item must be a NamedLocalIdentifiable"
         if self.enableDbgOut: self.dbgOut( "append( %r )", item )
@@ -274,7 +284,7 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
         self.data.remove( child )
 
     def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]:
-        return ()
+        return tuple()
             
     def nliFind(self,name:str) -> NamedLocalIdentifiable|None:
         for child in self.data:

@@ -17,6 +17,9 @@ class Bag(object): # type: ignore
     def __len__(self) -> int:
         return len(self.__dict__)
 
+    def asDict(self) -> dict[str, Any]:
+        return dict(self.__dict__)
+
     def __getitem__(self, name:str) ->Any:
         try:
             return getattr(self, name)
@@ -57,7 +60,7 @@ class NamedList(Generic[_NLT]):
     def append( self, item:_NLT ) -> None:
         name = getattr(item,'name',None)
         if name is not None:
-            assert item.name not in self.__byName
+            assert name not in self.__byName
             self.__byName[name] = item
         self.__items.append(item)
                 

@@ -26,6 +26,8 @@ if TYPE_CHECKING:
         def dbgName(self) -> str: ...
         @property
         def enableDbgOut(self) -> bool: ...
+        @enableDbgOut.setter
+        def enableDbgOut(self, enabled: bool) -> None: ...
 
         def dbgOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ) -> None: ...
         def startupOut( self, fmtString:str, *args:Any, **kwds:KWDS_TYPE ) -> None: ...
@@ -109,6 +111,7 @@ class Debuggable( CountedInstance, IDebuggable ):
     def enableDbgOut(self) -> bool: return self.__dbgOutEnabled
     
     @enableDbgOut.setter
-    def enableDbgOut(self,enabled:bool) -> None: self.__dbgOutEnabled = enabled
+    def enableDbgOut(self,enabled:bool) -> None: 
+        self.__dbgOutEnabled = enabled
 
 _sayDebugImport.complete(globals())

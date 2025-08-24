@@ -22,6 +22,7 @@ from LumensalisCP.Triggers.Invocable import *
 from LumensalisCP.Triggers.Trigger import TriggerActionTypeArg
 if TYPE_CHECKING:
     from LumensalisCP.Eval.Expressions import ExpressionTerm, Expression
+    from LumensalisCP.Scenes.Manager import SceneManager
 
 #############################################################################
 
@@ -85,10 +86,9 @@ class Scene(MainChild):
     class KWDS( MainChild.KWDS):
         pass
 
-
-    def __init__( self, **kwargs:Unpack[MainChild.KWDS] ) -> None:
+    def __init__( self, manager:SceneManager, **kwargs:Unpack[MainChild.KWDS] ) -> None:
         super().__init__( **kwargs )
-
+        self.manager = manager
         self._sceneRefreshables = SceneRefreshables( self )
             #parent=self.main.refreshables,name="sceneRefreshables" ) #, **kwargs)
 
@@ -135,7 +135,11 @@ class Scene(MainChild):
 
         if self.enableDbgOut: self.dbgOut( "Scene.refreshableCalculateNextRefresh is %.3f", nextRefresh )
         return nextRefresh
-    
+
+    def activateScene(self) -> None:    
+        if self.enableDbgOut: self.dbgOut( "Scene.activateScene" )
+        self.manager.setScene(self)
+
     @property
     def patterns(self) -> NamedList[Pattern]:
         return self.__patterns
@@ -161,8 +165,7 @@ class Scene(MainChild):
             #dictAddUnique( self.__rules, target.name, rule )
             rule.nliSetContainer( self.__rulesContainer )
             return rule
-        
-        
+
     def findOutput( self, tag:str ) -> NamedOutputTarget:
         raise NotImplementedError
                     
@@ -223,18 +226,7 @@ f"scene {self.name} run tasks ({len(self.__tasks)} tasks, {len(self._sceneRefres
                     rule.run( context, frame=activeFrame )
                 except Exception as inst:
                     self.SHOW_EXCEPTION( inst, "running rule %s", rule.name  )
-            if False:
-                activeFrame.snap("patterns")
-                if self.__nextPatternsRefresh <= context.when:
-                    self.__nextPatternsRefresh = context.when +  self.__patternRefreshPeriod
-                    for pattern in self.__patterns:
-                        try:
-                            pattern.refresh(context)
-                        except Exception as inst:
-                            SHOW_EXCEPTION( inst, "pattern %r refresh failed in %r", 
-                                        getattr(pattern,'name',pattern), self )
-                    if self.__nextPatternsRefresh < self._nextListRefresh:
-                        self.setNextRefresh(context, self.__nextPatternsRefresh)
+
 
 def addSceneTask( scene:Scene, **kwds:Unpack[SceneTask.KWDS] ) -> Callable[ [Callable[[],Any] ], SceneTask]:
     def addTask( callable:Callable[[],Any] ) -> SceneTask:

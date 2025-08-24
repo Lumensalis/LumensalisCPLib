@@ -1,8 +1,11 @@
 from LumensalisCP.Simple import * # http://lumensalis.com/ql/h2Start
 #############################################################################
 sayAtStartup( "start project" ) #  http://lumensalis.com/ql/h2Main
-main = ProjectManager( "CilgerranFountain" , useWifi=True )
 
+main = ProjectManager( "CilgerranFountain" , useWifi=True )
+manualControl = main.addScene( ) 
+waterWheel = main.addScene( ) 
+shishiOdoshi = main.addScene( )
 
 # add devices
 cilgerran = main.TerrainTronics.addCilgerran(withMotor=True,ledCount=6)
@@ -24,35 +27,24 @@ manualSpeedControl  = ui.addSwitch(         "enable manual speed control" )
 clBlinkBrightness   = ui.addZeroToOne(      0.5, "brightness for blinking LEDs")
 rotateDuration      = ui.addSeconds(        2.6, "rotation duration", min=0,max=5)
 rotateSpeed         = ui.addZeroToOne(      0.6, "rotation speed")
-jogLeft             = ui.addTrigger(       "rotate left" )
-jogRight            = ui.addTrigger(       "rotate right" )
-toWheel             = ui.addTrigger(       "rotate to wheel" )
-toShishi            = ui.addTrigger(       "rotate to shishi-odoshi" )
-toManual            = ui.addTrigger(       "manual mode" )
 
-jogLeft.addAction( do( fountainTurret.spin, rotateSpeed*-1, rotateDuration ))
-jogRight.addAction( do( fountainTurret.spin, rotateSpeed, rotateDuration ))
+jogLeft   = ui.addTrigger( "rotate left", action= do( fountainTurret.spin, rotateSpeed*-1, rotateDuration ) )
+jogRight  = ui.addTrigger( "rotate right", action=do( fountainTurret.spin, rotateSpeed, rotateDuration ) )
+toWheel   = ui.addTrigger( "rotate to wheel", scene=waterWheel )
+toShishi  = ui.addTrigger( "rotate to shishi-odoshi", scene=shishiOdoshi )
+toManual  = ui.addTrigger( "manual mode", scene=manualControl )
 
-manualControl = main.addScene( ) 
-toManual.addAction( manualControl.activate )
 manualControl.addRule( fountainFlow, flowRate )
 manualControl.addRule( fountainTurret.manualSpeed, motorSpeed )
 manualControl.addRule( fountainTurret.manualOverride, manualSpeedControl )
 manualControl.addPatterns(
-    Blink(cilLeds,onTime=1.0, offTime=1.0,onValue=clBlinkBrightness), # blink leds on Cilgerran
+    Blink(cilLeds,onTime=10.0, offTime=1.0,onValue=clBlinkBrightness), # blink leds on Cilgerran
 )
 
-waterWheel = main.addScene( ) 
 waterWheel.onEnter( do( fountainFlow.set, 0.7 ) )
-toWheel.addAction( waterWheel.activate )
-
-shishiOdoshi = main.addScene( )
-shishiOdoshi.onEnter( do( fountainFlow.set, 0.4 ) )
-toShishi.addAction( shishiOdoshi.activate )
-
 waterWheel.onChangeTo( shishiOdoshi, do( fountainTurret.spin, -rotationSpeedBetweenPositions, rotateTimeBetweenPositions ) )
+
+shishiOdoshi.onEnter( do( fountainFlow.set, 0.4 ) )
 shishiOdoshi.onChangeTo( waterWheel, do( fountainTurret.spin, rotationSpeedBetweenPositions, rotateTimeBetweenPositions ) )
-
-
 
 main.launchProject( globals() )

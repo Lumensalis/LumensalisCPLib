@@ -151,8 +151,7 @@ class NestedRefreshableList(RefreshableListImplementation,
         if self._dirtyCount > 0:
             if self.refreshList:
                 self.refreshList.markDirty(context,self)
-            
-        
+
 #############################################################################
 
 class NamedNestedRefreshableList(NestedRefreshableList,NamedLocalIdentifiable):
@@ -164,6 +163,12 @@ class NamedNestedRefreshableList(NestedRefreshableList,NamedLocalIdentifiable):
         kwds,nliKwds = NamedLocalIdentifiable.extractInitArgs(kwds)
         NestedRefreshableList.__init__(self, parent, **kwds)
         NamedLocalIdentifiable.__init__(self, **nliKwds)
+
+    def nliHasChildren(self) -> bool:
+        return True
+            
+    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]:
+        yield from self._refreshables
 
 #############################################################################
 

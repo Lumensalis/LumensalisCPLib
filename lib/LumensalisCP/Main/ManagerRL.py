@@ -39,7 +39,8 @@ def MainManager_nliGetChildren(self:MainManager) -> Iterable[NamedLocalIdentifia
     #yield self.defaultController
     if self.__dmx is not None:
         yield self.__dmx
-
+    yield self.__tunables
+    
 @_mmMeta.reloadableMethod()
 def launchProject( self:MainManager, globals:Optional[StrAnyDict]=None, verbose:bool = False ) -> None: 
     if globals is not None:

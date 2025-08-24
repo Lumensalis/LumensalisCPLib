@@ -28,7 +28,7 @@ class SceneManager(NamedLocalIdentifiable):
 
     def addScene( self, **kwds:Unpack[Scene.KWDS] ) -> Scene:
         kwds.setdefault("main", self.main)
-        scene = Scene( **kwds )
+        scene = Scene(  self, **kwds )
         scene.nliSetContainer(self._scenes)
         if self.__currentScene is None:
             self.setScene(scene)

@@ -30,6 +30,7 @@ class TunableSetting(NamedLocalIdentifiable,OutputTarget,
         for key,val in self.TUNABLE_DEFAULTS.items():
             kwargs.setdefault(key, val) # type: ignore
 
+        assert isinstance(tunable, Tunable), f"tunable {tunable} is not a Tunable, but {type(tunable)}"
         value = kwargs.get('startingValue', None)
         assert value is not None, "TunableSetting must have a startingValue"
 
@@ -44,6 +45,9 @@ class TunableSetting(NamedLocalIdentifiable,OutputTarget,
         NamedLocalIdentifiable.__init__(self, **nliArgs)
         InteractableT[TUNABLE_T].__init__(self, **kwargs) # type: ignore
         EvaluatableT[TUNABLE_T].__init__(self)
+
+        assert not tunable._tunableSettings.nliContains(self.name) , f"TunableSetting {self.name} is already registered"
+        tunable._addSetting(self) 
 
         self.__value:TUNABLE_T = value # type: ignore
 
@@ -94,11 +98,11 @@ class TunableDescriptor(Generic[TUNABLE_T,TUNABLE_SELF_T]):
     def __init__(self, settingClass:Optional[type]=None, 
                  **settingKwds:Unpack[TUNABLE_SETTING_KWDS[TUNABLE_T,TUNABLE_SELF_T]] # type: ignore
                  ) -> None:
-        name = settingKwds.get('name', None)
+        name:str|None = settingKwds.get('name', None)
         default = settingKwds.get('startingValue', None)
         assert name is not None and default is not None, "TunableDescriptor must have a name and default value"
-        self.name = name
-        self.settingClass = settingClass or self.SETTING_CLASS
+        self.name:str = name
+        self.settingClass:type = settingClass or self.SETTING_CLASS
         self.settingName = f"_ts_{name}"
         self.default:TUNABLE_T = default # type: ignore
         self._settingKwds:TUNABLE_SETTING_KWDS[TUNABLE_T,TUNABLE_SELF_T] = settingKwds 
@@ -117,7 +121,7 @@ class TunableDescriptor(Generic[TUNABLE_T,TUNABLE_SELF_T]):
         setting = getattr(instance, self.settingName, None)
         if setting is None:
             setting = self.__makeSetting(instance)
-            instance._tunableSettings[self.name] = setting
+            assert instance._tunableSettings.get(self.name) is setting
         return setting
 
     def __get__(self, instance:TUNABLE_SELF_T, owner:Any=None) -> TunableSetting[TUNABLE_T,TUNABLE_SELF_T]:
@@ -137,14 +141,40 @@ TUNABLE_DESCRIPTOR_T=TypeVar('TUNABLE_DESCRIPTOR_T' ) #, bound='TunableDescripto
 #############################################################################
 
 class Tunable(NliInterface):
-    
+    """ mixin for classes that have tunable settings """
+    _tunableSettings:NliList[TunableSetting[Any,Self]] 
+
     def __init__(self) -> None:
-        self._tunableSettings:Dict[str,TunableSetting[Any,Self]] = {}
+        if not hasattr(self, '_tunableSettings'):
+            #self._tunableSettings:Dict[str,TunableSetting[Any,Self]] = {}
+            self._tunableSettings = NliList("tunables")
+
         
     def onSettingUpdate( self, setting:TunableSetting[TUNABLE_T,Self]) -> None:
         pass
         
 
+    def activeSettings(self) -> list[TunableSetting[Any,Self]]:
+        return list(self._tunableSettings.values()) 
+    
+    def inactiveSettings(self) -> list[TunableDescriptor[Any,Self]]:
+        rv:list[TunableDescriptor[Any,Self]] = []
+        for k in dir(self.__class__):
+            v = getattr(self.__class__, k)
+            if isinstance(v, TunableDescriptor):
+                if not self._tunableSettings.nliContains(v.name):
+                    rv.append(v)
+        return rv
+
+    def _addSetting(self, setting:TunableSetting[Any,Self]) -> None:
+        setting.nliSetContainer(self._tunableSettings)
+
+    def nliGetContainers(self) -> Iterable[NliContainerInterface]: 
+        yield  self._tunableSettings
+   
+    def nliHasContainers(self) -> bool:
+        return True
+    
 #############################################################################
 
 def tunableProperty(  default:TUNABLE_T, 

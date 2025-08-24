@@ -393,7 +393,8 @@ see http://lumensalis.com/ql/h2Scenes
         return True
 
     @reloadingMethod
-    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]: ...
+    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]:
+        return tuple()
 
     def nliHasChildren(self) -> bool: return True
 

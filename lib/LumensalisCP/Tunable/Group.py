@@ -28,17 +28,17 @@ class TunableGroup( Tunable, NamedLocalIdentifiable, InteractableGroup ):
         Tunable.__init__( self )
         NamedLocalIdentifiable.__init__( self, **kwds )
 
-        self._tunables:NliList[TunableSetting[Any,TunableGroup]] = NliList(name='tunables',parent=self)
+        #self._tunables:NliList[TunableSetting[Any,TunableGroup]] = NliList(name='tunables',parent=self)
 
     @property
     def tunables(self) -> NliList[TunableSetting[Any,TunableGroup]]:
-        return self._tunables
+        return self._tunableSettings
 
     def _positionalArgs(self, controlCls: type, argOne:Any|None,  argTwo:str|None, kwds:StrAnyDict)->Tuple[Any]:
         defaultStartingValue = kwds.get('startingValue', None)
         assert defaultStartingValue is not None
-        return (defaultStartingValue,)
-    
+        return (self    ,)
+
     #def addRGB( self, argOne:Optional[Any]=None,  argTwo:Optional[str]=None, **kwds:Unpack[CVT_ADD_KWDS[AnyRGBValue, RGB]] ) -> PanelControl[AnyRGBValue,RGB]:
     #    """ add control for an RGB color value, see  http://lumensalis.com/ql/h2PanelControl """
     #    return self._addControl( argOne, argTwo, kind=RGB,convertor=lambda v: RGB.toRGB(v), **kwds ) # type: ignore
@@ -78,11 +78,11 @@ class TunableGroup( Tunable, NamedLocalIdentifiable, InteractableGroup ):
     #########################################################################
 
 
-    def nliGetContainers(self) -> Iterable[NliContainerMixin[TunableSetting[Any,TunableGroup]]]:
-        yield self._tunables
+    #def nliGetContainers(self) -> Iterable[NliContainerMixin[TunableSetting[Any,TunableGroup]]]:
+   #     yield self._tunables
 
-    def nliHasContainers(self) -> bool:
-        return True
+    #def nliHasContainers(self) -> bool:
+    #    return True
         
 __all__ = [ 'TunableGroup' ]
 

@@ -64,8 +64,21 @@ class Interactable( Generic[INTERACTABLE_T]):
 
         self._min:INTERACTABLE_T|None = convertor(min) if min is not None else None
         self._max:INTERACTABLE_T|None = convertor(max) if max is not None else None
+        self.startingValue = startingValue
         self._interactValue:INTERACTABLE_T|None = None
+
         self._interactValue = convertor(startingValue)  # type: ignore
+
+    def interactSpec(self) -> dict[str, Any]:
+        return {
+            "name": getattr(self, "name", None),
+            "description": self.description,
+            "kind": str(self.kind),
+            "kindMatch": str(self.kindMatch),
+            "startingValue": self.startingValue,
+            "min": self._min,
+            "max": self._max,
+        }
 
     def interactConvert( self, value: Any ) -> INTERACTABLE_T:
         if isinstance(value, str):

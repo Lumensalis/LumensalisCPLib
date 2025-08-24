@@ -155,7 +155,7 @@ class BasicServer(Server,MainAsyncChild):
         self.addReloadableRouteHandler( "sak" )
         self.addReloadableRouteHandler( "profile" )
         self.addReloadableRouteHandler( "query", params="<name>" )
-        self.addReloadableRouteHandler( "proxy", params="<name>" )
+        self.addReloadableRouteHandler( "proxy" )
         self.addReloadableRouteHandler( "cmd", [PUT,POST], params="<cmd>"  )
 
         @self.route("/connect-websocket", GET) # type: ignore[reportUntypedFunctionDecorator,reportUnusedFunction]

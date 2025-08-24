@@ -17,10 +17,10 @@ _sayImport.parsing()
 #############################################################################
 
 
-INTERACTABLE_BASE = TypeVar('INTERACTABLE_BASE', bound='Interactable')
+INTERACTABLE_BASE = TypeVar('INTERACTABLE_BASE', bound='Interactable[Any]')
 #############################################################################
 
-class InteractableGroup:
+class InteractableGroup(IDebuggable):
     """ Panels define a collection of controls which can be used to 
      interact with your project
 
@@ -63,12 +63,16 @@ class InteractableGroup:
             kwds['startingValue'] = defaultStartingValue
 
         args = self._positionalArgs( controlCls, argOne, argTwo, kwds )
-        variable:Interactable[Any] = controlCls( # type: ignore
-            *args,
-            kind=kind,
-            kindMatch=kindMatch,
-            convertor=convertor,
-            **kwds ) # type: ignore
+        try:
+            variable:Interactable[Any] = controlCls(  # type: ignore
+                *args,
+                kind=kind,
+                kindMatch=kindMatch,
+                convertor=convertor,
+                **kwds ) # type: ignore
+        except Exception as e:
+            self.SHOW_EXCEPTION(e, "_addInteractable %s(%r...) error", controlCls, args )
+            raise
 
         return variable
 
