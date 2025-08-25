@@ -285,8 +285,12 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
     
     def append( self, item:_NLIListT ) -> None:
         assert isinstance(item, NamedLocalIdentifiable), "item must be a NamedLocalIdentifiable"
+
         if self.enableDbgOut: self.dbgOut( "append( %r )", item )
+        assert item not in self.data, f"item {item} already in {self}"
         item.nliSetContainer(self)
+        assert item in self.data, f"item {item} not added to {self}"
+
 
 
     def nliAddChild( self, child:_NLIListT ) -> None: # type:ignore[override]

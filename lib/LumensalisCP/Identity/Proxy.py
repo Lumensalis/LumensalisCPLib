@@ -64,7 +64,7 @@ def addProxyAccessibleClass(cls:type, **kwds:Unpack[AddProxyAccessibleClassKWDS]
     assert isinstance(cls, type), f"Expected a class, got {cls}"
     name = f"{cls.__module__}.{cls.__name__}"
     proxyActions:dict[str, GenericNamedLocalInstanceProxyAction] = {}
-    print(f"Adding proxy accessible class: {name}")
+    #print(f"Adding proxy accessible class: {name}")
     assert getattr(cls,'_clsProxyActions',None) is None, f"Class {name} already has _clsProxyActions"
     cls._clsProxyActions = proxyActions
     #for val in cls.__dict__.values():
@@ -72,7 +72,7 @@ def addProxyAccessibleClass(cls:type, **kwds:Unpack[AddProxyAccessibleClassKWDS]
         val = getattr(cls, tag, None)
         if isinstance(val, NamedLocalInstanceProxyAction):
             proxyActions[tag] = val
-            print(f"Adding proxy action {val.name} to {name}")
+            # print(f"Adding proxy action {val.name} to {name}")
     return cls
 
 _CLASS_T = TypeVar("_CLASS_T", bound=type)
