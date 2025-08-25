@@ -6,6 +6,7 @@ __profileImport = getImportProfiler( globals() ) # "Outputs"
 # pyright: reportUnusedImport=false
 
 from LumensalisCP.Eval.Expressions import *
+from LumensalisCP.Eval.ExpressionTerm  import ExpressionTerm,  EVAL_VALUE_TYPES
 from LumensalisCP.Outputs import NamedNotifyingOutputTarget, NotifyingOutputTargetT,OutputTarget
 from LumensalisCP.Interactable.Interactable import Interactable, InteractableT, INTERACTABLE_ARG_T, INTERACTABLE_T
 
@@ -17,9 +18,8 @@ if TYPE_CHECKING:
 
 #############################################################################
 TUNABLE_ARG_T=TypeVar('TUNABLE_ARG_T')
-TUNABLE_T=TypeVar('TUNABLE_T')
-
-
+TUNABLE_T=TypeVar('TUNABLE_T',bound=EVAL_VALUE_TYPES)
+TunableValAny:TypeAlias = EVAL_VALUE_TYPES
 
 #############################################################################
 
@@ -33,6 +33,6 @@ TUNABLE_SETTING_KWDS_T = GenericT(TUNABLE_SETTING_KWDS)
 __profileImport.complete(globals())
     
 __all__ = [
-            'TUNABLE_SETTING_KWDS', 'TUNABLE_SETTING_KWDS_T', 'TUNABLE_ARG_T', 'TUNABLE_T'
+            'TUNABLE_SETTING_KWDS', 'TUNABLE_SETTING_KWDS_T', 'TUNABLE_ARG_T', 'TUNABLE_T','TunableValAny'
 
            ]

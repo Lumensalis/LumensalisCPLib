@@ -1,4 +1,5 @@
 from __future__ import annotations
+from lib2to3.fixes.fix_idioms import TYPE
 
 from LumensalisCP.ImportProfiler import  getImportProfiler
 __profileImport = getImportProfiler( globals() ) # "Outputs"
@@ -9,6 +10,7 @@ from LumensalisCP.Eval.Expressions import *
 from LumensalisCP.Eval.ExpressionTerm  import ExpressionTerm,  EVAL_VALUE_TYPES
 from LumensalisCP.Outputs import NamedNotifyingOutputTarget, NotifyingOutputTargetT,OutputTarget
 from LumensalisCP.Interactable.Interactable import Interactable, InteractableT, INTERACTABLE_ARG_T, INTERACTABLE_T
+from LumensalisCP.Identity.Proxy import proxyMethod, ProxyAccessibleClass
 
 from LumensalisCP.Tunable.TunableKWDS import *
 #############################################################################
@@ -18,7 +20,7 @@ __profileImport.parsing()
 #############################################################################
 TUNABLE_SELF_T=TypeVar('TUNABLE_SELF_T', bound='Tunable')
 
-
+@ProxyAccessibleClass()
 class TunableSetting(NamedLocalIdentifiable,OutputTarget,
                      InteractableT[TUNABLE_T],
                      ExpressionTerm,
@@ -51,7 +53,7 @@ class TunableSetting(NamedLocalIdentifiable,OutputTarget,
 
         self.__value:TUNABLE_T = value # type: ignore
 
-    def set( self, value:Any, context:EvaluationContext ) -> None:
+    def set( self, value:TUNABLE_T, context:EvaluationContext ) -> None:
         self.infoOut( "set (OutputTarget) to %s", value)
         # from OutputTarget
         self.settingUpdate(value, context)
@@ -76,25 +78,41 @@ class TunableSetting(NamedLocalIdentifiable,OutputTarget,
         except Exception as e:
             self.SHOW_EXCEPTION( e, "settingUpdate %s error", value )
             raise
-            
 
     @property
     def value(self) -> TUNABLE_T:
         return self.__value
     
-    def getValue(self, context:Optional[EvaluationContext]=None)  -> EVAL_VALUE_TYPES:
+    def getValue(self, context:Optional[EvaluationContext]=None)  -> TUNABLE_T:
         """ current value of term"""
         return self.__value
+    
+    @proxyMethod()
+    def remoteSettingGet(self) -> TUNABLE_T:
+        return self.__value
+    
+    @proxyMethod()
+    def remoteSettingSet(self, value:TUNABLE_T) -> None:
+        self.settingUpdate(value)
+
     def __call__(self, context:Optional[EvaluationContext]=None) -> TUNABLE_T:
         return self.__value
     
 TunableSettingT = GenericT(TunableSetting)
 
+if TYPE_CHECKING:
+    BaseTunableSetting:TypeAlias = TunableSetting[TunableValAny,'Tunable']
+else:
+    BaseTunableSetting = GenericT(TunableSetting)
 
 #############################################################################
 class TunableDescriptor(Generic[TUNABLE_T,TUNABLE_SELF_T]):
     SETTING_CLASS:ClassVar[type]
-
+    name:str 
+    settingClass:type
+    default:TUNABLE_T
+    _settingKwds:TUNABLE_SETTING_KWDS[TUNABLE_T,TUNABLE_SELF_T]
+    
     def __init__(self, settingClass:Optional[type]=None, 
                  **settingKwds:Unpack[TUNABLE_SETTING_KWDS[TUNABLE_T,TUNABLE_SELF_T]] # type: ignore
                  ) -> None:
@@ -138,38 +156,39 @@ class TunableDescriptor(Generic[TUNABLE_T,TUNABLE_SELF_T]):
 TunableDescriptorT = GenericT(TunableDescriptor)
 
 TUNABLE_DESCRIPTOR_T=TypeVar('TUNABLE_DESCRIPTOR_T' ) #, bound='TunableDescriptor')
+
+if TYPE_CHECKING:
+    BaseTunableDescriptor:TypeAlias = TunableDescriptor[TunableValAny,'Tunable']
+else:
+    BaseTunableDescriptor = GenericT(TunableDescriptor)
+
+
 #############################################################################
 
 class Tunable(NliInterface):
     """ mixin for classes that have tunable settings """
-    _tunableSettings:NliList[TunableSetting[Any,Self]] 
+    _tunableSettings:NliList[BaseTunableSetting] 
 
     def __init__(self) -> None:
-        if not hasattr(self, '_tunableSettings'):
-            #self._tunableSettings:Dict[str,TunableSetting[Any,Self]] = {}
-            self._tunableSettings = NliList("tunables")
+        self._tunableSettings = getattr(self,'_tunableSettings',  NliList("tunables") )
 
-        
     def onSettingUpdate( self, setting:TunableSetting[TUNABLE_T,Self]) -> None:
         pass
-        
 
-    def activeSettings(self) -> list[TunableSetting[Any,Self]]:
-        return list(self._tunableSettings.values()) 
-    
-    def inactiveSettings(self) -> list[TunableDescriptor[Any,Self]]:
-        rv:list[TunableDescriptor[Any,Self]] = []
+    def activeSettings(self) -> Generator[BaseTunableSetting]:
+        yield from self._tunableSettings.values()
+
+    def inactiveSettings(self) -> Generator[BaseTunableDescriptor]:
         for k in dir(self.__class__):
             v = getattr(self.__class__, k)
-            if isinstance(v, TunableDescriptor):
+            if isinstance(v, TunableDescriptor) :
                 if not self._tunableSettings.nliContains(v.name):
-                    rv.append(v)
-        return rv
+                    yield v
 
-    def _addSetting(self, setting:TunableSetting[Any,Self]) -> None:
+    def _addSetting(self, setting:BaseTunableSetting) -> None:
         setting.nliSetContainer(self._tunableSettings)
 
-    def nliGetContainers(self) -> Iterable[NliContainerInterface]: 
+    def nliGetContainers(self) -> NliGetContainersRVT: 
         yield  self._tunableSettings
    
     def nliHasContainers(self) -> bool:
@@ -196,15 +215,14 @@ def tunableProperty(  default:TUNABLE_T,
         return descriptor # type: ignore
     return decorated
 
-
 tunablePropertyT = GenericT(tunableProperty)
 #############################################################################
 
 __profileImport.complete(globals())
     
 __all__ = [
-            'Tunable', 'TunableSetting', 'TunableSettingT',
-            'TunableDescriptor','TunableDescriptorT',
+            'Tunable', 'TunableSetting', 'TunableSettingT', 'BaseTunableSetting',
+            'TunableDescriptor','TunableDescriptorT', 'BaseTunableDescriptor',
             'TUNABLE_SELF_T',
             'tunableProperty', 'tunablePropertyT'
          

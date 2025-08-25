@@ -34,7 +34,8 @@ T=TypeVar('T')
 class NotifyingOutputTarget( OutputTarget, EvaluatableT[T], Generic[T] ):
 
     def __init__(self,onChange:Callable[[T,EvaluationContext], None],initialValue:Optional[T]=None) -> None:
-        self.__latestValue:T|None = initialValue
+        assert initialValue is not None, "NotifyingOutputTarget requires an initial value"
+        self.__latestValue:T = initialValue
         self.onChange = onChange
 
     @property
@@ -54,7 +55,7 @@ NotifyingOutputTargetT = GenericT(NotifyingOutputTarget)
 
 class NamedNotifyingOutputTarget(Generic[T],NotifyingOutputTargetT[T],NamedLocalIdentifiable):
     def __init__(self,
-                 onChange:Callable[[EvaluationContext,T], None],initialValue:Optional[T]=None, 
+                 onChange:Callable[[T,EvaluationContext], None],initialValue:Optional[T]=None, 
                  **kwds:Unpack[NamedLocalIdentifiable.KWDS]
                  ) -> None:
         NotifyingOutputTargetT[T].__init__(self, onChange=onChange,initialValue=initialValue)
