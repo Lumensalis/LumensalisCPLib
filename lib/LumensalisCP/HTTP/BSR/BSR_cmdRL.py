@@ -4,39 +4,20 @@ __sayBSR_cmdRLImport = getImportProfiler( globals(), reloadable=True )
 from LumensalisCP.HTTP.BSR.common import *
 
 from LumensalisCP.util.Reloadable import ReloadableModule
+from LumensalisCP.HTTP.BSR import bsrReloadables
 
 _module = ReloadableModule( 'LumensalisCP.HTTP.BasicServer' )
 _BasicServer = _module.reloadableClassMeta('BasicServer')
 
-from LumensalisCP.Main import ManagerRL
-from LumensalisCP.Main import Manager2RL
-from LumensalisCP.Main import MainAsyncRL
-from LumensalisCP.HTTP import BasicServerRL
-from LumensalisCP.Temporal import RefreshableRL, RefreshableListRL
-
-from LumensalisCP.Main import ProfilerRL
-from LumensalisCP.HTTP.BSR import BSR_profileRL
-from LumensalisCP.HTTP.BSR import BSR_clientRL
-from LumensalisCP.HTTP.BSR import BSR_cmdRL
-from LumensalisCP.HTTP.BSR import BSR_queryRL
-from LumensalisCP.HTTP.BSR import BSR_proxyRL
-_reloadableModules:list[ModuleType] = [ 
-    ManagerRL, Manager2RL, MainAsyncRL, 
-    RefreshableRL, RefreshableListRL,
-    ProfilerRL, BSR_profileRL, BSR_clientRL,  
-    BSR_cmdRL, BSR_queryRL, BSR_proxyRL,
-     BasicServerRL,
-       ]
-
 def _reloadAll(self:BasicServer ) -> list[Any]:
 
-    for m in _reloadableModules:
+    for m in bsrReloadables.bsrReloadableModules:
         reload( m )
     #self.cvHelper = None
-    return _reloadableModules
+    return bsrReloadables.bsrReloadableModules
 
 def _reload(self:BasicServer, module:str ) -> Any:
-    for realModule in _reloadableModules:
+    for realModule in bsrReloadables.bsrReloadableModules:
         if realModule.__name__.endswith(module):
             reload( realModule )
             return realModule

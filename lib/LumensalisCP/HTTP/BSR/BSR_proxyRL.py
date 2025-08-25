@@ -1,12 +1,15 @@
 from LumensalisCP.ImportProfiler import getImportProfiler
 __profileImport = getImportProfiler( __name__, globals(), reloadable=True  )
 
+# pyright: reportUnusedImport=false, reportPrivateUsage=false
+
 from LumensalisCP.HTTP.BSR.common import *
 
 from LumensalisCP.util.Reloadable import ReloadableModule
 from LumensalisCP.util.bags import Bag
-from LumensalisCP.util.ObjToDict import objectToDict, objectToVal
+from LumensalisCP.util.ObjToDict import objectToVal
 from LumensalisCP.Identity.Proxy import NamedLocalInstanceProxyAction
+from LumensalisCP.Tunable.Tunable import Tunable, TunableDescriptor
 
 _module = ReloadableModule( 'LumensalisCP.HTTP.BasicServer' )
 _BasicServer = _module.reloadableClassMeta('BasicServer')
@@ -172,7 +175,7 @@ def getProxyTarget( base:Optional[NamedLocalIdentifiable|NliContainerInterface]=
 #############################################################################
 
 def _inspectClass( config:ProxyRequestConfig, cls:type, recurse:bool=False ) -> StrAnyDict:
-    rv = { "name": cls.__name__ }
+    rv:StrAnyDict = { "name": cls.__name__ }
     bases = [b for b in cls.__bases__ if b is not object]
     if len(bases): rv["bases"] = [ _inspectClass(config, b, recurse=recurse) if recurse else b.__name__ for b in  bases ]
 
@@ -212,7 +215,7 @@ def _inspectDir( config:ProxyRequestConfig, target:NamedLocalIdentifiable|NliCon
 def _inspect(  config:ProxyRequestConfig, target:NamedLocalIdentifiable|NliContainerInterface ) -> dict[str, Any]:
     rv: dict[str, Any] = {
         'name': target.name,
-        'localId': target.localId,
+        'localId': getattr(target, 'localId', None),
         'module': target.__class__.__module__,
     }
     cls = target.__class__
@@ -256,14 +259,18 @@ def _tune(  config:ProxyRequestConfig, target:Tunable ) -> dict[str, Any]:
                         'spec': setting.interactSpec()
 
                     } for setting in target.activeSettings()],
-            'inactive': [{
-                    'name': descriptor.name, 
-                    'cls': descriptor.settingClass.__name__, 
-                    'default': descriptor.default,
-                    'kwds': objectToVal(descriptor._settingKwds),
-                } for descriptor in target.inactiveSettings()]
         }
-        
+
+        inactives:list[dict[str, Any]] = []
+        for descriptor in target.inactiveSettings():
+            inactives.append({
+                'name': getattr(descriptor, 'name', str(descriptor)), 
+                'cls': getattr(descriptor, 'settingClass', type(descriptor)).__name__, 
+                'default': descriptor.default,
+                'kwds': objectToVal(descriptor._settingKwds),
+            })
+        rv['inactive'] = inactives
+
 
     return rv
 
@@ -278,7 +285,7 @@ def BSR_proxy(self:BasicServer, request:Request, name:Optional[str]=None):
     try:
         assert request.method != 'GET'
         qc = ProxyRequestConfig(recurse=3)
-        j:StrAnyDict = request.json() # type.ignore
+        j:StrAnyDict = request.json() # type:ignore
         for tag,val in j.items(): # Process the JSON data
             assert hasattr(qc, tag), f"unknown query config tag {tag}"
             if tag == "path":

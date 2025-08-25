@@ -47,7 +47,6 @@ class BasicServer(Server,MainAsyncChild):
 
         # TODO: make actual client instance for multiple connections...???
         self.websocket: Websocket|None = None
-        # self.cvHelper:ControlVarsRL.PanelControlTemplateHelper|None = ControlVarsRL.PanelControlTemplateHelper( main=main )
 
         #self.main = main
         self.monitoredVariables:List[InputSource] = []
