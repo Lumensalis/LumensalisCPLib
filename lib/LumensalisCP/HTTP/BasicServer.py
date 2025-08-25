@@ -43,7 +43,8 @@ class BasicServer(Server,MainAsyncChild):
         main = self.main 
 
         self.pool = main.socketPool
-        Server.__init__(self, self.pool, debug=pmc_mainLoopControl.enableHttpDebug )
+        Server.__init__(self, self.pool, debug=pmc_mainLoopControl.enableHttpDebug ,
+                        root_path="/www")
 
         # TODO: make actual client instance for multiple connections...???
         self.websocket: Websocket|None = None
@@ -167,7 +168,8 @@ class BasicServer(Server,MainAsyncChild):
             self.websocket = Websocket(request, buffer_size=8192)
             self.priorMonitoredValue = {}
             return self.websocket
-        
+
+     
         @self.route("/") # type:ignore[override]
         def base(request: Request) -> Response: # type:ignore[reportUntypedFunctionDecorator,reportUnusedFunction]
 

@@ -18,7 +18,7 @@ from LumensalisCP.util.Reloadable import ReloadableModule
 _module = ReloadableModule( 'LumensalisCP.HTTP.BasicServer' )
 _BasicServer = _module.reloadableClassMeta('BasicServer')
 
-from LumensalisCP.HTTP.BSR import bsrReloadables
+from LumensalisCP.HTTP.BSR import bsrReloadablesRL
 
 @_BasicServer.reloadableMethod()
 def _reloadForRoute( self:BasicServer, name:str ) -> None: # type:ignore[no-untyped-def]
@@ -28,7 +28,8 @@ def _reloadForRoute( self:BasicServer, name:str ) -> None: # type:ignore[no-unty
     
     self.infoOut( "_reloadForRoute %s", name )
     pmc_gcManager.checkAndRunCollection(force=True)
-    modules = bsrReloadables.reloadablesForRoute(self, name)
+    reload(bsrReloadablesRL)
+    modules = bsrReloadablesRL.reloadablesForRoute(self, name)
 
     self.infoOut( "reloading  %s", modules )
     
