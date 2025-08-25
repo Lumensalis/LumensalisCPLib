@@ -113,7 +113,7 @@ class Scene(MainChild):
     def onExit( self, action:TriggerActionTypeArg ) -> None:
         self.__onExit.append( Invocable.makeInvocable(action) )
 
-    def nliGetContainers(self) -> list[NliContainerMixin[NamedLocalIdentifiable]]:
+    def nliGetContainers(self) -> NliGetContainersRVT:
         return [self.__rulesContainer, self.__tasksContainer, self.__patternsContainer] # type: ignore[return-value]
     
     def nliHasContainers(self) -> bool:

@@ -117,23 +117,15 @@ class CaernarfonCastle(D1MiniBoardBase):
         self.__allPixels.append(pixels)
         return pixels
 
-    #def nliGetChildren(self) -> Iterable['NamedLocalIdentifiable']|None:
-    #    #if self._irRemote is not None:
-    #    #    return [ self._irRemote ]
-    #    return None
     def nliHasContainers(self) -> bool:
         return True
 
-    def nliGetContainers(self) -> list["NliContainerMixin"]|None: # type: ignore
+    def nliGetContainers(self) -> NliGetContainersRVT:
         return itertools.chain(  [ self.__pixelsContainer, self.__servoContainer ], super().nliGetContainers())  #type: ignore
-
-    def nliHasContainers(self) -> bool:
-        return True
 
     def derivedRefresh(self,context:EvaluationContext):
         for pixels in self.__allPixels:
             pixels.refresh()
-        
     
     @property
     def pixels(self) -> NeoPixelSource: return self.__pixels

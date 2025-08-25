@@ -25,7 +25,7 @@ class ShieldBase(ControllerConfigurableChildBase):#,RfMxnActivatablePeriodic, Re
         self.__componentsContainer:NliList[NamedLocalIdentifiable] = NliList("components", parent=self)
         self.activate(main.getContext())
 
-    def nliGetContainers(self) -> Iterable[NliContainerMixin[NamedLocalIdentifiable]]:
+    def nliGetContainers(self) -> NliGetContainersRVT:
         return [ self.__componentsContainer ]
 
     def nliHasContainers(self) -> bool:

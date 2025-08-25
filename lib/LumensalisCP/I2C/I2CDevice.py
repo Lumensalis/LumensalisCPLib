@@ -42,7 +42,7 @@ class I2CDevice( MainChild ):
         self._inputs: NliList[InputSource] = NliList(name='inputs', parent=self)
         self._outputs: NliList[NamedOutputTarget] = NliList(name='outputs', parent=self)
 
-    def nliGetContainers(self)->Iterable[NliContainerInterface]:
+    def nliGetContainers(self) -> NliGetContainersRVT:
         assert isinstance(self._inputs, NliContainerInterface), "inputs must be a NliContainerInterface"
         yield self._inputs
         assert isinstance(self._outputs, NliContainerInterface), "outputs must be a NliContainerInterface"

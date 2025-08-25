@@ -167,7 +167,7 @@ class NamedNestedRefreshableList(NestedRefreshableList,NamedLocalIdentifiable):
     def nliHasChildren(self) -> bool:
         return True
             
-    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]:
+    def nliGetChildren(self) -> NliGetChildrenRVT:
         yield from self._refreshables
 
 #############################################################################

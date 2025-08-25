@@ -17,7 +17,7 @@ import LumensalisCP.Main.Dependents
 import LumensalisCP.Main.Updates
 
 from LumensalisCP.common import *
-from LumensalisCP.Identity.Local import NliContainerMixin, NliList,NamedLocalIdentifiable, NliInterface
+from LumensalisCP.Identity.Local import NliContainerMixin, NliList,NamedLocalIdentifiable, NliInterface, NliGetChildrenRVT,NliGetContainersRVT
 from LumensalisCP.util.bags import Bag
 from LumensalisCP.Eval.Expressions import EvaluationContext, UpdateContext
 from LumensalisCP.Debug import Debuggable, IDebuggable 

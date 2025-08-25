@@ -14,6 +14,9 @@ from LumensalisCP.pyCp.collections import GenericList, GenericListT
 if TYPE_CHECKING:
     from .Proxy import GenericNamedLocalInstanceProxyAction
 #############################################################################
+NliGetChildrenRVT:TypeAlias = Generator['NamedLocalIdentifiable']
+
+NliGetContainersRVT:TypeAlias = Generator['NliContainerInterface']
 
 __profileImport.parsing()
 
@@ -47,9 +50,9 @@ class NliInterface(IDebuggable):
     def nliHasContainers(self) -> bool: ...
     def nliHasItems(self) -> bool: ...
 
-    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]: ...
+    def nliGetChildren(self) -> NliGetChildrenRVT: ...
 
-    def nliGetContainers(self) -> Iterable[NliContainerInterface]: ...
+    def nliGetContainers(self) -> NliGetContainersRVT: ...
 
     def isContainer(self) -> bool: ...
 
@@ -130,15 +133,16 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
     def nliHasChildren(self) -> bool:
         return False
             
-    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]:
-        return tuple()
+    def nliGetChildren(self) -> NliGetChildrenRVT:
+        yield from ()
+        
 
 
     def nliHasContainers(self) -> bool:
         return False
     
-    def nliGetContainers(self) -> Iterable[NliContainerInterface]:
-        return tuple()
+    def nliGetContainers(self) -> NliGetContainersRVT:
+       yield from ()
 
 
     def nliHasItems(self) -> bool:
@@ -287,8 +291,8 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
     def nliRemoveChild( self, child:_NLIListT ) -> None: # type:ignore[override]
         self.data.remove( child )
 
-    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]:
-        return tuple()
+    def nliGetChildren(self) -> NliGetChildrenRVT:
+        yield from self.data
             
     def nliFind(self,name:str) -> NamedLocalIdentifiable|None:
         for child in self.data:
@@ -302,6 +306,7 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
 __all__ = ['LocalIdentifiable',
            'NamedLocalIdentifiable',
            'NamedLocalIdentifiableWithParent',
-            'NliContainerMixin','NliList', 'NliInterface']
+            'NliContainerMixin','NliList', 'NliInterface',
+            'NliGetChildrenRVT','NliGetContainersRVT']
 
 __profileImport.complete(globals())

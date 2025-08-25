@@ -3,7 +3,9 @@ from __future__ import annotations
 from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayScenesManagerImport = getImportProfiler( globals() ) # "Scenes.Manager"
 
-from LumensalisCP.Identity.Local import NamedLocalIdentifiable, NliContainerMixin, NliList
+# pyright: reportUnusedImport=false
+
+from LumensalisCP.Identity.Local import NamedLocalIdentifiable, NliContainerMixin, NliList, NliGetContainersRVT
 from LumensalisCP.Scenes.Scene import Scene
 from LumensalisCP.Main.Updates import UpdateContext
 from LumensalisCP.Eval.Expressions import EvaluationContext
@@ -43,8 +45,8 @@ class SceneManager(NamedLocalIdentifiable):
         
         #self.__currentScene.runTasks(context)
 
-    def nliGetContainers(self) -> list[NliContainerMixin[Any]]:
-        return [self._scenes]
+    def nliGetContainers(self) -> NliGetContainersRVT:
+        yield self._scenes
     
     def nliHasContainers(self) -> bool:
         return True
