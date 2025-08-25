@@ -11,17 +11,19 @@ from LumensalisCP.Temporal import RefreshableRL, RefreshableListRL
 from LumensalisCP.Main import ProfilerRL
 from LumensalisCP.HTTP.BSR import BSR_profileRL
 from LumensalisCP.HTTP.BSR import BSR_sakRL
-from LumensalisCP.HTTP.BSR import UIHelpers
+from LumensalisCP.HTTP.BSR import UIPanelHelpersRL
+from LumensalisCP.HTTP.BSR import UIPageHelpersRL
 from LumensalisCP.HTTP.BSR import BSR_cmdRL
 from LumensalisCP.HTTP.BSR import BSR_clientRL
 from LumensalisCP.HTTP.BSR import BSR_queryRL
 from LumensalisCP.HTTP.BSR import BSR_proxyRL
 from LumensalisCP.HTTP import WebsocketsRL
 
+
 bsrReloadableModules:list[ModuleType] = [ 
     ManagerRL, Manager2RL, MainAsyncRL, 
     RefreshableRL, RefreshableListRL,
-    ProfilerRL, BSR_profileRL, BSR_clientRL, UIHelpers, 
+    ProfilerRL, BSR_profileRL, UIPageHelpersRL,UIPanelHelpersRL, BSR_clientRL, UIPanelHelpersRL, 
     BSR_cmdRL, BSR_queryRL, BSR_proxyRL, BSR_sakRL,
      BasicServerRL,WebsocketsRL,
 
@@ -38,7 +40,7 @@ def reloadablesForRoute(  self:BasicServer, name:str ) -> list[Any]:
     elif "cmd" in name:
         modules.extend( [BSR_cmdRL] )
     elif "client" in name:
-        modules.extend( [BSR_clientRL] )
+        modules.extend( [UIPageHelpersRL,UIPanelHelpersRL, BSR_clientRL] )
     elif "query" in name:
         modules.extend( [BSR_queryRL] )
     elif "proxy" in name:
