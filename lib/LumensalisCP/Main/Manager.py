@@ -76,7 +76,7 @@ class MainManager( NamedLocalIdentifiable ): #, I2CProvider, ConfigurableBase, )
 
 
     @staticmethod
-    def initManager(*args,**kwargs) -> "MainManager":
+    def initManager(*args:Any,**kwargs:Any) -> "MainManager":
         assert MainManager.theManager is None
         rv = MainManager()
         assert MainManager.theManager is rv
@@ -118,6 +118,8 @@ class MainManager( NamedLocalIdentifiable ): #, I2CProvider, ConfigurableBase, )
         self.__anonOutputs:NliList[NamedOutputTarget] = NliList(name='outputs',parent=self)
         self.controlPanels = NliList(name='panels',parent=self)
         self.__rootPanel:ControlPanel|None = None
+
+        
         self._monitored:list[InputSource] = []
         self._timers:PeriodicTimerManager|None = None
         self._scenes: SceneManager|None = None
@@ -387,14 +389,14 @@ see http://lumensalis.com/ql/h2Scenes
     def getNextFrame(self, now:TimeInSeconds) ->ProfileFrameBase: ...
 
     @reloadingMethod
-    def nliGetContainers(self) -> Iterable[NliContainerMixin[NamedLocalIdentifiable]]|None: ...
+    def nliGetContainers(self) -> NliGetContainersRVT: ...
 
     def nliHasContainers(self) -> bool:
         return True
 
     @reloadingMethod
-    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]:
-        return tuple()
+    def nliGetChildren(self) -> NliGetChildrenRVT:
+        yield from ()
 
     def nliHasChildren(self) -> bool: return True
 

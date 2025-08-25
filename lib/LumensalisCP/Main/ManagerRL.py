@@ -68,10 +68,10 @@ def MainManager_renameIdentifiables( self:MainManager, items:Optional[dict[str,N
                 val.name = tag
 
             if isinstance(val,InputSource):
-                if val.nliGetContaining() is None:
+                if not val.nliIsInContainer():
                     val.nliSetContainer(self.__anonInputs)
             elif isinstance(val,NamedOutputTarget):
-                if val.nliGetContaining() is None:
+                if not val.nliIsInContainer():
                     val.nliSetContainer(self.__anonOutputs)
 
 @_mmMeta.reloadableMethod()

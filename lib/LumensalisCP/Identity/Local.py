@@ -122,14 +122,18 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
     __nliContaining:list[ReferenceType[NliContainerInterface]]|None = None
     __name:str|None
     
-    def nliGetContaining(self) -> Iterable[NliContainerInterface]|None:
+    def nliGetContaining(self) -> Generator[NliContainerInterface]|None:
         c = self.__nliContaining
         if c is None: return None
         for i in c:
             v = i()
             if v is not None: yield v
 
-    
+    def nliIsInContainer(self) -> bool:
+        if self.__nliContaining is not None:
+            return len(self.__nliContaining) > 0
+        return False
+
     def nliHasChildren(self) -> bool:
         return False
             
