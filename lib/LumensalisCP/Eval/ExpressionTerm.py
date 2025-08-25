@@ -264,7 +264,7 @@ class BinOp_sub(BinaryOperationBase):
 #############################################################################
 
 class ExpressionConstant(ExpressionTerm):
-    constantTypes = { int : True, bool: True, float: True, str: True }
+    constantTypes:dict[type, bool] = { int : True, bool: True, float: True, str: True }
     
     def __init__( self, value:Optional[Any]=None ):
         super().__init__()

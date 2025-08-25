@@ -417,7 +417,7 @@ class ControlPanel( MainChild ):
     
     #########################################################################
 
-    def nliGetContainers(self) -> Iterable[NliContainerMixin[NamedLocalIdentifiable]]:
+    def nliGetContainers(self) -> NliGetContainersRVT:
         yield self._controlVariables
         yield self._monitored
         yield self._triggers

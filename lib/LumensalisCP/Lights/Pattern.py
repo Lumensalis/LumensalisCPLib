@@ -8,7 +8,7 @@ from LumensalisCP.Lights.RGB import *
 from LumensalisCP.Lights.Groups import LightGroup
 
 from LumensalisCP.Eval.EvaluationContext import EvaluationContext
-from LumensalisCP.Identity.Local import NamedLocalIdentifiable
+#from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.common import *
 from LumensalisCP.util.bags import Bag
 from LumensalisCP.Temporal.Refreshable import RefreshableNAP
@@ -143,7 +143,7 @@ class PatternGeneratorStep(CountedInstance):
             ):
         super().__init__()
         self._startValue = startValue
-        self._endValue:AnyRGBValue = endValue or startValue
+        self._endValue = endValue if endValue is not None else startValue
         self.duration = duration
         self.intermediateRefresh = intermediateRefresh
     

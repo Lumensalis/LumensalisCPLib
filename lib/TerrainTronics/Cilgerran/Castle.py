@@ -62,6 +62,7 @@ class CilgerranLED( DimmableLight ):
 
     def setValue(self,value:AnyRGBValue, context: Optional[UpdateContext] = None ):
         context = context or self.__main.latestContext
+        value = context.valueOf(value)
         if not isinstance(value, float):
             if isinstance(value, int) and value >= 0 and value <= 1:
                 value = float(value)
@@ -289,7 +290,7 @@ class CilgerranCastle(D1MiniBoardBase):
     def nliHasChildren(self) -> bool:
         return True
             
-    def nliGetChildren(self) -> Iterable[NamedLocalIdentifiable]:
+    def nliGetChildren(self) -> NliGetChildrenRVT:
         self.infoOut( "nliGetChildren called")
         yield self.__ledSource
         if self.__batteryMonitor is not None:
