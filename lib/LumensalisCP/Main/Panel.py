@@ -183,6 +183,9 @@ class PanelMonitor( NamedLocalIdentifiable, Generic[CVT]   ):
         self._max = kwds.pop('max', None)
         self.description = kwds.pop('description', '')
 
+    def refresh(self,context:EvaluationContext) -> None:
+        self.__varValue = self.source.getValue(context)
+
     @property
     def controlValue(self) -> CVT | None:
         return self.__varValue
@@ -263,6 +266,15 @@ class ControlPanel( MainChild ):
     @property    
     def controls(self) -> NliList[PanelControl[Any, Any]]:
         return self._controlVariables
+
+    @property    
+    def triggers(self) -> NliList[PanelTrigger]:
+        return self._triggers
+    
+
+    def derivedRefresh(self,context:EvaluationContext) -> None:
+        for m in self._monitored:
+            m.refresh(context)
 
     def _addControl( self, argOne:Optional[Any]=None, 
                      argTwo:Optional[str]=None,

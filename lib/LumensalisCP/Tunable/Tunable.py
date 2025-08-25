@@ -1,5 +1,4 @@
 from __future__ import annotations
-from lib2to3.fixes.fix_idioms import TYPE
 
 from LumensalisCP.ImportProfiler import  getImportProfiler
 __profileImport = getImportProfiler( globals() ) # "Outputs"

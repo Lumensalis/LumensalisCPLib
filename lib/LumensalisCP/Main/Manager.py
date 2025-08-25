@@ -263,6 +263,13 @@ class MainManager( NamedLocalIdentifiable ): #, I2CProvider, ConfigurableBase, )
         
         return self.__rootPanel
     
+    def addPanel( self, **kwds:Unpack[ControlPanel.KWDS] ) -> ControlPanel:
+        kwds.setdefault('main', self)
+        from LumensalisCP.Main.Panel import ControlPanel
+        panel = ControlPanel( **kwds)
+        self.controlPanels.append(panel)
+        return panel
+
     @property
     def dmx(self):
         if self.__dmx is None:
