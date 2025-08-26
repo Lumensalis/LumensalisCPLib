@@ -76,14 +76,25 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
     class KWDS(TypedDict):
         name:NotRequired[str]
         temporaryName:NotRequired[str]
-    
+        displayName:NotRequired[str]
+
+    __displayName:str|None=None
     def __init__( self, 
                 name:Optional[str]=None,
-                temporaryName:Optional[str]=None
+                temporaryName:Optional[str]=None,
+                displayName:Optional[str]=None
             ) -> None:
       
-        self.__name = name
+        self.__name = None
+        if temporaryName is not None: assert self._nliNameIsValid(temporaryName), f"temporaryName ({temporaryName}) is not valid"
         self.__temporaryName = temporaryName
+
+        if name is not None:
+            assert self._nliNameIsValid(name), f"name ({name}) is not valid"
+            self.name = name
+
+        if displayName is not None:
+            self.__displayName = displayName
 
         LocalIdentifiable.__init__(self)
         Debuggable.__init__(self)
@@ -97,11 +108,26 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
         return kwds, nliKwds
 
     @property
-    def name(self) -> str: return self.__name or self.__temporaryName or self.nliDynamicName()
+    def displayName(self) -> str:
+        return self.__displayName or self.name
+    
+    @displayName.setter
+    def displayName(self, displayName:str) -> None:
+        self.__displayName = displayName
+
+    @staticmethod 
+    def _nliNameIsValid(name:str) -> bool:
+        return name.replace(' ','') == name and name != ''
+    
+    @property
+    def name(self) -> str: 
+        return self.__name or self.__temporaryName or self.nliDynamicName()
     
     @name.setter
     def name( self, name:str ):
         assert name is not None
+        assert self._nliNameIsValid(name), f"name ({name}) is not valid"
+        
         containing = getattr(self,'__containing',None)
         if containing is not None:
             for containerRef in containing:
@@ -109,9 +135,7 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
         self.__name = name
 
     def __repr__(self):
-        if self.__name is None:
-            return self.nliDynamicName()
-        return f"{self.__class__.__name__}({self.__name}@{self.localId})"
+        return f"{self.__class__.__name__}({self.name}@{self.localId})"
 
     def isContainer(self) -> bool:
         return False
@@ -273,6 +297,12 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
         assert default is not None, "default must be provided if key not found"
         return default
 
+    def getPossiblyMissing(self, key:str) -> _NLIListT|None:
+        for v in self.data:
+            if v.name == key:
+                return v
+        return None
+    
     def nliContainsChild( self, child:NamedLocalIdentifiable ) -> bool:
         for v in self.data:
             if v is child: return True

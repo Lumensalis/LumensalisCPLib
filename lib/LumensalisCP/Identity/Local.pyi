@@ -54,10 +54,12 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
     class KWDS(TypedDict):
         name:NotRequired[str]
         temporaryName:NotRequired[str]
-    
+        displayName:NotRequired[str]
+
     def __init__( self, 
                 name:Optional[str]=None,
-                temporaryName:Optional[str]=None
+                temporaryName:Optional[str]=None,
+                displayName:Optional[str]=None
             ) -> None: ...
 
     @staticmethod 
@@ -68,6 +70,15 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
     
     @name.setter
     def name( self, name:str ) -> None: ...
+
+
+    @property
+    def displayName(self) -> str: ...
+    @displayName.setter
+    def displayName(self, displayName:str) -> None: ...
+
+    @staticmethod 
+    def _nliNameIsValid(name:str) -> bool: ...
 
     #########################################################################
 
@@ -136,7 +147,9 @@ class NliList[T](NamedLocalIdentifiableWithParent, GenericList[T], NliContainerM
     
     def values(self) -> Iterable[T]: ...
 
-    def get(self, key:str, default:Optional[T]=None) -> T|None: ...
+    def get(self, key:str, default:Optional[T]=None) -> T: ...
+
+    def getPossiblyMissing(self, key:str) -> T|None:...
 
     def nliContainsChild( self, child:T ) -> bool: ...
     def nliContains( self, name:str ) -> bool: ...
