@@ -6,7 +6,7 @@ __profileImport = getImportProfiler(__name__,globals())
 #############################################################################
 
 from LumensalisCP.common import Optional, Any, Unpack, NotRequired
-from LumensalisCP.Lights.Groups import LightSource
+from LumensalisCP.Lights.Groups import LightSource, LightGroup
 from LumensalisCP.Lights.RGB import *
 
 from LumensalisCP.Lights.Values import LightValueBase
@@ -93,6 +93,8 @@ __all__ = [
     "RGBLight", 
     "AnyRGBValue",
     "RGB",  
+    "LightSource",
+    "LightGroup"
 ]
 
 __profileImport.complete()
