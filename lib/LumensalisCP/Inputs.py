@@ -11,6 +11,7 @@ from LumensalisCP.Main.Updates import UpdateContext
 from LumensalisCP.Eval.Evaluatable import NamedEvaluatableProtocolT
 from LumensalisCP.Eval.Expressions import ExpressionTerm    
 from LumensalisCP.Eval.EvaluationContext import EvaluationContext
+from LumensalisCP.Outputs import OutputTarget
 from LumensalisCP.CPTyping import Protocol
 #############################################################################
 
@@ -120,6 +121,26 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm, NamedEvaluatableProtoc
     
     def path( self ): return None
 
+class InputSourceCB(InputSource):
+    def __init__( self, cb:Callable[[EvaluationContext],Any], **kwargs:Unpack[InputSource.KWDS] ):
+        super().__init__(**kwargs)
+        self.cb = cb
+    def getDerivedValue(self, context:EvaluationContext) -> Any:
+        return self.cb(context)
+    
+class SimpleInputSource(InputSource,OutputTarget):
+    def __init__( self, value:Any, **kwargs:Unpack[InputSource.KWDS] ):
+        super().__init__(**kwargs)
+        self.__simpleValue = value
+    
+    def getDerivedValue(self, context:EvaluationContext) -> Any:
+        return self.__simpleValue
+
+    def set( self, value:Any, context:EvaluationContext ) -> None:
+        self.__simpleValue = value
+        self.updateValue(context)
+    
+
 _sayInputsImport.complete(globals())
 
-__all__ = [ 'InputSource' ]
+__all__ = [ 'InputSource', 'InputSourceCB', 'SimpleInputSource' ]

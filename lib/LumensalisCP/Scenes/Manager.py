@@ -10,6 +10,7 @@ from LumensalisCP.Scenes.Scene import Scene
 from LumensalisCP.Main.Updates import UpdateContext
 from LumensalisCP.Eval.Expressions import EvaluationContext
 from LumensalisCP.Identity.Proxy import proxyMethod, ProxyAccessibleClass
+from LumensalisCP.Inputs import InputSource, SimpleInputSource
 
 from LumensalisCP.CPTyping import *
 from LumensalisCP.common import *
@@ -29,6 +30,16 @@ class SceneManager(NamedLocalIdentifiable):
         #self._scenes:Mapping[str,Scene] = {}
         self._scenes:NliList[Scene] = NliList("scenes", parent=self)
         self.__currentScene:Scene|None = None
+
+        self.__currentSceneInput = SimpleInputSource( "---", name="currentScene" )
+    
+    @property
+    def scenes(self) -> NliList[Scene]:
+        return self._scenes
+
+    @property
+    def currentSceneInput(self) -> InputSource:
+        return self.__currentSceneInput
 
     def addScene( self, **kwds:Unpack[Scene.KWDS] ) -> Scene:
         kwds.setdefault("main", self.main)
@@ -57,6 +68,7 @@ class SceneManager(NamedLocalIdentifiable):
     @currentScene.setter
     def currentScene(self, scene:Scene|str):  self.setScene(scene)
         
+    
 
     @proxyMethod()
     def remoteGetCurrentSceneName(self) -> str|None:
@@ -85,11 +97,13 @@ class SceneManager(NamedLocalIdentifiable):
                 if transitions is not None:
                     for invocable in transitions:
                         invocable(context)
-            if self.enableDbgOut: self.dbgOut( "switching from scene %r to scene %r", oldScene, newScene )
+            #if self.enableDbgOut: self.dbgOut( "switching from scene %r to scene %r", oldScene, newScene )
+            self.infoOut( "switching from scene %r to scene %r", oldScene, newScene )
             self.__currentScene = scene # type: ignore
             for invocable in newScene.__onEnter:
                 invocable(context)
             scene.activate()
+            self.__currentSceneInput.set(scene.displayName,context) 
             
     def switchToNextIn( self, sceneList:list[str] ):
         matched = False
