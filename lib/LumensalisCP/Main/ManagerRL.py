@@ -45,6 +45,11 @@ def MainManager_nliGetChildren(self:MainManager) -> Iterable[NamedLocalIdentifia
 def launchProject( self:MainManager, globals:Optional[StrAnyDict]=None, verbose:bool = False ) -> None: 
     if globals is not None:
         self.renameIdentifiables( globals, verbose=verbose )
+
+    if self._scenes is not None:
+        for scene in self.scenes.scenes:
+            self.panel.addTrigger(name="switchToScene_"+scene.name, displayName="Scene "+scene.name, scene=scene)
+
     useWifi = getattr(self, 'useWifi', False)        
     if useWifi:
         self.sayAtStartup( "adding web server" )
@@ -90,19 +95,26 @@ def handleWsChanges( self:MainManager, changes:StrAnyDict ):
         key = changes.get( 'name', None )
         if key is not None:
             val = changes['value']
-            v = defaultPanel.controls.get(key,None)
-            if v is not None:
-                v.setFromWs( val )
-            else:
-                self.warnOut( f"missing cv {key} in {defaultPanel.controls.keys()} for wsChanges {changes}")
+            v = None
+            for panel in self.controlPanels:
+                v = panel.controls.getPossiblyMissing(key)
+                if v is not None:
+                    v.setFromWs( val )
+                    break
+            if v is None:
+                self.warnOut( f"missing cv {key} for wsChanges {changes}")
         else:
             triggerName = changes.get( 'trigger', None )
             if triggerName is not None:
-                trigger = defaultPanel._triggers.get(triggerName,None)
-                self.infoOut( f"wsChanges trigger {triggerName}" )
-                assert trigger is not None, f"trigger {triggerName} not found in {defaultPanel._triggers.keys()}"
-                
-                trigger.fireTrigger( self.getContext() )
+                trigger = None
+                for panel in self.controlPanels:
+                    trigger = panel._triggers.getPossiblyMissing(triggerName)
+                    if trigger is not None:
+                        self.infoOut( f"wsChanges trigger {triggerName}" )
+                        trigger.fireTrigger( self.getContext() )
+                        break
+                if trigger is None:
+                    self.warnOut( f"missing trigger {triggerName} for wsChanges {changes}")
 
 @_mmMeta.reloadableMethod()
 def dumpLoopTimings( self:MainManager, count:int, minE:Optional[float]=None, minF:Optional[float]=None, **kwds:StrAnyDict ) -> list[Any]:
