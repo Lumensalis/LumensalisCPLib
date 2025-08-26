@@ -273,7 +273,9 @@ class CilgerranCastle(D1MiniBoardBase):
             self.__ledSource.addLeds(ledCount)  
 
     @property
-    def batteryMonitor(self) -> CilgerranBatterMonitor | None:
+    def batteryMonitor(self) -> CilgerranBatterMonitor:
+        if self.__batteryMonitor is None:
+            self.__batteryMonitor = CilgerranBatterMonitor( self )
         return self.__batteryMonitor
     
     @property

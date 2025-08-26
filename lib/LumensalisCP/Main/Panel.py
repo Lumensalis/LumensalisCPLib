@@ -27,6 +27,7 @@ class CVT_ADD_KWDS(TypedDict, Generic[CVT,CVT_OUT]):
     max: NotRequired[CVT]
     name: NotRequired[str]
     description: NotRequired[str]
+    displayName: NotRequired[str]
     
 class CVT_KWDS(TypedDict, Generic[CVT,CVT_OUT]):
     startingValue: Required[CVT]
@@ -34,6 +35,7 @@ class CVT_KWDS(TypedDict, Generic[CVT,CVT_OUT]):
     max: NotRequired[CVT]
     name: NotRequired[str]
     description: NotRequired[str]
+    displayName: NotRequired[str]
     kindMatch: NotRequired[type]
     kind: NotRequired[str|type]
     
@@ -93,9 +95,12 @@ class PanelControl(InputSource, Generic[CVT, CVT_OUT]):
         if startingValue is not None:
             self.set( convertor(startingValue) )
 
+
+    
     @property
     def controlValue(self) -> CVT_OUT | None:
         return self._controlValue
+
 
     def setFromWs( self, value: Any ):
         if self.kind == 'RGB':
@@ -252,9 +257,13 @@ class ControlPanel( MainChild ):
      interact with your project
 
     """
-    def __init__( self, **kwds:Unpack[MainChild.KWDS] ) -> None: 
+    class KWDS(MainChild.KWDS):
+        useSliders:NotRequired[bool]
+
+    def __init__( self, useSliders:bool = False, **kwds:Unpack[MainChild.KWDS] ) -> None: 
         super().__init__( **kwds )
 
+        self.useSliders = useSliders
         self._controlVariables:NliList[PanelControl[Any,Any]] = NliList(name='controls',parent=self)
         self._monitored:NliList[PanelMonitor[Any]] = NliList(name='monitored',parent=self)
         self._triggers:NliList[PanelTrigger] = NliList(name='triggers',parent=self)
@@ -319,7 +328,9 @@ class ControlPanel( MainChild ):
 
 
     #########################################################################
-    def addZeroToOne( self, argOne:Optional[Any]=None,  argTwo:Optional[str]=None, **kwds:Unpack[CVT_ADD_KWDS[float,ZeroToOne]] ) -> PanelControl[float,ZeroToOne]:
+    def addZeroToOne( self, argOne:Optional[Any]=None, 
+                      argTwo:Optional[str]=None, **kwds:Unpack[CVT_ADD_KWDS[float,ZeroToOne]] 
+                ) -> PanelControl[float,ZeroToOne]:
         """ add control for a value between 0 and 1, see  http://lumensalis.com/ql/h2PanelControl """
         return self._addControl(  argOne, argTwo='ZeroToOne',kindMatch=float,
                                  convertor=lambda v: float(v),   # type: ignore
@@ -410,6 +421,18 @@ class ControlPanel( MainChild ):
     def monitorFloat( self, input:NamedEvaluatableProtocol[float],**kwds:Unpack[IVT_ADD_KWDS[float]] ) -> PanelMonitor[float]:
         """ add monitor for a float value, see  http://lumensalis.com/ql/h2PanelMonitor """
         return self._addMonitor(  input, kind=float, **kwds )
+
+    def monitorPlusMinusOne( self, input:NamedEvaluatableProtocol[PlusMinusOne],**kwds:Unpack[IVT_ADD_KWDS[PlusMinusOne]] ) -> PanelMonitor[PlusMinusOne]:
+        """ add monitor for a float value, see  http://lumensalis.com/ql/h2PanelMonitor """
+        return self._addMonitor(  input, kind='PlusMinusOne', kindMatch=PlusMinusOne, **kwds )
+
+    def monitorZeroToOne( self, input:NamedEvaluatableProtocol[ZeroToOne],**kwds:Unpack[IVT_ADD_KWDS[ZeroToOne]] ) -> PanelMonitor[ZeroToOne]:
+        """ add monitor for a float value, see  http://lumensalis.com/ql/h2PanelMonitor """
+        return self._addMonitor(  input, kind='ZeroToOne', kindMatch=ZeroToOne, **kwds )
+
+    def monitorString( self, input:NamedEvaluatableProtocol[str],**kwds:Unpack[IVT_ADD_KWDS[str]] ) -> PanelMonitor[str]:
+        """ add monitor for a string value, see  http://lumensalis.com/ql/h2PanelMonitor """
+        return self._addMonitor(  input, kind=str, **kwds )
 
     def monitorSeconds( self, input:NamedEvaluatableProtocol[TimeInSeconds],**kwds:Unpack[IVT_ADD_KWDS[TimeInSeconds]] ) -> PanelMonitor[TimeInSeconds]:
         """ add monitor for a duration (in seconds), see  http://lumensalis.com/ql/h2PanelMonitor """

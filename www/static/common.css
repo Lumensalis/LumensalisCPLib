@@ -1,17 +1,231 @@
 table, th, td {
-  border: 1px solid black;
-  border-radius: 5px;
-padding: 10px;
+    border: 1px solid gray;
+    border-radius: 5px;
+    padding: 10px;
+    color: white;
 }
 h2 {
   text-align: center;
+}
+.pageContainer {    
+    background-color: grey;
+    color: white;
+    /* margin: 7px; */
+    padding: 7px;
+    
+    width:100%;
+    height: 100%;
+}
+.clientPage {
+    background-color: grey;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    /* margin-left: 5%; */
+    /*margin-right: 5%; */
+    text-align: center;
+    align-items: center;
+    padding: 7px;
+    
+    /* justify-content: space-around; */
+    gap: 10px;
+}
+
+.tableTitle {
+    text-align: center;
 }
 table.center {
   margin-left: auto;
   margin-right: auto;
 }
 .triggers {
-  margin-left: auto;
-  margin-right: auto;
-  text-align: center;
+    /*flex: 1;*/
+    display: flex;
+    flex-direction: column;
+    margin-left: 5%;
+    margin-right: 5%;
+    text-align: center;
+    align-items: center;
+
+    width: fit-content;
+    justify-content: space-around;
+    gap: 10px;
+}
+
+.trigger-button {
+    background-color: blue;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0;
+    border:blueviolet;
+    border-radius: 7px;
+    border-width: 3px;
+    transition: background-color 0.3s ease;
+    font-weight: bold;
+    /* font-size: 125%; */
+    padding: 15px 32px;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+.controlPanel {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin: auto;
+    text-align: center;
+    align-items: center;
+    justify-content: space-evenly;
+    background-color: black;
+    color: white;
+    gap: 10px;
+
+    border: 1px solid gray;
+    border-radius: 25px;
+    padding: 10px;
+}
+
+.controlsTable {
+    flex: 5;
+    display: flex;
+    flex-direction: column;
+    color: white;
+}
+
+.monitoredTable {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    color: white;
+}
+
+.sliders {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    /*gap: 1em;*/
+    align-items: center;
+    align-self: center;
+    justify-content: space-around;
+}
+.slider-control-slot {
+
+  flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.slider-control-slot.label {
+  font-weight: bold;
+  /*font-size: 125%;*/
+  flex: 1;
+}
+.slider-valuetext h3 {
+  color: white;
+  font-weight: bold;
+  font-size: 75%;
+}
+
+.slider-control .label,
+.slider-seek .label {
+  font-weight: bold;
+  font-size: 125%;
+}
+
+.slider-control svg,
+.slider-seek svg {
+  forced-color-adjust: auto;
+}
+
+.slider-control text,
+.slider-seek text {
+  font-weight: bold;
+  fill: currentcolor;
+  font-family: sans-serif;
+}
+
+.slider-control {
+  width: fit-content;
+  flex: 1;
+  align-self: center;
+}
+
+.slider-control,
+.slider-seek {
+  margin-top: 1em;
+  padding: 6px;
+  color: white;
+}
+
+.slider-control .value,
+.slider-slider .value {
+  position: relative;
+  top: 20px;
+  height: 1.5em;
+  font-size: 80%;
+}
+
+.slider-control .temp-value,
+.slider-seek .temp-value {
+  padding-left: 24px;
+  font-size: 100%;
+}
+
+.slider-control .rail,
+.slider-seek .rail {
+  stroke: currentcolor;
+  stroke-width: 2px;
+  fill: currentcolor;
+  fill-opacity: 0.25;
+}
+
+.slider-control .thumb,
+.slider-seek .thumb {
+  stroke-width: 0;
+  fill: currentcolor;
+}
+
+.slider-control .focus-ring,
+.slider-seek .focus-ring {
+  stroke: currentcolor;
+  stroke-opacity: 0;
+  fill-opacity: 0;
+  stroke-width: 3px;
+  display: none;
+}
+
+.slider-control .slider-group {
+  touch-action: pan-x;
+}
+
+.slider-seek .slider-group {
+  touch-action: pan-y;
+}
+
+.slider-seek .slider-group .value {
+  display: none;
+}
+
+/* Focus and hover styling */
+
+.slider-seek.focus [role="slider"],
+.slider-control.focus [role="slider"] {
+  color: #005a9c;
+}
+
+.slider-control [role="slider"]:focus,
+.slider-seek [role="slider"]:focus {
+  outline: none;
+}
+
+.slider-control [role="slider"]:focus .focus-ring,
+.slider-seek [role="slider"]:focus .focus-ring {
+  display: block;
+  stroke-opacity: 1;
+}
+
+.slider-seek [role="slider"]:focus .value {
+  display: block;
 }

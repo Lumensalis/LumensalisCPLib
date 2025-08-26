@@ -3,14 +3,12 @@ from __future__ import annotations
 from LumensalisCP.ImportProfiler import getReloadableImportProfiler
 __profileImport = getReloadableImportProfiler( __name__, globals() )
 
-
 from LumensalisCP.HTTP.BSR.common import *
 
 #############################################################################
 # pyright: reportPrivateUsage=false, reportUnusedImport=false
 
 __profileImport.parsing()
-
 
 class Selector(CountedInstance):
     def __init__(self, section:UIPageSection, selector:str, nameId:str, suffix:str=""):
@@ -23,9 +21,21 @@ class Selector(CountedInstance):
             const {self.selector} = document.querySelector("#{self.nameId}");"""
     
 class UIPageSection(CountedInstance):
-    def __init__(self, parent:UIPageSection, wsTarget:Optional[str]=None):
+    class KWDS(TypedDict):
+        wsTarget: NotRequired[str]
+        divClass: NotRequired[str]
+        divId: NotRequired[str]
+
+    def __init__(self, parent:UIPageSection, 
+            wsTarget:Optional[str]=None,
+            divClass:Optional[str]=None,
+            divId:Optional[str]=None,
+                 ) -> None:
         super().__init__()
         self.__parent = weakref.ref(parent) if parent is not self else None
+        self.divClass = divClass
+        self.divId = divId
+
         if parent is not self:
             parent.sections.append(self)
         else:
@@ -52,12 +62,33 @@ class UIPageSection(CountedInstance):
                 }}
             ''' )
 
-    def yieldHtml(self) -> Iterable[str]:
+    def yieldHtmlHead(self) -> Iterable[str]:
+        if self.divClass is None and self.divId is None: return
+        if self.divClass is None:
+            yield f'<div id="{self.divId}">'
+            return
+        if self.divId is None:
+            yield f'<div class="{self.divClass}">'
+            return
+        yield f'<div class="{self.divClass}" id="{self.divId}">'
+
+    def yieldHtmlFoot(self) -> Iterable[str]:
+        if self.divClass is None and self.divId is None: return
+        yield f'</div>'
+
+    def yieldSectionHtml(self) -> Iterable[str]:
+        yield from self.yieldHtmlHead()
+        yield from self.yieldHtml()
         for section in self.sections:
             assert section is not self
-            yield from section.yieldHtml()
+            yield from section.yieldSectionHtml()
         for child in self.children:
-            yield from child.yieldHtml()
+            yield from child.yieldChildHtml()
+        yield from self.yieldHtmlFoot()
+        
+    
+    def yieldHtml(self) -> Iterable[str]:
+        yield from ()
 
     def yieldSelectorScript(self) -> Iterable[str]:
         for selector in self.__jsSelectors:
@@ -107,8 +138,20 @@ class UIPageSectionChild(CountedInstance):
     def yieldWsChecks(self) -> Iterable[str]:
         yield from ()
 
+    @final
+    def yieldChildHtml(self) -> Iterable[str]:
+        yield from self.yieldHtmlHead()
+        yield from self.yieldHtml()
+        yield from self.yieldHtmlFoot()
+
     def yieldHtml(self) -> Iterable[str]:
         yield from ()
+    def yieldHtmlHead(self) -> Iterable[str]:
+        yield from ()
+        
+    def yieldHtmlFoot(self) -> Iterable[str]:
+        yield from ()
+        
 
 class SimpleTableRow(UIPageSectionChild):
     def __init__(self, table:SimpleTable):
@@ -121,9 +164,12 @@ class SimpleTableRow(UIPageSectionChild):
         yield from ()
 
 class SimpleTable(UIPageSection):
+    class KWDS(UIPageSection.KWDS):
+        title:NotRequired[str]
+        headers:Required[list[str]]
 
-    def __init__(self, section:UIPageSection, title:str, headers:list[str]):
-        super().__init__(section)
+    def __init__(self, section:UIPageSection, headers:list[str], title:Optional[str]=None, **kwds:Unpack[UIPageSection.KWDS]) -> None:
+        super().__init__(section,**kwds)
         self.title = title
         self.headers = headers
         self.rows:list[SimpleTableRow] = []
@@ -156,7 +202,8 @@ class SimpleTable(UIPageSection):
 
     def yieldHtml(self) -> Iterable[str]: 
         if len(self.rows) == 0: return
-        yield "<h2>" + self.title + "</h2>"
+        if self.title is not None:
+            yield "<div class='tableTitle'><h4>" + self.title + "</h4></div>"
         yield from self.startTable()
         for row in self.rows:
             yield "<tr>\n"
@@ -178,12 +225,23 @@ class UIPage(UIPageSection):
         self.main = main
 
     def _yieldHtml(self) -> Iterable[str]:
-        yield HTML_TEMPLATE_A
+        yield """
+<html lang="en">
+    <head>
+        <title>Websocket Client</title>
+        <link rel="stylesheet" href="static/common.css" />
+        <script src="static/controlSlider.js"></script>
+        
+    </head>
+        <body>
+        <div class="pageContainer">
+        <div class="clientPage">
+"""
 
-        yield from self.yieldHtml()
+        yield from self.yieldSectionHtml()
 
         yield  """
-        <script>
+        </div></div><script>
             console.log('client on ' + location.host );
             let ws = new WebSocket('ws://' + location.host + '/connect-websocket');
             ws.onopen = () => console.log('WebSocket connection opened');
@@ -248,6 +306,8 @@ HTML_TEMPLATE_A = """
     <head>
         <title>Websocket Client</title>
         <link rel="stylesheet" href="static/common.css" />
+        <script src="static/controlSlider.js"></script>
+        
     </head>
 
 """
