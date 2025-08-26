@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from LumensalisCP.ImportProfiler import  getImportProfiler
 from LumensalisCP.Eval.Expressions import EvaluationContext
+
 _sayScenesSceneImport = getImportProfiler( "Scenes.Scene" )
 
 #############################################################################
@@ -20,6 +21,7 @@ from LumensalisCP.Eval.Evaluatable import NamedEvaluatableProtocolT
 from LumensalisCP.Temporal.RefreshableList import NamedNestedRefreshableList
 from LumensalisCP.Triggers.Invocable import *
 from LumensalisCP.Triggers.Trigger import TriggerActionTypeArg
+
 from LumensalisCP.Identity.Proxy import proxyMethod, ProxyAccessibleClass
 
 if TYPE_CHECKING:
@@ -109,6 +111,10 @@ class Scene(MainChild):
 
     def onEnter( self, action:TriggerActionTypeArg ) -> None:
         self.__onEnter.append( Invocable.makeInvocable(action) )
+
+    def setOnEnter( self, target:OutputTarget, value:Any) -> None:
+        from LumensalisCP.Triggers.Action import do
+        self.onEnter( do( target.set, value) )
 
     def onExit( self, action:TriggerActionTypeArg ) -> None:
         self.__onExit.append( Invocable.makeInvocable(action) )
