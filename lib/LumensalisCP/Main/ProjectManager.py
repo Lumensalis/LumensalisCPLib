@@ -6,6 +6,7 @@ from __future__ import annotations
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
 
 from LumensalisCP.ImportProfiler import  getImportProfiler
+import supervisor
 _saySimpleImport = getImportProfiler( __name__, globals() )
 
 import gc
@@ -26,6 +27,7 @@ def ProjectManager( name:Optional[str]=None,
                         profile:Optional[bool]=None,
                     profileMemory:Optional[bool|int]=None,
                     useWifi:bool = True,
+                    autoreload:Optional[bool] = True,
     ) -> MainManager:
     """ return the MainManager for a new simple project 
 ```python
@@ -38,6 +40,10 @@ main.launchProject( globals() )
 ```
 see http://lumensalis.com/ql/h2Main
 """
+    if autoreload is not None:
+        sayAtStartup( f"setting autoreload={autoreload}" )
+        supervisor.runtime.autoreload = autoreload
+        
     sayAtStartup( f"import MainManager" )
     from LumensalisCP.Main.Manager import MainManager
     if profile is not None:
