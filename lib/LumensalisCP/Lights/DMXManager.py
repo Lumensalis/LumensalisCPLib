@@ -5,9 +5,13 @@ from __future__ import annotations
 from LumensalisCP.IOContext import *
 from LumensalisCP.Lights.Light import *
 from LumensalisCP.Main.Dependents import *
-
 #############################################################################
 
+if TYPE_CHECKING:
+    from LumensalisCP.Main.Panel import ControlPanel
+    _DMXChannelArgType:TypeAlias = int
+    _DMXUniverseArgType:TypeAlias = Any
+    _DMXDataList:TypeAlias = list[Any]
 #import stupidArtnet
 from LumensalisCP.Lights.LCP_StupidArtnetServer import StupidArtnetASIOServer
 
@@ -15,13 +19,9 @@ from LumensalisCP.Lights.LCP_StupidArtnetServer import StupidArtnetASIOServer
 
 from LumensalisCP.Main.Async import MainAsyncChild, ManagerAsync
 
-_DMXChannelArgType:TypeAlias = int
-_DMXUniverseArgType:TypeAlias = Any
-_DMXDataList:TypeAlias = list[Any]
-
 class DMXWatcher(InputSource):
-    def __init__(self, name:str, manager:"DMXManager", c1:_DMXChannelArgType, cN:Optional[_DMXChannelArgType]=None):
-        super().__init__(name=name)
+    def __init__(self,  manager:"DMXManager", c1:_DMXChannelArgType, cN:Optional[_DMXChannelArgType]=None, **kwds:Unpack[InputSource.KWDS]):
+        super().__init__(**kwds)
         self.__manager = manager
         self.c1 = c1-1
         self.cN = (cN or c1)-1
@@ -38,8 +38,8 @@ class DMXWatcher(InputSource):
     def derivedUpdate(self) -> None: raise NotImplementedError
 
 class DMXDimmerWatcher(DMXWatcher):
-    def __init__(self, name:str, manager:"DMXManager", c1:_DMXChannelArgType):
-        super().__init__(name, manager, c1, c1+1 )
+    def __init__(self,  manager:"DMXManager", c1:_DMXChannelArgType,**kwds:Unpack[DMXWatcher.KWDS]):
+        super().__init__(manager, c1, c1+1, **kwds)
         self.__dimmerValue = 0
         
     def derivedUpdate(self):
@@ -53,8 +53,8 @@ class DMXDimmerWatcher(DMXWatcher):
 
 
 class DMX_RGBWatcher(DMXWatcher):
-    def __init__(self, name:str, manager:"DMXManager", c1:_DMXChannelArgType):
-        super().__init__(name, manager, c1, c1+3 )
+    def __init__(self,  manager:"DMXManager", c1:_DMXChannelArgType,**kwds:Unpack[DMXWatcher.KWDS]):
+        super().__init__(manager, c1, c1+3, **kwds)
         self.__rgbValue = RGB(0,0,0)
         
     def derivedUpdate(self):
@@ -96,15 +96,85 @@ class DMXManager(MainAsyncChild):
         rv['watchers'] = self._watchers
         return rv
     
-    def addDimmerInput( self, name:str, channel:_DMXChannelArgType ):
-        rv = DMXDimmerWatcher( name, self, channel )
+    @staticmethod
+    def _watcherNames(channel:_DMXChannelArgType,**kwds:Unpack[DMXDimmerWatcher.KWDS]):
+        name = kwds.get('name', None) 
+        displayName = kwds.get('displayName', None)
+        if name is None:
+            if displayName is not None:
+                name = displayName.replace(' ','_').lower()
+            else:
+                name = f"dmx_dimmer_{channel}"
+                displayName = f"DMX Dimmer {channel}"
+        if displayName is None:
+            displayName = name
+        kwds['name'] = name
+        kwds['displayName'] = displayName
+        return {'name': name, 'displayName': displayName}
+
+    def addDimmerInputs( self, firstChannel:_DMXChannelArgType,
+                        *names:str,
+                        lights:Optional[LightGroup]=None,
+                        firstLight:int = 0,
+                        panel:Optional[ControlPanel]=None,
+                          # **kwds:Unpack[DMXDimmerWatcher.KWDS]
+                ) -> list[DMXDimmerWatcher]:
+        """Add multiple dimmer inputs.
+
+        :param firstChannel: The first DMX channel to use. Each subsequent channel will be assigned to the lights in the order they are provided.
+        :param lights: lights to automatically connect to dimmer channels
+        :type lights: Optional[LightGroup], optional
+        :param firstLight: index of the first light to connect, defaults to 0
+        :type firstLight: int, optional
+        :param panel: Control Panel to add sliders, defaults to None
+        :type panel: Optional[ControlPanel], optional
+        :rtype: list[DMXDimmerWatcher]
+        """
+
+        rv:list[DMXDimmerWatcher] = []
+        for i, name in enumerate(names):
+            channel = firstChannel + i
+            rv.append(self.addDimmerInput(channel, light=lights[i] if lights else None, panel=panel, displayName=name))
+        return rv
+    
+    def __addLightAndSlider( self, watcher:DMXWatcher, slider:InputSource|None, light:Light|None, panel:ControlPanel|None ) -> None:
+        if light is not None:
+            def updateLight(source:InputSource, context:EvaluationContext) -> None:
+                val = source.getValue(context)
+                source.infoOut( "DIMMER CHANGE %s = %s", watcher.name, val)
+                light.setValue(val,context)
+
+            watcher.onChange(updateLight)
+            if slider is not None:
+                slider.onChange(updateLight)
+    
+    def addDimmerInput( self, channel:_DMXChannelArgType,
+                        light:Optional[Light]=None,
+                          panel:Optional[ControlPanel]=None,
+                           **kwds:Unpack[DMXDimmerWatcher.KWDS]
+                ) -> DMXDimmerWatcher:
+        piKwds = self._watcherNames(channel, **kwds)
+        rv = DMXDimmerWatcher( self, channel, **kwds )
         self._watchers.append(rv)
+
+        panelInput = panel.addZeroToOne(0.0,**piKwds) if panel is not None else None
+        self.__addLightAndSlider(rv, panelInput, light, panel)
+
         return rv
 
 
-    def addRGBInput( self, name:str, channel:_DMXChannelArgType ):
-        rv = DMX_RGBWatcher( name, self, channel )
+    def addRGBInput( self, channel:_DMXChannelArgType ,
+                                light:Optional[Light]=None,
+                          panel:Optional[ControlPanel]=None,
+                           **kwds:Unpack[DMXDimmerWatcher.KWDS]
+            ) -> DMX_RGBWatcher:
+        piKwds = self._watcherNames(channel, **kwds)
+        rv = DMX_RGBWatcher( self, channel, **kwds )
         self._watchers.append(rv)
+
+        panelInput = panel.addZeroToOne(0.0,**piKwds) if panel is not None else None
+        self.__addLightAndSlider(rv, panelInput, light, panel)
+
         return rv
     
     async def handle_dmx(self, universe:_DMXUniverseArgType, data:_DMXDataList ):
