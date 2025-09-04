@@ -1,8 +1,5 @@
 
-try:
-    from typing import Any
-except ImportError: 
-    pass
+from LumensalisCP.CPTyping import *
 
 def objectToVal( obj:Any ) -> Any:
     if isinstance(obj, (str,bool,int,float,type(None))): return obj
@@ -50,3 +47,35 @@ def objectToDict( obj:Any ) -> dict[str,Any]|str:
     if len(rv) == 0:
         return repr(obj)
     return rv
+
+
+
+v2jSimpleTypes:set[type] = { int, str, bool, float,type(None) }
+
+def valToJson( val:Any ) -> Any:
+    if type(val) in v2jSimpleTypes: return val
+    if callable(val):
+        try:
+            return valToJson( val() )
+        except: pass
+    if isinstance( val, dict ):
+        return dict( [ (tag, valToJson(v2)) for tag,v2 in val.items() ]) # type:ignore[return-value]
+
+    if isinstance( val, list ):
+        return [ valToJson(v2) for v2 in val ] # type:ignore[return-value]
+    return repr(val)
+
+def attrsToDict( obj:Any, attrList:list[str], **kwds:StrAnyDict ) -> StrAnyDict:
+    rv:StrAnyDict = dict(kwds)
+    for attr in attrList:
+        rv[attr] = valToJson( getattr(obj,attr,None) )
+    return rv
+
+#############################################################################
+
+__all__ = [
+    "objectToVal",
+    "objectToDict",
+    "valToJson",
+    "attrsToDict",
+]

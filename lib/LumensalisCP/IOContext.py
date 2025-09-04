@@ -9,7 +9,7 @@ import math
 
 
 from LumensalisCP.Eval.common import *
-from LumensalisCP.Inputs import InputSource
+from LumensalisCP.Inputs import InputSource, SimpleInputSource, InputSourceCB, NestedInputSource
 from LumensalisCP.Outputs import OutputTarget, NamedOutputTarget, \
         NotifyingOutputTarget,  NotifyingOutputTargetT, \
         NamedNotifyingOutputTarget, NamedNotifyingOutputTargetT, \

@@ -8,7 +8,9 @@ __profileImport = getReloadableImportProfiler( __name__, globals() )
 # pyright: reportPrivateUsage=false, reportUnusedImport=false
 
 from LumensalisCP.HTTP.BSR.common import *
-from LumensalisCP.Main.Panel import PanelControl, PanelMonitor, PanelTrigger, ControlPanel
+from LumensalisCP.Main.Panel import PanelControl, PanelMonitor, \
+                PanelTrigger, ControlPanel, PanelJoystick
+
 from LumensalisCP.util.ObjToDict import objectToDict
 from LumensalisCP.Eval.Evaluatable import NamedEvaluatableProtocolT, NamedEvaluatableProtocol
 
@@ -94,7 +96,7 @@ class PanelControlInstanceHelper(PanelTableRow):
         yield   f"""
                         if( receivedMessage.{self.nameId} !== undefined ) {{
                             value = receivedMessage.{self.nameId};
-                            console.log( "received {self.nameId} ", value );
+                            // console.log( "received {self.nameId} ", value );
                             {self.wsCellUpdate()}
                         }}
 """ 
@@ -117,15 +119,11 @@ class EditCapablePanelControlInstanceHelper(PanelControlInstanceHelper):
             editSelector = self.editSelector.selector
             
             self.section.addScript(f"""
-            {editSelector}.oninput = ( debounce(() => {{
-                const packet = JSON.stringify( 
-                    {{ name: '{self.nameId}', value: {editSelector}.value }}
-                    );
-                console.log( "sending packet", packet );
-                ws.send( packet );
+            {editSelector}.oninput = ( () => {{
+                thinner.controls.getChannel("{self.panelInstance.name}").set({editSelector}.value);
                 {self.valueSelector.selector}.textContent = {editSelector}.value;
 
-            }},200 ) );
+            }} );
             """)
     
     def valueCell(self)-> str:
@@ -244,11 +242,12 @@ class PanelSlider(UIPageHelpersRL.UIPageSectionChild):
                 // Create an observer instance.
                 function observeMutations(mutations) {{
                     value = { self.sliderSelectorName }.innerHTML;
+                    thinner.controls.getChannel("{self.panelInstance.name}").set(value);
                     const packet = JSON.stringify( 
                         {{ name: '{self.panelInstance.name}', value: value }}
                         );
                     console.log( "sending packet", packet );
-                    ws.send( packet );
+                    //ws.send( packet );
                 }}
 
                 var observer = new MutationObserver(
@@ -347,6 +346,8 @@ class TriggerSection(UIPageHelpersRL.UIPageSection):
     def addTrigger(self, trigger:PanelTrigger):
         return UITrigger( self, trigger )
 
+#############################################################################
+
 class PanelControlsTable( PanelTable):
     def __init__(self, panel:PanelParts,section:Optional[UIPageHelpersRL.UIPageSection]=None):
         super().__init__(section or panel, divClass= "controlsTable", #title= "Controls", 
@@ -408,13 +409,93 @@ class PanelMonitoredTable( PanelTable):
             #instanceHelper.addSelectors()
             instanceHelper.addSelectors()
             #instanceHelper.wsReceivedBlock() 
+
+
+#############################################################################
+
+class WsPaneJoystick(UIPageHelpersRL.UIPageSectionChild):
+    def __init__(self, section:UIPageHelpersRL.UIPageSection, panelInstance:PanelJoystick) -> None:
+        super().__init__(section)
+        self.panelInstance = panelInstance
+
+        self.joystickId = f"id_{self.panelInstance.name}_joystick"
+        self.joystickSelectorName = f"{self.panelInstance.name}_joystickSelector"
+        self.joystickInstanceName = f"{self.panelInstance.name}_joystickInstance"
+        #//self.valueSelector = self.section.addSelector( self.nameId+"Monitor", self.nameId+"_monitor")                    
+        self.section.addScript(f"""
+            var { self.joystickInstanceName } = new JoystickControl("{self.joystickId}");
+            // const { self.joystickSelectorName } = document.getElementById("{self.joystickId}");
+            console.log( "added joystick", { self.joystickId } );
+            {self.joystickInstanceName}.onJoystickUpdate =  debounce( (pos) => {{
+
+                thinner.tethers.getChannel("{self.panelInstance.name}").set({{
+                    x: pos.x,
+                    y: pos.y
+                }});
+                const packet = JSON.stringify( {{
+                        tether: {{
+                            name: '{self.panelInstance.name}',
+                            x: pos.x,
+                            y: pos.y
+                        }},
+                        
+                    }} );
+                console.log( "sending packet", packet );
+                //ws.send( packet );
+            }}, 100);
+""")
         
+
+    def yieldHtml(self):
+        if True:
+            if True:
+                yield f"""
+        <div class="noselect">
+            <div class="container space-top">
+                <canvas id="{self.joystickId}"  class="joystickCanvas" height="300" width="300"></canvas>
+            </div>  
+        </div>
+    
+"""
+            else: yield from ()
+
+        else:
+            yield f"""
+        <div class="noselect">
+            <div class="container space-top">
+                <h1 class="center blue-text thin">Canvas Joystick</h1>
+                <div class="center-align">
+                <canvas id="joystick" height="300" width="300"></canvas>
+                </div>
+                <p id="xVal" class="light">X: </p>
+                <p id="yVal" class="light">Y: </p>
+            </div>
+        </div>
+"""
+
+class PanelTetheredGroup( UIPageHelpersRL.UIPageSection):
+    def __init__(self, panel: PanelParts, section:Optional[UIPageHelpersRL.UIPageSection]=None):
+        super().__init__(section or panel, divClass="tethered")
+        for v in panel.panel.tethers.values():
+            assert isinstance(v, PanelJoystick )
+            print( f"  adding tethered {v.name} ({type(v)})" )
+            joystick = WsPaneJoystick( self, v ) # type: ignore
+
+            
+    
+#############################################################################
+
 class PanelParts(UIPageHelpersRL.UIPageSection):
     def __init__(self, page:UIPageHelpersRL.UIPage,  panel:ControlPanel):
         name = panel.name #.replace(' ','').lower()
         super().__init__(page, wsTarget=panel.name, divClass="controlPanel", divId=name+"_panel" )
 
         self.panel = panel  
+
+        if len(panel.tethers) > 0:
+            self.tethers = PanelTetheredGroup( self )
+
+
         if panel.useSliders:
             self.sliders = PanelSliders( self )
         else:
@@ -425,7 +506,8 @@ class PanelParts(UIPageHelpersRL.UIPageSection):
 
         if len(panel.monitored) > 0:
             self.monitors = PanelMonitoredTable( self )
-        
+
+
     def yieldHtml(self):
             yield f"""
             <div class="controlPanelTitle">

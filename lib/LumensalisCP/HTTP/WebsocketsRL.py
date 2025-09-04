@@ -6,13 +6,40 @@ __importProfile = getImportProfiler( globals(), reloadable=True  )
 from LumensalisCP.HTTP.BSR.common import *
 
 from LumensalisCP.util.Reloadable import ReloadableModule
+from LumensalisCP.util.TextIOHelpers import valToJson, v2jSimpleTypes
 
-_module = ReloadableModule( 'LumensalisCP.HTTP.BasicServer' )
-_BasicServer = _module.reloadableClassMeta('BasicServer')
+if TYPE_CHECKING:
+    from .BasicServer import BasicServer
+    from .WebsocketSession import WebsocketSession
 
-    
-@_BasicServer.reloadableMethod()
-def handle_websocket_request(self:BasicServer):
+#############################################################################
+__importProfile.parsing()
+
+_serverModule = ReloadableModule( 'LumensalisCP.HTTP.BasicServer' )
+_BasicServer = _serverModule.reloadableClassMeta('BasicServer')
+
+_sessionModule = ReloadableModule( 'LumensalisCP.HTTP.WebsocketSession' )
+_WebsocketSession = _sessionModule.reloadableClassMeta('WebsocketSession')
+
+@_WebsocketSession.reloadableMethod()
+def close(self:WebsocketSession) -> None:
+    self.infoOut("CLOSING WebsocketSession")
+    if self.websocket is not None:
+        try:
+            self.dbgOut("calling websocket.close()")
+            self.websocket.close()
+        except Exception as inst:
+            self.SHOW_EXCEPTION( inst, "error closing websocket" )
+        self.websocket = None
+    if self in self.server.websockets:
+        self.dbgOut("removing from server.websockets")
+        self.server.websockets.remove(self)
+
+    self.dbgOut("session is close")
+
+
+@_WebsocketSession.reloadableMethod()
+def handle_websocket_request(self:WebsocketSession):
     if self.websocket is None or self.websocket.closed:
         return
     
@@ -21,17 +48,18 @@ def handle_websocket_request(self:BasicServer):
         data = self.websocket.receive(fail_silently=False)
     except Exception as inst:
         self.SHOW_EXCEPTION( inst, "error receiving websocket data %r", data )
-        self.websocket.close()
-        self.websocket = None
+        self.close()
         return
     if data is None:
         return
     try:
         self.infoOut( 'websocket data = %r', data )
         jData = json.loads(data)
-        self.main.handleWsChanges(jData)
+        main = getMainManager()
+        main.handleWsChanges(jData)
     except Exception as inst:
         self.SHOW_EXCEPTION( inst, "error on incoming websocket data %r", data )
+        self.close()
 
 _digits = ["0","1","2","3","4","5","6","7","8","9"]
 def writeInt( out:TextIO, val:int, pad:int = 0, mag:Optional[int]=None ) -> None:
@@ -53,7 +81,7 @@ def writeInt( out:TextIO, val:int, pad:int = 0, mag:Optional[int]=None ) -> None
     else:
         out.write( _digits[val] )
 
-def writeMonitoredChanges(self:BasicServer, out:TextIO, pm:Any, name:str, val:Any  ):
+def writeMonitoredChanges(self:WebsocketSession, out:TextIO, pm:Any, name:str, val:Any  ):
     """
     Generator that yields JSONResponse objects with monitored changes.
     """
@@ -86,74 +114,59 @@ def writeMonitoredChanges(self:BasicServer, out:TextIO, pm:Any, name:str, val:An
         else:
             out.write( repr(asJson) )
 
-@_BasicServer.reloadableMethod()
-def updateSocketClient(self:BasicServer, useStringIO:bool=False )->None:
+@_WebsocketSession.reloadableMethod()
+def updateSocketClient(self:WebsocketSession )->None:
     if self.websocket is None or self.websocket.closed:
         return
-    
-    payload = None
+   
     jsonBuffer =self._ws_jsonBuffer # type:ignore[reportAttributeAccessIssue]
     checked = 0
     changed = 0
-    if useStringIO:
-        assert jsonBuffer is not None, "jsonBuffer must be set if useStringIO is True"
-        #print(f" jsonBuffer:{dir(jsonBuffer)}")
-        x = 0
-        for mv in self.main.panel.monitored.values(): 
-            v = mv.source
-            currentValue = v.getValue()
-            if currentValue is None:
-                if self.enableDbgOut: self.dbgOut( "updateSocketClient %s is None", v.name )
-                continue
-            checked += 1
-            if currentValue != self.priorMonitoredValue.get(v.name,None):
-                self.priorMonitoredValue[v.name] = currentValue
-                if x == 0:
-                    jsonBuffer.seek(0)
-                    jsonBuffer.write("{")
-                else:
-                    jsonBuffer.write(",")
-                x += 1
-                changed+=1
-                writeMonitoredChanges(self, jsonBuffer, mv, v.name, currentValue)
-                #for s in yieldMonitoredChanges(self, mv, v.name, currentValue):
-                #    jsonBuffer.write(s) # type:ignore[reportAttributeAccessIssue]
-        if changed > 0:
-            jsonBuffer.write("}")
-            message = jsonBuffer.getvalue()[:jsonBuffer.tell()] 
-            #print(f"updateSocketClient writing {message}")
-            self.websocket.send_message(message, fail_silently=True)
-        return
-    else:
-        for mv in self.main.panel.monitored.values():
+    gc_before = 0
 
-            v = mv.source
-            currentValue = v.getValue()
-            if currentValue is None:
-                if self.enableDbgOut: self.dbgOut( "updateSocketClient %s is None", v.name )
-                continue
-            checked += 1
-            if currentValue != self.priorMonitoredValue.get(v.name,None):
-                if payload is None: payload = {}
-                if self.enableDbgOut: self.dbgOut( "updateSocketClient %s changed to %r", v.name, currentValue )
-                if type(currentValue) not in v2jSimpleTypes:
-                    currentValue = valToJson(currentValue)
+    main = getMainManager()
+    context = main.getContext()
+    assert jsonBuffer is not None, "jsonBuffer must be set if useStringIO is True"
+    #print(f" jsonBuffer:{dir(jsonBuffer)}")
+    x = 0
+    for mv in main.panel.monitored.values(): 
+        v = mv.source
+        currentValue = v.getValue(context)
+        if currentValue is None:
+            if self.enableDbgOut: self.dbgOut( "updateSocketClient %s is None", v.name )
+            continue
+        checked += 1
+        if currentValue != self.priorMonitoredValue.get(v.name,None):
+            self.priorMonitoredValue[v.name] = currentValue
 
-                payload[v.name] = currentValue
-                self.priorMonitoredValue[v.name] = currentValue
-        if self.enableDbgOut: self.infoOut( "updateSocketClient checked %d variables" % checked )
-
-        if payload is not None:
-            if useStringIO:
-                #print(f" jsonBuffer:{dir(jsonBuffer)}")
-                jsonBuffer.seek(0) # type:ignore[reportAttributeAccessIssue]
-                #jsonBuffer.truncate() # type:ignore[reportAttributeAccessIssue]
-                json.dump( payload, jsonBuffer ) # type:ignore[reportAttributeAccessIssue]
-                message = jsonBuffer.getvalue()[:jsonBuffer.tell()] # type:ignore[reportAttributeAccessIssue]
+            if x == 0:
+                gc_before = gc.mem_free()
+                jsonBuffer.seek(0)
+                jsonBuffer.write("{")
             else:
-                message =json.dumps(payload)
+                jsonBuffer.write(",")
+            x += 1
+            changed+=1
+            writeMonitoredChanges(self, jsonBuffer, mv, v.name, currentValue)
+            #for s in yieldMonitoredChanges(self, mv, v.name, currentValue):
+            #    jsonBuffer.write(s) # type:ignore[reportAttributeAccessIssue]
+    if changed > 0:
+        jsonBuffer.write("}")
+        message = jsonBuffer.getvalue()[:jsonBuffer.tell()] 
+        #print(f"updateSocketClient writing {message}")
+        gc_after_message_create = gc.mem_free()
+        try:
             self.websocket.send_message(message, fail_silently=True)
-            if self.enableDbgOut: self.dbgOut( "wrote WS update : %r", message ) 
+        except Exception as inst:
+            self.SHOW_EXCEPTION( inst, "error sending websocket message" )
+            self.close()
+        gc_after = gc.mem_free()
+        if self.enableDbgOut:
+            self.dbgOut("gc delta for message[%d] is %d / %d (%d)", len(message),
+                        gc_after_message_create-gc_before,
+                        gc_after-gc_after_message_create,
+                        gc_after-gc_before
+                        )
 
 
 

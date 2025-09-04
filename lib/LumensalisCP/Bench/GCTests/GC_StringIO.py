@@ -3,6 +3,7 @@ from ..GCSimpleBench import *
 
 #import stringio
 import io
+from LumensalisCP.util.TextIOHelpers import writeIntOnTextIO
 
 def GC_StringIO():
     
@@ -27,6 +28,15 @@ def GC_StringIO():
     def writeMid2(  a:str, b:int ) -> None:
         s2.write( a[b:b+2] )
 
+    def writeInt(  a:str, b:int ) -> None:
+        s2.write( repr(b) )
+
+    def writeIntTIO( a:str, b:int ) -> None:
+        writeIntOnTextIO(s2, b)
+
+    def writeClear(  a:str, b:int ) -> None:
+        s2.seek(0)
+
     def write0(  a:str, b:int ) -> None:
         s2.write( a[0] )
     
@@ -37,7 +47,8 @@ def GC_StringIO():
         for x in range(len(a)):
             s2.write( a[x] )
 
-    s.addTester( "StringIO",
+    if False:
+        s.addTester( "StringIOStrings",
             signature = [GCTArg("a",str), GCTArg("b",int)],
             baseline = baseline,
             tests=[ 
@@ -52,5 +63,30 @@ def GC_StringIO():
         ).addArgs( "easy","hello world",  5
         )
 
+
+
+    def getSlice(  a:str, b:int ) -> None:
+        v = memoryview(s2)[max(0,s2.tell()-b),s2.tell()]
+
+    def getSliced(  a:str, b:int ) -> None:
+        v =  s2[0,s2.tell()]
+
+    def getValue(  a:str, b:int ) -> None:
+        v =  s2.getvalue()
+
+    s.addTester( "StringIOInts",
+            signature = [GCTArg("a",str), GCTArg("b",int)],
+            baseline = baseline,
+            tests=[ 
+                    writeInt,
+                    writeIntTIO,
+                    getSlice,
+                    getSliced,
+                    getValue
+            ]
+        ).addArgs( "easy","hello world",  5
+        )
+    
+    
     s.run(cycles=10)
-    print( f"s1 at {s1.tell()}, s2 at {s2.tell()}" )
+    print( f"\ns1 at {s1.tell()}, s2 at {s2.tell()}" )

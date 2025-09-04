@@ -18,7 +18,7 @@ from LumensalisCP.Temporal.RefreshableList import RootRefreshableList
 from LumensalisCP.util.Reloadable import addReloadableClass, reloadingMethod
 from LumensalisCP.Main import GetManager 
 from LumensalisCP.Temporal.Refreshable import *
-
+from LumensalisCP.Main.Raw import RawAccess
 from LumensalisCP.Tunable.Group import TunableGroup
 
 #from LumensalisCP.Main import ManagerRL
@@ -113,7 +113,7 @@ class MainManager( NamedLocalIdentifiable ): #, I2CProvider, ConfigurableBase, )
         self.__dmx :DMXManager|None = None
         self.__shutdownTasks:List[ExitTask] = []
         self.shields = NliList(name='shields',parent=self)
-
+        
         self.__anonInputs:NliList[InputSource] = NliList(name='inputs',parent=self)
         self.__anonOutputs:NliList[NamedOutputTarget] = NliList(name='outputs',parent=self)
         self.controlPanels = NliList(name='panels',parent=self)
@@ -128,7 +128,8 @@ class MainManager( NamedLocalIdentifiable ): #, I2CProvider, ConfigurableBase, )
         self.__TerrainTronics = None
         self.__tunables = TunableGroup(name='tunables')
         self.sessionUuid = f"{self.name}_{os.urandom(4).hex()}" 
-
+        self.raw = RawAccess(self)
+        
         if not self.unitTesting:
             from LumensalisCP.Main import ManagerRL
             from LumensalisCP.Main import Manager2RL

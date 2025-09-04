@@ -36,38 +36,5 @@ def BSR_client(self:BasicServer, request: Request):
     
     return Response(request, html, content_type="text/html")
 
-
-HTML_TEMPLATE_Bggg = """
- 
-        <script>
-            console.log('client on ' + location.host );
-
-            document.getElementById('myButton').addEventListener('click', function() {
-                fetch('/sakReload', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                }) // Replace with your API endpoint
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.json(); // Parse the response as JSON
-                    })
-                    .then(data => {
-                        // Handle the JSON data received from the API
-                        document.getElementById('responseContainer').innerHTML = JSON.stringify(data, null, 2);
-                    })
-                    .catch(error => {
-                        console.error('There was a problem with the fetch operation:', error);
-                        document.getElementById('responseContainer').innerHTML = 'Error: ' + error.message;
-                    });
-            });
-            let ws = new WebSocket('ws://' + location.host + '/connect-websocket');
-            ws.onopen = () => console.log('WebSocket connection opened');
-            ws.onclose = () => console.log('WebSocket connection closed');
-"""
-
     
 __sayHTTPControlVarsRLImport.complete(globals())

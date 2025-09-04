@@ -1,4 +1,15 @@
+""" Support for adding "proxy" behavior to classes, accessible for remote method invocation.
+
+This allows classes to expose specific methods for "remote access".  Currently,
+that takes the form of REST calls through /proxy route, but this will likely
+expand to other forms of remote invocation in the future.
+
+
+"""
+
 from __future__ import annotations
+
+
 
 from LumensalisCP.ImportProfiler import  getImportProfiler
 __profileImport = getImportProfiler( __name__, globals() )
@@ -77,6 +88,23 @@ def addProxyAccessibleClass(cls:type, **kwds:Unpack[AddProxyAccessibleClassKWDS]
 
 _CLASS_T = TypeVar("_CLASS_T", bound=type)
 class ProxyAccessibleClass:
+    """ Decorator to mark a class as proxy accessible.
+    
+    This allows the LCPF to automatically detect and register any class
+    methods marked with `@proxyMethod(...)`.  
+    
+    Proxy marking is class specific, i.e.
+    it only applies to direct methods of the class being decorated,
+    _not_ methods inherited from parent classes or defined in child classes.
+    
+    If a class defines it's own `@proxyMethod()`s and derives from a parent 
+    class which _also_ defines it's own `@proxyMethod()`s,  decorating _both_
+    classes with `@ProxyAccessibleClass()` is not only acceptable but required in order to make all
+    of the proxy methods remotely accessible.  (normally this could be more 
+    easily achieved using python metaclasses, but those are not
+    supported in CircuitPython )
+
+    """
     def __init__(self,  **kwds:Unpack[AddProxyAccessibleClassKWDS]) -> None:
         self.kwds = kwds
 
@@ -90,6 +118,13 @@ class ProxyAccessibleClass:
 def proxyMethod(  
                 ) -> Callable[ [ Callable[Concatenate[_NLIPA_SELF_T,P], R] ],
             NamedLocalInstanceProxyAction[_NLIPA_SELF_T,P,R] ]:
+    """Decorator to mark a method as a proxy method.
+
+    Methods marked with `@proxyMethod(...)`  *_in a class marked with 
+    `@ProxyAccessibleClass()`_* will be automatically registered by
+    the LCPF to be available for remote invocation.
+
+    """
     
     def decorated(method:Callable[Concatenate[_NLIPA_SELF_T,P], R]  ):
         rv = NamedLocalInstanceProxyAction(

@@ -112,13 +112,50 @@ class Scene(MainChild):
     def onEnter( self, action:TriggerActionTypeArg ) -> None:
         self.__onEnter.append( Invocable.makeInvocable(action) )
 
-    def setOnEnter( self, target:OutputTarget, value:Any) -> None:
+    def setOnEnter( self, target:OutputTarget, value:Any,
+                target2:Optional[OutputTarget]=None, value2:Optional[Any]=None,
+                target3:Optional[OutputTarget]=None, value3:Optional[Any]=None,
+                target4:Optional[OutputTarget]=None, value4:Optional[Any]=None,
+            ) -> None:
         from LumensalisCP.Triggers.Action import do
         self.onEnter( do( target.set, value) )
+
+        if target2 is not None:
+            assert value2 is not None, "value2 must be provided if target2 is set"
+            self.onEnter( do( target2.set, value2) )
+
+        if target3 is not None:
+            assert value3 is not None, "value3 must be provided if target3 is set"
+            self.onEnter( do( target3.set, value3) )
+
+        if target4 is not None:
+            assert value4 is not None, "value4 must be provided if target4 is set"
+            self.onEnter( do( target4.set, value4) )
+
 
     def onExit( self, action:TriggerActionTypeArg ) -> None:
         self.__onExit.append( Invocable.makeInvocable(action) )
 
+    def setOnExit( self, target:OutputTarget, value:Any,
+                target2:Optional[OutputTarget]=None, value2:Optional[Any]=None,
+                target3:Optional[OutputTarget]=None, value3:Optional[Any]=None,
+                target4:Optional[OutputTarget]=None, value4:Optional[Any]=None,
+            ) -> None:
+        from LumensalisCP.Triggers.Action import do
+        self.onExit( do( target.set, value) )
+
+        if target2 is not None:
+            assert value2 is not None, "value2 must be provided if target2 is set"
+            self.onExit( do( target2.set, value2) )
+
+        if target3 is not None:
+            assert value3 is not None, "value3 must be provided if target3 is set"
+            self.onExit( do( target3.set, value3) )
+
+        if target4 is not None:
+            assert value4 is not None, "value4 must be provided if target4 is set"
+            self.onExit( do( target4.set, value4) )
+            
     def nliGetContainers(self) -> NliGetContainersRVT:
         return [self.__rulesContainer, self.__tasksContainer, self.__patternsContainer] # type: ignore[return-value]
     

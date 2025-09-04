@@ -134,8 +134,8 @@ class GCManager(object):
         #self.main: = None
         
         self.min_delta_free = 32768
-        self.__absoluteMinimumThreshold:int = 512000
-        self.__actualFreeThreshold:int = 512000
+        self.__absoluteMinimumThreshold:int = 768000
+        self.__actualFreeThreshold:int = 768000
         
         self.freeBuffer = None
         self.targetCollectPeriod:float|None = 0.15

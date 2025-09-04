@@ -1,99 +1,38 @@
 from LumensalisCP.Simple import * # http://lumensalis.com/ql/h2Start
 
 #############################################################################
-sayAtStartup( "start project" ) #  http://lumensalis.com/ql/h2Main
-main = ProjectManager(  "TwinCastlesFountain",
-                      #useWifi=False,
-                      useWifi=True,
-                       #profile=True, profileMemory=3   
-            )
+main = ProjectManager(  "HammerFountain", useWifi=True)
 
-scene = main.addScene( ) 
+stopped = main.addScene()  # scene active when wheel is "stopped"
+spinning = main.addScene()  # scene active when wheel is "spinning"
 
-NEO_PIXEL_COUNT = 40
-
-caernarfon = main.TerrainTronics.addCaernarfon( 
-                config="secondary", 
-                neoPixelCount=NEO_PIXEL_COUNT,
-                refreshRate = 0.05
-        )
-
+# using a Cilgerran Castle board.  Take note of all the details
+# you have to provide about which type of controller you're using, 
+# what pins the Castle board is connected to, how many
+# Cilgerran channels you want to use as LEDs, whether you
+# want to enable the motor controller or battery monitor support...
 cilgerran = main.TerrainTronics.addCilgerran()
 
-leds = cilgerran.ledSource
-leds.addLeds(8)
+fountainWheel  = cilgerran.motor
 
-firstTwo = leds.nextNLights(2)
-secondTwo = leds.nextNLights(2)
-lastFour = leds.nextNLights(4)
+# set up the "UI" - everything here (as well as the ability to switch
+# scenes) will automatically show up in the WebUI provided by LCPF
+ui = main.panel
+fountainSpeed = ui.addZeroToOne("water wheel rotation speed")
+ui.monitorFloat( cilgerran.batteryMonitor ).displayName = "Battery Voltage"
 
-brightness = main.panel.addZeroToOne(startingValue=0.9)
-f0 = main.panel.addZeroToOne(startingValue=0.1)
-f1 = main.panel.addZeroToOne(startingValue=0.1)
-f2 = main.panel.addZeroToOne(startingValue=0.1)
-f3 = main.panel.addZeroToOne(startingValue=0.1)
-f4 = main.panel.addZeroToOne(startingValue=0.1)
-f5 = main.panel.addZeroToOne(startingValue=0.9)
-f6 = main.panel.addZeroToOne(startingValue=0.6)
-f7 = main.panel.addZeroToOne(startingValue=0.6)
-rbSpeed = main.panel.addSeconds(startingValue=0.5,min=0.1,max=10)
-rpSpread = main.panel.addFloat(startingValue=0.5,min=0.3,max=5.0)
-#ir = caernarfon.addIrRemote()
-ringBowLeds = caernarfon.pixels.ring(16)
+# Now everything is in place so we can tell it _what_ we want the
+# project to do.  Not _how_ to do it - LCPF takes care of that for you.
 
-blinky, rbow = scene.addPatterns(
-    Blink(secondTwo,onTime=1.0, offTime=1.0),
-    #Blink(firstTwo,onTime=3.3, offTime=3.3),
-    #Cylon(firstFour, sweepTime=0.7),
-    #Blink(lastFour,onTime=15.0, offTime=1.5),
-    Rainbow(ringBowLeds, colorCycle=rbSpeed, spread=rpSpread, refreshRate=0.05),
-)
-leds.brightness = 1
-rbow.enableDbgOut = True
+# when we "change" to spinning, enable override
+spinning.setOnEnter( fountainWheel.manualOverride, True  )
 
-BRIGHTNESS_SWEEP_SECONDS = 10.0
-#@addSceneTask( scene, period = 0.1 )
-def brighten():
-    brightness = (
-        divmod( main.when, BRIGHTNESS_SWEEP_SECONDS )[1]
-            / BRIGHTNESS_SWEEP_SECONDS ) #/ 10.0
-    
-    # print( f"brightness = {brightness}")
-    leds.brightness = brightness
+# while we are in the spinning scene, set the motor speed from the fountainSpeed control
+spinning.addRule(fountainWheel.manualSpeed, fountainSpeed )
 
-#@addSceneTask( scene, refreshRate = 0.1 )
-def setLeds() -> None:
-    leds.brightness = brightness.value
-    leds[0].setValue( f0.value )
-    #leds[1].setValue( f1.value )
-    #leds[2].setValue( f2.value )
-    #leds[3].setValue( f3.value )
-    #leds[4].setValue( f4.value )
-    #leds[5].setValue( f5.value )    
-    #leds[5].setValue( f6.value )
-    leds[6].setValue( f7.value )
+# when we "leave" to spinning scene, stop the motor
+spinning.setOnExit( fountainWheel.manualSpeed, 0 )
+spinning.setOnExit( fountainWheel.manualOverride, False  )
 
-#scene.enableDbgOut = True
-tLeds = scene.addTask(task=setLeds, refreshRate = 0.1  )
-#tLeds.enableDbgOut = True
-            
-
-leds.enableDbgOut = True
-fountainFlow = leds[0]
-fountainFlow.enableDbgOut = True
-cil7 = leds[7]
-cil7.enableDbgOut = True
-
-# @addSceneTask( scene, refreshRate = 1.0 )
-def showBattery():
-    #b = leds.brightness
-    #print( f"battery = {cilgerran.batteryMonitor.value}, brightness={b}")
-    ledStr = ",".join( [f"{led.sourceIndex}:{led.value:0.2f}:{led.dutycycle}" for led in leds])
-    print( f'bat:{cilgerran.batteryMonitor.value}, bright:{leds.brightness}, leds={ledStr}')
-    #leds.brightness = b
-
-tBattery  = scene.addTask(task=showBattery, refreshRate = 3.0  )
-#tBattery.enableDbgOut = True
-
-
+# 3, 2, 1, IGNITION
 main.launchProject( globals() )

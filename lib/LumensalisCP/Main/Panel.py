@@ -4,7 +4,7 @@ from LumensalisCP.ImportProfiler import  getImportProfiler
 _sayImport = getImportProfiler( __name__, globals() )
 
 # pylint: disable=redefined-builtin,unused-variable,unused-argument,broad-exception-caught
-# pyright: reportUnusedImport=false
+# pyright: reportUnusedImport=false, reportPrivateUsage=false
 
 from LumensalisCP.IOContext import *
 
@@ -14,6 +14,7 @@ from LumensalisCP.Triggers.Action import do
 from LumensalisCP.Eval.Evaluatable import NamedEvaluatableProtocolT, NamedEvaluatableProtocol
 from LumensalisCP.Scenes.Scene import Scene
 from LumensalisCP.Identity.Proxy import proxyMethod, ProxyAccessibleClass
+from LumensalisCP.Temporal.Refreshable import RefreshableNAP
 
 _sayImport.parsing()
 
@@ -252,6 +253,159 @@ class PanelTrigger(Trigger):
 
 #############################################################################
 
+class PanelTethered(RefreshableNAP):
+    """ A source of "real-time-ish" control with safety features to detect when/if it is "disconnected"
+
+    For use primarily in motion oriented scenarios - for example
+      - directional joystick
+      - steering wheel
+      - accelerator / brake
+    where the user "manually" controls motions (like dc motors driving wheels)
+    from a potentially remote source (like a WebUI) where a "dropped connection"
+    while still in motion could lead to a loss of control, like a run-away 
+    vehicle.
+
+    """
+    class KWDS(RefreshableNAP.KWDS):
+        timeout:NotRequired[TimeSpanInSeconds]
+
+    def __init__(self, panel:ControlPanel, **kwds:Unpack[RefreshableNAP.KWDS]) -> None:
+        main = panel.main # or getMainManager()
+        assert main is not None
+        self.panel = panel
+        self.__timeout:TimeSpanInSeconds = TimeSpanInSeconds(kwds.pop('timeoutSeconds', 0.5))
+        kwds.setdefault('autoList',main._refreshables ) # type: ignore[assignment]
+        super().__init__(**kwds)
+
+        self._lastPingTime = getOffsetNow()
+        #self.__isActive:bool  = False
+        self.__isTethered:bool  = False
+        self.__pendingConnection:bool = False
+        self.__tethered = NestedInputSource( value=False, name='tethered' )
+        
+        self.__inputs:NliList[PanelTetheredInputSource[Any]] = NliList(name='inputs', parent=self)
+
+    @property
+    def tethered(self) -> NestedInputSource:
+        """ input which indicates that there is a live safely connected tether connection"""
+        return self.__tethered
+
+    @property
+    def isTethered(self) -> bool:
+        """ True if there is a live safely connected tether connection"""
+        return self.__isTethered
+
+    def ping( self, context:EvaluationContext ) -> None:
+        """ must be called while the connection is active, otherwise all inputs will be "safed" 
+        """
+        now = getOffsetNow()
+        if self.__pendingConnection:
+            assert self.__isTethered is False
+            self.__pendingConnection = False    
+            self.__isTethered = True
+
+    def _makeTethered(self,context:Optional[EvaluationContext]=None) -> None:
+        self.__isTethered = False
+        self.__isActive = False
+        self.__pendingConnection = False
+        self._lastPingTime = getOffsetNow()
+        if not self.isActiveRefreshable:
+            self.activate(context)
+
+    def breakTether(self,context:Optional[EvaluationContext]=None) -> None:
+        self.infoOut( "breakTether" )
+
+        self.__isTethered = False
+        self.__isActive = False
+        self.__pendingConnection = False
+        self._lastPingTime = 0.0
+        if context is None: context = UpdateContext.fetchCurrentContext(None)
+        try:
+            self.__tethered._parentSet( False, context )
+        except Exception as inst:
+            self.SHOW_EXCEPTION(inst,'failed to set tethered false')
+
+        for input in self.__inputs:
+            try:
+                input.makeSafe(context)
+            except Exception as inst:
+                self.SHOW_EXCEPTION(inst,f'failed to makeSafe {input.name}')
+
+        if self.isActiveRefreshable:
+            self.deactivate(context)
+
+
+    def isConnected(self) -> bool:
+        return self.__isActive
+    
+    def derivedRefresh(self,context:'EvaluationContext') -> None:
+        now = getOffsetNow()
+        elapsed = now - self._lastPingTime
+        if elapsed > self.__timeout:
+            self.breakTether(context)
+        #self._lastPingTime
+        #raise NotImplementedError( f"{self.__class__.__name__}.derivedRefresh not implemented")
+
+    def setFromWs(self, data: dict[str,Any]) -> None:
+        raise NotImplementedError( f"{self.__class__.__name__}.setFromWs not implemented")
+
+class PanelTetheredInputSource(InputSource, Generic[CVT]):
+    """ A simple input source for tethered controls.
+    """
+
+    def __init__(self, parent: PanelTethered, safeValue:CVT, **kwds:Unpack[InputSource.KWDS]) -> None:
+        super().__init__(**kwds)
+        self.__parent = parent
+        self.__safeValue = safeValue
+        self.__simpleValue = safeValue
+
+    #def isConnected(self) -> bool:
+    #    return self.__parent._isConnected
+
+
+    def makeSafe(self,context:EvaluationContext) -> None:
+        self.__simpleValue = self.__safeValue
+        self.updateValue(context)
+
+
+    @final
+    def getDerivedValue(self, context:EvaluationContext) -> Any:
+        return self.__simpleValue if self.__parent.isTethered else self.__safeValue
+
+    def tetheredSet( self, value:Any, context:EvaluationContext ) -> None:
+        self.__simpleValue = value
+        self.updateValue(context)
+
+PanelTetheredInputSourceT = GenericT(PanelTetheredInputSource)
+
+class PanelJoystick( PanelTethered ):
+    """ A joystick controller for manual motion control.
+    """
+
+    def __init__(self, panel:ControlPanel, **kwds:Unpack[PanelTethered.KWDS]) -> None:
+        super().__init__(panel=panel, **kwds)
+        self.__x = PanelTetheredInputSourceT[PlusMinusOne](parent=self, safeValue=0.0, name='x')
+        self.__y = PanelTetheredInputSourceT[PlusMinusOne](parent=self, safeValue=0.0, name='y')
+    
+    @property
+    def x(self) -> PanelTetheredInputSource[PlusMinusOne]: return self.__x
+
+    @property
+    def y(self) -> PanelTetheredInputSource[PlusMinusOne]: return self.__y
+
+    def setFromWs(self, data: dict[str,Any], context:Optional[EvaluationContext]=None) -> None:
+        if context is None: context = UpdateContext.fetchCurrentContext(None)
+        try:
+            val = data['value']
+            self.__x.tetheredSet(val['x'],context)
+            self.__y.tetheredSet(val['y'],context)
+            self.ping(context)
+        except Exception as inst:
+            self.SHOW_EXCEPTION(inst,f'failed to setFromWs {data}')
+            self.breakTether()
+
+#############################################################################
+
 class ControlPanel( MainChild ):
     """ Panels define a collection of controls which can be used to 
      interact with your project
@@ -267,6 +421,7 @@ class ControlPanel( MainChild ):
         self._controlVariables:NliList[PanelControl[Any,Any]] = NliList(name='controls',parent=self)
         self._monitored:NliList[PanelMonitor[Any]] = NliList(name='monitored',parent=self)
         self._triggers:NliList[PanelTrigger] = NliList(name='triggers',parent=self)
+        self._tethers:NliList[PanelTethered] = NliList(name='tethers',parent=self)
 
     @property    
     def monitored(self) -> NliList[PanelMonitor[Any]]:
@@ -280,6 +435,9 @@ class ControlPanel( MainChild ):
     def triggers(self) -> NliList[PanelTrigger]:
         return self._triggers
     
+    @property
+    def tethers(self) -> NliList[PanelTethered]:
+        return self._tethers
 
     def derivedRefresh(self,context:EvaluationContext) -> None:
         for m in self._monitored:
@@ -390,6 +548,12 @@ class ControlPanel( MainChild ):
         trigger = PanelTrigger(**kwds)
         self._triggers.append(trigger)
         return trigger
+
+    def addJoystick( self,  **kwds:Unpack[PanelJoystick.KWDS] ) -> PanelJoystick:
+        """ add control for a joystick, see  http://lumensalis.com/ql/h2PanelControl """
+        rv = PanelJoystick( self, **kwds)
+        rv.nliSetContainer(self._tethers)
+        return rv
 
     #########################################################################
     def _addMonitor( self,

@@ -229,3 +229,27 @@ table.center {
 .slider-seek [role="slider"]:focus .value {
   display: block;
 }
+
+/* Joystick based on https://codepen.io/jiffy/pen/zrqwON by Jeff Treleaven */
+.joystickCanvas {
+  height: 300px;
+  width: 300px;
+  border-radius: 300px;
+  -moz-border-radius: 300px;
+  -webkit-border-radius: 300px;
+  text-align: center;
+  background-color: #80d5ff;
+  font: 24px/300px Helvetica, Arial, sans-serif;
+  cursor: all-scroll;
+  user-select: none;
+  z-index: -100;
+}
+
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}

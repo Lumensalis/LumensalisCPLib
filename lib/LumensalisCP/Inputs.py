@@ -77,29 +77,27 @@ class InputSource(NamedLocalIdentifiable, ExpressionTerm, NamedEvaluatableProtoc
             context.addChangedSource( self )
             return True
 
-        #with context.subFrame('InputSource.updateValue', self.name) as frame:
-        if True:
-            if context.debugEvaluate:
-                with context.nestDebugEvaluate() as nde:
-                    val = self.getDerivedValue( context )
-                    self.__latestUpdateIndex = context.updateIndex
-                    
-                    if val == self.__latestValue:
-                        if self.enableDbgOut: self.dbgOut( "updateValue unchanged (%r) on update %d", self.__latestValue, context.updateIndex )
-                        return False
-                    else:
-                        nde.say( self, "value changing from %r to %r on %s", self.__latestValue, val, context.updateIndex )
-            else:
+        if context.debugEvaluate:
+            with context.nestDebugEvaluate() as nde:
                 val = self.getDerivedValue( context )
                 self.__latestUpdateIndex = context.updateIndex
+                
                 if val == self.__latestValue:
+                    if self.enableDbgOut: self.dbgOut( "updateValue unchanged (%r) on update %d", self.__latestValue, context.updateIndex )
                     return False
-                if self.enableDbgOut: self.dbgOut( "updateValue changing from %r to %r on %s", self.__latestValue, val, context.updateIndex )
-                    
-            self.__latestValue = val
-            self.__latestChangeIndex = context.updateIndex
-            #frame.snap( "__callOnChanged" )
-            self.__callOnChanged(context)
+                else:
+                    nde.say( self, "value changing from %r to %r on %s", self.__latestValue, val, context.updateIndex )
+        else:
+            val = self.getDerivedValue( context )
+            self.__latestUpdateIndex = context.updateIndex
+            if val == self.__latestValue:
+                return False
+            if self.enableDbgOut: self.dbgOut( "updateValue changing from %r to %r on %s", self.__latestValue, val, context.updateIndex )
+                
+        self.__latestValue = val
+        self.__latestChangeIndex = context.updateIndex
+        #frame.snap( "__callOnChanged" )
+        self.__callOnChanged(context)
 
         return True
 
@@ -133,6 +131,7 @@ class SimpleInputSource(InputSource,OutputTarget):
         super().__init__(**kwargs)
         self.__simpleValue = value
     
+    @final
     def getDerivedValue(self, context:EvaluationContext) -> Any:
         return self.__simpleValue
 
@@ -140,7 +139,25 @@ class SimpleInputSource(InputSource,OutputTarget):
         self.__simpleValue = value
         self.updateValue(context)
     
+class NestedInputSource(InputSource):
+    """A nested input source for use as a member of a class which internally updates it
+    
+    Unlike a SimpleInputSource,  it isn't (trivially) updatable - it is not
+    an OutputTarget and the "parent" needs to use _parentSet 
+
+    """
+    def __init__( self, value:Any, **kwargs:Unpack[InputSource.KWDS] ):
+        super().__init__(**kwargs)
+        self.__simpleValue = value
+    
+    @final
+    def getDerivedValue(self, context:EvaluationContext) -> Any:
+        return self.__simpleValue
+
+    def _parentSet( self, value:Any, context:EvaluationContext ) -> None:
+        self.__simpleValue = value
+        self.updateValue(context)    
 
 _sayInputsImport.complete(globals())
 
-__all__ = [ 'InputSource', 'InputSourceCB', 'SimpleInputSource' ]
+__all__ = [ 'InputSource', 'InputSourceCB', 'SimpleInputSource', 'NestedInputSource' ]

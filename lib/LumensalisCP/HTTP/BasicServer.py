@@ -26,6 +26,8 @@ from LumensalisCP.util.Reloadable import addReloadableClass, reloadingMethod
 
 from LumensalisCP.HTTP._httpBits import *
 
+from LumensalisCP.HTTP.WebsocketSession import WebsocketSession
+
 #############################################################################
 __sayHTTPBasicServerImport.parsing()
 
@@ -47,7 +49,7 @@ class BasicServer(Server,MainAsyncChild):
                         root_path="/www")
 
         # TODO: make actual client instance for multiple connections...???
-        self.websocket: Websocket|None = None
+        self.websockets:list[WebsocketSession] = []
 
         #self.main = main
         self.monitoredVariables:List[InputSource] = []
@@ -162,12 +164,16 @@ class BasicServer(Server,MainAsyncChild):
         def connect_client(request: Request) -> Websocket: # pyright: ignore[reportUntypedFunctionDecorator,reportUnusedFunction]
             #global websocket  # pylint: disable=global-statement
 
-            if self.websocket is not None:
-                self.websocket.close()  # Close any existing connection
+            if True:
+                session = WebsocketSession(self, request)
+                return session.websocket
+            else:
+                if self.websocket is not None:
+                    self.websocket.close()  # Close any existing connection
 
-            self.websocket = Websocket(request, buffer_size=8192)
-            self.priorMonitoredValue = {}
-            return self.websocket
+                self.websocket = Websocket(request, buffer_size=8192)
+                self.priorMonitoredValue = {}
+                return self.websocket
 
      
         @self.route("/") # type:ignore[override]
@@ -178,18 +184,10 @@ class BasicServer(Server,MainAsyncChild):
             """
             self.infoOut( "base request...")
             return Response(request, "Hello from the CircuitPython HTTP Server!")
-        
-    @reloadingMethod
-    def updateSocketClient(self, useStringIO:bool=False )->None:...
-
-    @reloadingMethod
-    def handle_websocket_request(self): ...
 
     #########################################################################
     async def runAsyncSetup(self) -> None:
         self.startupOut( f"{self.__class__.__name__} serverLoop starting" )
-        self.useStringIO = True
-        self._ws_jsonBuffer:io.StringIO|None = io.StringIO(8192) if self.useStringIO else None # type:ignore[assignment]
     
         socket = self.main.socketPool
         self.startupOut( "socketPool=%r", socket )
@@ -210,10 +208,13 @@ class BasicServer(Server,MainAsyncChild):
 
             if self._asyncStep == 1:
                 self._asyncStep = 1
-                if self.websocket is not None and not self.websocket.closed:
-                    self.handle_websocket_request()
+                for ws in self.websockets:
+                    ws.handle_websocket_request()
+                #if self.websocket is not None and not self.websocket.closed:
+                #     self.handle_websocket_request()
             elif self._asyncStep == 2:
-                self.updateSocketClient(self.useStringIO)
+                for ws in self.websockets:
+                    ws.updateSocketClient()
             else:
                 pool_result = self.poll()
                 if pool_result == adafruit_httpserver.REQUEST_HANDLED_RESPONSE_SENT:

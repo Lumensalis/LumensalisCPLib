@@ -230,30 +230,83 @@ class UIPage(UIPageSection):
     <head>
         <title>Websocket Client</title>
         <link rel="stylesheet" href="static/common.css" />
-        <script src="static/controlSlider.js"></script>
-        
+
     </head>
-        <body>
-        <div class="pageContainer">
-        <div class="clientPage">
+        <body onload="pageInit();">
 """
+        yield """        
+
+    <div class="pageContainer">
+"""
+        if False:   yield """
+        <div class="noselect">
+            <div class="container space-top">
+                <h1 class="center blue-text thin">Canvas Joystick</h1>
+                <div class="center-align">
+                <canvas id="joysticky" class="joystickCanvas" height="300" width="300"></canvas>
+                </div>
+                <p id="xVal" class="light">X: </p>
+                <p id="yVal" class="light">Y: </p>
+            </div>
+        </div>"""
+
+        yield """        
+        <div class="clientPage">
+ 
+"""
+        joyTemp = """
+        <div class="noselect">
+            <div class="container space-top">
+                <h1 class="center blue-text thin">Canvas Joystick</h1>
+                <div class="center-align">
+                <canvas id="joystick" height="300" width="300"></canvas>
+                </div>
+                <p id="xVal" class="light">X: </p>
+                <p id="yVal" class="light">Y: </p>
+            </div>
+        </div>"""
 
         yield from self.yieldSectionHtml()
 
         yield  """
-        </div></div><script>
+            </div>
+"""
+        if False: yield """
+        <div class="noselect">
+            <div class="container space-top">
+                <h1 class="center blue-text thin">Canvas Joystick</h1>
+                <div class="center-align">
+                <canvas id="id_joy_joystick" class="joystickCanvas" height="300" width="300"></canvas>
+                </div>
+                <p id="xVal" class="light">X: </p>
+                <p id="yVal" class="light">Y: </p>
+            </div>
+        </div>"""
+
+        yield  """
+        </div>
+"""
+        yield  """
+        <script>
+        function pageInit() {
+            console.log( "jquery init..." );
+            // var joystick = new JoystickControl("joysticky");
+                
             console.log('client on ' + location.host );
             let ws = new WebSocket('ws://' + location.host + '/connect-websocket');
             ws.onopen = () => console.log('WebSocket connection opened');
             ws.onclose = () => console.log('WebSocket connection closed');
+            var thinner = makePanelsThinner(ws);
 """
+
         yield from self.yieldSelectorScript()
         yield from self.yieldJavaScript()
         yield """
+
             function handleWSMessage( event ) {
                 try {
                     const receivedMessage = JSON.parse(event.data);
-                    console.log( "ws receivedMessage", receivedMessage);
+                    // console.log( "ws receivedMessage", receivedMessage);
 
                 
 """
@@ -274,8 +327,17 @@ class UIPage(UIPageSection):
                   }, delay)
                 }
             }
+        } 
             
         </script>
+        <script src='//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.js'></script>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.3/js/materialize.js'></script>
+        <script src='https://hammerjs.github.io/dist/hammer.js'></script>
+        <script src='https://code.createjs.com/createjs-2015.11.26.combined.js'></script>
+        <script src="static/controlSlider.js"></script>
+        <script src="static/joystick.js"></script>
+        <script src="static/thinner.js"></script>
+
     </body>
 </html>
 """
@@ -299,48 +361,6 @@ class UIPage(UIPageSection):
         html =  "".join(self.y2())
         return html
 
-
-
-HTML_TEMPLATE_A = """
-<html lang="en">
-    <head>
-        <title>Websocket Client</title>
-        <link rel="stylesheet" href="static/common.css" />
-        <script src="static/controlSlider.js"></script>
-        
-    </head>
-
-"""
-
-HTML_TEMPLATE_B = """
- 
-        <script>
-            console.log('client on ' + location.host );
-
-
-            let ws = new WebSocket('ws://' + location.host + '/connect-websocket');
-            ws.onopen = () => console.log('WebSocket connection opened');
-            ws.onclose = () => console.log('WebSocket connection closed');
-"""
-#            ws.onerror = error => cpuTemp.textContent = error;
-
-HTML_TEMPLATE_Z = """            
-            ws.onmessage = event => handleWSMessage( event );
-
-            function debounce(callback, delay = 1000) {
-                let timeout
-                return (...args) => {
-                    clearTimeout(timeout)
-                    timeout = setTimeout(() => {
-                    callback(...args)
-                  }, delay)
-                }
-            }
-            
-        </script>
-    </body>
-</html>
-"""
 
 #############################################################################
 

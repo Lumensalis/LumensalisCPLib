@@ -115,6 +115,19 @@ def handleWsChanges( self:MainManager, changes:StrAnyDict ):
                         break
                 if trigger is None:
                     self.warnOut( f"missing trigger {triggerName} for wsChanges {changes}")
+            tetherUpdate = changes.get( 'tether', None )
+            if tetherUpdate is not None:
+                tetherName = tetherUpdate.get( 'name', None )
+                tether = None
+                for panel in self.controlPanels:
+                    tether = panel._tethers.getPossiblyMissing(tetherName)
+                    if tether is not None:
+                        self.infoOut( f"wsChanges tether {tetherName}" )
+                        tether.setFromWs( tetherUpdate)
+                        #tether.fireTrigger( self.getContext() )
+                        break
+                if tether is None:
+                    self.warnOut( f"missing tether {tetherName} for wsChanges {changes}")
 
 @_mmMeta.reloadableMethod()
 def dumpLoopTimings( self:MainManager, count:int, minE:Optional[float]=None, minF:Optional[float]=None, **kwds:StrAnyDict ) -> list[Any]:

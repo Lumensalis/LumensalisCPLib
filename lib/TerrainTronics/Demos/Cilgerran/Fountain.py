@@ -21,8 +21,8 @@ fountainFlow = fountainChannels[0]
 # setup tunables
 rotateTimeBetweenPositions = main.tunables.addSeconds(2.6)
 rotationSpeedBetweenPositions = main.tunables.addZeroToOne(0.9)
-shishiOdoshiFlowRate = main.tunables.addZeroToOne(0.5, "shishi-odoshi flow rate")
-waterWheelFlowRate = main.tunables.addZeroToOne(0.95, "water wheel flow rate")
+shishiOdoshiFlowRate = main.tunables.addZeroToOne(0.95, "shishi-odoshi flow rate")
+waterWheelFlowRate = main.tunables.addZeroToOne(0.55, "water wheel flow rate")
 
 # setup panel controls - will be available in the UI
 ui = main.panel
@@ -35,7 +35,8 @@ ui.monitorPlusMinusOne( motorSpeed )
 
 sliders = main.addPanel(displayName="Sliders", useSliders=True)
 flowRate = sliders.addZeroToOne(0.7, "fountain flow rate")
-main.dmx.addDimmerInputs( 1, "Bamboo Lamp", "Fountain Lamp", "WheelLamp",
+lBamboo, lFountain, lWheel = main.dmx.addDimmerInputs( 
+                 "Bamboo Lamp", "Fountain Lamp", "WheelLamp",
                           lights=cilLeds, panel=sliders ) 
 
 jogPanel = main.addPanel(displayName="Jog Controls")
@@ -52,11 +53,13 @@ manualControl.addRule(fountainFlow, flowRate)
 manualControl.addRule(fountainTurret.manualSpeed, motorSpeed)
 manualControl.addRule(fountainTurret.manualOverride, manualSpeedControl)
 
-waterWheel.setOnEnter( fountainFlow, waterWheelFlowRate)
+waterWheel.setOnEnter( fountainFlow, waterWheelFlowRate,
+                        lBamboo, 0, lFountain, 0.05, lWheel, 1.0,  )
 waterWheel.onChangeTo(shishiOdoshi, do(
     fountainTurret.spin, rotationSpeedBetweenPositions, rotateTimeBetweenPositions))
 
-shishiOdoshi.setOnEnter(fountainFlow, shishiOdoshiFlowRate)
+shishiOdoshi.setOnEnter(fountainFlow, shishiOdoshiFlowRate,
+                        lBamboo, 1, lFountain, 0.1, lWheel, 0,  )
 shishiOdoshi.onChangeTo(waterWheel, do(
     fountainTurret.spin, rotationSpeedBetweenPositions*-1, rotateTimeBetweenPositions))
 

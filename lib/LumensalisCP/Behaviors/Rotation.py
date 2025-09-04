@@ -190,6 +190,8 @@ class SpinTimedMovement(SpinMovement):
         return f"({self.__class__.__name__}@ {hex(id(self))} {self.name!r} directionalSpeed={self.directionalSpeed}, duration={self.duration})"
     # def derivedExit(self, context:EvaluationContext) -> None: ...
 
+TDT = TypeVar('TDT') # bound=TypedDict
+
 class DCMotorSpinner(Spinner):
     """ Spinner driven by servo
 
@@ -201,6 +203,17 @@ class DCMotorSpinner(Spinner):
         lowerLimit:NotRequired[InputSource]
         upperLimit:NotRequired[InputSource]
         defaultDirectionalSpeed:NotRequired[PlusMinusOneEvalArg]
+
+    @classmethod
+    def extractMotorKwds(cls, kwargs:TDT) -> tuple[ KWDS, TDT ]:
+        lowerLimit = kwargs.pop('lowerLimit', None)
+        upperLimit = kwargs.pop('upperLimit', None)
+        defaultDirectionalSpeed = kwargs.pop('defaultDirectionalSpeed', None)
+        return (
+            { 'lowerLimit': lowerLimit, 'upperLimit': upperLimit,
+              'defaultDirectionalSpeed': defaultDirectionalSpeed },
+              kwargs
+        )
 
     @tunableZeroToOne(1.0)
     def maxSpeed(self, setting:ZeroToOneSetting, context:EvaluationContext) -> None:

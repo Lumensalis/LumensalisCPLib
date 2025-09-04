@@ -29,8 +29,9 @@ boom = main.panel.addTrigger( description="Jamie Wants..." )
 # HARDWARE : http://lumensalis.com/ql/h2Hardware
 sayAtStartup( "setup the Caernarfon Castle" )  # http://lumensalis.com/ql/h2Caernarfon
 caernarfon = main.TerrainTronics.addCaernarfon( )
-
 lidServo = caernarfon.initServo( 1, movePeriod=0.05 )
+neoPixels = caernarfon.addNeoPixels(pixelCount=45) 
+
 ir = caernarfon.addIrRemote(codenames="dvd_remote", refreshRate=5.0 )
 neoPixA = caernarfon.addNeoPixels(pixelCount=45) 
 neoPixB = caernarfon.addNeoPixels(servoPin=3,pixelCount=35)
