@@ -53,7 +53,7 @@ def handle_websocket_request(self:WebsocketSession):
     if data is None:
         return
     try:
-        self.infoOut( 'websocket data = %r', data )
+        if self.enableDbgOut:self.infoOut( 'websocket data = %r', data )
         jData = json.loads(data)
         main = getMainManager()
         main.handleWsChanges(jData)

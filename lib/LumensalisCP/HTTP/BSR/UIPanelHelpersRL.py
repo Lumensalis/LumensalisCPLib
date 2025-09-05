@@ -243,17 +243,10 @@ class PanelSlider(UIPageHelpersRL.UIPageSectionChild):
                 function observeMutations(mutations) {{
                     value = { self.sliderSelectorName }.innerHTML;
                     thinner.controls.getChannel("{self.panelInstance.name}").set(value);
-                    const packet = JSON.stringify( 
-                        {{ name: '{self.panelInstance.name}', value: value }}
-                        );
-                    console.log( "sending packet", packet );
-                    //ws.send( packet );
+                    
                 }}
 
-                var observer = new MutationObserver(
-                    debounce(observeMutations,200)
-                    //observeMutations
-                );
+                var observer = new MutationObserver( observeMutations );
 
                 // Pass in the target node, as well as the observer options.
                 observer.observe({ self.sliderSelectorName }, {{
@@ -426,30 +419,18 @@ class WsPaneJoystick(UIPageHelpersRL.UIPageSectionChild):
             var { self.joystickInstanceName } = new JoystickControl("{self.joystickId}");
             // const { self.joystickSelectorName } = document.getElementById("{self.joystickId}");
             console.log( "added joystick", { self.joystickId } );
-            {self.joystickInstanceName}.onJoystickUpdate =  debounce( (pos) => {{
+            {self.joystickInstanceName}.onJoystickUpdate =  (pos) => {{
 
                 thinner.tethers.getChannel("{self.panelInstance.name}").set({{
                     x: pos.x,
                     y: pos.y
                 }});
-                const packet = JSON.stringify( {{
-                        tether: {{
-                            name: '{self.panelInstance.name}',
-                            x: pos.x,
-                            y: pos.y
-                        }},
-                        
-                    }} );
-                console.log( "sending packet", packet );
-                //ws.send( packet );
-            }}, 100);
+            }} ;
 """)
         
 
     def yieldHtml(self):
-        if True:
-            if True:
-                yield f"""
+        yield f"""
         <div class="noselect">
             <div class="container space-top">
                 <canvas id="{self.joystickId}"  class="joystickCanvas" height="300" width="300"></canvas>
@@ -457,21 +438,7 @@ class WsPaneJoystick(UIPageHelpersRL.UIPageSectionChild):
         </div>
     
 """
-            else: yield from ()
 
-        else:
-            yield f"""
-        <div class="noselect">
-            <div class="container space-top">
-                <h1 class="center blue-text thin">Canvas Joystick</h1>
-                <div class="center-align">
-                <canvas id="joystick" height="300" width="300"></canvas>
-                </div>
-                <p id="xVal" class="light">X: </p>
-                <p id="yVal" class="light">Y: </p>
-            </div>
-        </div>
-"""
 
 class PanelTetheredGroup( UIPageHelpersRL.UIPageSection):
     def __init__(self, panel: PanelParts, section:Optional[UIPageHelpersRL.UIPageSection]=None):

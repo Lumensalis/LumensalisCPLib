@@ -196,6 +196,8 @@ class PanelMonitor( NamedLocalIdentifiable, Generic[CVT]   ):
     def controlValue(self) -> CVT | None:
         return self.__varValue
 
+PanelMonitorT = GenericT(PanelMonitor)
+
 class PanelPipe( InputSource, OutputTarget,  Generic[CVT] ):
     """ combination of OutputTarget and InputSource
 
@@ -224,6 +226,16 @@ class PanelPipe( InputSource, OutputTarget,  Generic[CVT] ):
         self.__varValue = value
         self.updateValue( UpdateContext.fetchCurrentContext(context) )
 
+PanelPipeT = GenericT(PanelPipe)
+
+class PanelMonitorOutput( PanelPipeT[CVT], PanelMonitorT[CVT],  Generic[CVT]   ):
+    """ combination of OutputTarget and InputSource
+    """
+    def __init__(self, **kwds:Unpack[IVT_KWDS[CVT]] ) -> None:
+        PanelPipeT[CVT].__init__(self, **kwds )
+        PanelMonitorT[CVT].__init__( self, self )
+
+PanelMonitorOutputT = GenericT(PanelMonitorOutput)
 
 #############################################################################
 
@@ -244,8 +256,6 @@ class PanelTrigger(Trigger):
         action = kwds.pop('action', None)
         if action is not None:
             self.addAction(action)
-
-
 
     def setScene(self, scene: Scene) -> None:
         self.addAction( do( scene.manager.setScene, scene ) )
@@ -298,15 +308,17 @@ class PanelTethered(RefreshableNAP):
     def ping( self, context:EvaluationContext ) -> None:
         """ must be called while the connection is active, otherwise all inputs will be "safed" 
         """
-        now = getOffsetNow()
+        self._lastPingTime = getOffsetNow()
         if self.__pendingConnection:
-            assert self.__isTethered is False
-            self.__pendingConnection = False    
-            self.__isTethered = True
+            self._makeTethered(context)
+        elif not self.__isTethered:
+            self.__pendingConnection = True
+            self.infoOut( "ping - pending connection" )
+
 
     def _makeTethered(self,context:Optional[EvaluationContext]=None) -> None:
-        self.__isTethered = False
-        self.__isActive = False
+        self.infoOut( "_makeTethered" )
+        self.__isTethered = True
         self.__pendingConnection = False
         self._lastPingTime = getOffsetNow()
         if not self.isActiveRefreshable:
@@ -359,18 +371,15 @@ class PanelTetheredInputSource(InputSource, Generic[CVT]):
         self.__safeValue = safeValue
         self.__simpleValue = safeValue
 
-    #def isConnected(self) -> bool:
-    #    return self.__parent._isConnected
-
-
     def makeSafe(self,context:EvaluationContext) -> None:
         self.__simpleValue = self.__safeValue
         self.updateValue(context)
 
-
     @final
     def getDerivedValue(self, context:EvaluationContext) -> Any:
-        return self.__simpleValue if self.__parent.isTethered else self.__safeValue
+        rv = self.__simpleValue if self.__parent.isTethered else self.__safeValue
+        #self.infoOut( f"getDerivedValue = {rv} tethered = {self.__parent.isTethered}" )
+        return rv
 
     def tetheredSet( self, value:Any, context:EvaluationContext ) -> None:
         self.__simpleValue = value
@@ -397,9 +406,11 @@ class PanelJoystick( PanelTethered ):
         if context is None: context = UpdateContext.fetchCurrentContext(None)
         try:
             val = data['value']
+            if self.enableDbgOut: self.infoOut( f"joystick setFromWs {data} " )
+            self.ping(context)
             self.__x.tetheredSet(val['x'],context)
             self.__y.tetheredSet(val['y'],context)
-            self.ping(context)
+            
         except Exception as inst:
             self.SHOW_EXCEPTION(inst,f'failed to setFromWs {data}')
             self.breakTether()
@@ -420,6 +431,7 @@ class ControlPanel( MainChild ):
         self.useSliders = useSliders
         self._controlVariables:NliList[PanelControl[Any,Any]] = NliList(name='controls',parent=self)
         self._monitored:NliList[PanelMonitor[Any]] = NliList(name='monitored',parent=self)
+        self._outputs:NliList[PanelMonitorOutput[Any]] = NliList(name='outputs',parent=self)
         self._triggers:NliList[PanelTrigger] = NliList(name='triggers',parent=self)
         self._tethers:NliList[PanelTethered] = NliList(name='tethers',parent=self)
 
@@ -484,7 +496,49 @@ class ControlPanel( MainChild ):
         self.dbgOut( f"added ControlVariable {variable}")
         return variable
 
+    #########################################################################
+    
+    def _addOutput( self, argOne:Optional[Any]=None, 
+                     argTwo:Optional[str]=None,
+                kind:Optional[str|type]=None,
+                kindMatch: Optional[type]=None,
+                convertor : Callable[[Any],Any]|None = None,
+                defaultStartingValue: Optional[Any]=0.0,
+                controlCls: type  = PanelMonitorOutputT[Any],
+                **kwds:Unpack[CVT_ADD_KWDS[Any,Any]]
+        ) -> PanelMonitorOutput[Any]:
 
+        if isinstance(argOne, str):
+            assert 'description' not in kwds, "cannot specify description and argOne as string"
+            kwds['description'] = argOne
+            argOne = None
+
+        if argTwo is not None:
+            assert 'description' not in kwds, "cannot specify description and argTwo as string"
+            kwds['description'] = argTwo
+
+        if 'startingValue' not in kwds:
+            if argOne is not None:
+                assert kindMatch is not None
+                assert isinstance(argOne, kindMatch), f"argOne {argOne} is not of type {kindMatch}"
+                defaultStartingValue = argOne
+            
+            assert defaultStartingValue is not None
+            min = kwds.get('min', None)
+            max = kwds.get('max', None) 
+            if min is not None and defaultStartingValue < min:  defaultStartingValue = min
+            if max is not None and defaultStartingValue > max:  defaultStartingValue = max
+            kwds['startingValue'] = defaultStartingValue
+
+        variable:PanelMonitorOutput[Any] = controlCls( # type: ignore
+            kind=kind,
+            kindMatch=kindMatch,
+            #convertor=convertor,
+            **kwds ) # type: ignore
+        variable.nliSetContainer(self._outputs)
+        self.dbgOut( f"added Output {variable}")
+        return variable
+    
     #########################################################################
     def addZeroToOne( self, argOne:Optional[Any]=None, 
                       argTwo:Optional[str]=None, **kwds:Unpack[CVT_ADD_KWDS[float,ZeroToOne]] 
@@ -549,6 +603,14 @@ class ControlPanel( MainChild ):
         self._triggers.append(trigger)
         return trigger
 
+    #########################################################################
+
+    def addFloatOutput( self, argOne:Optional[Any]=None,  argTwo:Optional[str]=None, **kwds:Unpack[CVT_ADD_KWDS[float,float]] ) -> PanelMonitorOutput[float]:
+        return self._addOutput( argOne, argTwo, kind=float, convertor=lambda v: float(v), **kwds ) # type: ignore
+
+
+    #########################################################################
+    
     def addJoystick( self,  **kwds:Unpack[PanelJoystick.KWDS] ) -> PanelJoystick:
         """ add control for a joystick, see  http://lumensalis.com/ql/h2PanelControl """
         rv = PanelJoystick( self, **kwds)
