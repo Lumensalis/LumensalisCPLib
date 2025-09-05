@@ -8,7 +8,7 @@ from LumensalisCP.Eval.Expressions import *
 
 _sayOutputsImport.parsing()
 
-class OutputTarget(CountedInstance):
+class OutputTarget(CountedInstance, IDebuggable):
 
     def __init__(self, name:Optional[str] = None):
         super().__init__()

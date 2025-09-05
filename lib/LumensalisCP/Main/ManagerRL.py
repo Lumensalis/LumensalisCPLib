@@ -122,7 +122,7 @@ def handleWsChanges( self:MainManager, changes:StrAnyDict ):
                 for panel in self.controlPanels:
                     tether = panel._tethers.getPossiblyMissing(tetherName)
                     if tether is not None:
-                        self.infoOut( f"wsChanges tether {tetherName}" )
+                        if self.enableDbgOut:self.infoOut( f"wsChanges tether {tetherName}" )
                         tether.setFromWs( tetherUpdate)
                         #tether.fireTrigger( self.getContext() )
                         break

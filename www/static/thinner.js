@@ -108,7 +108,7 @@ class ThinnerGroup   {
 
 class Thinner   {
     constructor() {
-        this.debounceTime = 0.2;
+        this.debounceTime = 0.3;
         this.groups = {};
     }
 

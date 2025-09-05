@@ -94,7 +94,7 @@ class PipeInputSource(InputSource):
             yield dependency
 
     def getPipedValue(self, context:EvaluationContext, v:Any ) -> Any:
-        raise NotImplementedError
+        return v
     
     def getDerivedValue(self, context:EvaluationContext) -> Any:
         if True:
