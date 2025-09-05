@@ -113,13 +113,31 @@ class RawPWMOutputWrapper( RawPinWrapper, NamedOutputTarget ):
             'frequency': kwargs.get('frequency', 500),
             'variable_frequency': kwargs.get('variable_frequency', False)   
         }
+        self.pKwds = pKwds
+        self.infoOut( f"{self.__class__.__name__} on pin {pin}, pKwds: {pKwds}" )
+        self.pin = pin 
         self._io = pwmio.PWMOut(pin, **pKwds)
 
     def set( self, value:Any, context:EvaluationContext ) -> None:
         
-        value = withinZeroToOne(value)* self.DUTY_CYCLE_RANGE 
-        self._io.duty_cycle = value
+        duty_cycle = int( withinZeroToOne(value)* self.DUTY_CYCLE_RANGE)
+        if self.enableDbgOut:
+            self.dbgOut( f"setting {self.pin}duty_cycle to {duty_cycle} for {value}" )
+        self._io.duty_cycle = duty_cycle
 
+
+    def matchesKwds( self, **kwargs:Unpack[KWDS] ) -> bool:
+        duty_cycle = kwargs.get('duty_cycle', None)
+        frequency = kwargs.get('frequency', None)
+        variable_frequency = kwargs.get('variable_frequency', None)
+        if duty_cycle is not None and self.pKwds['duty_cycle'] != duty_cycle:
+            return False
+        if frequency is not None and self.pKwds['frequency'] != frequency:
+            return False
+        if variable_frequency is not None and self.pKwds['variable_frequency'] != variable_frequency:
+            return False
+        return True
+    
     @property
     def duty_cycle(self) -> int:
         """ the current duty cycle of the LED """
@@ -164,6 +182,18 @@ class RawAccess( MainChild ):
         else:
             assert isinstance(io, RawDigitalOutputWrapper)
             assert io.matchesKwds(**kwargs)
+        return io
+        
+    def getPWMOutput( self, pin:microcontroller.Pin, 
+            **kwargs:Unpack[RawPWMOutputWrapper.KWDS]
+              ) -> RawPWMOutputWrapper :
+        io = self._pins.get(pin,None)
+        if io is None:
+            io = RawPWMOutputWrapper(parent=self, pin=pin, **kwargs)
+            self._pins[pin] = io
+        else:
+            assert isinstance(io, RawPWMOutputWrapper)
+            assert io.matchesKwds(**kwargs)
         return io    
 
     
@@ -171,8 +201,8 @@ class RawAccess( MainChild ):
 
         """ return (inputA,inputB,speed) """
 
-        a = self.getDigitalOutput( ia, **kwargs )
-        b = self.getDigitalOutput( ib, **kwargs )
+        a = self.getPWMOutput( ia, **kwargs )
+        b = self.getPWMOutput( ib, **kwargs )
 
         kwargs.setdefault('duty_cycle', 0)
         kwargs.setdefault('frequency', 2000) # default to 2000Hz
