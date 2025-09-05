@@ -16,7 +16,7 @@ class Spinner(Actor,Tunable):
 
     def __init__(self, **kwds:Unpack[Actor.KWDS]):
         Actor.__init__( self, **kwds )
-        Tunable.__init__(self)
+        
 
         #self.manualSpeed = TunableSettingT[PlusMinusOne](startingValue=0,onChange=self._onManualSpeedChange)
         #self.manualOverride = TunableBoolSettingT[Spinner](self, name="manualOverride", startingValue=False, onChange=Spinner._onManualOverrideChange)
@@ -329,7 +329,7 @@ class DCMotorSpinner(Spinner):
     def _setSpeed( self, directionalSpeed:PlusMinusOne, context:EvaluationContext) -> None:
         self.__targetSpeed = directionalSpeed
         if abs(directionalSpeed) < self.minSpeed.value:
-            self.infoOut(f"_setSpeed: {directionalSpeed} min/deadband {self.minSpeed.value} exceeded")
+            if self.enableDbgOut: self.infoOut(f"_setSpeed: {directionalSpeed} within min/deadband {self.minSpeed.value}")
             inA, inB = (0, 0)
         elif directionalSpeed < 0:
             inA, inB = (-min(self.maxSpeed.value, directionalSpeed), 0)
@@ -339,7 +339,7 @@ class DCMotorSpinner(Spinner):
             inA, inB = (0, 0)
 
         if self.enableDbgOut:
-            self.infoOut(f"_setSpeed: {directionalSpeed}, inA: {inA}, inB: {inB}")
+            self.infoOut(f"_setSpeed: {directionalSpeed}, setting inA={inA}, inB={inB}")
         self.inA.set(inA, context)
         self.inB.set(inB, context)
 

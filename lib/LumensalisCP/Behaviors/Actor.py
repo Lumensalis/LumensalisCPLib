@@ -13,6 +13,7 @@ from LumensalisCP.common import *
 from LumensalisCP.Scenes.Scene import Scene
 from LumensalisCP.Debug import Debuggable
 from LumensalisCP.Temporal.Refreshable import RefreshableNAP
+from LumensalisCP.Tunable.Tunable import Tunable
 
 if TYPE_CHECKING:
     #import weakref
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
     from LumensalisCP.Behaviors.Behavior import Behavior
     
 _sayBehaviorImport( "parsing" )
-class Actor(RefreshableNAP):
+class Actor(RefreshableNAP, Tunable):
     """
     Base class for actors in the scene.
     
@@ -38,7 +39,8 @@ class Actor(RefreshableNAP):
         self.main = main 
         kwds.setdefault('autoList',main._refreshables ) # type: ignore[assignment]
         kwds.setdefault('temporaryName', self.__class__.__name__ )
-        super().__init__(**kwds)
+        RefreshableNAP.__init__(self,**kwds)
+        Tunable.__init__(self)
         self.__currentBehavior = None
         
     @property
