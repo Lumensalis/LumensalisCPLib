@@ -1,5 +1,10 @@
 # SPDX-FileCopyrightText: 2025 James Fowler
 # SPDX-License-Identifier: MIT
+#
+# WARNING: The project containing this file is NOT under the MIT license.
+# Only files which explicitly contain the above SPDX identifiers are available
+# for use under MIT license terms.
+# 
 """ basic importlib for CircuitPython
 """
 from __future__ import annotations
