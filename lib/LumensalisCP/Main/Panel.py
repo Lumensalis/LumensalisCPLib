@@ -440,6 +440,10 @@ class ControlPanel( MainChild ):
         return self._monitored
     
     @property    
+    def outputs(self) -> NliList[PanelMonitorOutput[Any]]:
+        return self._outputs
+
+    @property    
     def controls(self) -> NliList[PanelControl[Any, Any]]:
         return self._controlVariables
 
@@ -453,6 +457,8 @@ class ControlPanel( MainChild ):
 
     def derivedRefresh(self,context:EvaluationContext) -> None:
         for m in self._monitored:
+            m.refresh(context)
+        for m in self._outputs:
             m.refresh(context)
 
     def _addControl( self, argOne:Optional[Any]=None, 

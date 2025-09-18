@@ -49,6 +49,7 @@ def launchProject( self:MainManager, globals:Optional[StrAnyDict]=None, verbose:
     if self._scenes is not None:
         for scene in self.scenes.scenes:
             self.panel.addTrigger(name="switchToScene_"+scene.name, displayName="Scene "+scene.name, scene=scene)
+        self.panel.monitorString(name="currentScene", description="Current Scene", input=self.scenes.currentSceneInput)
 
     useWifi = getattr(self, 'useWifi', False)        
     if useWifi:
@@ -112,6 +113,7 @@ def handleWsChanges( self:MainManager, changes:StrAnyDict ):
                     if trigger is not None:
                         self.infoOut( f"wsChanges trigger {triggerName}" )
                         trigger.fireTrigger( self.getContext() )
+                        self.infoOut( f"wsChanges trigger {triggerName} fired" )
                         break
                 if trigger is None:
                     self.warnOut( f"missing trigger {triggerName} for wsChanges {changes}")

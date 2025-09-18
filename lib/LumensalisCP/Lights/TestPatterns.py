@@ -1,5 +1,7 @@
 from __future__ import annotations
-from math import log
+
+from LumensalisCP.ImportProfiler import  getImportProfiler
+__profileImport = getImportProfiler( __name__, globals() ) 
 
 # pylint: disable=unused-import,import-error,reimported,import-outside-toplevel
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
@@ -16,6 +18,9 @@ from LumensalisCP.Temporal.Oscillator import Sawtooth
 #############################################################################
 
 from LumensalisCP.Lights import TestPatternsRL
+from LumensalisCP.pyCp.importlib import reload
+
+#############################################################################
 
 class PatternRLTest( Pattern, OutputTarget ):
     def __init__(self,
@@ -63,6 +68,76 @@ class PatternRLTest( Pattern, OutputTarget ):
             target[px] = v
 
 ABFade = PatternRLTest
+
+#############################################################################
+
+class PatternRLTestBase( Pattern ):
+
+    AUTO_RESET_ON_INIT:ClassVar[bool] = True
+
+    def __init__(self,
+                target:LightGroup, 
+                **kwargs:Unpack[Pattern.KWDS]
+            ) -> None:
+        Pattern.__init__( self, target=target,**kwargs)
+        self._kwargs = kwargs
+        if self.AUTO_RESET_ON_INIT:
+            self.reset(UpdateContext.fetchCurrentContext(None))
+
+    def reset( self, context:Optional[EvaluationContext]=None ) -> None:
+
+        raise NotImplementedError()
+
+    def reload( self,context:Optional[EvaluationContext]=None ) -> None:
+        reload( TestPatternsRL )
+        self.reset(context)
+
+
+    def refresh( self, context:EvaluationContext ) -> None:
+        raise NotImplementedError()
+
+
+#############################################################################
+
+class TestPattern1( PatternRLTestBase ):
+    #def __init__(self, target:LightGroup, **kwargs:Unpack[Pattern.KWDS] ) -> None:
+    #    super().__init__( target=target, **kwargs)
+
+    
+    def reset( self,  context:Optional[EvaluationContext]=None  ) -> None:
+        TestPatternsRL.TestPattern1_reset( self, context )
+
+    def refresh( self, context:EvaluationContext ) -> None:
+        TestPatternsRL.TestPattern1_refresh( self, context )
+
+#############################################################################
+
+class TestPattern2( PatternRLTestBase ):
+    #def __init__(self, target:LightGroup, **kwargs:Unpack[Pattern.KWDS] ) -> None:
+    #    super().__init__( target=target, **kwargs)
+
+    
+    def reset( self,  context:Optional[EvaluationContext]=None  ) -> None:
+        TestPatternsRL.TestPattern2_reset( self, context )
+
+    def refresh( self, context:EvaluationContext ) -> None:
+        TestPatternsRL.TestPattern2_refresh( self, context )
+
+#############################################################################
+
+class TestPattern3( PatternRLTestBase ):
+    #def __init__(self, target:LightGroup, **kwargs:Unpack[Pattern.KWDS] ) -> None:
+    #    super().__init__( target=target, **kwargs)
+    
+    def reset( self,  context:Optional[EvaluationContext]=None  ) -> None:
+        TestPatternsRL.TestPattern3_reset( self, context )
+
+    def refresh( self, context:EvaluationContext ) -> None:
+        TestPatternsRL.TestPattern3_refresh( self, context )
+
+
+#############################################################################
+
 
 class Spinner( OnOffPattern ):
     """ a spinning pattern that wraps around the end of the LightGroup
@@ -121,6 +196,8 @@ class Spinner( OnOffPattern ):
                 v = offValue 
             target[px] = v
 
+#############################################################################
+
 class PatternTemplate(CountedInstance):
     """ shorthand for creating patterns with consistent options
 
@@ -139,4 +216,9 @@ class PatternTemplate(CountedInstance):
         fullKwds.update( kwds )
         return self.patternClass( *fullArgs, **fullKwds )
     
-__all__ = ['Spinner', 'PatternTemplate', 'ABFade', 'OnOffPattern', 'PatternRLTest']
+__all__ = ['Spinner', 'PatternTemplate', 'ABFade', 'OnOffPattern', 
+           'PatternRLTest',
+           'TestPattern1', 'TestPattern2', 'TestPattern3'
+           ]
+
+__profileImport.complete()

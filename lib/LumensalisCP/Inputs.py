@@ -138,7 +138,11 @@ class SimpleInputSource(InputSource,OutputTarget):
     def set( self, value:Any, context:EvaluationContext ) -> None:
         self.__simpleValue = value
         self.updateValue(context)
-    
+
+    @property
+    def latestSimpleValue(self) -> Any:
+        return self.__simpleValue
+        
 class NestedInputSource(InputSource):
     """A nested input source for use as a member of a class which internally updates it
     

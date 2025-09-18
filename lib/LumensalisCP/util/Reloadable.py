@@ -10,9 +10,12 @@ from LumensalisCP.common import *
 
 ReloadableMethodType:TypeAlias = Callable[..., Any]
 
+_showReloadDebug:bool = True
 def __reloadPrint( message:str) -> None:
-    # print( message )
+    if _showReloadDebug:
+        print( message )
     pass
+
 #############################################################################
 
 class ReloadingMethodStub():
@@ -106,7 +109,7 @@ class ReloadableClassMeta(CountedInstance):
     
     def reloadableMethod(self, name:Optional[str]=None ) -> Callable[..., Callable[..., Any]]:
         def decorator( func:Callable[...,Any] ) -> Callable[...,Any]:
-            #__reloadPrint(f"Adding reloadable method {func.__name__} to {self.name}")
+            __reloadPrint(f"Adding reloadable method {func.__name__} to {self.name}")
             self.add_method(name or func.__name__, func)
             return func
         return decorator

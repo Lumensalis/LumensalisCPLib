@@ -9,6 +9,9 @@ from LumensalisCP.commonCP import *
 from LumensalisCP.IOContext import *
 from LumensalisCP.Main.Dependents import MainChild
 
+if TYPE_CHECKING:
+    from LumensalisCP.Main.I2CProvider import I2CProvider
+    
 #from LumensalisCP.Temporal.Refreshable import Refreshable, RfMxnActivatablePeriodic
 #############################################################################
 
@@ -22,14 +25,17 @@ class I2CDevice( MainChild ):
         #main: NotRequired[MainManager]
         i2c: NotRequired[busio.I2C]
         address: NotRequired[int]
+        provider: NotRequired[I2CProvider]
     
     def __init__(self,  **kwds:Unpack[KWDS] ) -> None:
         i2c = kwds.pop('i2c', None)
         address = kwds.pop('address',None)
+        provider = kwds.pop('provider',None)
         super().__init__(**kwds)
         assert self.main is not None, "I2CDevice must be created with a main instance"  
+        assert provider is not None, "I2CDevice must be created with a provider instance"
 
-        self.__i2c:busio.I2C = i2c or self.main.defaultI2C
+        self.__i2c:busio.I2C = i2c or provider.defaultI2C
         assert isinstance(self.__i2c, I2C), "I2CDevice must be created with a valid I2C instance"
         
         self.__latestUpdateIndex:int = -1
@@ -37,7 +43,7 @@ class I2CDevice( MainChild ):
         self.__updates = 0  
         self.__derivedUpdateChanges = 0
 
-        self.main.addI2CDevice(self)  # pyright: ignore[reportPrivateUsage]
+        provider.addI2CDevice(self)  # pyright: ignore[reportPrivateUsage]
 
         self._inputs: NliList[InputSource] = NliList(name='inputs', parent=self)
         self._outputs: NliList[NamedOutputTarget] = NliList(name='outputs', parent=self)

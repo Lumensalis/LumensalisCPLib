@@ -6,10 +6,10 @@ from LumensalisCP.ImportProfiler import  getImportProfiler
 __profileImport = getImportProfiler( __name__, globals() )
 
 #############################################################################
-
+import busio
 from LumensalisCP.CPTyping import Unpack
 from LumensalisCP.Shields.Pins import PinProxy
-from LumensalisCP.Shields.Base import ShieldI2CBase
+from LumensalisCP.Shields.Base import ShieldBase, ShieldI2CMixin
 
 #############################################################################
 __profileImport.parsing()
@@ -17,10 +17,10 @@ __profileImport.parsing()
 class D1MiniPinProxy(PinProxy):
     pass
   
-class D1MiniBoardBase(ShieldI2CBase): # pylint: disable=abstract-method
+class D1MiniBoardBase(ShieldBase): # pylint: disable=abstract-method
 
 
-    def __init__(self, **kwds:Unpack[ShieldI2CBase.KWDS] ):
+    def __init__(self, **kwds:Unpack[ShieldBase.KWDS] ):
         super().__init__( **kwds )
         
         #print( f"D1MiniBoardBase.__init__( {kwds})")
@@ -44,5 +44,18 @@ class D1MiniBoardBase(ShieldI2CBase): # pylint: disable=abstract-method
         self.A0= D1MiniPinProxy( 'A0', self )
         
         
+class D1MiniBoardI2CBase(D1MiniBoardBase, ShieldI2CMixin): 
+    def __init__(self, **kwds:Unpack[ShieldBase.KWDS] ) -> None:
+        D1MiniBoardBase.__init__( self, **kwds )
+        ShieldI2CMixin.__init__( self )
+
+    @property
+    def defaultI2C(self) -> busio.I2C:
+       if self.__defaultI2C is None:
+            self.initI2C()
+            self.__defaultI2C  = self.i2c
+       return self.__defaultI2C or board.I2C() # pylint: disable=no-member
+         
+
 #############################################################################
 __profileImport.complete()

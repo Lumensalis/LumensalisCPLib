@@ -129,7 +129,13 @@ def updateSocketClient(self:WebsocketSession )->None:
     assert jsonBuffer is not None, "jsonBuffer must be set if useStringIO is True"
     #print(f" jsonBuffer:{dir(jsonBuffer)}")
     x = 0
-    for mv in main.panel.monitored.values(): 
+    def monitorables() -> Generator[Any, None, None]:
+        for mv in main.panel.monitored.values(): 
+            yield mv
+        for mv in main.panel.outputs.values(): 
+            yield mv
+
+    for mv in monitorables():
         v = mv.source
         currentValue = v.getValue(context)
         if currentValue is None:

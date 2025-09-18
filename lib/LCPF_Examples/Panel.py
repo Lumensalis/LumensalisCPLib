@@ -1,24 +1,25 @@
-from LumensalisCP.ImportProfiler import ImportProfiler
-ImportProfiler.SHOW_IMPORTS = True
-
 from LumensalisCP.Simple import *  # http://lumensalis.com/ql/h2Start
+
 #############################################################################
-main = ProjectManager("PanelsDemo")
+main = ProjectManager("PanelsDemo",useWifi=True)
 
-scene1 = main.addScene()
-scene2 = main.addScene()
 
+# setup two different scenes : http://lumensalis.com/ql/h2Scenes
+shortScene = main.addScene()
+tallScene = main.addScene()
+
+# create a shortcut to the "root" panel
 demoPanel = main.panel
-
-distance = demoPanel.addMillimeters(100.0, min=10.0, max=1000.0)
+# add a distance and on/off control to the panel
+baseHeight = demoPanel.addMillimeters(100.0, min=10.0, max=1000.0)
 onOff = demoPanel.addSwitch()
 
+# add an output to the panel
+height = demoPanel.addFloatOutput()
+demoPanel.monitor( height )
 
-
-result = demoPanel.addFloatOutput()
-
-demoPanel.monitor( result )
-scene1.addRule( result, distance )
-scene2.addRule( result, distance / 2 )
+# set value of result is based on scene
+shortScene.addRule( height, baseHeight / 2)
+tallScene.addRule( height, baseHeight * 2 )
 
 main.launchProject(globals())

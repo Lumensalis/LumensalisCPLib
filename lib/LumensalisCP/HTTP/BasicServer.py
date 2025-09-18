@@ -19,6 +19,7 @@ from LumensalisCP.HTTP.BSR import BSR_cmdRL
 from LumensalisCP.HTTP.BSR import BSR_clientRL
 from LumensalisCP.HTTP.BSR import BSR_queryRL
 from LumensalisCP.HTTP.BSR import BSR_proxyRL
+from LumensalisCP.HTTP.BSR import HomePageRL
 from LumensalisCP.HTTP import WebsocketsRL
 
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
@@ -162,28 +163,16 @@ class BasicServer(Server,MainAsyncChild):
 
         @self.route("/connect-websocket", GET) # type: ignore[reportUntypedFunctionDecorator,reportUnusedFunction]
         def connect_client(request: Request) -> Websocket: # pyright: ignore[reportUntypedFunctionDecorator,reportUnusedFunction]
-            #global websocket  # pylint: disable=global-statement
-
-            if True:
-                session = WebsocketSession(self, request)
-                return session.websocket
-            else:
-                if self.websocket is not None:
-                    self.websocket.close()  # Close any existing connection
-
-                self.websocket = Websocket(request, buffer_size=8192)
-                self.priorMonitoredValue = {}
-                return self.websocket
+            session = WebsocketSession(self, request)
+            return session.websocket
 
      
         @self.route("/") # type:ignore[override]
         def base(request: Request) -> Response: # type:ignore[reportUntypedFunctionDecorator,reportUnusedFunction]
-
             """
             Serve a default static plain text message.
             """
-            self.infoOut( "base request...")
-            return Response(request, "Hello from the CircuitPython HTTP Server!")
+            return HomePageRL.serveHomePage(self, request)
 
     #########################################################################
     async def runAsyncSetup(self) -> None:

@@ -10,18 +10,18 @@ import board
 from LumensalisCP.commonCP import *
 from LumensalisCP.Eval.common import *
 
-from LumensalisCP.I2C.I2CDevice import I2CDevice
-from LumensalisCP.Controllers.Config import ControllerConfig
-
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
+
+    from LumensalisCP.I2C.I2CDevice import I2CDevice
+    from LumensalisCP.Controllers.Config import ControllerConfig
     #from LumensalisCP.Debug import Debuggable
     #import LumensalisCP.I2C.Adafruit.Factory
     #from LumensalisCP.I2C.Adafruit.Factory import AdafruitFactory
     #import LumensalisCP.I2C.Factory
 
-from LumensalisCP.I2C.Factory import I2CFactory
-from LumensalisCP.I2C.Adafruit.Factory import AdafruitFactory
+    from LumensalisCP.I2C.Factory import I2CFactory
+    from LumensalisCP.I2C.Adafruit.Factory import AdafruitFactory
 
 __sayImport.parsing()
 
@@ -34,8 +34,15 @@ class I2CProvider(Debuggable):
     i2cFactory: I2CFactory
     """ factory to connect to I2C devices """
 
+    @property
+    def providerMain(self) -> MainManager: return self.__providerMain
+    @property
+    def providerConfig(self) -> ControllerConfig: return self.__providerConfig
+
     def __init__(self,config:ControllerConfig, main:'MainManager'):
         super().__init__()
+        self.__providerMain = main 
+        self.__providerConfig = config
         
         self.i2cDevicesContainer:NliList[I2CDevice] = NliList(name='i2cDevices',parent=main)
         
@@ -44,8 +51,11 @@ class I2CProvider(Debuggable):
         #from LumensalisCP.I2C.Factory  import I2CFactory 
         #from LumensalisCP.I2C.Adafruit.Factory import AdafruitFactory
         
-        self.adafruitFactory = AdafruitFactory(main=main)
-        self.i2cFactory = I2CFactory(main=main)
+        from LumensalisCP.I2C.Factory import I2CFactory
+        from LumensalisCP.I2C.Adafruit.Factory import AdafruitFactory
+        self.adafruitFactory = AdafruitFactory(self)
+        self.i2cFactory = I2CFactory(self)
+
         self.__i2cChannels:dict[tuple[int|str,int|str],busio.I2C] = {}
 
         self.__i2cDevices:List[I2CDevice] = []
@@ -72,7 +82,8 @@ class I2CProvider(Debuggable):
         # raise NotImplementedError
     
     @property
-    def defaultI2C(self) -> busio.I2C: return self.__defaultI2C or board.I2C() # pylint: disable=no-member
+    def defaultI2C(self) -> busio.I2C: 
+        return self.__defaultI2C or board.I2C() # pylint: disable=no-member
             
     def addI2CDevice(self, target:I2CDevice ):
         self.__i2cDevices.append(target)

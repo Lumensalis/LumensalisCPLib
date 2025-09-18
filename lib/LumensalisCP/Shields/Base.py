@@ -39,13 +39,11 @@ class ShieldBase(ControllerConfigurableChildBase):#,RfMxnActivatablePeriodic, Re
         self.nliSetContainer( self.main.shields )
         
 
-class ShieldI2CBase(ShieldBase,I2CProvider):  # pylint: disable=abstract-method
+class ShieldI2CMixin(I2CProvider):  # pylint: disable=abstract-method
     # pylint: disable=attribute-defined-outside-init
     
         
     def __init__(self, **kwds:Unpack[ShieldBase.KWDS] ):
-        ShieldBase.__init__( self, **kwds )
-        
         I2CProvider.__init__( self, config=self.config, main=self.main )
 
     def initI2C(self): 
@@ -58,7 +56,7 @@ class ShieldI2CBase(ShieldBase,I2CProvider):  # pylint: disable=abstract-method
                 i2c = self.main.defaultI2C
             else:
                 self.infoOut( "initializing busio.I2C, scl=%s, sda=%s", sclPin, sdaPin )
-                i2c =  self.main.addI2C( sdaPin, sclPin ) 
+                i2c =  self.addI2C( sdaPin, sclPin ) 
             assert i2c is not None
             
         if i2c is not None:

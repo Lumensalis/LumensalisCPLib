@@ -9,7 +9,7 @@ from LumensalisCP.commonCP import *
 from LumensalisCP.Lights.NeoPixels import NeoPixelSource, NeoPixelSourceKwds
 from LumensalisCP.Gadgets.IrRemote import LCP_IRrecv, onIRCode # type: ignore
 from LumensalisCP.Gadgets.Servos import LocalServo
-from TerrainTronics.D1MiniBoardBase import D1MiniBoardBase
+from TerrainTronics.D1MiniBoardBase import D1MiniBoardI2CBase
 
 _sayImport.parsing()
 
@@ -21,12 +21,12 @@ class CaernarfonCastleKWDS(TypedDict):
         servo2pin: NotRequired[microcontroller.Pin|str]
         servo3pin: NotRequired[microcontroller.Pin|str]
 
-class CaernarfonCastle(D1MiniBoardBase):
+class CaernarfonCastle(D1MiniBoardI2CBase):
     
     __servoContainer:NliList[LocalServo]
     __pixelsContainer:NliList[NeoPixelSource]
 
-    class KWDS(D1MiniBoardBase.KWDS):
+    class KWDS(D1MiniBoardI2CBase.KWDS):
         neoPixelCount: NotRequired[int]
         servos: NotRequired[int]
         servo1pin: NotRequired[microcontroller.Pin|str]
@@ -40,7 +40,7 @@ class CaernarfonCastle(D1MiniBoardBase):
                 servo2pin: Optional[microcontroller.Pin] = None,
                 servo3pin: Optional[microcontroller.Pin] = None,
                 neoPixels: Optional[NeoPixelSource.KWDS] = None,
-                 **kwds:Unpack[D1MiniBoardBase.KWDS] 
+                 **kwds:Unpack[D1MiniBoardI2CBase.KWDS] 
              ) -> None:
         super().__init__( **kwds )
         c = self.config

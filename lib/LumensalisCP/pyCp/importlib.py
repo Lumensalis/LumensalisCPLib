@@ -109,7 +109,9 @@ than CPython's.
         if verbose: print( f"reload {name} : updating {key}")
         setattr( existingModule, key, val )
     setattr( existingModule, '__file__', sourceFile )
+    setattr( existingModule, '__name__', name )
 
         
     #########################################################################
     # new code should now be "reloaded" into **module**
+    return module

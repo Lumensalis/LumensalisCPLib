@@ -15,6 +15,9 @@ from LumensalisCP.Triggers.Action import do
 from LumensalisCP.Eval.Evaluatable import NamedEvaluatableProtocolT, NamedEvaluatableProtocol
 from LumensalisCP.Scenes.Scene import Scene
 from LumensalisCP.Identity.Proxy import proxyMethod, ProxyAccessibleClass
+from LumensalisCP.util.Reloadable import reloadingMethod, ReloadableClass, addReloadableClass
+
+from LumensalisCP.Main import RawRL
 
 if TYPE_CHECKING:
     from LumensalisCP.Behaviors.Rotation import DCMotorSpinner
@@ -22,20 +25,28 @@ if TYPE_CHECKING:
 _sayImport.parsing()
 
 import microcontroller, board
-import pwmio
+import pwmio, pulseio
+import analogio
+
 
 
 #############################################################################
 # pyright: reportPrivateUsage=false
 
 class RawPinWrapper( NliInterface ):
+    class KWDS(TypedDict):
+        pass
+
     def __init__(self,parent:RawAccess, pin: microcontroller.Pin) -> None:
         self.pin = pin
         assert pin not in parent._pins, f"pin {pin} already in use"
         parent._pins[pin] = self
 
+    def matchesKwds( self, **kwargs:Unpack[KWDS] ) -> bool:
+        return True
+
 class RawDigitalIOWrapper( RawPinWrapper ):
-    class KWDS(TypedDict):
+    class KWDS(RawPinWrapper.KWDS):
         drive_mode:NotRequired[digitalio.DriveMode]
         pull:NotRequired[digitalio.Pull]
 
@@ -93,6 +104,8 @@ class RawDigitalOutputWrapper( RawDigitalIOWrapper, NamedOutputTarget ):
     def set( self, value:Any, context:EvaluationContext ) -> None:
         self._io.value = value
 
+#############################################################################
+
 class RawPWMOutputWrapper( RawPinWrapper, NamedOutputTarget ):
     DUTY_CYCLE_RANGE:int = 65535
 
@@ -143,6 +156,84 @@ class RawPWMOutputWrapper( RawPinWrapper, NamedOutputTarget ):
         """ the current duty cycle of the LED """
         return self._io.duty_cycle
 
+#############################################################################
+
+#@ReloadableClass()
+class RawPWMInputWrapper( RawPinWrapper, InputSource ):
+    DUTY_CYCLE_RANGE:int = 65535
+
+    class KWDS( RawPinWrapper.KWDS, InputSource.KWDS):
+        #duty_cycle: NotRequired[int]
+        #frequency: NotRequired[int] # = 500
+        #variable_frequency: NotRequired[bool] #= False
+
+        pass
+
+    def __init__(self, parent:RawAccess, pin: microcontroller.Pin, **kwargs:Unpack[KWDS]) -> None:
+
+        RawPinWrapper.__init__(self,  parent=parent, pin=pin)
+        kwargs.setdefault('temporaryName', f"{pin}")
+
+        InputSource.__init__(self, **kwargs)
+        #self.digitalIn = digitalio.DigitalInOut(pin)
+        #self.digitalIn.direction = digitalio.Direction.INPUT    
+        #self.digitalIn.pull = digitalio.Pull.UP
+        #self.digitalIn.deinit()
+
+        self.pulseIn = pulseio.PulseIn(pin, maxlen=128, idle_state=False)
+        pinName = getattr( kwargs, 'name', str(pin).replace('.','_')) 
+        self.pulsesDetected = SimpleInputSource( 0, name=pinName+'_pulsesDetected' )
+        self.readCycles = SimpleInputSource( 0, name=pinName+'_readCycles' )
+
+        self._internalData = {
+                'cycles': 0,
+                'pulsesDetected': 0,
+                'onCount': 0,
+                'offCount': 0,
+                'onTotal': 0,
+                'offTotal': 0,
+                'lastState': None,
+            }
+
+    #@reloadingMethod
+    def getDerivedValue(self, context:EvaluationContext) -> Any:
+        #raise NotImplementedError
+        return RawRL.RawPWMInputWrapper_getDerivedValue(self, context)
+
+    def matchesKwds( self, **kwargs:Unpack[KWDS] ) -> bool:
+        return super().matchesKwds(**kwargs)
+            
+    #@reloadingMethod
+    def rl( self, context:Optional[EvaluationContext]=None )  -> None:  
+        RawRL.RawPWMInputWrapper_rl(self, context)
+
+    #@reloadingMethod
+    def boop( self, context:Optional[EvaluationContext]=None )  -> None:
+        #raise NotImplementedError  
+        RawRL.RawPWMInputWrapper_boop(self, context)
+
+addReloadableClass(RawPWMInputWrapper, RawRL)
+#############################################################################
+
+
+class RawAnalogInputWrapper( RawPinWrapper, InputSource ):
+    class KWDS(InputSource.KWDS):
+        pass
+
+    def __init__(self, parent:RawAccess, pin: microcontroller.Pin, **kwargs:Unpack[KWDS]) -> None:
+
+        RawPinWrapper.__init__(self,  parent=parent, pin=pin)
+        kwargs.setdefault('temporaryName', f"{pin}")
+        InputSource.__init__(self, **kwargs)
+        
+        self._io = analogio.AnalogIn(pin)
+
+    def getDerivedValue(self, context:EvaluationContext) -> Any:
+        return self._io.value
+    
+
+#############################################################################
+
 class RawAccess( MainChild ):
     """ deal directly with Controller IO
 
@@ -159,6 +250,19 @@ class RawAccess( MainChild ):
         #self._monitored:NliList[PanelMonitor[Any]] = NliList(name='monitored',parent=self)
         #self._triggers:NliList[PanelTrigger] = NliList(name='triggers',parent=self)
 
+    def _addIO( self, cls:type, pin:microcontroller.Pin,
+                         **kwargs:Unpack[RawPinWrapper.KWDS] ) -> RawPinWrapper :
+
+        io = self._pins.get(pin,None)
+        if io is None:
+            io = cls(parent=self, pin=pin, **kwargs)
+            self._pins[pin] = io
+        else:
+            assert isinstance(io, cls)
+            assert io.matchesKwds(**kwargs)            
+        return io
+
+    #########################################################################
 
     def getDigitalInput( self, pin:microcontroller.Pin,
                          **kwargs:Unpack[RawDigitalIOInputWrapper.KWDS]
@@ -184,6 +288,8 @@ class RawAccess( MainChild ):
             assert io.matchesKwds(**kwargs)
         return io
         
+    #########################################################################
+
     def getPWMOutput( self, pin:microcontroller.Pin, 
             **kwargs:Unpack[RawPWMOutputWrapper.KWDS]
               ) -> RawPWMOutputWrapper :
@@ -196,7 +302,20 @@ class RawAccess( MainChild ):
             assert io.matchesKwds(**kwargs)
         return io    
 
-    
+    def getPWMInput( self, pin:microcontroller.Pin,
+                         **kwargs:Unpack[RawPWMInputWrapper.KWDS]
+            ) -> RawPWMInputWrapper :
+        return self._addIO( RawPWMInputWrapper, pin, **kwargs )
+
+    #########################################################################
+
+    def getAnalogInput( self, pin:microcontroller.Pin,
+                         **kwargs:Unpack[RawAnalogInputWrapper.KWDS]
+            ) -> RawAnalogInputWrapper :
+        return self._addIO( RawAnalogInputWrapper, pin, **kwargs )
+
+    #########################################################################
+
     def dcMotor( self, ia:microcontroller.Pin, ib:microcontroller.Pin, **kwargs:Unpack[RawPWMOutputWrapper.KWDS] ) -> DCMotorSpinner:
 
         """ return (inputA,inputB,speed) """
