@@ -91,9 +91,10 @@ class Gauge( OnOffPattern, NamedOutputTarget ):
                 **kwargs:Unpack[OnOffPattern.KWDS]
             ):
         self.__value = value
-        OnOffPattern.__init__( self, target , **kwargs)
-        notArgs = NamedOutputTarget.extractInitArgs(kwargs)
+
+        kwargs, notArgs = NamedOutputTarget.extractInitArgs(kwargs)
         NamedOutputTarget.__init__(self, **notArgs )
+        OnOffPattern.__init__( self, target , **kwargs)
         self._mix = RGB(Colors.BLACK)
 
     @property

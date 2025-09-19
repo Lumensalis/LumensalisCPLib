@@ -17,7 +17,6 @@ from LumensalisCP.Temporal.Oscillator import Sawtooth
 
 #############################################################################
 
-from LumensalisCP.Lights import TestPatternsRL
 from LumensalisCP.pyCp.importlib import reload
 
 #############################################################################
@@ -74,6 +73,7 @@ ABFade = PatternRLTest
 class PatternRLTestBase( Pattern ):
 
     AUTO_RESET_ON_INIT:ClassVar[bool] = True
+    _reloadablePatterns:ClassVar[list[PatternRLTestBase]] = []
 
     def __init__(self,
                 target:LightGroup, 
@@ -81,6 +81,7 @@ class PatternRLTestBase( Pattern ):
             ) -> None:
         Pattern.__init__( self, target=target,**kwargs)
         self._kwargs = kwargs
+        self._reloadablePatterns.append(self) # pyright: ignore[reportPrivateUsage]
         if self.AUTO_RESET_ON_INIT:
             self.reset(UpdateContext.fetchCurrentContext(None))
 
@@ -89,12 +90,16 @@ class PatternRLTestBase( Pattern ):
         raise NotImplementedError()
 
     def reload( self,context:Optional[EvaluationContext]=None ) -> None:
+        from LumensalisCP.Lights import TestPatternsRL
         reload( TestPatternsRL )
         self.reset(context)
 
-
     def refresh( self, context:EvaluationContext ) -> None:
         raise NotImplementedError()
+
+#############################################################################
+
+from LumensalisCP.Lights import TestPatternsRL
 
 
 #############################################################################
@@ -190,7 +195,7 @@ class Spinner( OnOffPattern ):
         for px in range(target.lightCount):
             delta =  divmod( px - rotation, target.lightCount )[1]
             if delta > 0 and delta <= tail:
-                delta = delta * (log(delta*t10, 10))
+                delta = delta * (math.log(delta*t10, 10))
                 v = offValue.fadeTowards(onValue, delta/tail)
             else:
                 v = offValue 
