@@ -42,7 +42,7 @@ class Buttons(NunchukChild):
     c:NunchukInput
     z:NunchukInput
     def __init__( self, nunchuk:Nunchuk ):
-        super().__init__(nunchuk, c=False, z=False)
+        super().__init__(nunchuk, c=0, z=0)
 
 
 
@@ -109,8 +109,8 @@ class Nunchuk(I2CDevice,):
         changes += self.accel.ay.setNunchukValue(  ((buf[5] & 0x30) >> 4) | (buf[3] << 2), context )
         changes += self.accel.az.setNunchukValue(  ((buf[5] & 0x0C) >> 2) | (buf[4] << 2), context )
 
-        button_c = not bool(buf[5] & 0x02)
-        button_z = not bool(buf[5] & 0x01)
+        button_c = 1 if not bool(buf[5] & 0x02) else 0
+        button_z = 1 if not bool(buf[5] & 0x01) else 0
         changes += self.buttons.c.setNunchukValue( button_c, context )
         changes += self.buttons.z.setNunchukValue( button_z, context )
         if self.enableDbgOut: 
