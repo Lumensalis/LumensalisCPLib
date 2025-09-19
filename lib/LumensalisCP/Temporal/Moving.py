@@ -75,6 +75,7 @@ class Moving( NamedOutputTarget, Refreshable ):
             return
         
         if speed is not None:
+            assert isinstance(speed,(int,float)), "speed must be a number of seconds"
             self.__moveSpeed = speed
         if self.__moving and self.__moveCompleteCB is not None:
             self.__moveCompleteCB()

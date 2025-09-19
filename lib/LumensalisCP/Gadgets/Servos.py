@@ -33,6 +33,7 @@ class LocalServo( NamedOutputTarget ):
         self.__servo:adafruit_motor.servo.Servo = adafruit_motor.servo.Servo( pwm ) #, **kwds) # type: ignore
         self.__moveTimer = PeriodicTimer( movePeriod, manager=main.timers, name=f"{self.name}_timer" )
         self.__moveTimer.addAction( self._updateMove )
+        assert isinstance(moveSpeed,(int,float)), "moveSpeed must be a number of seconds"
         self.__moveSpeed:DegreesPerSecond = moveSpeed
         self.__moveTarget:Degrees|None = None
         self.__moveTimeAtStart:TimeInSeconds|None = None
@@ -87,6 +88,7 @@ class LocalServo( NamedOutputTarget ):
             return
         
         if speed is not None:
+            assert isinstance(speed,(int,float)), "speed must be a number of seconds"
             self.__moveSpeed = speed
         if self.__moving and self.__moveCompleteCB is not None:
             self.__moveCompleteCB()

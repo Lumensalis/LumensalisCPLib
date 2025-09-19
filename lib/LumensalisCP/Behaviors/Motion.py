@@ -21,13 +21,13 @@ class Door(Actor):
     def __init__(self, **kwds:Unpack[Actor.KWDS]):
         
         super().__init__( **kwds )
-        
-    def open(self, speed:TimeInSeconds|None = None, context:Optional[EvaluationContext]=None) -> Behavior:
+
+    def open(self, context:Optional[EvaluationContext]=None, speed:TimeInSeconds|None = None) -> Behavior:
         raise NotImplementedError("open method must be implemented in subclass")
 
-    def close(self, speed:TimeInSeconds|None = None, context:Optional[EvaluationContext]=None) -> Behavior:
-        raise NotImplementedError("open method must be implemented in subclass")
-    
+    def close(self, context:Optional[EvaluationContext]=None, speed:TimeInSeconds|None = None) -> Behavior:
+        raise NotImplementedError("close method must be implemented in subclass")
+
     def setSpeed(self, speed:TimeInSeconds, context:Optional[EvaluationContext]=None) -> None:
         raise NotImplementedError("setSpeed method must be implemented in subclass")
 
@@ -60,7 +60,7 @@ class ServoMovement(Motion):
         if target is not None: self.target = target
         if speed is not None: self.speed = speed
         if self.actor.currentBehavior is self:
-            self.actor._servo.moveTo( self.target, self.speed, UpdateContext.fetchCurrentContext(None) ) # type: ignore
+            self.actor.servo.moveTo( self.target, self.speed, context=UpdateContext.fetchCurrentContext(None) ) # type: ignore
         #    self.actor.setCurrentBehavior(self, reset=True)
 
     def activate( self, target:Optional[Degrees]=None, 
@@ -80,11 +80,11 @@ class ServoMovement(Motion):
     def enter(self, context:EvaluationContext):
         super().enter(context)
         if self.enableDbgOut: self.dbgOut( f"enter moveTo {self.target} at {self.speed}" )
-        self.actor._servo.moveTo( self.target, self.speed, context )  # type: ignore
-        self.actor._servo.onMoveComplete( self._complete )  # type: ignore
+        self.actor.servo.moveTo( self.target, self.speed, context=context )  # type: ignore
+        self.actor.servo.onMoveComplete( self._complete )  # type: ignore
     
     def exit(self, context:EvaluationContext):
-        self.actor._servo.onMoveComplete( None )  # type: ignore
+        self.actor.servo.onMoveComplete( None )  # type: ignore
         super().exit(context)
         
 
@@ -161,10 +161,10 @@ class ServoDoor(Door):
         self.stopped.enableDbgOut = setting
         self.servo.enableDbgOut = setting
         
-    def open(self, speed:TimeInSeconds|None = None, context:Optional[EvaluationContext]=None) -> Behavior:
+    def open(self, context:Optional[EvaluationContext]=None, speed:TimeInSeconds|None = None) -> Behavior:
         return self.opening.activate(speed=speed, target=self.openPosition, context=context)
-        
-    def close(self, speed:TimeInSeconds|None = None, context:Optional[EvaluationContext]=None) -> Behavior:
+
+    def close(self, context:Optional[EvaluationContext]=None, speed:TimeInSeconds|None = None) -> Behavior:
         return self.closing.activate(speed=speed, target=self.closedPosition, context=context)
 
     def stop(self, context:Optional[EvaluationContext]=None) -> Motion:
