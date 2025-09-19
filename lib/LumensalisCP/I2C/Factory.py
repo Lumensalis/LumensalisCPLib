@@ -41,22 +41,25 @@ class I2CFactory(CountedInstance):
         kwds.setdefault('provider', self.__provider )
         return kwds
 
+    def _addI2CDevice(self, cls:type, kwds:I2CDevice.KWDS) -> I2CDevice:
+        self._updateAddKwds(kwds)
+        rv = cls( **kwds )
+        #self.__provider.addI2CDevice(rv)
+        return rv
+
     def addDisplay_SSD1306(self, **kwds:Unpack[Display_SSD1306.KWDS] ) -> Display_SSD1306:
         """Add an SSD1306 display"""
         from LumensalisCP.I2C.Generic.Display_SSD1306 import Display_SSD1306
-        self._updateAddKwds(kwds)
-        return Display_SSD1306( **kwds )
+        return self._addI2CDevice( Display_SSD1306, kwds )
 
     def addDisplayIO_SSD1306(self, **kwds:Unpack[DisplayIO_SSD1306.KWDS] ) -> DisplayIO_SSD1306:
         """Add an SSD1306 display (using DisplayIO)"""
         from LumensalisCP.I2C.Generic.DisplayIO_SSD1306 import DisplayIO_SSD1306
-        self._updateAddKwds(kwds)
-        return DisplayIO_SSD1306( **kwds )
+        return self._addI2CDevice( DisplayIO_SSD1306, kwds )
 
     def addVL530lx(self, **kwds: Unpack[VL53L0X.KWDS] ) -> VL53L0X: # pylint: disable=used-before-assignment
         """ add a VL53L0X distance sensor """
         from LumensalisCP.I2C.Generic.VL530lx import VL53L0X
-        self._updateAddKwds(kwds)
-        return VL53L0X( **kwds )
+        return self._addI2CDevice( VL53L0X, kwds )
 
 #############################################################################
