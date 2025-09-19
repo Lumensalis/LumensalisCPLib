@@ -15,9 +15,11 @@ class SkidSteerDCMotor(BilateralDrive):
     class KWDS(BilateralDrive.KWDS):
         motorPins:NotRequired[list[microcontroller.Pin]]
         motors:NotRequired[list[DCMotorSpinner]]
+        motorKwds:NotRequired[StrAnyDict]
 
     def __init__(self, motors:Optional[list[DCMotorSpinner]]=None, 
                  motorPins:Optional[list[microcontroller.Pin]]=None,
+                 motorKwds:Optional[StrAnyDict]=None,
                    **kwds:Unpack[Motile.KWDS]
             ) -> None:
 
@@ -31,7 +33,8 @@ class SkidSteerDCMotor(BilateralDrive):
             
             main = self.main
             assert main is not None
-            motorKwds = {}
+            if motorKwds is None:
+                motorKwds = {}
             motors = [
                 main.raw.dcMotor( motorPins[0], motorPins[1], **motorKwds ),
                 main.raw.dcMotor( motorPins[2], motorPins[3], **motorKwds ),

@@ -31,6 +31,8 @@ def MainManager_nliGetContainers(self:MainManager) -> Iterable[NliContainerMixin
     #if self._scenes is not None:
     #    yield self._scenes._scenes
     yield self.controlPanels
+    if self.__i2cProvider is not None:
+        yield self.__i2cProvider.i2cDevicesContainer    
 
 @_mmMeta.reloadableMethod()
 def MainManager_nliGetChildren(self:MainManager) -> Iterable[NamedLocalIdentifiable]:
@@ -40,7 +42,8 @@ def MainManager_nliGetChildren(self:MainManager) -> Iterable[NamedLocalIdentifia
     if self.__dmx is not None:
         yield self.__dmx
     yield self.__tunables
-    
+
+
 @_mmMeta.reloadableMethod()
 def launchProject( self:MainManager, globals:Optional[StrAnyDict]=None, verbose:bool = False ) -> None: 
     if globals is not None:

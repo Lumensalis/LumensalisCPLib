@@ -1,12 +1,3 @@
-from LumensalisCP.ImportProfiler import ImportProfiler
-ImportProfiler.SHOW_IMPORTS = True
-# ALWAYS START WITH "from LumensalisCP.Simple import *"
-from LumensalisCP.Main.Manager import MainManager
-
-from LumensalisCP.HTTP.BasicServer import BasicServer
-
-ImportProfiler.dumpWorstImports(10)
-
 from LumensalisCP.Simple import * # http://lumensalis.com/ql/h2Start
 
 #############################################################################
@@ -30,7 +21,7 @@ boom = main.panel.addTrigger( description="Jamie Wants..." )
 sayAtStartup( "setup the Caernarfon Castle" )  # http://lumensalis.com/ql/h2Caernarfon
 caernarfon = main.TerrainTronics.addCaernarfon( )
 lidServo = caernarfon.initServo( 1, movePeriod=0.05 )
-neoPixels = caernarfon.addNeoPixels(pixelCount=45) 
+#neoPixels = caernarfon.addNeoPixels(pixelCount=45) 
 
 ir = caernarfon.addIrRemote(codenames="dvd_remote", refreshRate=5.0 )
 neoPixA = caernarfon.addNeoPixels(pixelCount=45) 
@@ -49,8 +40,8 @@ from LumensalisCP.I2C.Factory import I2CFactory
 I2CFactory.addVL530lx
 
 sayAtStartup( "setup StemmaQT..." ) # StemmaQT modules
-timeOfFlightSensor = main.i2cFactory.addVL530lx(refreshRate=0.25)
-vcnl4040 = main.adafruitFactory.addVCNL4040()
+timeOfFlightSensor = caernarfon.i2cFactory.addVL530lx(refreshRate=0.25)
+vcnl4040 = caernarfon.adafruitFactory.addVCNL4040()
 
 lightSensor = vcnl4040.light
 proximitySensor = vcnl4040.proximity
@@ -61,12 +52,12 @@ main.panel.monitor( proximitySensor )
 
 #############################################################################
 sayAtStartup( "setup touch inputs" ) # http://lumensalis.com/ql/h2Touch
-capTouch = main.adafruitFactory.addMPR121()
+capTouch = caernarfon.adafruitFactory.addMPR121()
 leftStoneTouch, centerStoneTouch, rightStoneTouch= capTouch.addInputs( 1, 2, 4 )
 leftRimTouch, centerRimTouch, rightRimTouch= capTouch.addInputs( 5, 6, 7 )
 bottomTouch = capTouch.addInput( 8 )
 
-magInputs = main.adafruitFactory.addAW9523()
+magInputs = caernarfon.adafruitFactory.addAW9523()
 lidClosedMag    = magInputs.addInput(1)
 lidOpenMag      = magInputs.addInput(2)
 
@@ -154,6 +145,8 @@ ir.onCode( "DOWN", do( lid.close ).unless( handTooClose ) )
 ir.onCode( "UP", do( lid.open ) )
 ir.onCode( "NEXT", do( main.scenes.switchToNextIn, ["sceneClosed","sceneOpening","sceneOpen","sceneClosing"] ) )
 
+rightStoneTouch.enableDbgOut = True
+rightRimTouch.enableDbgOut = True
 fireOnRising( rightStoneTouch, lid.open )
 fireOnRising( rightRimTouch, lid.close )
 
@@ -187,7 +180,9 @@ centerSpin = Spinner(centerStoneLights)
 sceneOpen.addPatterns( frontLidBlink(onValue="GREEN"), aglSpinner, rainbowLeft, rainbowRight )
 #sceneClosed.addPatterns( frontLidBlink(onValue="RED"), closedSpin, centerPattern, rainbowLeft, rainbowRight  )
 sceneClosed.addPatterns( gauge, centerPattern, frontLidStripPattern , controlDemoGauge )
-sceneMoving.addPatterns( frontLidBlink(onValue="YELLOW"), centerSpin, aglSpinner )
+sceneMoving.addPatterns( frontLidBlink(onValue="YELLOW"), 
+        centerSpin, Spinner(angleGaugeLights, onValue=Colors.RED, tail=0.42,period=0.49)
+ )
 
 #############################################################################
 # Wrap up and launch : http://lumensalis.com/ql/h2Launch

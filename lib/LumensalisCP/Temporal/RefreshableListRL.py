@@ -33,7 +33,7 @@ def __processOne( self:RefreshableListImplementation, context:EvaluationContext,
         show = self.enableDbgOut or item.enableDbgOut
         
         # prepare for refresh
-        assert item.refreshList is self
+        assert item.refreshList is self, f"Item {item} is in a different refresh list {item.refreshList}, not {self}"  
         item.__priorRefresh = item.__latestRefresh
         item.__latestRefresh = when
         item.__refreshCount += 1
@@ -150,7 +150,7 @@ def addActive( self:RefreshableListImplementation, context:EvaluationContext, it
 def add( self:RefreshableListImplementation, context:EvaluationContext, item:Refreshable, nextRefresh:Optional[TimeInSeconds]=None ) -> None:
     if item.refreshList is not None:
         if item.refreshList is not self:
-            raise ValueError( f"Item {item} already in a refresh list {item.refreshList}" )
+           raise ValueError( f"Item {item} already in a refresh list {item.refreshList}" )
         self.warnOut( "add ... Item %s already in this refresh list", item )
     
     if nextRefresh is None:

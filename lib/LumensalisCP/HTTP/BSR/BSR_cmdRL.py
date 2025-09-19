@@ -5,7 +5,7 @@ from LumensalisCP.HTTP.BSR.common import *
 
 from LumensalisCP.util.Reloadable import ReloadableModule
 from LumensalisCP.HTTP.BSR import bsrReloadablesRL
-
+import sys
 _module = ReloadableModule( 'LumensalisCP.HTTP.BasicServer' )
 _BasicServer = _module.reloadableClassMeta('BasicServer')
 
@@ -23,6 +23,10 @@ def _reload(self:BasicServer, module:str ) -> Any:
         if realModule.__name__.endswith(module):
             reload( realModule )
             return realModule
+    realModule = sys.modules.get(module,None)
+    if realModule is not None:
+        reload( realModule )
+        return realModule
 
     raise ValueError(f"Module {module} not found in reloadable modules.")
 

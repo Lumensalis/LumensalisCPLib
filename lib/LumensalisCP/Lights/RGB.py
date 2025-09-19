@@ -171,6 +171,12 @@ class RGB(CountedInstance,RGBInterface):
     def brightness(self)->float: 
         return (self.r + self.g + self.b) / 3.0
     
+    @brightness.setter
+    def brightness(self,v:float) -> None: 
+        self.r = withinZeroToOne_(self.r * v)
+        self.g = withinZeroToOne_(self.g * v)
+        self.b = withinZeroToOne_(self.b * v)
+
     def __repr__(self):
         return safeFmt( "(%.3f,%.3f,%.3f)", self.r, self.g, self.b)
  

@@ -10,7 +10,10 @@ import busio
 from LumensalisCP.CPTyping import Unpack
 from LumensalisCP.Shields.Pins import PinProxy
 from LumensalisCP.Shields.Base import ShieldBase, ShieldI2CMixin
+from LumensalisCP.Identity.Local import NliGetContainersRVT 
 
+
+# pyright: reportPrivateUsage=false
 #############################################################################
 __profileImport.parsing()
 
@@ -56,6 +59,12 @@ class D1MiniBoardI2CBase(D1MiniBoardBase, ShieldI2CMixin):
             self.__defaultI2C  = self.i2c
        return self.__defaultI2C or board.I2C() # pylint: disable=no-member
          
+
+
+    def nliGetContainers(self) -> NliGetContainersRVT:
+        yield from super().nliGetContainers()  #type: ignore
+        yield self.i2cDevicesContainer
+
 
 #############################################################################
 __profileImport.complete()
