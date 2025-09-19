@@ -1,6 +1,3 @@
-from LumensalisCP.ImportProfiler import ImportProfiler
-ImportProfiler.SHOW_IMPORTS = True
-
 from LumensalisCP.Simple import *  # http://lumensalis.com/ql/h2Start
 
 #############################################################################

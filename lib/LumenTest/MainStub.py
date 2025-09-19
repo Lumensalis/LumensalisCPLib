@@ -1,6 +1,7 @@
 from LumensalisCP.ImportProfiler import ImportProfiler
 import sys, time
-ImportProfiler.SHOW_IMPORTS = False
+#ImportProfiler.SHOW_IMPORTS = False
+
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl, pmc_gcManager
 
 if False:

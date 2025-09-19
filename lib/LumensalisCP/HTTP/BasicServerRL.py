@@ -23,8 +23,8 @@ from LumensalisCP.HTTP.BSR import bsrReloadablesRL
 @_BasicServer.reloadableMethod()
 def _reloadForRoute( self:BasicServer, name:str ) -> None: # type:ignore[no-untyped-def]
 
-    ImportProfiler.SHOW_IMPORTS = True
-    ReloadableImportProfiler.SHOW_IMPORTS = True
+    #ImportProfiler.SHOW_IMPORTS = True
+    #ReloadableImportProfiler.SHOW_IMPORTS = True
     
     self.infoOut( "_reloadForRoute %s", name )
     pmc_gcManager.checkAndRunCollection(force=True)

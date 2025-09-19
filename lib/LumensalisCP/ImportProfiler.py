@@ -39,6 +39,7 @@ try:
 except ImportError:
     
     TYPE_CHECKING = False # type: ignore
+
 from LumensalisCP.Temporal.Time import getOffsetNow, TimeInSeconds
 
 from LumensalisCP.Main.PreMainConfig import sayAtStartup, pmc_mainLoopControl, pmc_gcManager
@@ -53,7 +54,7 @@ class ImportProfiler(CountedInstance):
     """ If True, will print import profiling messages to the console.
     """
 
-    RECORD_IMPORTS:ClassVar[bool|None] = True
+    RECORD_IMPORTS:ClassVar[bool|None] = False
     """ If false, disables import tracking (and reduces the overhead to __almost__ zero)
     """
 
