@@ -119,7 +119,7 @@ class RawPWMOutputWrapper( RawPinWrapper, NamedOutputTarget ):
     def __init__(self, parent:RawAccess, pin: microcontroller.Pin, **kwargs:Unpack[KWDS]) -> None:
 
         RawPinWrapper.__init__(self,  parent=parent, pin=pin)
-        kwargs.setdefault('temporaryName', f"{pin}")
+        kwargs.setdefault('temporaryName', NliMakeValidName(f"{pin}"))
         NamedOutputTarget.__init__(self, **kwargs)
         pKwds = { 
             'duty_cycle': kwargs.get('duty_cycle', 0),
@@ -320,14 +320,15 @@ class RawAccess( MainChild ):
 
         """ return (inputA,inputB,speed) """
 
-        a = self.getPWMOutput( ia, **kwargs )
-        b = self.getPWMOutput( ib, **kwargs )
+        from LumensalisCP.Behaviors.Rotation import DCMotorSpinner
+        motorArgs, outputArgs = DCMotorSpinner.extractMotorKwds(kwargs)
+
+        a = self.getPWMOutput( ia, **outputArgs )
+        b = self.getPWMOutput( ib, **outputArgs )
 
         kwargs.setdefault('duty_cycle', 0)
         kwargs.setdefault('frequency', 2000) # default to 2000Hz
 
-        from LumensalisCP.Behaviors.Rotation import DCMotorSpinner
-        motorArgs, outputArgs = DCMotorSpinner.extractMotorKwds(kwargs)
         rv = DCMotorSpinner(a, b, **motorArgs)
 
         return rv

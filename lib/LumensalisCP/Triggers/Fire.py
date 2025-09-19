@@ -12,6 +12,7 @@ from LumensalisCP.common import *
 #from LumensalisCP.Triggers.Invocable import *
 from LumensalisCP.Triggers.Trigger import Trigger
 from LumensalisCP.Eval.ExpressionTerm import rising, ExpressionTerm
+from LumensalisCP.Identity.Local import NliMakeValidName
 
 if TYPE_CHECKING:
     from LumensalisCP.Triggers.Action import Action, ActionDoArg, ActionCB, ActionCBArg, ActionSelectBehavior
@@ -36,7 +37,9 @@ def fireOnTrue( expression:Expression|ExpressionTerm,
             assert isinstance(cb.__name__, str), f"cb.__name__ must be a string, got {type(cb.__name__)}" # type: ignore[reportCallIssue]
             name = cb.__name__ # type: ignore[reportCallIssue]
         except (AttributeError, AssertionError):
-            name = repr(cb)
+            name = NliMakeValidName(repr(cb))
+
+            
         trigger = Trigger( name=name )
     cTrigger = trigger 
 

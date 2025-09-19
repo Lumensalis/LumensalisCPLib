@@ -22,6 +22,9 @@ NliGetChildrenRVT:TypeAlias = Generator[NamedLocalIdentifiable]
 
 NliGetContainersRVT:TypeAlias = Generator[NliContainerInterface]
 
+def NliMakeValidName(name:str) -> str: ...
+def NliIsValidName(name:str) -> bool: ...
+
 class NliInterface( IDebuggable):
     @property
     def name(self) -> str: ...
@@ -160,5 +163,6 @@ class NliList[T](NamedLocalIdentifiableWithParent, GenericList[T], NliContainerM
 
 __all__ = ['LocalIdentifiable','NamedLocalIdentifiable','NamedLocalIdentifiableWithParent',
             'NliContainerMixin','NliList', 'NliInterface','NliContainerInterface',
-            'NliGetChildrenRVT','NliGetContainersRVT'
+            'NliGetChildrenRVT','NliGetContainersRVT',
+            'NliMakeValidName','NliIsValidName'
             ]

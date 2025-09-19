@@ -10,6 +10,7 @@ from LumensalisCP.Debug import Debuggable
 import LumensalisCP.pyCp.weakref as lcpWeakref
 from LumensalisCP.CPTyping import ReferenceType, Optional, Iterable , Generic, TypeVar, GenericT
 from LumensalisCP.pyCp.collections import GenericList, GenericListT
+import re
 
 if TYPE_CHECKING:
     from .Proxy import GenericNamedLocalInstanceProxyAction
@@ -65,7 +66,24 @@ class NliContainerInterface(NliInterface):
     def values(self) -> Iterable[Any]: ...
 
     def __getitem__(self, key:str|int) -> NamedLocalIdentifiable: ...
-    
+
+############################################################################# 
+
+__mvnnRe = re.compile(r'[^a-zA-Z0-9_]')
+__nliValidNameRe = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
+
+def NliMakeValidName(name:str) -> str:
+    """ make a valid NLI name from the given string """
+    assert name is not None
+    name = __mvnnRe.sub('', name)
+    #if name == '':
+    #    name = f"Item_{id(name):X}"
+    assert name != '', "name cannot be empty or all spaces"
+    return name
+
+def NliIsValidName(name:str) -> bool:
+    return __nliValidNameRe.match(name) is not None
+
 ############################################################################# 
 FULL_KWDS=TypeVar("FULL_KWDS")
 
@@ -117,6 +135,7 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
 
     @staticmethod 
     def _nliNameIsValid(name:str) -> bool:
+        return __nliValidNameRe.match(name) is not None
         return name.replace(' ','') == name and name != ''
     
     @property
@@ -197,7 +216,7 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
         if self.__name is not None: return self.__name
         cached = getattr(self, '_nliCachedName', None)
         if cached is None: 
-            cached = f"{self.__class__.__name__}@{id(self):X}"
+            cached = f"{self.__class__.__name__}_{id(self):X}"
             self._nliCachedName = cached
         return cached
 
@@ -344,7 +363,10 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
 __all__ = ['LocalIdentifiable',
            'NamedLocalIdentifiable',
            'NamedLocalIdentifiableWithParent',
-            'NliContainerMixin','NliList', 'NliInterface',
-            'NliGetChildrenRVT','NliGetContainersRVT']
+            'NliContainerInterface', 'NliContainerMixin',
+            'NliList', 'NliInterface',
+            'NliGetChildrenRVT','NliGetContainersRVT',
+            'NliMakeValidName','NliIsValidName'
+            ]
 
 __profileImport.complete(globals())

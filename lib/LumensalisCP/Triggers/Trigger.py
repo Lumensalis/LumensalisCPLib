@@ -41,7 +41,7 @@ class Trigger(NamedLocalIdentifiable, Invocable):
                   or getattr(action, 'name', None)
                   or getattr(action, 'tName', None)
                   or getattr(action, 'dbgName', None)
-                    or f"{type(action).__name__}@{id(self):X}"
+                    or f"{type(action).__name__}_{id(self):X}"
             )
             kwds['temporaryName'] = name
         
