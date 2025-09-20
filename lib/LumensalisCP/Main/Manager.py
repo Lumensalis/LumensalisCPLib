@@ -40,6 +40,7 @@ if TYPE_CHECKING:
     from LumensalisCP.I2C.Adafruit.Factory import AdafruitFactory
     from LumensalisCP.Main.Async import MainAsyncChild, ManagerAsync
     from LumensalisCP.Controllers.ConfigurableBase import ConfigurableBase, ControllerConfig
+    from LumensalisCP.Main.Analyst import Analyst
 
 import LumensalisCP.Main.ProfilerRL
 
@@ -280,6 +281,13 @@ class MainManager( NamedLocalIdentifiable ): #, I2CProvider, ConfigurableBase, )
         return self.__dmx
     
     @property
+    def analyst(self) -> Analyst:
+        #if self.__analyst is None:
+        #    import LumensalisCP.Main.Analyst
+        #    self.__analyst = LumensalisCP.Main.Analyst.Analyst(name="Main Analyst")
+        return self.__analyst
+
+    @property
     def socketPool(self) -> Any:
         if self.__socketPool is None:
             self.sayAtStartup( "socketPool is None, creating it" )
@@ -436,6 +444,8 @@ see http://lumensalis.com/ql/h2Scenes
     asyncManager:ManagerAsync
     __socketPool:Any 
     __identity: ControllerIdentity
+    __analyst: Analyst
+
 
 addReloadableClass(MainManager, checkMethods=False)
 #addReloadableClass( MainManager )

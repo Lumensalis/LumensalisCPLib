@@ -33,6 +33,7 @@ def MainManager_nliGetContainers(self:MainManager) -> Iterable[NliContainerMixin
     yield self.controlPanels
     if self.__i2cProvider is not None:
         yield self.__i2cProvider.i2cDevicesContainer    
+    
 
 @_mmMeta.reloadableMethod()
 def MainManager_nliGetChildren(self:MainManager) -> Iterable[NamedLocalIdentifiable]:
@@ -42,6 +43,8 @@ def MainManager_nliGetChildren(self:MainManager) -> Iterable[NamedLocalIdentifia
     if self.__dmx is not None:
         yield self.__dmx
     yield self.__tunables
+    yield self.__analyst
+    yield self._refreshables
 
 
 @_mmMeta.reloadableMethod()

@@ -47,7 +47,6 @@ def __liveInit(self:MainManager, **kwds:Any):
         #self._when = TimeInSeconds( self.getNewNow() - self.__startNow )
 
 
-        
         self.asyncManager = ManagerAsync(main=self)
     
         mainConfigDefaults = dict(
@@ -61,6 +60,9 @@ def __liveInit(self:MainManager, **kwds:Any):
 
         self.__identity = ControllerIdentity(self)
         displayio.release_displays()
+
+
+
         if pmc_mainLoopControl.preMainVerbose: print( f"MainManager options = {self.config.options}" )
         
 @_mmMeta.reloadableMethod()
@@ -134,6 +136,8 @@ def _finishInit(self:MainManager) -> None:
     #rCollect.enableDbgOut = True
     rDeferred.activate() 
 
+    from LumensalisCP.Main.Analyst import Analyst
+    self.__analyst = Analyst(main=self)
 
 
 @_mmMeta.reloadableMethod()
