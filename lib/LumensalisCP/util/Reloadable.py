@@ -74,6 +74,10 @@ class ReloadableClassMeta(CountedInstance):
     def make(name: str) -> ReloadableClassMeta:
         return ReloadableClassMeta._metaDict.get(name,None) or ReloadableClassMeta(name)
     
+    def getClass(self) -> type:
+        assert self._cls is not None, "Class has not been set."
+        return self._cls
+    
     def addStripPrefix(self, stripPrefix:Optional[str]) -> None:
         if stripPrefix is not None and stripPrefix not in self._stripPrefixList:
             self._stripPrefixList.append(stripPrefix)
@@ -144,6 +148,14 @@ def addReloadableClass(cls:type, modules:Optional[Any]=None, checkMethods:bool=T
             assert method is not _rmStub, f"""Method {name}.{method_name} in {meta} has not been given a reloadable implementation ({
                 ",\n   ".join( [ key + ":" + str(val.index) for key, val in ReloadableClassMeta._metaDict.items() ] )
                 })."""
+            
+    if modules is not None:
+        if not isinstance(modules, (list, tuple)):
+            modules = [modules]
+        for module in modules:
+            existing = getattr(module, cls.__name__, None)
+            if existing is None:
+                setattr(module, cls.__name__, cls)
     return cls
 
 def reloadableMethod( meta:ReloadableClassMeta, 
