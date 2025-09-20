@@ -1,5 +1,10 @@
 # from .Manager import MainManager
 
+from __future__ import annotations
+
+from LumensalisCP.ImportProfiler import getImportProfiler
+__importProfile = getImportProfiler( __name__, globals() )
+
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
 from LumensalisCP.common import *
 from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl
@@ -9,7 +14,9 @@ import LumensalisCP.pyCp.weakref as weakref
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
 
+__importProfile.parsing()
 #############################################################################
+
 class MainChild( NamedLocalIdentifiable, ActivatablePeriodicRefreshable ):
     
     class KWDS( NamedLocalIdentifiable.KWDS, ActivatablePeriodicRefreshable.KWDS ):
@@ -100,3 +107,5 @@ class MainRef(CountedInstance):
         return MainRef._theManager
 
 __all__ = ['MainChild','FactoryBase','ManagerBase','SubManagerBase','ManagerRef','MainRef']
+
+__importProfile.complete()

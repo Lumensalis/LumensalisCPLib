@@ -26,7 +26,7 @@ class ShieldBase(ControllerConfigurableChildBase):#,RfMxnActivatablePeriodic, Re
         self.activate(main.getContext())
 
     def nliGetContainers(self) -> NliGetContainersRVT:
-        return [ self.__componentsContainer ]
+        yield self.__componentsContainer
 
     def nliHasContainers(self) -> bool:
         return True

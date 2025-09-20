@@ -51,10 +51,12 @@ class NliInterface(IDebuggable):
     def nliHasContainers(self) -> bool: ...
     def nliHasItems(self) -> bool: ...
 
-    def nliGetChildren(self) -> NliGetChildrenRVT: ...
+    def nliGetChildren(self) -> NliGetChildrenRVT: 
+        raise NotImplementedError
 
-    def nliGetContainers(self) -> NliGetContainersRVT: ...
-
+    def nliGetContainers(self) -> NliGetContainersRVT: 
+        raise NotImplementedError
+    
     def isContainer(self) -> bool: ...
 
 #############################################################################
@@ -136,8 +138,7 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
     @staticmethod 
     def _nliNameIsValid(name:str) -> bool:
         return __nliValidNameRe.match(name) is not None
-        return name.replace(' ','') == name and name != ''
-    
+
     @property
     def name(self) -> str: 
         return self.__name or self.__temporaryName or self.nliDynamicName()
@@ -182,8 +183,6 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
             
     def nliGetChildren(self) -> NliGetChildrenRVT:
         yield from ()
-        
-
 
     def nliHasContainers(self) -> bool:
         return False
@@ -191,10 +190,8 @@ class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
     def nliGetContainers(self) -> NliGetContainersRVT:
        yield from ()
 
-
     def nliHasItems(self) -> bool:
         return False
-
 
     def nliSetContainer(self, container:NliContainerMixin):
         assert container is not None
@@ -280,7 +277,8 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
 
     
     def __iter__(self) -> Iterable[_NLIListT]:
-        return iter(self.data)
+        yield from self.data
+        #return iter(self.data)
     
     def __next__(self) -> Generator[_NLIListT]:
         for item in self.data:
@@ -290,7 +288,8 @@ class NliList(NamedLocalIdentifiableWithParent, GenericListT[_NLIListT], NliCont
         return len(self.data) > 0
 
     def iter(self) -> Iterable[_NLIListT]:
-        return iter(self.data)
+        yield from self.data
+        #return iter(self.data)
     
     def keys(self) -> list[str]:
         return [v.name for v in self.data] # type: ignore[return-value]

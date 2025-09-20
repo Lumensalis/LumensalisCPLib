@@ -18,7 +18,7 @@ _sayImport.parsing()
 
 #############################################################################
 
-class TunableGroup( Tunable, NamedLocalIdentifiable, InteractableGroup ):
+class TunableGroup(  NamedLocalIdentifiable, InteractableGroup, Tunable ):
     """ Panels define a collection of controls which can be used to 
      interact with your project
 
@@ -30,9 +30,16 @@ class TunableGroup( Tunable, NamedLocalIdentifiable, InteractableGroup ):
 
         #self._tunables:NliList[TunableSetting[Any,TunableGroup]] = NliList(name='tunables',parent=self)
 
+
+    def nliGetContainers(self) -> NliGetContainersRVT: 
+        yield  from Tunable.nliGetContainers(self)
+   
+    def nliHasContainers(self) -> bool:
+        return Tunable.nliHasContainers(self)
+    
     @property
     def tunables(self) -> NliList[TunableSetting[Any,TunableGroup]]:
-        return self._tunableSettings
+        return self._tunableSettings # type: ignore
 
     def _positionalArgs(self, controlCls: type, argOne:Any|None,  argTwo:str|None, kwds:StrAnyDict)->Tuple[Any]:
         defaultStartingValue = kwds.get('startingValue', None)

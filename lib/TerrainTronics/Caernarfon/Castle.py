@@ -121,10 +121,9 @@ class CaernarfonCastle(D1MiniBoardI2CBase):
         return True
 
     def nliGetContainers(self) -> NliGetContainersRVT:
-        return itertools.chain(  [ 
-            self.__pixelsContainer, 
-            self.__servoContainer 
-            ], super().nliGetContainers())  #type: ignore
+        yield self.__pixelsContainer
+        yield self.__servoContainer
+        yield from super().nliGetContainers()
 
     def derivedRefresh(self,context:EvaluationContext):
         for pixels in self.__allPixels:
