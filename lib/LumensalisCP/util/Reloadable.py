@@ -45,7 +45,10 @@ class ReloadableModule(CountedInstance):
         name = f"{self.name}.{name}"
         rv = ReloadableClassMeta.make(name)
         rv.setModule(self)
-        rv.addStripPrefix(stripPrefix)
+        if stripPrefix is not None:
+            rv.addStripPrefix(stripPrefix)
+        else:
+            rv.addStripPrefix(f"{name}_")
         return rv
 
 
