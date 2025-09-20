@@ -108,9 +108,9 @@ class Refreshable( RefreshableInterface, IDebuggable ):
     #    """
     #    raise NotImplementedError
 
-    @final
-    @reloadingMethod
-    def _refresh( self, context:EvaluationContext, when:TimeInSeconds ) -> bool: ...
+    #@final
+    #@reloadingMethod
+    #def _refresh( self, context:EvaluationContext, when:TimeInSeconds ) -> bool: ...
   
     @property
     def nextRefresh(self) -> TimeInSeconds|None: 

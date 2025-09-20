@@ -33,7 +33,12 @@ def __processOne( self:RefreshableListImplementation, context:EvaluationContext,
         show = self.enableDbgOut or item.enableDbgOut
         
         # prepare for refresh
-        assert item.refreshList is self, f"Item {item} is in a different refresh list {item.refreshList}, not {self}"  
+
+        #assert item.refreshList is self, f"Item {item} is in a different refresh list {item.refreshList}, not {self}"  
+        if item.refreshList is not self:
+            self.errOut( f"Item {item} is in a different refresh list {item.refreshList}, not {self}"  )
+            return
+
         item.__priorRefresh = item.__latestRefresh
         item.__latestRefresh = when
         item.__refreshCount += 1
@@ -46,6 +51,8 @@ def __processOne( self:RefreshableListImplementation, context:EvaluationContext,
             item.__latestException = inst
             item.__exceptionCount += 1
 
+        now = context.newNow
+        item.__latestRefreshComplete = now 
         # handle list rescheduling
         if item.nextRefresh is None:  # should normally be true, unless
                 # the item's derivedRefresh ended up calling setNextRefresh
@@ -62,6 +69,7 @@ def __processOne( self:RefreshableListImplementation, context:EvaluationContext,
 
 #@_RefreshableListImplementation.reloadableMethod()
 def _processInner( self:RefreshableListImplementation, context:EvaluationContext, when:TimeInSeconds ) -> None:
+    with context.subFrame('runScene', self.name) as activeFrame:
         self.__processCount += 1
         if len(self._refreshables) == 0: 
             if self.enableDbgOut: self.dbgOut( "no refreshables to process" )  
@@ -75,6 +83,7 @@ def _processInner( self:RefreshableListImplementation, context:EvaluationContext
         show = self.enableDbgOut or first.enableDbgOut
         if first.nextRefresh > when:
             if show: self.dbgOut( "process not ready, nextRefresh = %.3f > %.3f", first.nextRefresh, when )  
+            self.__assertSorted()
             return
 
         if show: self.infoOut("process refreshing %r", first)

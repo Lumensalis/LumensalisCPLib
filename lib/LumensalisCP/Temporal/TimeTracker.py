@@ -96,6 +96,9 @@ class TimingTracker(NamedLocalIdentifiable):
                 }
             average = self.totalElapsed / loops
             clockedAverage = clockElapsed / loops
+            out['zeroElapsed'] = self.zeroElapsed
+            out['totalElapsed'] = self.totalElapsed 
+            out['clockElapsed'] = clockElapsed 
             out['average'] = average
             out['fps'] =  1.0 / average
             out['clocked'] = clockedAverage
@@ -104,9 +107,7 @@ class TimingTracker(NamedLocalIdentifiable):
             #out['clockElapsed'] = clockElapsed
             out['min'] = self.minElapsed
             out['max'] = self.maxElapsed
-            out['zeroElapsed'] = self.zeroElapsed
-
-
+            
         return out  
 
 #############################################################################

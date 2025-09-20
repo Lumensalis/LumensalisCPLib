@@ -10,12 +10,13 @@ from LumensalisCP.Temporal.Refreshable import Refreshable, \
 from LumensalisCP.Temporal import RefreshableListRL
 
 from LumensalisCP.common import *
-from LumensalisCP.Identity.Local import NamedLocalIdentifiable
+from LumensalisCP.Identity.Local import NamedLocalIdentifiable, NliGetChildrenRVT
 from LumensalisCP.util.Reloadable import ReloadableClass, reloadingMethod
 
 
 if TYPE_CHECKING:
     from  LumensalisCP.Eval.Expressions import EvaluationContext
+    
 
 #############################################################################
 
@@ -41,8 +42,8 @@ class RefreshableListImplementation(RefreshableListInterface ):
         return iter(self._refreshables)
     
     @reloadingMethod
-    def __processOne( self, context:EvaluationContext, when:TimeInSeconds, item:Refreshable, index:int ) -> None:  ...
-    
+    def __processOne( self, context:EvaluationContext, when:TimeInSeconds, item:Refreshable, index:int ) -> None:
+        RefreshableListRL.__processOne(context, when, item, index)
 
     def __assertSorted(self) -> None:
         refreshForSortedTest = 0
@@ -59,7 +60,8 @@ class RefreshableListImplementation(RefreshableListInterface ):
         return self.__processCount
 
     @reloadingMethod
-    def process( self, context:EvaluationContext, when:TimeInSeconds ) -> None: ...
+    def process( self, context:EvaluationContext, when:TimeInSeconds ) -> None: 
+        RefreshableListRL.process(context,when)
 
     def addActive( self, context:EvaluationContext, item:Refreshable, 
                   nextRefresh:Optional[TimeInSeconds]=None ) -> None: ...
@@ -89,7 +91,6 @@ class RootRefreshableList(RefreshableListImplementation, NamedLocalIdentifiable)
         kwds,nliKwds = NamedLocalIdentifiable.extractInitArgs(kwds)
         RefreshableListImplementation.__init__(self, **kwds)
         NamedLocalIdentifiable.__init__(self, **nliKwds)
-
 
 #############################################################################
 
@@ -168,7 +169,10 @@ class NamedNestedRefreshableList(NestedRefreshableList,NamedLocalIdentifiable):
         return True
             
     def nliGetChildren(self) -> NliGetChildrenRVT:
-        yield from self._refreshables
+        for item in self._refreshables:
+            assert isinstance( item, NamedLocalIdentifiable )
+            yield item
+        
 
 #############################################################################
 
