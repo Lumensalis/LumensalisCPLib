@@ -40,7 +40,7 @@ class BasicServer(Server,MainAsyncChild):
     def __init__( self, **kwds:Unpack[MainAsyncChild.KWDS] ) -> None:
 
         kwds.setdefault('name', 'LCPFWebServer')
-        kwds.setdefault('loopSleepDuration', 20)
+        kwds.setdefault('loopSleepDuration', 50)
         MainAsyncChild.__init__(self, **kwds )
         assert self.main is not None
         main = self.main 
@@ -189,7 +189,7 @@ class BasicServer(Server,MainAsyncChild):
         self.startupOut( "started server on %r", address )
 
         pmc_gcManager.adjustLowerThreshold( "WebServerStarted" )
-        self.tracker.trackGC = True
+        #self.tracker.trackGC = True
 
     async def runAsyncSingleLoop(self, when:TimeInSeconds) -> None:
         try:

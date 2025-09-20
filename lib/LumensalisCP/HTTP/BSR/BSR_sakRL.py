@@ -27,7 +27,9 @@ def getAsyncInfo(main:MainManager) -> dict[str, Any]:
     asyncLoop = main.asyncLoop
     asyncManager = main.asyncManager
 
-    children = dict( [(getattr(task,'name',None) or task.dbgName, task.asyncTaskStats()) for task in  asyncManager.children] ) 
+    children = dict( 
+        [(getattr(task,'name',None) or task.dbgName, task.asyncTaskStats()) 
+                            for task in  asyncManager.children] ) 
 
     return {
         #'nextWait': asyncLoop.nextWait,

@@ -19,7 +19,8 @@ from LumensalisCP.common import *
 #from LumensalisCP.util.bags import Bag
 from LumensalisCP.util.Releasable import Releasable
 from LumensalisCP.Main import ProfilerRL
-from LumensalisCP.util.Reloadable import addReloadableClass, reloadingMethod
+from LumensalisCP.util.Reloadable import addReloadableClass, reloadingMethod, ReloadableClass
+
 if TYPE_CHECKING:
     from LumensalisCP.Main.Updates import UpdateContext
 
@@ -38,6 +39,7 @@ def ptToSeconds(v: TimePT|float) -> TimeInSeconds:
 
 PWJsonNestDataType:TypeAlias = Union[StrAnyDict,List[Any]]
 
+@ReloadableClass()
 class ProfileWriteConfig(CountedInstance):
     class KWDS(TypedDict):
         target:Required[TextIO|list[str]|StrAnyDict]
@@ -142,6 +144,7 @@ class ProfileWriteConfig(CountedInstance):
             self.__target.write( "\r\n" ) # type: ignore[reportAttributeAccessIssue]
 
 
+@ReloadableClass()
 class ProfileSnapEntry(Releasable): 
     # __slots__ = ["name","name2","lw","e","_nest","_nesting","etc"]
     __defaultEtc: dict[str, Any] = {}
@@ -239,8 +242,8 @@ class ProfileSnapEntry(Releasable):
         return self._nest
 
     @reloadingMethod
-    def writeOn(self,config:ProfileWriteConfig,indent:str=''):...
-        #return ProfilerRL.ProfileSnapEntry_writeOn(self,config,indent)
+    def writeOn(self,config:ProfileWriteConfig,indent:str=''):
+        return ProfilerRL.ProfileSnapEntry_writeOn(self,config,indent)
     
     def jsonData(self,**kwds:StrAnyDict) -> Mapping[str,Any]:
         #rv = collections.OrderedDict(lw=self.lw, e=self.e, id=id(self), **self.etc)
@@ -292,7 +295,7 @@ class CachedList(CountedInstance):
             self.__entries[x] = None
         self.__size = 0
 
-
+@ReloadableClass()
 class ProfileFrameBase(Releasable): 
     
     gcFixedOverhead = 0
@@ -499,9 +502,9 @@ class ProfileFrameBase(Releasable):
         return entry
         
     @reloadingMethod
-    def writeOn(self,config:ProfileWriteConfig,indent:str=''): ...
-    #    return ProfilerRL.ProfileFrameBase_writeOn(self,config,indent)
-    
+    def writeOn(self,config:ProfileWriteConfig,indent:str=''): 
+        return ProfilerRL.ProfileFrameBase_writeOn(self,config,indent)
+
     def __str__(self):
         return f"PSF{('-'+self.name) if self.name is not None else ''}[{self.depth}:{self._rIndex}]@{id(self):X}"
     
@@ -514,6 +517,7 @@ class ProfileFrameBase(Releasable):
         if self.shouldProfileMemory():
             self.rawUsedGC =  gc.mem_alloc() - self.allocGc 
 
+@ReloadableClass()
 class ProfileSubFrame(ProfileFrameBase): 
     #__context : UpdateContext
     
@@ -549,7 +553,7 @@ class ProfileSubFrame(ProfileFrameBase):
     def shouldProfileMemory(self) -> bool:
         return pmc_gcManager.PROFILE_MEMORY_NESTED
 
-
+@ReloadableClass()
 class ProfileFrame(ProfileFrameBase): 
     updateIndex: int
     #start: TimeInSeconds
@@ -590,8 +594,8 @@ class ProfileFrame(ProfileFrameBase):
         super().reset(context)
 
     @reloadingMethod
-    def writeOn(self,config:ProfileWriteConfig,indent:str=''): ...
-    #    return ProfilerRL.ProfileFrame_writeOn(self,config,indent)
+    def writeOn(self,config:ProfileWriteConfig,indent:str=''): 
+        return ProfilerRL.ProfileFrame_writeOn(self,config,indent)
     
 
 class ProfileStubFrameEntry(ProfileSnapEntry): 
@@ -640,6 +644,7 @@ class ProfileStubFrame(ProfileFrame):
 
 #############################################################################
 
+@ReloadableClass()
 class Profiler(CountedInstance):
     updateIndex: int
     when: TimeInSeconds
@@ -679,7 +684,8 @@ class Profiler(CountedInstance):
     def setProfileDisabled( self, disabled:bool ) -> None: ...
 
     @reloadingMethod
-    def getProfilerInfo( self,  dumpConfig:Optional[ProfileWriteConfig]=None ) -> Any: ...
+    def getProfilerInfo( self,  dumpConfig:Optional[ProfileWriteConfig]=None ) -> Any: 
+        return ProfilerRL.getProfilerInfo(self, dumpConfig)
 
     def nextNewFrame(self, context:UpdateContext, eSleep:TimeInSeconds=TimeInSeconds(0) ) -> ProfileFrame:
         updateIndex = context.updateIndex
@@ -705,20 +711,25 @@ class Profiler(CountedInstance):
             return None
         return rv 
     
-    
-def __addProfileClass(cls:type) -> None:
-    assert isinstance(cls,type)
-    addReloadableClass(cls)
-    assert getattr(ProfilerRL, cls.__name__, None) is None, f"Reloadable class {cls.__name__} already exists in ProfilerRL"
-    setattr(ProfilerRL, cls.__name__, cls)
+
+if False:  
+    def __addProfileClass(cls:type) -> None:
+        #assert isinstance(cls,type)
+        #addReloadableClass(cls)
+        assert getattr(ProfilerRL, cls.__name__, None) is None, f"Reloadable class {cls.__name__} already exists in ProfilerRL"
+        setattr(ProfilerRL, cls.__name__, cls)
 
 
-__addProfileClass(ProfileWriteConfig)
-__addProfileClass(ProfileSnapEntry)
-__addProfileClass(ProfileFrame)
-__addProfileClass(ProfileFrameBase)
-__addProfileClass(ProfileSubFrame)
-__addProfileClass(Profiler)
+    __addProfileClass(ProfileWriteConfig)
+    __addProfileClass(ProfileSnapEntry)
+    __addProfileClass(ProfileFrame)
+    __addProfileClass(ProfileFrameBase)
+    __addProfileClass(ProfileSubFrame)
+    __addProfileClass(Profiler)
 
-
+__all__ = [ "ProfileWriteConfig", 
+           "ProfileSnapEntry", 
+           "ProfileFrame", "ProfileFrameBase", "ProfileSubFrame", 
+           "Profiler",
+     ]
 __sayImport.complete(globals())

@@ -81,7 +81,7 @@ def tooMuchMemoryUsed( self:ProfileWriteConfig ,
     return entry.usedGC > self.minB 
 
 @_ProfileSnapEntry.reloadableMethod()
-def writeOn(self:ProfileSnapEntry,config:ProfileWriteConfig,indent:str='') -> None:
+def ProfileSnapEntry_writeOn(self:ProfileSnapEntry,config:ProfileWriteConfig,indent:str='') -> None:
     if not  config.shouldShowSnap(self): 
         # print(f"Skipping snap {self.name} with e={self.e} and usedGC={self.usedGC}")
         return
@@ -118,7 +118,7 @@ def iterSnaps(self:ProfileFrameBase):
         entry = entry._nextSnap # type:ignore[reportAttributeAccessIssue]
 
 @_ProfileFrameBase.reloadableMethod()
-def writeOn(self:ProfileFrameBase,config:ProfileWriteConfig,indent:str=''):
+def ProfileFrameBase_writeOn(self:ProfileFrameBase,config:ProfileWriteConfig,indent:str=''):
     if not config.shouldShowFrame(self):
         # print(f"Skipping frame {self.name} with e={self.e} and usedGC={self.usedGC}")
         return
@@ -149,7 +149,7 @@ def writeOn(self:ProfileFrameBase,config:ProfileWriteConfig,indent:str=''):
             snap.writeOn(config,indent=indent)
 
 @_ProfileFrame.reloadableMethod()
-def writeOn(self:ProfileFrame,config:ProfileWriteConfig,indent:str=''):
+def ProfileFrame_writeOn(self:ProfileFrame,config:ProfileWriteConfig,indent:str=''):
     if not config.shouldShowFrame(self): 
         # print(f"Skipping frame {self.name} with e={self.e} and usedGC={self.usedGC}")
         return
@@ -208,7 +208,7 @@ def getProfilerInfo( self:Profiler, dumpConfig:Optional[ProfileWriteConfig]=None
     main = getMainManager()
     context = main.getContext()
     i = context.updateIndex
-    # print(f"getProfilerInfo: updateIndex = {i}")
+    print(f"getProfilerInfo: updateIndex = {i}")
     
     if dumpConfig is None:
 

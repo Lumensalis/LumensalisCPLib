@@ -54,7 +54,12 @@ def _proxyAddRecursive( config:ProxyRequestConfig,
 
     if recurse >= 0:
         containers= [proxyData(config, c, recurse=recurse) for c in target.nliGetContainers() if _count(c.values())>0 or not config.skipEmptyContainers ]
-        targetChildren = target.nliGetChildren()
+        try:
+            targetChildren = target.nliGetChildren()
+        except NotImplementedError as inst:
+            target.SHOW_EXCEPTION( inst, f"nliGetChildren not implemented for {target.name} ({type(target)})" )
+            raise
+        
         children= [proxyData(config, c, recurse=recurse) for c in targetChildren ] if targetChildren is not None else []
         
         if target.isContainer():
@@ -330,7 +335,8 @@ def BSR_proxy(self:BasicServer, request:Request, name:Optional[str]=None):
         else:
             rv['error'] =  f"Unknown command {qc.cmd!r} in {qc}"
 
-        self.infoOut( f"result = %r", rv )
+        if self.enableDbgOut:
+            self.dbgOut( f"result = %r", rv )
 
         return JSONResponse(request, rv )
     

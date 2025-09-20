@@ -27,6 +27,7 @@ from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
 pmc_mainLoopControl.sayAtStartup( "beginning import of LumensalisCP.Simple.__init__" )
 
 from LumensalisCP.Main.PreMainConfig import *
+from LumensalisCP.Main.Profiler import  Profiler
 from LumensalisCP.Lights.RGB import *
 from LumensalisCP.Triggers.Action import do
 from LumensalisCP.Demo.DemoCommon import *

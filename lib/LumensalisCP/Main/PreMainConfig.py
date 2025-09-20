@@ -79,7 +79,7 @@ class _MainLoopControl(object):
         self.MINIMUM_LOOP:bool = False
         self.ENABLE_PROFILE:bool = False
         self.nextWaitPeriod:float = 0.01
-        self.profileTimings:int = 10
+        self.profileTimings:int = 14
         self.printStatCycles:int = 5000
         self.enableHttpDebug:bool = False
         self.preMainVerbose:bool = False
