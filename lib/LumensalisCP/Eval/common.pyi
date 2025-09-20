@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from LumensalisCP.common import *
 from LumensalisCP.Identity.Local import *
+from LumensalisCP.Identity.Proxy import ProxyAccessibleClass, proxyMethod
 from LumensalisCP.Lights.RGB import *
 from LumensalisCP.Eval.Terms import *
 from LumensalisCP.Main.Updates import UpdateContext

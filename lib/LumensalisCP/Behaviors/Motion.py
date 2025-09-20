@@ -16,6 +16,7 @@ class Motion(Behavior):
     def __init__(self, actor:Actor, **kwds:Unpack[Behavior.KWDS]):
         super().__init__(actor, **kwds)
 
+@ProxyAccessibleClass()
 class Door(Actor):
     
     def __init__(self, **kwds:Unpack[Actor.KWDS]):
@@ -34,6 +35,23 @@ class Door(Actor):
     def stop(self, context:Optional[EvaluationContext]=None) -> Behavior:
         raise NotImplementedError("stop method must be implemented in subclass")
 
+    @proxyMethod()
+    def remoteDoorCmd( self, cmd:str, context:Optional[EvaluationContext]=None, **kwds:Any) -> Any:
+        if cmd == 'open':
+            self.open(context=context, **kwds)
+        elif cmd == 'close':
+            self.close(context=context, **kwds)
+
+        elif cmd == 'setSpeed':
+            speed = kwds.get('speed', None)
+            assert speed is not None, "setSpeed command requires 'speed' kwd"
+            self.setSpeed(speed, context=context)
+        elif cmd == 'stop':
+            self.stop(context=context)
+        else:
+            self.warnOut( f"remoteCmd unknown command '{cmd}'" )
+        return None
+        
 class ServoMovement(Motion):
     """_summary_
 
@@ -87,7 +105,7 @@ class ServoMovement(Motion):
         self.actor.servo.onMoveComplete( None )  # type: ignore
         super().exit(context)
         
-
+#@ProxyAccessibleClass()
 class ServoDoor(Door):
     """ Door driven by servo
 
@@ -167,9 +185,15 @@ class ServoDoor(Door):
     def close(self, context:Optional[EvaluationContext]=None, speed:TimeInSeconds|None = None) -> Behavior:
         return self.closing.activate(speed=speed, target=self.closedPosition, context=context)
 
+    
     def stop(self, context:Optional[EvaluationContext]=None) -> Motion:
-        return self.stopped.activate(target=self.servo.lastSetAngle, context=context)
+            return self.stopped.activate(target=self.servo.lastSetAngle, context=context)
 
+    @proxyMethod()
+    def move(self, context:Optional[EvaluationContext]=None, speed:TimeInSeconds|None = None) -> Behavior:
+        return self.moving.activate(speed=speed, context=context)
+
+    @proxyMethod()
     def moveTo(self, target:Degrees, speed:TimeInSeconds|None = None, context:Optional[EvaluationContext]=None) -> None:
         self.moving.activate(speed=speed, target=target, context=context)
 

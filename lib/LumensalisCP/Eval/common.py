@@ -9,6 +9,7 @@ __sayImport = getImportProfiler( __name__, globals() )
 
 from LumensalisCP.common import *
 from LumensalisCP.Identity.Local import *
+from LumensalisCP.Identity.Proxy import ProxyAccessibleClass, proxyMethod
 from LumensalisCP.Eval.Terms import *
 #from LumensalisCP.CPTyping import TYPE_CHECKING
 #from LumensalisCP.Identity.Local import NamedLocalIdentifiable
