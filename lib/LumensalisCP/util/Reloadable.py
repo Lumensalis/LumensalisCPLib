@@ -42,13 +42,14 @@ class ReloadableModule(CountedInstance):
         self.name = name
 
     def reloadableClassMeta(self, name:str,  stripPrefix:Optional[str]=None) -> ReloadableClassMeta:
+        clsName = name
         name = f"{self.name}.{name}"
         rv = ReloadableClassMeta.make(name)
         rv.setModule(self)
         if stripPrefix is not None:
             rv.addStripPrefix(stripPrefix)
         else:
-            rv.addStripPrefix(f"{name}_")
+            rv.addStripPrefix(f"{clsName}_")
         return rv
 
 
@@ -100,6 +101,7 @@ class ReloadableClassMeta(CountedInstance):
         for prefix in self._stripPrefixList:
             if method_name.startswith(prefix):
                 method_name = method_name[len(prefix):]
+                __reloadPrint(f"stripped {prefix} from {method_name} for {method.__name__} of {self.name}")
                 break
         __reloadPrint(f"Adding reloadable method {method.__name__} to {self.name}.{method_name} {self}")
         self._methods[method_name] = method
