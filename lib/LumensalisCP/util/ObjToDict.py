@@ -1,13 +1,20 @@
 
 from LumensalisCP.CPTyping import *
 
+from collections import OrderedDict
+
 def objectToVal( obj:Any ) -> Any:
     if isinstance(obj, (str,bool,int,float,type(None))): return obj
     if isinstance(obj, (list, tuple)): return [objectToVal(v) for v in obj]
+    if isinstance(obj, OrderedDict): 
+        rv = OrderedDict()
+        for k, v in obj.items():
+            rv[k] = objectToVal(v)
+        return rv
     if isinstance(obj, dict):
         rv:dict[str,Any] = {}
         for k, v in obj.items():
-            if k.startswith('_'): continue
+            if isinstance(k, str) and k.startswith('_'): continue
             rv[k] = objectToVal(v)
         return rv   
     if isinstance(obj, set): return [objectToVal(v) for v in obj]
