@@ -21,6 +21,9 @@ from LumensalisCP.util.Releasable import Releasable
 from LumensalisCP.Main import ProfilerRL
 from LumensalisCP.util.Reloadable import addReloadableClass, reloadingMethod, ReloadableClass
 
+from LumensalisCP.Identity.Proxy import ProxyAccessibleClass, proxyMethod
+from LumensalisCP.Identity.Local import NamedLocalIdentifiable
+
 if TYPE_CHECKING:
     from LumensalisCP.Main.Updates import UpdateContext
 
@@ -144,14 +147,14 @@ class ProfileWriteConfig(CountedInstance):
             self.__target.write( "\r\n" ) # type: ignore[reportAttributeAccessIssue]
 
 
-@ReloadableClass()
+@ReloadableClass(modules=ProfilerRL)
 class ProfileSnapEntry(Releasable): 
     # __slots__ = ["name","name2","lw","e","_nest","_nesting","etc"]
     __defaultEtc: dict[str, Any] = {}
     
     gcFixedOverhead = 0
     
-    name:str
+    name:str|None
     name2:str|None
     lw: TimePT
     e: TimeSpanInSeconds
@@ -201,16 +204,16 @@ class ProfileSnapEntry(Releasable):
         return self.rawUsedGC - self.usedByProfile()
 
     @classmethod
-    def makeEntry(cls, name:str, when:TimeInSeconds, name2:str|None = None ):
+    def makeEntry(cls, context:UpdateContext, name:str, when:TimeInSeconds, name2:str|None = None ):
         rp = cls.getReleasablePool()
         entry = cls._make_getFree( rp )
 
         if entry is None: entry = cls()
-        entry.reset( name, when, name2 ) # pylint: disable=no-member # type: ignore
+        entry.resetSnap( name, when, name2 ) # pylint: disable=no-member # type: ignore
         
         return cls._makeFinish( rp, entry )
             
-    def reset( self, name:str, when:TimePT, name2:str|None = None ):
+    def resetSnap( self, name:Optional[str]=None, when:Optional[TimePT]=None, name2:Optional[str] = None ):
         self.name = name
         self.lw = when
         self.e:float = 0.0
@@ -230,11 +233,9 @@ class ProfileSnapEntry(Releasable):
     @property 
     def nest( self ) -> ProfileSubFrame|None: return self._nest if self._nesting else None
 
-
-
     def subFrame(self, context:UpdateContext, 
-                 name:Optional[str]=None, 
-                 name2:str|None = None
+                 name:str, 
+                 name2:str
             ) -> 'ProfileSubFrame':
         assert not self._nesting 
         self._nest = ProfileSubFrame.makeEntry(context,name, name2)
@@ -295,13 +296,13 @@ class CachedList(CountedInstance):
             self.__entries[x] = None
         self.__size = 0
 
-@ReloadableClass()
-class ProfileFrameBase(Releasable): 
+@ReloadableClass(modules=ProfilerRL)
+class ProfileFrameBase(ProfileSnapEntry): 
     
     gcFixedOverhead = 0
     #__entries:List[ProfileSnapEntry]
     #__usedEntries:int
-    e:TimeSpanInSeconds
+    #e:TimeSpanInSeconds
     when : TimeSpanInSeconds
     frameStartPT : TimePT
     priorStartPT: TimePT
@@ -316,36 +317,27 @@ class ProfileFrameBase(Releasable):
     snapMaxEntries: ClassVar[int]
     
     nextFrameIndex = 1
-
     snapMaxEntries = 2
-    #gcFixedOverhead = 112
-    
-    #_resets = 0
-    #_allocs = 0
     
     def __init__(self):
         super().__init__()
-        #self.__entries = []
         self.firstSnap = None
         self.currentSnap = None
-        self._name = '--'
-        #self.__usedEntries = 0
-        #self.__context = context
-
-        #ProfileFrameBase._allocs += 1
-        #self.reset()
+        #self._name = '--'
         
-    @property
-    def name(self) -> str|None:
-        return self._name
+    #@property
+    #def name(self) -> str|None:
+    #    return self._name
         
-    def reset(self, context:UpdateContext ) -> None:
+    def resetFrame(self, context:UpdateContext ) -> None:
         #nowPT = getOffsetNow_ns()
         nowPT = getProfilerNow()
         #assert isinstance(context,UpdateContext)
+       
+        #self.allocGc:int = gc.mem_alloc() if self.shouldProfileMemory() else 0
+        #self.rawUsedGC:int = 0
+
         self.__context:UpdateContext = context
-        self.allocGc:int = gc.mem_alloc() if self.shouldProfileMemory() else 0
-        self.rawUsedGC:int = 0
         assert self.firstSnap is None
         assert self.currentSnap is None
         assert not self._inUse
@@ -361,6 +353,7 @@ class ProfileFrameBase(Releasable):
         self.priorStartPT:TimePT = nowPT
         self.frameStartPT:TimePT = nowPT
         self.frameEndPT:TimePT = nowPT
+
 
         self.currentSnap:ProfileSnapEntry|None = None
         self.currentSnapIndex:int= 0
@@ -437,15 +430,6 @@ class ProfileFrameBase(Releasable):
             return entry.nest.activeFrame()
         return self    
     
-    def subFrame(self, context:UpdateContext, name:Optional[str]=None, name2:Optional[str]=None) -> 'ProfileSubFrame':
-        if name is not None:
-            #snap = self.activeFrame().snap(name, name2)
-            snap = self.snap(name, name2)
-            #snap = self.activeFrame().snap(name, name2)
-            return snap.subFrame(context,name, name2)
-        #return self.activeEntry().subFrame(context,name,name2)
-        return self.subFrame(context,name,name2)
-
     def shouldProfileMemory(self) -> bool:
         return False
 
@@ -467,6 +451,7 @@ class ProfileFrameBase(Releasable):
                 snap._nextSnap = None
                 snap.release()
                 snap = nextSnap
+        super().releaseNested()
                 
         
     def _resetSnap(self,tag:str):
@@ -477,14 +462,14 @@ class ProfileFrameBase(Releasable):
             existing.release()
         setattr(self,snapTag,None)
             
-    def snap(self, name:str, name2:str|None = None, cls:type=ProfileSnapEntry ) -> ProfileSnapEntry:
+    def snap(self, name:str, name2:str|None = None, cls:type=ProfileSnapEntry, context:Optional[UpdateContext]=None ) -> ProfileSnapEntry:
         self.priorStartPT = self.latestStartPT
         self.latestStartPT = getProfilerNow()
         self.when = ptToSeconds ( self.latestStartPT - self.frameStartPT ) 
         priorEntry = self.currentSnap
         
         
-        entry:ProfileSnapEntry = cls.makeEntry( name, self.when, name2 ) # type:ignore[reportCallIssue]
+        entry:ProfileSnapEntry = cls.makeEntry( context, name, self.when, name2 ) # type:ignore[reportCallIssue]
         assert isinstance( entry, ProfileSnapEntry ), f"Invalid snap entry {entry} for {name} in {self.snapNames}"
         #entry.snapIndex = self.currentSnapIndex
         #self.currentSnapIndex += 1
@@ -501,6 +486,11 @@ class ProfileFrameBase(Releasable):
 
         return entry
         
+    def subFrame(self, context:UpdateContext, name:str, name2:str) -> 'ProfileSubFrame':
+        assert name2 is not None
+        return self.snap( name,name2, ProfileSubFrame, context) # type: ignore[reportCallIssue]
+
+
     @reloadingMethod
     def writeOn(self,config:ProfileWriteConfig,indent:str=''): 
         return ProfilerRL.ProfileFrameBase_writeOn(self,config,indent)
@@ -517,35 +507,30 @@ class ProfileFrameBase(Releasable):
         if self.shouldProfileMemory():
             self.rawUsedGC =  gc.mem_alloc() - self.allocGc 
 
-@ReloadableClass()
+@ReloadableClass(modules=ProfilerRL)
 class ProfileSubFrame(ProfileFrameBase): 
     #__context : UpdateContext
     
     snapNames = IndexMap( 'snap', ['start','end' ] )
     
-    def __init__(self, ): # context:UpdateContext, name:Optional[str]=None, name2:Optional[str]=None):
-        super().__init__()#context)
-        #self.__context = context
-        #self._name = name
-        #self.name2 = name2
+    def __init__(self, ): 
+        super().__init__()
         self._nextFree = None
-        #self.reset( context, name, name2 )
-        
-    def reset(self, context:UpdateContext, name:Optional[str]=None, name2:Optional[str]=None):
-        super().reset(context)
-        self._name = name
-        self.name2 = name2
+
+    def resetSubFrame(self, context:UpdateContext, name:str, when: TimeInSeconds, name2:Optional[str]=None):
+        self.resetFrame(context)
+        self.resetSnap(name, when, name2)
         
     @classmethod
     def makeEntry(cls,  context:UpdateContext,
-                   name:Optional[str]=None, name2:Optional[str]=None 
+                   name:str, when: TimeInSeconds, name2:Optional[str]=None
                 ) -> Self:
     
         rp = cls.getReleasablePool()
         entry = cls._make_getFree( rp )
 
         if entry is None: entry = cls( )
-        entry.reset( context=context, name=name, name2=name2 ) # pylint: disable=no-member # type: ignore
+        entry.resetSubFrame( context=context, name=name, when=when, name2=name2 ) # pylint: disable=no-member # type: ignore
         
         return cls._makeFinish( rp, entry )
             
@@ -553,7 +538,7 @@ class ProfileSubFrame(ProfileFrameBase):
     def shouldProfileMemory(self) -> bool:
         return pmc_gcManager.PROFILE_MEMORY_NESTED
 
-@ReloadableClass()
+@ReloadableClass(modules=ProfilerRL)
 class ProfileFrame(ProfileFrameBase): 
     updateIndex: int
     #start: TimeInSeconds
@@ -581,17 +566,17 @@ class ProfileFrame(ProfileFrameBase):
         entry = cls._make_getFree( rp )
 
         if entry is None: entry = cls() # type: ignore
-        entry.reset( context, eSleep=eSleep ) # pylint: disable=no-member # type: ignore
-        
+        entry.resetFrame( context, eSleep=eSleep ) # pylint: disable=no-member # type: ignore
+        entry.resetSnap(name='root', when=entry.latestStartPT)
         return cls._makeFinish( rp, entry )
 
-    def reset(self, context:UpdateContext,  eSleep:TimeSpanInSeconds=0.0):
+    def resetFrame(self, context:UpdateContext,  eSleep:TimeSpanInSeconds=0.0):
         # nowPT = getOffsetNow_ns()
 
         #self.currentUpdateIndex = 
         self.updateIndex = context.updateIndex
         self.eSleep = eSleep
-        super().reset(context)
+        super().resetFrame(context)
 
     @reloadingMethod
     def writeOn(self,config:ProfileWriteConfig,indent:str=''): 
@@ -604,7 +589,7 @@ class ProfileStubFrameEntry(ProfileSnapEntry):
             #tag="stub",when=TimeInSeconds(0))
         self.__frame = frame
         
-    def subFrame(self, context, name:Optional[str]=None, name2:Optional[str]=None) -> 'ProfileFrameBase': # type: ignore
+    def subFrame(self, context, name:str, name2:str) -> 'ProfileFrameBase': # type: ignore
         return self.__frame  # type: ignore
 
     def writeOn(self,config:ProfileWriteConfig,indent:str=''):
@@ -626,14 +611,16 @@ class ProfileStubFrame(ProfileFrame):
     def activeFrame(self) -> "ProfileFrameBase":
         return self
 
-    def subFrame(self, context:UpdateContext, name:Optional[str]=None, name2:Optional[str]=None) -> 'ProfileSubFrame':
+    def subFrame(self, context:UpdateContext, name:str, name2:str) -> 'ProfileSubFrame':
         return self # type: ignore
 
-    def snap(self, name:str, name2:str|None = None, cls:type=ProfileSnapEntry ) -> ProfileSnapEntry:
+    def snap(self, name:str, name2:str|None = None, cls:type=ProfileSnapEntry, context:Optional[UpdateContext]=None  ) -> ProfileSnapEntry:
         return self.__stubEntry
-        
-    
-    def reset(self, context:UpdateContext,  eSleep:TimeSpanInSeconds=0.0):
+            
+    def resetSubFrame(self, context:UpdateContext, name:str, when: TimeInSeconds, name2:Optional[str]=None):
+        pass
+
+    def resetFrame(self, context:UpdateContext,  eSleep:TimeSpanInSeconds=0.0):
         pass
         
     def __enter__(self):
@@ -644,8 +631,10 @@ class ProfileStubFrame(ProfileFrame):
 
 #############################################################################
 
-@ReloadableClass()
-class Profiler(CountedInstance):
+
+@ReloadableClass(modules=ProfilerRL)
+@ProxyAccessibleClass()
+class Profiler(NamedLocalIdentifiable):
     updateIndex: int
     when: TimeInSeconds
     currentSnap: ProfileSnapEntry | None
@@ -656,7 +645,7 @@ class Profiler(CountedInstance):
     stubFrame:ProfileStubFrame
     
     def __init__(self, context:UpdateContext, timings:Optional[int]=None, stub:Optional[bool]=None ):
-        super().__init__()
+        super().__init__(name="Profiler")
         if stub is None:
             stub = not pmc_mainLoopControl.ENABLE_PROFILE
             
@@ -680,8 +669,10 @@ class Profiler(CountedInstance):
     def disabled(self, value:bool) -> None:
         self.setProfileDisabled(value)
 
-    @reloadingMethod
-    def setProfileDisabled( self, disabled:bool ) -> None: ...
+
+    @proxyMethod()
+    def setProfileDisabled( self, disabled:bool ) -> None: 
+        ProfilerRL.setProfileDisabled(self,disabled)
 
     @reloadingMethod
     def getProfilerInfo( self,  dumpConfig:Optional[ProfileWriteConfig]=None ) -> Any: 
@@ -711,21 +702,6 @@ class Profiler(CountedInstance):
             return None
         return rv 
     
-
-if False:  
-    def __addProfileClass(cls:type) -> None:
-        #assert isinstance(cls,type)
-        #addReloadableClass(cls)
-        assert getattr(ProfilerRL, cls.__name__, None) is None, f"Reloadable class {cls.__name__} already exists in ProfilerRL"
-        setattr(ProfilerRL, cls.__name__, cls)
-
-
-    __addProfileClass(ProfileWriteConfig)
-    __addProfileClass(ProfileSnapEntry)
-    __addProfileClass(ProfileFrame)
-    __addProfileClass(ProfileFrameBase)
-    __addProfileClass(ProfileSubFrame)
-    __addProfileClass(Profiler)
 
 __all__ = [ "ProfileWriteConfig", 
            "ProfileSnapEntry", 

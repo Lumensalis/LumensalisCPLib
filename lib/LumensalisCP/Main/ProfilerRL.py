@@ -59,11 +59,12 @@ _Profiler = _module.reloadableClassMeta('Profiler' )
 
 @_Profiler.reloadableMethod()
 def setProfileDisabled( self:Profiler, disabled:bool ) -> None: 
+    self.infoOut("setProfileDisabled(%r) called", disabled )
     self.__disabled = disabled
 
 @_ProfileWriteConfig.reloadableMethod()
 def shouldShowSnap(self:ProfileWriteConfig, snap:ProfileSnapEntry) -> bool:
-    return (snap.e >= self.minE) or self.tooMuchMemoryUsed(snap)
+    return (snap.e >= self.minE) or self.tooMuchMemoryUsed(snap) or isinstance(snap, ProfileFrameBase)
 
 @_ProfileWriteConfig.reloadableMethod()
 def shouldShowFrame(self:ProfileWriteConfig, frame:ProfileFrameBase) -> bool:
@@ -119,14 +120,19 @@ def iterSnaps(self:ProfileFrameBase):
 
 @_ProfileFrameBase.reloadableMethod()
 def ProfileFrameBase_writeOn(self:ProfileFrameBase,config:ProfileWriteConfig,indent:str=''):
-    if not config.shouldShowFrame(self):
+    if not config.shouldShowFrame(self) :
         # print(f"Skipping frame {self.name} with e={self.e} and usedGC={self.usedGC}")
         return
     
     if config.makingJson:
         data = config.topDict
-        data['name'] = self.name
+        ProfileSnapEntry.writeOn(self,config)
+        #data['name'] = self.name
+        #data['name2'] = self.name2
         data['e'] = self.e
+        data['frameStartPT'] = self.frameStartPT
+        data['frameEndPT'] = self.frameEndPT
+        
         if config.showMemory:
             usedGC = self.usedGC
             if usedGC: data['usedGC'] = usedGC
@@ -155,14 +161,20 @@ def ProfileFrame_writeOn(self:ProfileFrame,config:ProfileWriteConfig,indent:str=
         return
 
     if config.makingJson:
+        ProfileFrameBase_writeOn(self,config)
         data = config.topDict
         data['rindex'] = self.rindex
-        data['e'] = self.e
+        #data['e'] = self.e
         if config.showMemory:
             usedGC = self.usedGC
             if usedGC: data['usedGC'] = usedGC
-        data['start'] = self.start
+        #data['start'] = self.start
         data['eSleep'] = self.eSleep
+        ##        data['name'] = self.name
+        #data['name2'] = self.name2
+
+        ProfileSnapEntry.writeOn(self,config)
+        
 
         with config.nestList( 'snaps' ):
             for snap in self.iterSnaps():

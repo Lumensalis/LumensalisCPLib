@@ -136,8 +136,8 @@ class UpdateContext(Debuggable):
     @property
     def updateIndex(self) -> int: return self.__updateIndex
 
-    
-    def subFrame(self, name:Optional[str]=None, name2:Optional[str]=None) -> ProfileSubFrame: # pylint: disable=unused-argument
+
+    def subFrame(self, name:str, name2:str ) -> ProfileSubFrame: # pylint: disable=unused-argument
         #rv = self.activeFrame.activeFrame().subFrame(self, name, name2)
         if self.activeFrame is None: return self._stubFrame # type: ignore[return-value]
         rv = self.activeFrame.subFrame(self, name, name2)
