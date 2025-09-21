@@ -92,6 +92,7 @@ FULL_KWDS=TypeVar("FULL_KWDS")
 class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable):
 
     _proxyActions:ClassVar[dict[str, dict[str,GenericNamedLocalInstanceProxyAction]]] = {}
+    _unmappedProxyMethods:ClassVar[set[Callable[...,Any]]] = set()
     
     class KWDS(TypedDict):
         name:NotRequired[str]

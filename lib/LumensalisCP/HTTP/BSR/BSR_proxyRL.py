@@ -60,7 +60,11 @@ def _proxyAddRecursive( config:ProxyRequestConfig,
             target.SHOW_EXCEPTION( inst, f"nliGetChildren not implemented for {target.name} ({type(target)})" )
             raise
         
-        children= [proxyData(config, c, recurse=recurse) for c in targetChildren ] if targetChildren is not None else []
+        children= ( 
+            [ proxyData(config, c, recurse=recurse) for c in targetChildren ]
+               if targetChildren is not None else # type: ignore
+               []
+        )
         
         if target.isContainer():
             assert isinstance(target, NliContainerInterface), f"target {target.name} is not a NliContainerInterface, but {type(target)}"
@@ -239,11 +243,20 @@ def _act(  config:ProxyRequestConfig, target:NamedLocalIdentifiable|NliContainer
     args = config.positionalArgs or ()
     kwds = config.kwdArgs or {}
 
-    actionDescriptor = getattr(target.__class__, actionName, None)
-    assert actionDescriptor is not None, f"Action '{actionName}' not found in {target.__class__}"
-    assert isinstance(actionDescriptor, NamedLocalInstanceProxyAction), f"Action '{actionName}' in {target.__class__} is not a NamedLocalInstanceProxyAction, but {type(actionDescriptor)}"
+    #actionDescriptor = getattr(target.__class__, actionName, None)
+    if True:
+        try:
+            #actionDescriptor = NamedLocalIdentifiable._proxyActions[target.__class__.__name__].get(actionName, None)
+            actionDescriptor = target._clsProxyActions.get(actionName, None) # type: ignore
+        except Exception as inst:
+            target.SHOW_EXCEPTION(inst, f"getting actionDescriptor for {actionName} in {NamedLocalIdentifiable._proxyActions.keys().__class__}")
+            actionDescriptor = None
+        assert actionDescriptor is not None, f"Action '{actionName}' not found in {target.__class__} / / {target._clsProxyActions.keys()}" # type: ignore
+
+        assert isinstance(actionDescriptor, NamedLocalInstanceProxyAction), f"Action '{actionName}' in {target.__class__} is not a NamedLocalInstanceProxyAction, but {type(actionDescriptor)}"  # type: ignore
+
     action = getattr(target, actionName, None)
-    assert action is not None, f"Action '{actionName}' not found in instance of {target.__class__}"
+    assert action is not None, f"Action '{actionName}' not found in instance of {target.__class__} / {target._clsProxyActions.keys()}" # type: ignore
     result = action( *args, **kwds)
 
     return objectToVal(result)

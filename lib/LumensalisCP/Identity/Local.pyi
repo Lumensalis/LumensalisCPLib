@@ -6,7 +6,9 @@ import LumensalisCP.pyCp.weakref as lcpWeakref
 from LumensalisCP.CPTyping import ReferenceType, Optional, Iterable, TypeVar
 
 # pylint: disable=unused-argument, super-init-not-called, unused-private-member
+# pyright:  reportUnusedImport=false
 
+from LumensalisCP.Identity.Proxy import ProxyAccessibleClass, proxyMethod, GenericNamedLocalInstanceProxyAction
 from LumensalisCP.pyCp.collections import GenericList
 
 class LocalIdentifiable(object):
@@ -53,6 +55,9 @@ class NliContainerInterface( NliInterface ):
 #############################################################################    
 
 class NamedLocalIdentifiable(LocalIdentifiable,NliInterface,Debuggable): 
+    
+    _proxyActions:ClassVar[dict[str, dict[str,GenericNamedLocalInstanceProxyAction]]] = {}
+    _unmappedProxyMethods:ClassVar[set[Callable[...,Any]]] = set()
     
     class KWDS(TypedDict):
         name:NotRequired[str]

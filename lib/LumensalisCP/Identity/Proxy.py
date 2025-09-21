@@ -47,7 +47,9 @@ class NamedLocalInstanceProxyAction(Generic[_NLIPA_SELF_T,P,R]):
         wrapped:Callable[P,R]|None = getattr(instance, self.__wrapperName, None)
         if wrapped is None:
             def wrapper(*args:Any, **kwds:Any) -> Any:
-                return self.action(instance, *args, **kwds)
+                action = getattr(instance, self.name, None)
+                assert action is not None, f"Action '{self.name}' not found in instance of {instance.__class__}"
+                return action( *args, **kwds)
             wrapped = wrapper
             setattr(instance, self.__wrapperName, wrapper)
         return wrapped
@@ -64,6 +66,7 @@ if TYPE_CHECKING:
     GenericNamedLocalInstanceProxyAction:TypeAlias = NamedLocalInstanceProxyAction[NamedLocalIdentifiable,Any,Any]
 else:    
     GenericNamedLocalInstanceProxyAction:TypeAlias = NamedLocalInstanceProxyActionT[NamedLocalIdentifiable,Any,Any]
+
 
 #############################################################################
 class AddProxyAccessibleClassKWDS(TypedDict): 
@@ -83,7 +86,14 @@ def addProxyAccessibleClass(cls:type, **kwds:Unpack[AddProxyAccessibleClassKWDS]
         val = getattr(cls, tag, None)
         if isinstance(val, NamedLocalInstanceProxyAction):
             proxyActions[tag] = val
-            # print(f"Adding proxy action {val.name} to {name}")
+            print(f"Adding proxy action {val.name} to {name}")
+        elif isinstance(val,__funcType) and val in NamedLocalIdentifiable._unmappedProxyMethods:
+            print(f"Adding unmapped proxy action {val} to {name}")
+            assert type(val) is __funcType, f"Expected function type, got {type(val)}"
+            proxy = NamedLocalInstanceProxyAction(val.__name__, val) # type: ignore
+            #NamedLocalIdentifiable._proxyActions[t
+            proxyActions[tag] = proxy
+
     return cls
 
 _CLASS_T = TypeVar("_CLASS_T", bound=type)
@@ -115,9 +125,14 @@ class ProxyAccessibleClass:
     
 #############################################################################
 
+def __foo():pass
+__funcType = type(__foo)
+
 def proxyMethod(  
                 ) -> Callable[ [ Callable[Concatenate[_NLIPA_SELF_T,P], R] ],
-            NamedLocalInstanceProxyAction[_NLIPA_SELF_T,P,R] ]:
+             Callable[Concatenate[_NLIPA_SELF_T,P], R] 
+            #NamedLocalInstanceProxyAction[_NLIPA_SELF_T,P,R] 
+            ]:
     """Decorator to mark a method as a proxy method.
 
     Methods marked with `@proxyMethod(...)`  *_in a class marked with 
@@ -137,16 +152,25 @@ def proxyMethod(
         else:
             clsName = cls.__name__
             if clsName == 'function':
+                assert method not in NamedLocalIdentifiable._unmappedProxyMethods
+                NamedLocalIdentifiable._unmappedProxyMethods.add(method)
                 #print( f"\n#####\nWARNING: proxyMethod {method} no class in {dir(cls)} / {getattr(cls, '__dict__', {})}\n#####\n")
                 pass
+            elif clsName == "ReloadingMethodStub":
+                original = method
+                method = method.func
+                assert method not in NamedLocalIdentifiable._unmappedProxyMethods
+                print( f"\n#####\nadding RELOADABLE proxy method {method} registering {original}\n#####\n")                
+                NamedLocalIdentifiable._unmappedProxyMethods.add(method)
             else:
                 print( f"\n#####\nHOORAH!proxyMethod {method} registering for {cls.__name__} in {dir(cls)}\n#####\n")
+                assert False
                 clsDescriptors:dict[str,GenericNamedLocalInstanceProxyAction]|None = NamedLocalIdentifiable._proxyActions.get(clsName, None)
                 if clsDescriptors is None:
-                    clsDescriptors = {}
+                    clsDescriptors:dict[str,GenericNamedLocalInstanceProxyAction]|None = {}
                     NamedLocalIdentifiable._proxyActions[clsName] = clsDescriptors
                 clsDescriptors[rv.name] = rv
-        return rv
+        return method
     return decorated    
 
 proxyMethodT = GenericT(proxyMethod)
