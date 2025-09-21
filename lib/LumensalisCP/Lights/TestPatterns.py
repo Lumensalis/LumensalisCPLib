@@ -46,7 +46,7 @@ class PatternRLTest( Pattern, OutputTarget ):
     def set( self, value:ZeroToOne, context:EvaluationContext ):
         self._value = value
 
-    def refresh( self, context:EvaluationContext ):
+    def patternRefresh( self, context:EvaluationContext ):
         level = withinZeroToOne( context.valueOf(self._value) )
         target = self.target
         maxPxf = level * target.lightCount
@@ -94,7 +94,7 @@ class PatternRLTestBase( Pattern ):
         reload( TestPatternsRL )
         self.reset(context)
 
-    def refresh( self, context:EvaluationContext ) -> None:
+    def patternRefresh( self, context:EvaluationContext ) -> None:
         raise NotImplementedError()
 
 #############################################################################
@@ -112,7 +112,7 @@ class TestPattern1( PatternRLTestBase ):
     def reset( self,  context:Optional[EvaluationContext]=None  ) -> None:
         TestPatternsRL.TestPattern1_reset( self, context )
 
-    def refresh( self, context:EvaluationContext ) -> None:
+    def patternRefresh( self, context:EvaluationContext ) -> None:
         TestPatternsRL.TestPattern1_refresh( self, context )
 
 #############################################################################
@@ -125,7 +125,7 @@ class TestPattern2( PatternRLTestBase ):
     def reset( self,  context:Optional[EvaluationContext]=None  ) -> None:
         TestPatternsRL.TestPattern2_reset( self, context )
 
-    def refresh( self, context:EvaluationContext ) -> None:
+    def patternRefresh( self, context:EvaluationContext ) -> None:
         TestPatternsRL.TestPattern2_refresh( self, context )
 
 #############################################################################
@@ -137,7 +137,7 @@ class TestPattern3( PatternRLTestBase ):
     def reset( self,  context:Optional[EvaluationContext]=None  ) -> None:
         TestPatternsRL.TestPattern3_reset( self, context )
 
-    def refresh( self, context:EvaluationContext ) -> None:
+    def patternRefresh( self, context:EvaluationContext ) -> None:
         TestPatternsRL.TestPattern3_refresh( self, context )
 
 
@@ -181,7 +181,7 @@ class Spinner( OnOffPattern ):
     def set( self, value:ZeroToOne, context:EvaluationContext ):
         self._value = value
 
-    def refresh( self, context:EvaluationContext ):
+    def patternRefresh( self, context:EvaluationContext ):
         z2one = self.oscillator.getValue(context)
         target = self.target
         

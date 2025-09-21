@@ -59,7 +59,7 @@ class Rainbow( Pattern ):
         self.__colorCycleWhenOffset = TimeInSeconds( (((priorWhen+priorOffset) / priorCycle) * newCycleCurrent) - newWhen)
         self.__colorCycle = newCycleSetting
     
-    def refresh( self, context:EvaluationContext ):
+    def patternRefresh( self, context:EvaluationContext ):
         when = self.offsetWhen( context )
         self.__latestCycleWhen = when
         cc = max(0.001,context.valueOf(self.colorCycle))
@@ -103,7 +103,7 @@ class Gauge( OnOffPattern, NamedOutputTarget ):
     def set( self, value:ZeroToOne, context:EvaluationContext ):
         self.__value = value
 
-    def refresh( self, context:EvaluationContext ):
+    def patternRefresh( self, context:EvaluationContext ):
         level = withinZeroToOne( context.valueOf(self.__value) )
         target = self.target
         maxPxf = level * target.lightCount
@@ -144,7 +144,7 @@ class Blink( OnOffPattern ):
         
 
 
-    def refresh( self, context:EvaluationContext ):
+    def patternRefresh( self, context:EvaluationContext ):
         if self.lastToggleValue:
             duration = context.valueOf(self.onTime)
         else:

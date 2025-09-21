@@ -15,7 +15,7 @@ class MonoPatterrn( Pattern ):
         super().__init__(target, **kwargs)
 
 
-    def refresh( self, context:EvaluationContext ):
+    def patternRefresh( self, context:EvaluationContext ):
         when = self.offsetWhen( context )
         self.__latestCycleWhen = when
         cc = max(0.001,context.valueOf(self.colorCycle))

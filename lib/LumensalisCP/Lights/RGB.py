@@ -361,7 +361,7 @@ def _( v:RGB, target:RGB ) -> None:
 
 @RGB.Setters.defineRegisterSetter( int )
 def _( v:int, target:RGB ) -> None:
-    target.setFromNeoPixelRGBInt(int)
+    target.setFromNeoPixelRGBInt(v)
 
 @RGB.Setters.defineRegisterSetter( str )
 def _( v:str, target:RGB ) -> None:

@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 #############################################################################
 
 class Pattern(RefreshableNAP):
+    RENDER_REFRESHABLE_LIST = True
 
     RFD_refreshRate:ClassVar[TimeSpanInSeconds] = 0.041 
     class KWDS(RefreshableNAP.KWDS):
@@ -30,8 +31,12 @@ class Pattern(RefreshableNAP):
                    startingSpeed:TimeInSecondsEvalArg=1.0, 
                    **kwargs:Unpack[RefreshableNAP.KWDS] 
                 ) -> None:
+        
+        if not Pattern.RENDER_REFRESHABLE_LIST:
+            del kwargs['autoList']
+
         super().__init__(**kwargs)
-        self.__running = False
+        #self.__running = False
         self.__speed:TimeInSecondsEval =toTimeInSecondsEval( startingSpeed)
         assert target is not None, f"target LightGroup must be provided when creating {self.__class__.__name__} Pattern"
         self.__target = target
@@ -55,12 +60,13 @@ class Pattern(RefreshableNAP):
     
     @speed.setter
     def speed(self, value:TimeInSecondsEval): self.setSpeed(value)
-    
-    @property
-    def running(self) -> bool: return self.__running
 
-    @running.setter
-    def running(self, running:bool): self.setRunning(running)
+    if False:
+        @property
+        def running(self) -> bool: return self.__running
+
+        @running.setter
+        def running(self, running:bool): self.setRunning(running)
 
     def setSpeed(self, value:TimeInSecondsEval, context:Optional[EvaluationContext]=None ): # pylint: disable=unused-argument
         self.__speed = value
@@ -68,12 +74,12 @@ class Pattern(RefreshableNAP):
     def setRunning(self, value:bool, context:Optional[EvaluationContext]=None ): # pylint: disable=unused-argument
         self.__running = value
 
-    def refresh( self, context:EvaluationContext ) -> None:
+    def patternRefresh( self, context:EvaluationContext ) -> None:
         raise NotImplementedError
 
     def derivedRefresh(self, context: EvaluationContext) -> None:
         #if self.enableDbgOut:
-        self.refresh(context)
+        self.patternRefresh(context)
     
     def main(self) -> MainManager:
         return getMainManager()
@@ -208,8 +214,8 @@ class PatternGenerator(Pattern):
                     stepCount = self.__stepCount, 
                     intermediateCount = self.__intermediateCount,
         )
-        
-    def refresh( self, context:EvaluationContext ):
+
+    def patternRefresh( self, context:EvaluationContext ):
         if self.__nextPatternRefresh < context.when:
             context.activeFrame.snap("PGRefresh", self.name)
             if self.__nextStep < context.when:
