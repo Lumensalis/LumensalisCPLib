@@ -157,8 +157,10 @@ class Scene(MainChild):
             self.onExit( do( target4.set, value4) )
             
     def nliGetContainers(self) -> NliGetContainersRVT:
-        return [self.__rulesContainer, self.__tasksContainer, self.__patternsContainer] # type: ignore[return-value]
-    
+        yield self.__rulesContainer
+        yield self.__tasksContainer
+        yield self.__patternsContainer
+
     def nliHasContainers(self) -> bool:
         return True
 
@@ -242,18 +244,12 @@ class Scene(MainChild):
         return addTask
 
     def derivedRefresh(self, context: EvaluationContext) -> None:
-        self.runTasks(context)
-    
-    def runTasks(self, context:EvaluationContext):
-        if self.enableDbgOut: self.dbgOut( 
-f"scene {self.name} run tasks ({len(self.__tasks)} tasks, {len(self._sceneRefreshables._refreshables)} refreshables @ {self.nextRefresh}, {len(self.__rulesContainer)} rules) on update {context.updateIndex}..." )
-        with context.subFrame('runScene', self.name ) as activeFrame:
-        
-            #for task in self.__tasks:
-            #    try:
-            #        task.run( self, context=context, frame=activeFrame )
-            #    except Exception as inst:
-            #        self.SHOW_EXCEPTION(  inst, "running task %s", task.name )
+        if self.enableDbgOut:
+            self.dbgOut(
+                f"scene {self.name} run tasks ({len(self.__tasks)} tasks, {len(self._sceneRefreshables._refreshables)} refreshables @ {self.nextRefresh}, {len(self.__rulesContainer)} rules) on update {context.updateIndex}..."
+            )
+        with context.subFrame('runScene', self.name) as activeFrame:
+            activeFrame.snap("refreshables")
             self._sceneRefreshables.process(context, context.when)
             activeFrame.snap("rules")
             for rule in self.__rulesContainer:
