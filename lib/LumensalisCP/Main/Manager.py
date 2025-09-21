@@ -41,6 +41,8 @@ if TYPE_CHECKING:
     from LumensalisCP.Main.Async import MainAsyncChild, ManagerAsync
     from LumensalisCP.Controllers.ConfigurableBase import ConfigurableBase, ControllerConfig
     from LumensalisCP.Main.Analyst import Analyst
+    from . import ManagerRL
+    from . import Manager2RL
 
 import LumensalisCP.Main.ProfilerRL
 
@@ -129,7 +131,7 @@ class MainManager( NamedLocalIdentifiable ): #, I2CProvider, ConfigurableBase, )
         self.__TerrainTronics = None
         self.__tunables = TunableGroup(name='tunables')
         self.sessionUuid = f"{self.name}_{os.urandom(4).hex()}" 
-        self.raw = RawAccess(self)
+        self.raw = RawAccess(main=self)
         
         if not self.unitTesting:
             from LumensalisCP.Main import ManagerRL
@@ -369,7 +371,8 @@ see http://lumensalis.com/ql/h2Scenes
             #print( f"{self.getNewNow():0.3f} STARTUP : {safeFmt(fmt,*args)}" )
 
     @reloadingMethod            
-    def addBasicWebServer( self, *args:Any, **kwds:StrAnyDict ) -> None: ...
+    def addBasicWebServer( self, *args:Any, **kwds:StrAnyDict ) -> None: 
+        Manager2RL.addBasicWebServer(self,*args,**kwds) 
   
     @reloadingMethod
     def monitor( self, *inputs:InputSource, **kwds:StrAnyDict ) -> None: ...
@@ -412,7 +415,8 @@ see http://lumensalis.com/ql/h2Scenes
 
     @reloadingMethod
     def nliGetChildren(self) -> NliGetChildrenRVT:
-        yield from ()
+        return ManagerRL.MainManager_nliGetChildren(self)
+        
 
     def nliHasChildren(self) -> bool: return True
 

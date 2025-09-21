@@ -144,11 +144,10 @@ def _finishInit(self:MainManager) -> None:
 def addBasicWebServer( self:MainManager, *args:Any, **kwds:StrAnyDict ):
     self.sayAtStartup( "addBasicWebServer %r, %r ", args, kwds )
     from LumensalisCP.HTTP.BasicServer import BasicServer
+    self.sayAtStartup( "finished importing BasicServer" )
     ImportProfiler.dumpWorstImports(10)
     
 
-    #self.__asyncTaskCreators.append( server.createAsyncTasks )
-    
     def startWebServer():
         self.sayAtStartup( "startWebServer"  )
         socket = self.socketPool

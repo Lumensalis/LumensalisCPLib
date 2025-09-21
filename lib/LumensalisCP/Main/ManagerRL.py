@@ -45,6 +45,7 @@ def MainManager_nliGetChildren(self:MainManager) -> Iterable[NamedLocalIdentifia
     yield self.__tunables
     yield self.__analyst
     yield self._refreshables
+    yield self.profiler
 
 
 @_mmMeta.reloadableMethod()
@@ -169,12 +170,13 @@ def getNextFrame(self:MainManager,now:TimeInSeconds) ->ProfileFrameBase:
 
 @_mmMeta.reloadableMethod()
 def runDeferredTasks(self:MainManager, context:EvaluationContext) -> None: # type: ignore
-    with context.subFrame('deferredTasks'):
+    with context.subFrame('deferredTasks', self.name ) as activeFrame:
 
         while len( self.__deferredTasks ):
             task = self.__deferredTasks.popleft()
             self.infoOut( f"running deferred {task}")
             try:
+                activeFrame.snap('deferredTask', str(task))
                 task()
             except Exception as inst:
                 SHOW_EXCEPTION( inst, "exception on deferred task %r", task )
