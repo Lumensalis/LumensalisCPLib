@@ -136,6 +136,10 @@ class UpdateContext(Debuggable):
     @property
     def updateIndex(self) -> int: return self.__updateIndex
 
+    def snap(self, name:str, name2:str|None = None):
+        if self.activeFrame is None: return self._stubFrame.snap(name,name2) # type: ignore[return-value]
+        rv = self.activeFrame.snap(name,name2)
+        return rv
 
     def subFrame(self, name:str, name2:str ) -> ProfileSubFrame: # pylint: disable=unused-argument
         #rv = self.activeFrame.activeFrame().subFrame(self, name, name2)
