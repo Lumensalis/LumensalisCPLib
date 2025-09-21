@@ -3,6 +3,7 @@
 
 # pylint: disable=unused-import,import-error,reimported,import-outside-toplevel
 # pyright: reportMissingImports=false, reportImportCycles=false, reportUnusedImport=false
+# pyright: reportPrivateUsage=false
 
 from LumensalisCP.Lights.Light import *
 from LumensalisCP.IOContext import *
@@ -23,14 +24,17 @@ if TYPE_CHECKING:
 cgSteps = 256
 
 class RGBGradient:
-    def __init__(self, gradient:list[fancy.CRGB]) -> None:
+    def __init__(self, gradientData:list[tuple[float,int]], steps:Optional[int]=None ) -> None:
+
+        if steps is None: steps = len(gradientData)*4
+        gradient = fancy.expand_gradient(gradientData, steps) # type: ignore
         self.values:list[RGB] = []
         for v in gradient:
             if isinstance(v, int):
-                self.values.append(RGB.fromNeoPixelRGBInt(v))
+                self.values.append(RGB.fromNeoPixelRGBInt(v)) # type: ignore
             else:
                 assert isinstance(v, fancy.CRGB), f"Expected fancy.CRGB, got {type(v)} [{len(self.values)}]"
-                self.values.append(v.pack())
+                self.values.append(v.pack()) # type: ignore
         
 
     def getInto(self, out:RGB, position:float) -> None:
@@ -38,7 +42,7 @@ class RGBGradient:
         index = int(position * (len(self.values)-1))
         out.setFrom( self.values[index] )
 
-_copperFancy = fancy.expand_gradient([
+copperGradient = RGBGradient([
         (0.0, 0x97461A),
         (0.2, 0x3C1E06),
         (0.3, 0xFBD8C5),
@@ -46,10 +50,7 @@ _copperFancy = fancy.expand_gradient([
         (0.92, 0xEFDBCD),
         (1.0, 0x97461A),
     ],
-    cgSteps   # Number of steps
-)
-
-copperGradient = RGBGradient(_copperFancy )
+    cgSteps )
 
 #############################################################################
 
@@ -66,7 +67,7 @@ def TestPattern1_refresh( self:TestPattern1, context:EvaluationContext ) -> None
     copperGradient.getInto( self._color, i )
     #color.brightness =  0.5 
     if self.enableDbgOut: # or True:
-        self.infoOut( "refresh i=%.2f idx=%d color=%r" % (i, context.updateIndex, color) )
+        self.infoOut( "refresh i=%.2f idx=%d color=%r" % (i, context.updateIndex, self._color) )
     for px in range(target.lightCount):
         target[px] = self._color
         #break
@@ -101,7 +102,7 @@ def TestPattern2_refresh( self:TestPattern2, context:EvaluationContext ) -> None
 
 engineSideGradientSteps = 128
 
-engineSideGradient = RGBGradient( fancy.expand_gradient([
+engineSideGradient = RGBGradient( [
         (0.00, 0x000000),
         (0.07, 0x0f3d2f),
         (0.14, 0x8025a5),
@@ -112,9 +113,9 @@ engineSideGradient = RGBGradient( fancy.expand_gradient([
         (0.63, 0x2f6a3d),
         (0.77, 0x432167),
         (1.00, 0x000000),
-    ],
+    ], 
     engineSideGradientSteps   # Number of steps
-) )
+) 
 
 
 def TestPattern3_reset( self:TestPattern3,  context:Optional[EvaluationContext]=None  ) -> None:
@@ -127,12 +128,11 @@ def TestPattern3_refresh( self:TestPattern3, context:EvaluationContext ) -> None
 
     i = int( context.newNow * 1000) % cycleMs
 
-    #fcolor = fancy.palette_lookup( engineSideGradient, i/cycleMs ).pack()
+    #fColor = fancy.palette_lookup( engineSideGradient, i/cycleMs ).pack()
     color = self._colors[0]
-    #color.setFromNeoPixelRGBInt( fcolor )
+    #color.setFromNeoPixelRGBInt( fColor )
     engineSideGradient.getInto( color, i/cycleMs )
 
-    await asyncio.sleep(0.2)
     target = self.target
     for px in range(target.lightCount):
         target[px] = color

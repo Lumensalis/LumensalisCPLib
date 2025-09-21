@@ -74,6 +74,7 @@ class PatternRLTestBase( Pattern ):
 
     AUTO_RESET_ON_INIT:ClassVar[bool] = True
     _reloadablePatterns:ClassVar[list[PatternRLTestBase]] = []
+    _colors:list[RGB]
 
     def __init__(self,
                 target:LightGroup, 
@@ -82,6 +83,7 @@ class PatternRLTestBase( Pattern ):
         Pattern.__init__( self, target=target,**kwargs)
         self._kwargs = kwargs
         self._reloadablePatterns.append(self) # pyright: ignore[reportPrivateUsage]
+        self._color = RGB(0,0,0)
         if self.AUTO_RESET_ON_INIT:
             self.reset(UpdateContext.fetchCurrentContext(None))
 
@@ -120,8 +122,9 @@ class TestPattern1( PatternRLTestBase ):
 class TestPattern2( PatternRLTestBase ):
     #def __init__(self, target:LightGroup, **kwargs:Unpack[Pattern.KWDS] ) -> None:
     #    super().__init__( target=target, **kwargs)
+    _randomCount:int
+    _randomColors:list[RGB]
 
-    
     def reset( self,  context:Optional[EvaluationContext]=None  ) -> None:
         TestPatternsRL.TestPattern2_reset( self, context )
 
@@ -149,7 +152,7 @@ class Spinner( OnOffPattern ):
     """
     def __init__(self,
                 target:LightGroup, 
-                period:TimeInSecondsEval = 0.5,
+                period:TimeSpanInSecondsConfigArg = 0.5,
                 tail:ZeroToOne = 0.35,
                 **kwargs:Unpack[OnOffPattern.KWDS]
             ):
@@ -209,13 +212,13 @@ class PatternTemplate(CountedInstance):
     :param object: _description_
     :type object: _type_
     """
-    def __init__( self, patternClass:Type[Pattern], *args, **kwds ):
+    def __init__( self, patternClass:Type[Pattern], *args:Any, **kwds:Any ) -> None:
         super().__init__()
         self.patternClass = patternClass
         self.args = args
         self.kwds = kwds
     
-    def __call__(self, *args, **kwds ):
+    def __call__(self, *args:Any, **kwds:Any ) -> Pattern:
         fullArgs = self.args + args
         fullKwds = dict( self.kwds )
         fullKwds.update( kwds )

@@ -8,13 +8,13 @@ from LumensalisCP.Eval.common import *
 from LumensalisCP.Lights.RGB import *
 from LumensalisCP.Eval.EvaluationContext import EvaluationContext
 from LumensalisCP.Eval.Evaluatable import evaluate, Evaluatable
-from LumensalisCP.Lights.Light import Light, RGBLight
+from LumensalisCP.Lights.Light import Light, RGBLight, LightType
 from LumensalisCP.Lights.Groups import LightGroup, LightSource
-from LumensalisCP.Lights.Values import LightValueBase, LightValueRGB, LightValueNeoRGB, wheel1, wheel255
+from LumensalisCP.Lights.Values import LightValueBase, LightValueRGB, LightValueNeoRGB, wheel1, wheel255, randint, randomZeroToOne
 from LumensalisCP.util.bags import Bag
 #from LumensalisCP.CPTyping import *
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
-from LumensalisCP.Lights.Pattern import Pattern, PatternGeneratorStep, PatternGenerator
+from LumensalisCP.Lights.Pattern import Pattern
 from LumensalisCP.Lights.Pattern import OnOffPattern
 #from LumensalisCP.Lights.Pattern import PatternGeneratorStepBase
 #from LumensalisCP.Lights.Patterns import PatternGeneratorStepRGB

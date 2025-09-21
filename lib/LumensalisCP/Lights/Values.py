@@ -167,4 +167,6 @@ __all__ = [
     'LightValueNeoRGB',
     'wheel255',
     'wheel1',
+    'randomZeroToOne',
+    'randint',
 ]
