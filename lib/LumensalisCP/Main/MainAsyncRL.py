@@ -8,18 +8,20 @@ __sayMALRLImport = getImportProfiler( globals(), reloadable=True )
 # pyright: reportPrivateUsage=false, reportUnusedImport=false, reportUnusedFunction=false
 # pyright: reportRedeclaration=false
 
-from LumensalisCP.commonPreManager import *
-from LumensalisCP.Main.PreMainConfig import pmc_mainLoopControl, pmc_gcManager
-
+#from LumensalisCP.commonPreManager import *
+from LumensalisCP.CPTyping import Optional, Any, TYPE_CHECKING
+from LumensalisCP.commonPreManager import TimeInSeconds, safeRepr
 from LumensalisCP.util.Reloadable import ReloadableModule
-from LumensalisCP.Main.Async import MainAsyncChild
+from LumensalisCP.Main.PreMainConfig import pmc_gcManager
 
 if TYPE_CHECKING:
+    
+    from LumensalisCP.Main.Async import MainAsyncChild
     from LumensalisCP.Main.Manager import MainManager
     from LumensalisCP.Main.MainAsync import MainAsyncLoop, MainGCLoop
 
 #############################################################################
-mlc = pmc_mainLoopControl
+#mlc = pmc_mainLoopControl
 
 _module = ReloadableModule( 'LumensalisCP.Main.MainAsync' )
 _MainGCLoop = _module.reloadableClassMeta( 'MainGCLoop' )
@@ -43,40 +45,18 @@ def asyncTaskStats(self:MainAsyncLoop, out:Optional[dict[str,Any]]=None) -> dict
 
 @_MainAsyncLoop.reloadableMethod()
 async def runAsyncSingleLoop(self:MainAsyncLoop, when:TimeInSeconds) -> None:
-    if self.loopMode == 99: return
     try:
         main = self.main
-        
         now = self.innerTracker.start()
         
         self._step += 1
         if self.enableDbgOut:self.infoOut( "runAsyncSingleLoop @%.3f step=%d loopMode=%d", now, self._step, self.loopMode)
-        if self.loopMode < 5:
-            with main.getNextFrame(now): #  as activeFrame:
-                context = main._privateCurrentContext
-                if True:
-                    main._refreshables.process(context, context.when)
-                    if main._timers is not None:
-                        main._timers.update( context )
-                    if main._scenes is not None:
-                        main._scenes.run(context)
+        with main.getNextFrame(now): #  as activeFrame:
+            context = main._privateCurrentContext
+            main._refreshables.process(context, context.when)
                 
-                else:
-                    if self.loopMode < 3:
-                        if self._step == 1:
-                            main._refreshables.process(context, context.when)
-                        elif self._step == 2:
-                            if main._timers is not None:
-                                main._timers.update( context )
-                        elif self._step == 3:
-                            if main._scenes is not None:
-                                main._scenes.run(context)
-                        else:
-                            self._step = 0
-
-        if self.loopMode < 10:
-            self.cycle += 1
-            self.priorSleepWhen = self.innerTracker.stop()
+        self.cycle += 1
+        self.priorSleepWhen = self.innerTracker.stop()
 
 
     except Exception as inst:
