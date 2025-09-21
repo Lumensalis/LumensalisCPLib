@@ -47,7 +47,7 @@ class BilateralDrive(Motile):
         return
 
     @tunableFloat(1.0)
-    def speedScale(self, setting: float, context:EvaluationContext ) -> None:
+    def speedScale(self, setting: FloatSetting, context:EvaluationContext ) -> None:
         if self.enableDbgOut: self.dbgOut("speedScale changed to %s", setting)
         return
 

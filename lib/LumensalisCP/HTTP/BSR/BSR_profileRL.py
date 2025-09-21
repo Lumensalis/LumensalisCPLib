@@ -22,21 +22,21 @@ def BSR_profile(self:BasicServer, request:Request) -> JSONResponse | Response:
         print(f"BSR_profile: request = {request}")
         print(f"BSR_profile: printDumpInterval = {pmc_gcManager.printDumpInterval}")
 
-        settings:dict[str, Any]
+        requestSettings:dict[str, Any] = {}
         try:
-            settings = request.json()
+            requestSettings = request.json() # type: ignore[reportGeneralTypeIssues]
         except Exception as inst:
             print(f"BSR_profile: failed to get json from request: {inst}")
-            settings = {}
+            #settings = {}
 
         info:StrAnyDict = OrderedDict()
         settings: ProfileWriteConfig.KWDS = {
             'target': info,
-            'minE':  settings.get('minE', 0.005),
-            'minF': settings.get('minF', 0.01),
-            'minSubF': settings.get('minSubF', 0.05),
-            'minB': settings.get('minB', 0),
-            'minEB': settings.get('minEB', 0),
+            'minE':  requestSettings.get('minE', 0.005),
+            'minF': requestSettings.get('minF', 0.01),
+            'minSubF': requestSettings.get('minSubF', 0.05),
+            'minB': requestSettings.get('minB', 0),
+            'minEB': requestSettings.get('minEB', 0),
         }
         dumpConfig = ProfileWriteConfig( **settings )
 

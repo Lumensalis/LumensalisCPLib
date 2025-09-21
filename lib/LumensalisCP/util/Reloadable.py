@@ -135,7 +135,7 @@ def reloadableClassMeta(name:str,
 
 # pyright: reportPrivateUsage=false
 
-def addReloadableClass(cls:type, modules:Optional[Any]=None, checkMethods:bool=True ) -> type : # type: ignore
+def addReloadableClass(cls:type, modules:Optional[Union[ModuleType, list[ModuleType]]]=None, checkMethods:bool=True ) -> type : # type: ignore
 
     assert isinstance(cls, type), f"Expected a class, got {cls}"
     name = f"{cls.__module__}.{cls.__name__}"
@@ -154,6 +154,7 @@ def addReloadableClass(cls:type, modules:Optional[Any]=None, checkMethods:bool=T
         if not isinstance(modules, (list, tuple)):
             modules = [modules]
         for module in modules:
+            assert isinstance(module, ModuleType), f"Expected module, got {type(module)}"
             existing = getattr(module, cls.__name__, None)
             if existing is None:
                 setattr(module, cls.__name__, cls)

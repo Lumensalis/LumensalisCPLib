@@ -2,7 +2,11 @@ from LumensalisCP.Simple import * # http://lumensalis.com/ql/h2Start
 
 #############################################################################
 sayAtStartup( "start project" ) #  http://lumensalis.com/ql/h2Main
-main = ProjectManager( ) ## profile=True, profileMemory=3    ) 
+main = ProjectManager(
+    autoreload=False,
+    #profile=True,
+    #profileMemory=3 
+ ) 
 
 # setup three different scenes : http://lumensalis.com/ql/h2Scenes
 sceneClosed, sceneOpen, sceneMoving = main.addScenes( 3 ) 
@@ -35,20 +39,18 @@ frontLidStrip           = neoPixA.stick(8)
 sceneIndicatorLights    = neoPixB.stick(8)
 angleGaugeLights        = neoPixB.ring(12)
 
-from LumensalisCP.I2C.Factory import I2CFactory
-
-I2CFactory.addVL530lx
 
 sayAtStartup( "setup StemmaQT..." ) # StemmaQT modules
 timeOfFlightSensor = caernarfon.i2cFactory.addVL530lx(refreshRate=0.25)
-vcnl4040 = caernarfon.adafruitFactory.addVCNL4040()
 
-lightSensor = vcnl4040.light
-proximitySensor = vcnl4040.proximity
-vcnl4040.light_integration_time = 2
-vcnl4040.proximity_integration_time = 2
-main.panel.monitor( lightSensor )
-main.panel.monitor( proximitySensor )
+if False:
+    vcnl4040 = caernarfon.adafruitFactory.addVCNL4040()
+    lightSensor = vcnl4040.light
+    proximitySensor = vcnl4040.proximity
+    vcnl4040.light_integration_time = 2
+    vcnl4040.proximity_integration_time = 2
+    main.panel.monitor( proximitySensor )
+    main.panel.monitor( lightSensor )
 
 #############################################################################
 sayAtStartup( "setup touch inputs" ) # http://lumensalis.com/ql/h2Touch
@@ -67,53 +69,55 @@ oscillator2 = Oscillator.Oscillator( low = 0.3, high = 2, frequency = 0.1 )
 oscillator = Oscillator.Oscillator(  low = 0, high = 10, frequency = oscillator2 )
 oscillator.activate()
 #############################################################################
-sayAtStartup( "setup synth" )
 
-audio = main.addI2SAudio(
-    word_select=board.IO14,     # MAX98357 lrc:green
-    bit_clock=board.IO13,       # MAX98357 bclk:yellow
-    data=board.IO10,            # MAX98357 din:orange
-)
+if True:
+    sayAtStartup( "setup synth" )
 
-testEffect = audio.effects.makeEffect() # filterMode=BAND_PASS)
-#testEffect.enableDbgOut = True
+    audio = main.addI2SAudio(
+        word_select=board.IO14,     # MAX98357 lrc:green
+        bit_clock=board.IO13,       # MAX98357 bclk:yellow
+        data=board.IO10,            # MAX98357 din:orange
+    )
 
-def updateTestEffect(source:Any=None, context:Optional[EvaluationContext]=None) -> None:
-    #testEffect.filter.frequency = oscillator.value * 2000 + 100
-    v = oscillator.latestValue /10
-    testEffect.note.bend = v
-    #testEffect.infoOut( "bending to %r", v )
+    testEffect = audio.effects.makeEffect() # filterMode=BAND_PASS)
+    #testEffect.enableDbgOut = True
 
-#oscillator.onChange( updateTestEffect  )
-testEffect.bend = oscillator / 10.0
-testEffect.amplitude = volume
+    def updateTestEffect(source:Any=None, context:Optional[EvaluationContext]=None) -> None:
+        #testEffect.filter.frequency = oscillator.value * 2000 + 100
+        v = oscillator.latestValue /10
+        testEffect.note.bend = v
+        #testEffect.infoOut( "bending to %r", v )
 
-#@addPeriodicTaskDef( interval=0.03, name="updateOscillator" )
-def updateOscillator(context:EvaluationContext) -> None:
-    oscillator.updateValue(context)
+    #oscillator.onChange( updateTestEffect  )
+    testEffect.bend = oscillator / 10.0
+    testEffect.amplitude = volume
 
-def touchNote(context:Optional[EvaluationContext]=None, a2:Optional[Any]=None, a3:Optional[Any]=None) -> Any:
-    print( "in touchNote" )
-    if testEffect.playing:
-        print( "releasing note" )
-        testEffect.stop()
-    else:
-        print( "startNote" )
-        testEffect.start()
+    #@addPeriodicTaskDef( interval=0.03, name="updateOscillator" )
+    def updateOscillator(context:EvaluationContext) -> None:
+        oscillator.updateValue(context)
 
-    return 42
+    def touchNote(context:Optional[EvaluationContext]=None, a2:Optional[Any]=None, a3:Optional[Any]=None) -> Any:
+        print( "in touchNote" )
+        if testEffect.playing:
+            print( "releasing note" )
+            testEffect.stop()
+        else:
+            print( "startNote" )
+            testEffect.start()
 
-print( f"touchNote = {touchNote}" )
+        return 42
 
-# fireOnRising( leftRimTouch, do( touchNote ) )
-dot = do( touchNote )
-dot.enableDbgOut = True
-#dot.name = "dot"
+    print( f"touchNote = {touchNote}" )
 
-fireDot = fireOnRising( leftRimTouch, dot )
-fireDot.enableDbgOut = True
-leftRimTouch.enableDbgOut = True
-boom.addAction(dot)
+    # fireOnRising( leftRimTouch, do( touchNote ) )
+    dot = do( touchNote )
+    dot.enableDbgOut = True
+    #dot.name = "dot"
+
+    fireDot = fireOnRising( leftRimTouch, dot )
+    fireDot.enableDbgOut = True
+    leftRimTouch.enableDbgOut = True
+    boom.addAction(dot)
 
 main.panel.monitor( leftRimTouch )
 
@@ -157,8 +161,8 @@ sayAtStartup( "setup patterns" )
 
 frontLidBlink = PatternTemplate( Blink, frontLidStrip, onTime=0.25, offTime=0.25 )
 
-frontLidStripPattern = Cylon2(frontLidStrip,sweepTime=rbCycle, dimRatio=0.9, onValue=webColor )
-centerPattern = ABFade( centerStoneLights, value=oscillator/20, a =Colors.RED, b=Colors.BLUE )
+#frontLidStripPattern = Cylon2(frontLidStrip,sweepTime=rbCycle, dimRatio=0.9, onValue=webColor )
+#centerPattern = ABFade( centerStoneLights, value=oscillator/20, a =Colors.RED, b=Colors.BLUE )
 rainbowLeft = Rainbow(leftStoneLights,colorCycle=rbCycle, spread=rbs )
 rainbowRight = Rainbow(rightStoneLights,colorCycle=1.1, spread=2.0 )
 aglSpinner = Spinner(angleGaugeLights, onValue=Colors.RED, tail=0.42,period=0.49)
@@ -169,8 +173,9 @@ main.panel.monitor( csWheel, description="Color Wheel based on light sensor" )
 #csWheel.enableDbgOut = True
 sayAtStartup( "setup LED ring" ) # http://lumensalis.com/ql/h2Touch
 wheel = ColorWheelZ1( Z21Adapted(oscillator2) )
-gauge = Gauge( angleGaugeLights, value=Z21Adapted(oscillator), onValue=wheel )
-controlDemoGauge = Gauge( sceneIndicatorLights, value=Z21Adapted(rbCycle), onValue=webColor )
+#gauge = Gauge( angleGaugeLights, value=Z21Adapted(oscillator), onValue=wheel )
+
+#controlDemoGauge = Gauge( sceneIndicatorLights, value=Z21Adapted(rbCycle), onValue=webColor )
 
 #close
 
@@ -179,7 +184,13 @@ centerSpin = Spinner(centerStoneLights)
 
 sceneOpen.addPatterns( frontLidBlink(onValue="GREEN"), aglSpinner, rainbowLeft, rainbowRight )
 #sceneClosed.addPatterns( frontLidBlink(onValue="RED"), closedSpin, centerPattern, rainbowLeft, rainbowRight  )
-sceneClosed.addPatterns( gauge, centerPattern, frontLidStripPattern , controlDemoGauge )
+sceneClosed.addPatterns( #gauge, 
+    TestPattern1(leftStoneLights,refreshRate=0.05),
+    #centerPattern, 
+    #frontLidStripPattern 
+    TestPattern3(rightStoneLights,refreshRate=0.05),
+    TestPattern2(sceneIndicatorLights,refreshRate=0.05),
+    )  #(), controlDemoGauge )
 sceneMoving.addPatterns( frontLidBlink(onValue="YELLOW"), 
         centerSpin, Spinner(angleGaugeLights, onValue=Colors.RED, tail=0.42,period=0.49)
  )

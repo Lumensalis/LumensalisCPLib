@@ -34,7 +34,7 @@ def GC_StringIO():
     def writeIntTIO( a:str, b:int ) -> None:
         writeIntOnTextIO(s2, b)
 
-    def writeClear(  a:str, b:int ) -> None:
+    def writeClear(  a:str, b:int ) -> None: # type: ignore
         s2.seek(0)
 
     def write0(  a:str, b:int ) -> None:
@@ -65,14 +65,14 @@ def GC_StringIO():
 
 
 
-    def getSlice(  a:str, b:int ) -> None:
-        v = memoryview(s2)[max(0,s2.tell()-b),s2.tell()]
+    def getSlice(  a:str, b:int ) -> None: 
+        v = memoryview(s2)[max(0,s2.tell()-b),s2.tell()] # type: ignore
 
     def getSliced(  a:str, b:int ) -> None:
-        v =  s2[0,s2.tell()]
+        v =  s2[0,s2.tell()] # type: ignore
 
     def getValue(  a:str, b:int ) -> None:
-        v =  s2.getvalue()
+        v =  s2.getvalue() # type: ignore
 
     s.addTester( "StringIOInts",
             signature = [GCTArg("a",str), GCTArg("b",int)],

@@ -284,8 +284,8 @@ def _tune(  config:ProxyRequestConfig, target:Tunable ) -> dict[str, Any]:
             inactives.append({
                 'name': getattr(descriptor, 'name', str(descriptor)), 
                 'cls': getattr(descriptor, 'settingClass', type(descriptor)).__name__, 
-                'default': descriptor.default,
-                'kwds': objectToVal(descriptor._settingKwds),
+                'default': descriptor.default, # type: ignore
+                'kwds': objectToVal(descriptor._settingKwds), # type: ignore
             })
         rv['inactive'] = inactives
 

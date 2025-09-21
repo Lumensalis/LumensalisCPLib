@@ -21,6 +21,7 @@ TimeSpanInMS:TypeAlias  = int # Time span in milliseconds
 
 # TimeInSeconds = NewType('TimeInSeconds', float ) # Time in seconds
 TimeSpanInSeconds:TypeAlias  = float #
+TimeSpanInSecondsConfigArg:TypeAlias = Union[TimeSpanInSeconds, int, float]
 
 DegreesPerSecond:TypeAlias  = float # rotation speed  in degrees per second
 Degrees:TypeAlias  = float # angle in degrees

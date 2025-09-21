@@ -57,6 +57,25 @@ def tunableZeroToOne(  default:ZeroToOne,
 
 #############################################################################
 
+class TunableFloatSetting(TunableSettingT[float,TUNABLE_SELF_T]):
+    TUNABLE_DEFAULTS:ClassVar[StrAnyDict] = {'kind': float, 'kindMatch': float}
+
+TunableFloatSettingT = GenericT(TunableFloatSetting)
+class FloatSetting(TunableFloatSettingT[Tunable]): ...
+class TunableFloatDescriptor(TunableDescriptorT[float,Tunable]):
+    SETTING_CLASS = FloatSetting
+
+def tunableFloat(  default:float,
+        **kwds:Unpack[TUNABLE_SETTING_KWDS[float,TUNABLE_SELF_T]]
+    ) -> Callable[
+        [   Callable[[TUNABLE_SELF_T, FloatSetting, EvaluationContext],
+             None]],
+        TunableFloatDescriptor]:
+    return tunableProperty( default, TunableFloatDescriptor, **kwds) # type: ignore
+
+
+#############################################################################
+
 class TunablePlusMinusOneSetting(TunableSettingT[PlusMinusOne,TUNABLE_SELF_T]):
     TUNABLE_DEFAULTS:ClassVar[StrAnyDict] = {'kind': PlusMinusOne, 'kindMatch': PlusMinusOne, 'min': PlusMinusOne(-1.0), 'max': PlusMinusOne(1.0)}
 
@@ -96,24 +115,6 @@ def tunableBool(  default:bool,
              None]],
         TunableBoolDescriptor]:
     return tunableProperty( default, TunableBoolDescriptor, **kwds) # type: ignore
-
-#############################################################################
-
-class TunableFloatSetting(TunableSettingT[float,TUNABLE_SELF_T]):
-    TUNABLE_DEFAULTS:ClassVar[StrAnyDict] = {'kind': float, 'kindMatch': float}
-
-TunableFloatSettingT = GenericT(TunableFloatSetting)
-class FloatSetting(TunableFloatSettingT[Tunable]): ...
-class TunableFloatDescriptor(TunableDescriptorT[float,Tunable]):
-    SETTING_CLASS = FloatSetting
-
-def tunableFloat(  default:float,
-        **kwds:Unpack[TUNABLE_SETTING_KWDS[float,TUNABLE_SELF_T]]
-    ) -> Callable[
-        [   Callable[[TUNABLE_SELF_T, FloatSetting, EvaluationContext],
-             None]],
-        TunableFloatDescriptor]:
-    return tunableProperty( default, TunableFloatDescriptor, **kwds) # type: ignore
 
 
 #############################################################################

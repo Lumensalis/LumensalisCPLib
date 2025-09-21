@@ -44,7 +44,7 @@ def GC_ArgsKwds():
             ]
         ).addArgs( "easy","hello world"
         ).addArgs( "two","hello", "world"
-        ).addArgs( "bKwd", invoke=lambda c: c("hello", b="world")
+        ).addArgs( "bKwd", invoke=lambda c: c("hello", b="world") # type: ignore
         )
     
 

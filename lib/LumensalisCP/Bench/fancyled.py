@@ -1,5 +1,14 @@
 
 import gc
+# pyright: reportOptionalMemberAccess=false, reportOptionalSubscript=false, reportGeneralTypeIssues=false
+# pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false
+# pyright: reportUnknownParameterType=false, reportInvalidTypeForm=false
+# pyright: reportMissingTypeArgument=false, reportUntypedNamedTuple=false
+# pyright: reportAttributeAccessIssue=false, reportUnnecessaryComparison=false
+# pyright: reportReturnType=false, reportArgumentType=false
+# pyright: reportCallIssue=false, reportIncompatibleMethodOverride=false
+# pyright: reportUnusedImport=false, reportIndexIssue=false
+
 import board
 import microcontroller
 import neopixel

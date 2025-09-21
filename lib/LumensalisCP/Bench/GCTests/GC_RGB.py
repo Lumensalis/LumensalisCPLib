@@ -3,8 +3,8 @@ from ..GCSimpleBench import *
 from LumensalisCP.Lights.RGB import RGB, Colors
 from collections import namedtuple
 
-TupleRgbTest = namedtuple("TupleRgbTest", ["r", "g", "b"] )
-
+TupleRgbTest = namedtuple("TupleRgbTest", ["r", "g", "b"] ) # type: ignore
+ 
 def RGBTest():
     
     

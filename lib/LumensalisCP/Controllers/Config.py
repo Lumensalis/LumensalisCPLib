@@ -49,7 +49,7 @@ class ControllerConfigBase(CountedInstance):
         # self.options = None
     
     
-    def copy(self) -> "ControllerConfig":
+    def copy(self) -> ControllerConfig:
         
         assert self.pins is None 
         assert getattr(self,'options',None) is None 
@@ -113,4 +113,4 @@ class ControllerConfig(ControllerConfigBase):
    
 ControllerConfigArg: TypeAlias = Union[ControllerConfig , str , StrAnyDict ]
 
-__all__ = [ "ControllerConfig", "D1MiniShieldConfig", "ControllerConfigArg" ]
+__all__ = [ "ControllerConfig", "ControllerConfigArg" ]

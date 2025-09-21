@@ -31,6 +31,7 @@ try:
         from types import ModuleType    
     except ImportError:
         pass
+
         # ModuleType:TypeAlias = type(sys) # type: ignore
 
     # any imports below this won't happen if the error gets raised
@@ -58,6 +59,8 @@ except ImportError:
 
     if not TYPE_CHECKING:
         from LumensalisCP.CPTyping._pseudoTyping  import *
+        import sys
+        ModuleType = type(sys) # type: ignore
         
 if LCPF_TYPING_IMPORTED:
     # this is _not_ within the initial try/except because we do

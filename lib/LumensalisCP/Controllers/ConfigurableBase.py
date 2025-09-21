@@ -30,7 +30,9 @@ class ConfigurableBase(CountedInstance):
             'defaults': kwds.pop('defaults', None)
         }
             
-    def __init__(self, config:Optional[ControllerConfigArg]=None, defaults:Optional[StrAnyDict]=None, **kwds:StrAnyDict ):
+    def __init__(self, config:Optional[ControllerConfigArg]=None, 
+                 defaults:Optional[StrAnyDict]=None, 
+                 **kwds:StrAnyDict ) -> None:
         super().__init__()
         if configSecondary := config == "secondary":
             config = None

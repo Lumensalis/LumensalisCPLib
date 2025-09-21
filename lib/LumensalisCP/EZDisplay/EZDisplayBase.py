@@ -3,11 +3,12 @@ from __future__ import annotations
 import displayio, terminalio # type: ignore
 from i2cdisplaybus import I2CDisplayBus # type: ignore
 import adafruit_display_text.label  # pyright: ignore[reportMissingImports] # pylint: disable=import-error
-
+from microcontroller import Pin
+import busio
 from LumensalisCP.I2C.common import *
 
 class EZDisplayBase(CountedInstance):
-    def __init__(self, displayWidth = 128, displayHeight = 64 ):
+    def __init__(self, displayWidth:int = 128, displayHeight:int = 64 ):
         self.displayWidth = displayWidth or 128
         self.displayHeight = displayHeight or 64
 
@@ -18,7 +19,10 @@ class EZDisplayElement(CountedInstance):
         pass
     
 class EZI2cDisplayIoBase(I2CDevice, EZDisplayBase):
-    def __init__(self, displayWidth = 128, displayHeight = 64, i2c=None, device_address=0x3c, reset=None, **kwds ):
+    def __init__(self, i2c:busio.I2C, displayWidth :int= 128, displayHeight :int= 64, 
+                  device_address:int=0x3c, 
+                 reset:Optional[Pin]=None,
+                   **kwds:Any ) -> None:
         I2CDevice.__init__( self, i2c=i2c, address=device_address, **kwds )
         EZDisplayBase.__init__( self, displayWidth = displayWidth, displayHeight = displayHeight, **kwds )
         self.displayBus = I2CDisplayBus(self.i2c, device_address=device_address, reset=reset ) 
@@ -29,7 +33,7 @@ class EZI2cDisplayIoBase(I2CDevice, EZDisplayBase):
         self.canvas = displayio.Group()
         self.root_group = self.canvas
 
-    def addBitmap( self, filename ):
+    def addBitmap( self, filename:str ):
         bitmap = displayio.OnDiskBitmap(open(filename, "rb"))
         image = displayio.TileGrid(bitmap, pixel_shader=bitmap.pixel_shader)
         self.canvas.append(image) 
@@ -46,4 +50,4 @@ class EZI2cDisplayIoBase(I2CDevice, EZDisplayBase):
         return label
     
         
-    def _initDisplayInstance(self): raise NotImplementedError
+    def _initDisplayInstance(self) -> Any: raise NotImplementedError

@@ -1,14 +1,11 @@
 from ..GCSimpleBench import *
 
 
-#import stringio
-import io
-#from LumensalisCP.util.TextIOHelpers import writeIntOnTextIO, writeJsonTagValOnTextIO
 from ulab import numpy as np
 
 class Uint8Buffer(np.ndarray):
     def init(self, data:Any):
-        super().__init__(data, dtype=np.uint8)
+        super().__init__(data, dtype=np.uint8) #type: ignore
 
 _EMPTY=[]
 def GC_bytearray():
@@ -24,7 +21,7 @@ def GC_bytearray():
         def reset(self):
             #self.data[:] = _EMPTY
             self.data = bytearray()
-            self.data2.fill(0)
+            self.data2.fill(0) #type: ignore
         
     sji = SIJContext()
 
@@ -66,7 +63,7 @@ def GC_bytearray():
 
 
     sji = SIJContext()
-    testData: dict[str, Any] = {
+    testData: dict[str, Any] = { #type: ignore
         "key1": "value1",
         "key2": 23,
         "key3": ["value3",42],

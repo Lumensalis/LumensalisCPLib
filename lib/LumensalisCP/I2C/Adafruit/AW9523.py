@@ -6,11 +6,11 @@ from LumensalisCP.I2C.common import *
 
 
 class AW9523Input(I2CInputSource):
-    def __init__( self, parent:"AW9523", pin:int, name:Optional[str]=None, **kwargs ):
+    def __init__( self, parent:"AW9523", pin:int, name:Optional[str]=None, **kwargs:Any ):
         name = name or f"{NliMakeValidName(parent.name)}_I{pin}"
         super().__init__(parent,name=name,**kwargs)
         self.io = adafruit_aw9523.DigitalInOut( pin, parent.aw9523 )
-        self.io.switch_to_input()
+        self.io.switch_to_input() # type: ignore
         
         self.__pin = pin
         self.__mask = 1 << pin
@@ -22,7 +22,7 @@ class AW9523Input(I2CInputSource):
     def getDerivedValue(self, context:EvaluationContext) -> bool: # pylint: disable=unused-argument
         return self._value
 
-    def _setFromInputs( self, inputsValue, context:EvaluationContext):
+    def _setFromInputs( self, inputsValue:int, context:EvaluationContext):
         value = (inputsValue & self.__mask) != 0
         #self.dbgOut( "_setFromInputs  %X / %r",  inputsValue, value )
         
@@ -50,14 +50,15 @@ class AW9523(I2CDevice):
 
 
     def addInput(self, pin:int, name:Optional[str]=None, **kwds:StrAnyDict ) -> AW9523Input:
-        ensure( isinstance(pin, int) and pin >= 0 and pin < AW9523.AW9523_PINS, "invalid pin %r", pin )
+        ensure( isinstance(pin, int) and pin >= 0 and pin < AW9523.AW9523_PINS, "invalid pin %r", pin ) # type: ignore
         ensure( self.__ios[pin] is None, "pin %r already used", pin )
         io = AW9523Input( self, pin, name=name,**kwds )
         self.__ios[pin] = io
         return io
         
     @property
-    def inputs(self): return list(filter( lambda i: i is not None and isinstance(i,AW9523Input), self.__ios ))
+    def inputs(self): 
+        return list(filter( lambda i: i is not None and isinstance(i,AW9523Input), self.__ios )) # type: ignore
     
     @property
     def lastInputs(self): return self.__lastInputs
@@ -71,6 +72,6 @@ class AW9523(I2CDevice):
             
             for inp in self.__ios:
                 if inp is not None:
-                    inp._setFromInputs( inputValues, context )
+                    inp._setFromInputs( inputValues, context ) # pyright: ignore[reportPrivateUsage]
             return True
         return False

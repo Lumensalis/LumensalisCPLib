@@ -2,8 +2,10 @@ from LumensalisCP.common import *
 from LumensalisCP.Main.Manager import MainManager
 
 
-def autoStart(**kwds ):
+def autoStart(**kwds:Any ):
     main = MainManager.initOrGetManager(**kwds)
+    assert False
+    
     project = main.identity.project
     if project is not None:
         main = "demoMain" if project.find("Demos") >= 0 else "main"

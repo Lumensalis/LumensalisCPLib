@@ -26,7 +26,7 @@ def GC_StringIOJson():
         sji.sioDump.write(json.dumps(value))
         return None
 
-    def testRepr(  sji:SIJContext, value:dict[str,Any] ) -> None:
+    def testRepr(  sji:SIJContext, value:dict[str,Any] ) -> None: # type: ignore
         sji.sioOther.write(repr(value))
         return None
 

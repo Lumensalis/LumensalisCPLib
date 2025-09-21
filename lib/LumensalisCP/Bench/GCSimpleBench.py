@@ -103,7 +103,7 @@ class GCTesterTestParameters(CountedInstance):
         aArgs = args if len(args) > 0 else None
         kKwds = kwds if len(kwds) > 0 else None
 
-        return GCTesterTestParameters( name, args, **(kwds or {}) )
+        return GCTesterTestParameters( name, args, **(kwds or {}) ) # type: ignore
 
 
     def writeOnScope(self, writeScope:WriteScope):

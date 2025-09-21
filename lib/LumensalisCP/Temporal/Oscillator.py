@@ -49,7 +49,7 @@ class Oscillator( InputSource, EvalDescriptorHolder, RfMxnActivatablePeriodic, R
 
     class KWDS( InputSource.KWDS, RfMxnActivatablePeriodic.KWDS, Refreshable.KWDS ):
         frequency: NotRequired[Hertz|Evaluatable[Hertz]]
-        period: NotRequired[TimeInSeconds]
+        period: NotRequired[TimeSpanInSeconds]
         low: NotRequired[float|Evaluatable[float]]
         high: NotRequired[float|Evaluatable[float]]
         

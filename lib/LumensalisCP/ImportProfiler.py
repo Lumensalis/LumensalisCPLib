@@ -40,6 +40,7 @@ except ImportError:
     
     TYPE_CHECKING = False # type: ignore
 
+# pyright: reportUnusedImport=false
 from LumensalisCP.Temporal.Time import getOffsetNow, TimeInSeconds
 
 from LumensalisCP.Main.PreMainConfig import sayAtStartup, pmc_mainLoopControl, pmc_gcManager
@@ -209,7 +210,10 @@ def getReloadableImportProfiler(name:Optional[str|dict[str,Any]]=None, moduleGlo
     return _fakeImportProfiler
 
 
-def getImportProfiler(name:Optional[str|dict[str,Any]]=None, moduleGlobals:Optional[dict[str,Any]]=None,reloadable:bool=False) -> ImportProfiler:
+def getImportProfiler(name:Optional[str|dict[str,Any]]=None, 
+                      moduleGlobals:Optional[dict[str,Any]]=None,
+                      reloadable:bool=False
+    ) -> ImportProfiler:
     """  returns an import profiler for the given name 
     
     .. code-block:: python

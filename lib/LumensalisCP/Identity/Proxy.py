@@ -10,7 +10,6 @@ expand to other forms of remote invocation in the future.
 from __future__ import annotations
 
 
-
 from LumensalisCP.ImportProfiler import  getImportProfiler
 __profileImport = getImportProfiler( __name__, globals() )
 
@@ -22,6 +21,7 @@ import LumensalisCP.pyCp.weakref as lcpWeakref
 from LumensalisCP.CPTyping import ReferenceType, Optional, Iterable , Generic, TypeVar, GenericT
 from LumensalisCP.pyCp.collections import GenericList, GenericListT
 from LumensalisCP.Identity.Local import NamedLocalIdentifiable
+from LumensalisCP.util.Reloadable import ReloadingMethodStub
 #############################################################################
 
 #############################################################################
@@ -158,7 +158,8 @@ def proxyMethod(
                 pass
             elif clsName == "ReloadingMethodStub":
                 original = method
-                method = method.func
+                assert isinstance(original,ReloadingMethodStub)
+                method = original.func
                 assert method not in NamedLocalIdentifiable._unmappedProxyMethods
                 print( f"\n#####\nadding RELOADABLE proxy method {method} registering {original}\n#####\n")                
                 NamedLocalIdentifiable._unmappedProxyMethods.add(method)

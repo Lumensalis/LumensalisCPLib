@@ -110,7 +110,7 @@ class LocalServo( NamedOutputTarget ):
 
     def _updateMove(self, context:EvaluationContext) -> None:
         #self.__moveTimer
-        when = context.when if context is not None else self.__moveTimer.manager.main.when
+        when = context.when # if context is not None else self.__moveTimer.manager.main.when
         assert when is not None
         assert self.__moveTimeAtStart is not None
         assert self.__moveSpan is not None

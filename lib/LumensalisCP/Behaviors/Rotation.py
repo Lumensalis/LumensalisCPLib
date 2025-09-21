@@ -206,9 +206,9 @@ class DCMotorSpinner(Spinner):
 
     @classmethod
     def extractMotorKwds(cls, kwargs:TDT) -> tuple[ KWDS, TDT ]:
-        lowerLimit = kwargs.pop('lowerLimit', None)
-        upperLimit = kwargs.pop('upperLimit', None)
-        defaultDirectionalSpeed = kwargs.pop('defaultDirectionalSpeed', None)
+        lowerLimit = kwargs.pop('lowerLimit', None)# type: ignore
+        upperLimit = kwargs.pop('upperLimit', None)# type: ignore
+        defaultDirectionalSpeed = kwargs.pop('defaultDirectionalSpeed', None)# type: ignore
         return (
             { 'lowerLimit': lowerLimit, 'upperLimit': upperLimit,
               'defaultDirectionalSpeed': defaultDirectionalSpeed },
