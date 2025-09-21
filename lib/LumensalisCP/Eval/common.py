@@ -26,6 +26,7 @@ from LumensalisCP.Lights.RGB import *
 __sayImport.parsing()
 
 #_EvaluatableTimeInSecondsConfigArg:TypeAlias = Evaluatable
+#############################################################################
 
 TimeInSecondsEvalArg:TypeAlias = Union[TimeInSecondsConfigArg, EvaluatableT[TimeInSeconds]]
 TimeInSecondsEval:TypeAlias = Union[TimeInSeconds, float, EvaluatableT[TimeInSeconds]]
@@ -37,6 +38,22 @@ def toTimeInSecondsEval(value:  TimeInSecondsEvalArg|None, default:Optional[Time
     if isinstance(value, Evaluatable):
         return value # type: ignore
     return TimeInSeconds(value) # type: ignore
+
+#############################################################################
+
+TimeSpanInSecondsEvalArg:TypeAlias = Union[TimeSpanInSecondsConfigArg, EvaluatableT[TimeSpanInSeconds]]
+TimeSpanInSecondsEval:TypeAlias = Union[TimeSpanInSeconds, float, EvaluatableT[TimeSpanInSeconds]]
+
+def toTimeSpanInSecondsEval(value:  TimeSpanInSecondsEvalArg|None, default:Optional[TimeSpanInSecondsEvalArg] = None) -> TimeSpanInSecondsEval:
+    if value is None: 
+        value = default
+        assert value is not None, "toTimeSpanInSecondsEval requires a value or default"
+    if isinstance(value, Evaluatable):
+        return value # type: ignore
+    return TimeSpanInSeconds(value) # type: ignore
+
+#############################################################################
+
 
 RGBConfigArg:TypeAlias = AnyRGBValue
 
