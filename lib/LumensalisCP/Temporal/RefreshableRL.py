@@ -30,49 +30,6 @@ _RefreshableListImplementation = _listModule.reloadableClassMeta('RefreshableLis
 
 #############################################################################
 
-if False:
-    @_Refreshable.reloadableMethod()
-    def _refresh( self:Refreshable, context:EvaluationContext, when:TimeInSeconds ) -> bool:
-            assert self.nextRefresh is not None
-            if when >= self.nextRefresh:
-                if self.enableDbgOut: self.dbgOut( "refreshing %s at %.3f", self, when )
-                assert self.refreshList is not None
-                self.__priorRefresh = self.__latestRefresh
-                self.__latestRefresh = when
-                self.__refreshCount += 1
-                self.setNextRefresh( context, None )
-                # self.__refreshList.markDirty(context, self)
-                refreshList = self.refreshList
-                try:
-                    self.derivedRefresh(context)
-                except Exception as inst:
-                    refreshList.SHOW_EXCEPTION( inst, "derivedRefresh exception on %s", self )
-                    self.__latestException = inst
-                    self.__exceptionCount += 1
-                now = context.newNow
-                self.__latestRefreshComplete = now 
-                
-                if self.nextRefresh is None:
-                    if self.__autoRefresh:
-                        nextRefresh = self.refreshableCalculateNextRefresh( context, now)
-                        if self.enableDbgOut: self.dbgOut( "autoRefresh : %s", nextRefresh )
-                        if nextRefresh is not None:
-                            assert nextRefresh > now
-                            self.setNextRefresh( context, nextRefresh )
-                            #self.__refreshList.nextRefreshChanged(context, self)
-                    else:
-                        if self.enableDbgOut: self.dbgOut( "expired, no autoRefresh" )
-
-                    if  self.nextRefresh is None:
-                        assert self.refreshList is refreshList or self.refreshList is None, f"Refreshable {self} refresh list changed from {refreshList} to {self.refreshList}"
-                    
-                        refreshList.remove(context, self)
-                        
-                return True # was processed
-            
-            assert self.refreshList is not None
-            return False
-    
 @_Refreshable.reloadableMethod()
 def __repr__(self:Refreshable) -> str:
     return f"{self.__class__.__name__}({getattr(self, 'name',self.dbgName)}, nextRefresh={self.nextRefresh}, refreshCount={self.__refreshCount}, latestRefresh={self.__latestRefresh})"

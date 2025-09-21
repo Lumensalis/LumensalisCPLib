@@ -38,7 +38,14 @@ def __processOne( self:RefreshableListImplementation, context:EvaluationContext,
         if item.refreshList is not self:
             self.errOut( f"Item {item} is in a different refresh list {item.refreshList}, not {self}"  )
             return
+        
+        if item.__latestRefreshIndex  == context.updateIndex:
+            if self.enableDbgOut or item.enableDbgOut:
+                self.errOut( f"Item {item} already refreshed in this update {context.updateIndex}"  )
+            return
 
+
+        item.__latestRefreshIndex  = context.updateIndex
         item.__priorRefresh = item.__latestRefresh
         item.__latestRefresh = when
         item.__refreshCount += 1
@@ -69,22 +76,26 @@ def __processOne( self:RefreshableListImplementation, context:EvaluationContext,
 
 #@_RefreshableListImplementation.reloadableMethod()
 def _processInner( self:RefreshableListImplementation, context:EvaluationContext, when:TimeInSeconds ) -> None:
-    with context.subFrame('runScene', self.name) as activeFrame:
-        self.__processCount += 1
-        if len(self._refreshables) == 0: 
-            if self.enableDbgOut: self.dbgOut( "no refreshables to process" )  
-            return 
+    self.__processCount += 1
+    if len(self._refreshables) == 0: 
+        if self.enableDbgOut: self.dbgOut( "no refreshables to process" )  
+        return 
+    #self.__assertSorted()
+    first = self._refreshables[0]
+    assert first.nextRefresh is not None, f"Top item {first} has no next refresh time"
+    show = self.enableDbgOut or first.enableDbgOut
+    if first.nextRefresh > when:
+        if show: self.dbgOut( "process not ready, nextRefresh = %.3f > %.3f", first.nextRefresh, when )  
+        #self.__assertSorted()
+        return
+        
+    name = self.name
+    assert isinstance(name,str) and len(name)>0
+    with context.subFrame('rListProcessInner', name) as activeFrame:
         if self._dirtyCount > 0:
             self._sort(context,when)
         
-        #self.__assertSorted()
-        first = self._refreshables[0]
-        assert first.nextRefresh is not None, f"Top item {first} has no next refresh time"
-        show = self.enableDbgOut or first.enableDbgOut
-        if first.nextRefresh > when:
-            if show: self.dbgOut( "process not ready, nextRefresh = %.3f > %.3f", first.nextRefresh, when )  
-            self.__assertSorted()
-            return
+
 
         if show: self.infoOut("process refreshing %r", first)
         #top._refresh(context, when)
@@ -99,8 +110,8 @@ def _processInner( self:RefreshableListImplementation, context:EvaluationContext
             # changed, but does it move?
             if len(self._refreshables) > 1:
                 if self._refreshables[0] is not first:
-                    self.errOut("process nextRefresh %s but top(%r) is not [0](%r) of %d",
-                                  nextRefresh, first, self._refreshables[0], len(self._refreshables))
+                    #self.errOut("process nextRefresh %s but top(%r) is not [0](%r) of %r",
+                    #              nextRefresh, first, self._refreshables[0], self._refreshables)
                     self.markDirty(context, first)  
                 elif self._refreshables[1].nextRefresh is not None:
                     if nextRefresh <= self._refreshables[1].nextRefresh:
@@ -130,6 +141,11 @@ def _processInner( self:RefreshableListImplementation, context:EvaluationContext
             self.infoOut("process finished, nextRefresh = %s, dirty=%s", nextRefresh, self._dirtyCount)
             assert nextRefresh == self._nextListRefresh or self._dirtyCount > 0, f"nextRefresh {nextRefresh} != _nextListRefresh {self._nextListRefresh} dirty={self._dirtyCount}"
 
+
+@_RefreshableListImplementation.reloadableMethod()
+def processFinishedDirty( self:RefreshableListImplementation, context:EvaluationContext ) -> None:
+    if self.enableDbgOut: self.dbgOut( "processFinishedDirty, dirtyCount = %d", self._dirtyCount )
+    
 @_RefreshableListImplementation.reloadableMethod()
 def process( self:RefreshableListImplementation, context:EvaluationContext, when:TimeInSeconds ) -> None:
     _processInner(self, context, when)

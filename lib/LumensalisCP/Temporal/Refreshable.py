@@ -78,6 +78,7 @@ class Refreshable( RefreshableInterface, IDebuggable ):
         self.__latestRefresh:TimeInSeconds|None = None
         self.__priorRefresh:TimeInSeconds|None = None
         self.__latestRefreshComplete:TimeInSeconds|None = None
+        self.__latestRefreshIndex:int = -1
 
 
         if mixinKwds is not None:

@@ -45,15 +45,9 @@ class RefreshableListImplementation(RefreshableListInterface ):
     def __processOne( self, context:EvaluationContext, when:TimeInSeconds, item:Refreshable, index:int ) -> None:
         RefreshableListRL.__processOne(context, when, item, index)
 
-    def __assertSorted(self) -> None:
-        refreshForSortedTest = 0
-        for item in self._refreshables:
-            assert item.nextRefresh is not None
-            assert item.nextRefresh >=  refreshForSortedTest
-            refreshForSortedTest = item.nextRefresh
-
+    @reloadingMethod
     def processFinishedDirty( self, context:EvaluationContext ) -> None:
-        if self.enableDbgOut: self.dbgOut( "processFinishedDirty, dirtyCount = %d", self._dirtyCount )
+        RefreshableListRL.processFinishedDirty(self,context)
 
     @property
     def processCount(self) -> int:
@@ -64,21 +58,36 @@ class RefreshableListImplementation(RefreshableListInterface ):
         RefreshableListRL.process(context,when)
 
     def addActive( self, context:EvaluationContext, item:Refreshable, 
-                  nextRefresh:Optional[TimeInSeconds]=None ) -> None: ...
+                  nextRefresh:Optional[TimeInSeconds]=None ) -> None:
+        RefreshableListRL.addActive(self,context,item,nextRefresh)
 
-    def add( self, context:EvaluationContext, item:Refreshable, nextRefresh:Optional[TimeInSeconds]=None ) -> None: ...
+    def add( self, context:EvaluationContext, item:Refreshable, nextRefresh:Optional[TimeInSeconds]=None ) -> None: 
+        RefreshableListRL.add(self,context,item,nextRefresh)
     
-    def _setNextListRefreshChanged(self,context:EvaluationContext,nextRefresh:Optional[TimeInSeconds]=None) -> None: ...
+    def _setNextListRefreshChanged(self,context:EvaluationContext,nextRefresh:Optional[TimeInSeconds]=None) -> None: 
+        RefreshableListRL._setNextListRefreshChanged(context,nextRefresh)
 
-    def remove( self,  context:EvaluationContext, item:Refreshable ) -> None: ...
+    def remove( self,  context:EvaluationContext, item:Refreshable ) -> None: 
+        RefreshableListRL.remove(self,context,item)
 
-    def nextRefreshChanged( self, context:EvaluationContext, item:Refreshable ) -> None: ...
+    def nextRefreshChanged( self, context:EvaluationContext, item:Refreshable ) -> None: 
+        RefreshableListRL.nextRefreshChanged(self,context,item)
 
-    def getNextRefreshForList(self, context:EvaluationContext, when:TimeInSeconds) -> TimeInSeconds|None: ...
+    def getNextRefreshForList(self, context:EvaluationContext, when:TimeInSeconds) -> TimeInSeconds|None: 
+        return RefreshableListRL.getNextRefreshForList(self, context, when)
 
-    def markDirty( self, context:EvaluationContext, item:Refreshable|None ) -> None: ...
+    def markDirty( self, context:EvaluationContext, item:Refreshable|None ) -> None:
+        RefreshableListRL.markDirty(context,item)
 
-    def _sort(self, context:EvaluationContext, when:TimeInSeconds) -> None: ...
+    def _sort(self, context:EvaluationContext, when:TimeInSeconds) -> None: 
+        RefreshableListRL._sort(self, context, when)
+
+    def __assertSorted(self) -> None:
+        refreshForSortedTest = 0
+        for item in self._refreshables:
+            assert item.nextRefresh is not None
+            assert item.nextRefresh >=  refreshForSortedTest
+            refreshForSortedTest = item.nextRefresh
 
 #############################################################################
 
