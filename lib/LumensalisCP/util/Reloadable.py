@@ -20,6 +20,7 @@ def __reloadPrint( message:str) -> None:
 class ReloadingMethodStub():
     def __init__(self,  func:Callable[...,Any] ) -> None:
         self.func = func
+        self.__name__ = func.__name__
 
     def __call__(self, *args:Any, **kwargs:Any) -> Any:
         raise NotImplementedError(f"Method {self.func.__name__} is not implemented in the reloading context. Please use the reloadingMethod decorator to implement it.")
