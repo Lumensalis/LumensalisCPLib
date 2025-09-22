@@ -21,7 +21,7 @@ class WebsocketSession(Debuggable):
 
     def __init__(self, server:BasicServer,request: Request) -> None:
         Debuggable.__init__(self)
-        self.websocket:Websocket = Websocket(request, buffer_size=8192)
+        self.websocket:Websocket|None = Websocket(request, buffer_size=8192)
         self.priorMonitoredValue:dict[str, Any] = {}
         server.websockets.append(self)
         self.useStringIO = True

@@ -45,7 +45,7 @@ def GCManager_adjustLowerThreshold(self:GCManager, reason:str) -> None:
     after_free = gc.mem_free()
     after_alloc = gc.mem_alloc()
     self.sayGC(f"  (after free={after_free}, alloc={after_alloc})")
-    delta = before_free - after_free
+    #delta = before_free - after_free
     #newThreshold = after_free - max( delta, 512000 )
     newThreshold = max( 512000, int(after_free/3) )
     self.sayGC(f"lower threshold set to {newThreshold}: {reason}" )

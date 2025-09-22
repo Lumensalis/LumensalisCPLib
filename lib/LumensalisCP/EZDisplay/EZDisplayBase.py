@@ -8,7 +8,7 @@ import busio
 from LumensalisCP.I2C.common import *
 
 class EZDisplayBase(CountedInstance):
-    def __init__(self, displayWidth:int = 128, displayHeight:int = 64 ):
+    def __init__(self, displayWidth:Optional[int] = 128, displayHeight:Optional[int]     = 64 ):
         self.displayWidth = displayWidth or 128
         self.displayHeight = displayHeight or 64
 
@@ -19,7 +19,7 @@ class EZDisplayElement(CountedInstance):
         pass
     
 class EZI2cDisplayIoBase(I2CDevice, EZDisplayBase):
-    def __init__(self, i2c:busio.I2C, displayWidth :int= 128, displayHeight :int= 64, 
+    def __init__(self, i2c:busio.I2C, displayWidth :Optional[int]= 128, displayHeight :Optional[int]= 64, 
                   device_address:int=0x3c, 
                  reset:Optional[Pin]=None,
                    **kwds:Any ) -> None:

@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 __sayControllersIdentityImport.parsing()
 
 class ControllerNVM(CountedInstance):
-    MAGIC = b"LCP"
+    MAGIC = bytearray(b"LCP")
     SIZE = 1024
     SPANS = dict(
         PROJECT=(5,105),
@@ -108,14 +108,15 @@ class ControllerNVM(CountedInstance):
                 )
         
         with nvm._i2c as i2c: # type: ignore
-            i2c: busio.I2C
+            assert isinstance(i2c, busio.I2C)
+            
             for i in range(0, data_length):
                 assert  (start + i) < max_size
                 #buffer[0] = (start + i) >> 8
                 buffer[0] = (start + i) & 0xFF
                 #i2c.write(buffer)
                 buffer[1] = data[i]
-                i2c.write(buffer)
+                i2c.write(buffer)  # type: ignore
 
     
     def readI2C(self,start:int, end:int):
@@ -124,13 +125,16 @@ class ControllerNVM(CountedInstance):
         write_buffer[0] = start & 0xFF
         read_buffer = bytearray(end-start)
         with self.__nvm._i2c as i2c: # type: ignore
+            assert isinstance(i2c, busio.I2C)
             # i2c: I2CDevice
-            i2c.write_then_readinto(write_buffer, read_buffer)
+            i2c.write_then_readinto(write_buffer, read_buffer) # type: ignore
             
         print(f"wrote {write_buffer}, read {read_buffer}" )
         return read_buffer
     
 class ControllerIdentity(CountedInstance):
+    CUIDConfig: dict[str,Any]
+    
     def __init__(self, main:MainManager):
         super().__init__()
         processorUid = microcontroller.cpu.uid
@@ -146,22 +150,14 @@ class ControllerIdentity(CountedInstance):
             self.CUIDConfig = {}
 
         self.envProject = os.getenv("project",None)
-        nvm = ControllerNVM(microcontroller.nvm)
+        assert microcontroller.nvm is not None
+        nvm = ControllerNVM() 
         self.controllerNVM = nvm
         self.controllerNVMProject = nvm.project if nvm.isInitialized else None
 
         
-        if 1:
-            self.i2cNVM = main.i2cProvider.identityI2C
-        else:
-            try:
-                i2c = main.defaultI2C
-                eeprom = adafruit_24lc32.EEPROM_I2C(i2c_bus=i2c, max_size=1024)
-                self.i2cNVM = ControllerNVM( eeprom[0:len(eeprom)] )
-                del eeprom
-            except Exception as inst:
-                SHOW_EXCEPTION( inst, f"I2C identity exception ")
-                self.i2cNVM = None
+        self.i2cNVM = main.i2cProvider.identityI2C
+
             
         self.i2cNVMProject = self.i2cNVM.project if self.i2cNVM is not None and self.i2cNVM.isInitialized else None
             

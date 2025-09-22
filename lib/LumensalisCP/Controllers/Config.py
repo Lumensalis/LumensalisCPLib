@@ -6,7 +6,7 @@ from LumensalisCP.common import Any, Optional, TypeAlias, Union, StrAnyDict, Cou
 # Map from specific controllers actual pins to D1 Mini pin names
 class ControllerPins(CountedInstance):
     
-    def __init__(self, pinNames:list[str], **kwds:dict[str,Any]): 
+    def __init__(self, pinNames:list[str], **kwds:Any): 
         super().__init__()
         self.pinNames = pinNames
 
@@ -53,9 +53,11 @@ class ControllerConfigBase(CountedInstance):
         
         assert self.pins is None 
         assert getattr(self,'options',None) is None 
-        return self.__class__( **self.kwds )
+        assert isinstance(self,ControllerConfig)
+        cls = self.__class__
+        return cls( **self.kwds )
 
-    def bake( self, **kwds:dict[str,Any] ):
+    def bake( self, **kwds:Any ):
         self.kwds.update( kwds )
         self.pins = ControllerPins(self.pinNames, **self.kwds )
         self.options = {}
@@ -84,7 +86,7 @@ class ControllerConfigBase(CountedInstance):
         assert self.options is not None
         return self.options.get( tag, default )
     
-    def updateDefaultOptions( self, **kwds:dict[str,Any] ):
+    def updateDefaultOptions( self, **kwds:Any ):
         assert self.options is not None
         for tag,val in kwds.items():
             if tag not in self.options:

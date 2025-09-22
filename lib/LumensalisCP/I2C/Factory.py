@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
     from LumensalisCP.Main.I2CProvider import I2CProvider
     from LumensalisCP.I2C.I2CDevice import  I2CDevice    
+    I2CDeviceT=TypeVar('I2CDeviceT', bound=I2CDevice)
 
     from LumensalisCP.I2C.Generic.Display_SSD1306 import Display_SSD1306
     from LumensalisCP.I2C.Generic.DisplayIO_SSD1306 import DisplayIO_SSD1306
@@ -41,7 +42,7 @@ class I2CFactory(CountedInstance):
         kwds.setdefault('provider', self.__provider )
         return kwds
 
-    def _addI2CDevice(self, cls:type, kwds:I2CDevice.KWDS) -> I2CDevice:
+    def _addI2CDevice(self, cls:Type[I2CDeviceT], kwds:I2CDevice.KWDS) -> I2CDeviceT:
         self._updateAddKwds(kwds)
         rv = cls( **kwds )
         #self.__provider.addI2CDevice(rv)

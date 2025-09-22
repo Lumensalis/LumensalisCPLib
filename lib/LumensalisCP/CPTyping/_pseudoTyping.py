@@ -183,3 +183,8 @@ def overload( f ): return f
 def override( f ): return f
 def final( f ): return f
 def wraps( f ): return f
+
+def cast( typ, val ): return val
+
+def assert_type( val, typ ):
+    return val

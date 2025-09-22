@@ -215,6 +215,7 @@ class ProfileSnapEntry(Releasable):
             
     def resetSnap( self, name:Optional[str]=None, when:Optional[TimePT]=None, name2:Optional[str] = None ):
         self.name = name
+        assert when is not None
         self.lw = when
         self.e:float = 0.0
         self.etc = self.__defaultEtc
@@ -231,14 +232,15 @@ class ProfileSnapEntry(Releasable):
         self.etc[tag] = val
         
     @property 
-    def nest( self ) -> ProfileSubFrame|None: return self._nest if self._nesting else None
+    def nest( self ) -> ProfileSubFrame|None:
+        return self._nest if self._nesting else None
 
     def subFrame(self, context:UpdateContext, 
                  name:str, 
                  name2:str
             ) -> 'ProfileSubFrame':
-        assert not self._nesting 
-        self._nest = ProfileSubFrame.makeEntry(context,name, name2)
+        assert not self._nesting
+        self._nest = ProfileSubFrame.makeEntry(context,name, context.newNow, name2=name2)
         self._nesting = True
         return self._nest
 
@@ -557,7 +559,7 @@ class ProfileFrame(ProfileFrameBase):
         return pmc_gcManager.PROFILE_MEMORY
 
     @classmethod
-    def makeEntry(cls,   context:UpdateContext, eSleep:TimeSpanInSeconds=0.0) -> Self:
+    def makeEntry(cls, context:UpdateContext, eSleep:TimeSpanInSeconds=0.0) -> Self: # type: ignore
         """ NASTY!!! 
             the only reason this is overridden is to eliminate the cost of the 
             temporaries for *args and **kwds in CircuitPython GC

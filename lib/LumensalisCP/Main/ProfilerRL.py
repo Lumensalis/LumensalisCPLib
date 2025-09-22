@@ -77,7 +77,7 @@ def shouldShowFrame(self:ProfileWriteConfig, frame:ProfileFrameBase) -> bool:
 def tooMuchMemoryUsed( self:ProfileWriteConfig ,
             entry:ProfileSnapEntry|ProfileFrameBase,
         ) -> bool:
-    if isinstance(entry,ProfileSnapEntry):
+    if isinstance(entry,ProfileSnapEntry): # type: ignore
         return entry.usedGC > self.minEB
     return entry.usedGC > self.minB 
 

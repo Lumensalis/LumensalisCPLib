@@ -127,7 +127,7 @@ class DMXManager(MainAsyncChild):
         return rv
     
     @staticmethod
-    def _watcherNames(channel:_DMXChannelArgType,**kwds:Unpack[DMXDimmerWatcher.KWDS]):
+    def _watcherNames(channel:_DMXChannelArgType,**kwds:Unpack[DMXDimmerWatcher.KWDS]) -> dict[str, Any]:
         name = kwds.get('name', None) 
         displayName = kwds.get('displayName', None)
         if name is None:

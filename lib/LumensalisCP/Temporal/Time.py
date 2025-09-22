@@ -1,11 +1,11 @@
 
 try: 
-    from typing import NewType, TypeAlias, TYPE_CHECKING
+    from typing import NewType, TypeAlias, TYPE_CHECKING # type: ignore
 
     
 except ImportError:
     #TimeInSeconds = float  # type: ignore
-    TYPE_CHECKING = False
+    TYPE_CHECKING = False # type: ignore
     if not TYPE_CHECKING:
         def NewType(name:str, type_:type) : # type: ignore
             """Create a new type with the given name and type."""
@@ -15,7 +15,7 @@ except ImportError:
         
 import time
 
-TimeInSeconds = NewType('TimeInSeconds', float)
+TimeInSeconds = NewType('TimeInSeconds', float) # type: ignore
 
 
 __getMonotonic = time.monotonic

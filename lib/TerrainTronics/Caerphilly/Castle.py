@@ -1,16 +1,17 @@
 
-import TerrainTronics.D1MiniBoardBase
+
 from LumensalisCP.commonCP import *
 from LumensalisCP.IOContext import *
 from LumensalisCP.Gadgets.Servos import LocalServo
 from LumensalisCP.Lights.NeoPixels import NeoPixelSource
-from LumensalisCP.Gadgets.IrRemote import LCP_IRrecv, onIRCode
+from LumensalisCP.Gadgets.IrRemote import LCP_IRrecv
+from TerrainTronics.D1MiniBoardBase import D1MiniBoardI2CBase
 
-class CaerphillyCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
+class CaerphillyCastle(D1MiniBoardI2CBase):
     
-    def __init__(self, *args, name=None, **kwds ):
-        name = name or "Caerphilly"
-        super().__init__( *args, name=name, **kwds )
+    def __init__(self, *args:Any, **kwds:Unpack[D1MiniBoardI2CBase.KWDS]) -> None:
+        #kwds.setdefault( 'name', "Caerphilly" )
+        super().__init__( *args,  **kwds )
         c = self.config
         c.updateDefaultOptions( 
                 neoPixelPin = c.D3,
@@ -43,8 +44,8 @@ class CaerphillyCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
     def initNeoPixOnServo( self, servoN:int, 
                 neoPixelCount:int = 1,
                 name:Optional[str] = None, 
-                neoPixelOrder = neopixel.GRB,
-                neoPixelBrightness = 0.2,
+                neoPixelOrder:str = neopixel.GRB,
+                neoPixelBrightness:float = 0.2,
              ) -> NeoPixelSource:
         assert( self.__servos[servoN-1] is None  and self.__neoPixOnServos[servoN-1] is None )
         pin = self.config.option('servo{}pin'.format(servoN))
@@ -52,14 +53,16 @@ class CaerphillyCastle(TerrainTronics.D1MiniBoardBase.D1MiniBoardBase):
 
         pixels = NeoPixelSource(
             pin, pixelCount=neoPixelCount, main = self.main, refreshRate=0.05,
-                brightness=neoPixelBrightness, auto_write=False, pixel_order=neoPixelOrder
+                brightness=neoPixelBrightness, 
+                #auto_write=False, 
+                pixel_order=neoPixelOrder
         )
         self.__neoPixOnServos[servoN-1] = pixels
         self.__allPixels.append(pixels)
         return pixels
     
 
-    def addIrRemote(self, codenames:Mapping|str|None = None) -> LCP_IRrecv:
+    def addIrRemote(self, codenames:dict[str,int]|str|None = None) -> LCP_IRrecv:
         assert self._irRemote is None
         codenames = codenames or "ar_mp3"
         self._irRemote = LCP_IRrecv( self.D5.actualPin, codenames=codenames, main=self.main )

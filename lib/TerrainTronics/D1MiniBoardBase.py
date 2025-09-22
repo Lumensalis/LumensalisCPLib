@@ -6,7 +6,7 @@ from LumensalisCP.ImportProfiler import  getImportProfiler
 __profileImport = getImportProfiler( __name__, globals() )
 
 #############################################################################
-import busio
+import busio, board
 from LumensalisCP.CPTyping import Unpack
 from LumensalisCP.Shields.Pins import PinProxy
 from LumensalisCP.Shields.Base import ShieldBase, ShieldI2CMixin

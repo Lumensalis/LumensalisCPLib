@@ -82,7 +82,7 @@ def cmd_set(request:BSRRequest):
 statusTopic = QueryActionGroup("gsi",prefix="st_")
 
 @statusTopic()
-def st_supervisor(request:BSRRequest):
+def st_supervisor(request:BSRRequest)    -> dict[str, Any]:
     return {
             'runtime': attrsToDict( supervisor.runtime, ['autoreload','run_reason'] ),
             'ticks_ms': supervisor.ticks_ms()

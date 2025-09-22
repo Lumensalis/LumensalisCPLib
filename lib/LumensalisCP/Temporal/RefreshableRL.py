@@ -86,15 +86,16 @@ def activate( self:RfMxnActivatable, context:Optional[EvaluationContext]=None, n
         if nextRefresh is None:
             nextRefresh = self.refreshableCalculateNextRefresh(context, context.when)
 
-        self.__autoList.add( context, self, nextRefresh=nextRefresh )
+        self.__autoList.add( context,  cast( Refreshable,self ), nextRefresh=nextRefresh )
         self.__refreshIsActive = True
 
 @_RfMxnActivatable.reloadableMethod()
 def deactivate( self:RfMxnActivatable, context:'EvaluationContext' ) -> None:
-        assert self.refreshList is not None
-        self.refreshList.remove( context, self )
+        r = cast( Refreshable,self )
+        assert r.refreshList is not None
+        r.refreshList.remove( context, r )
         self.__refreshIsActive = False
-        self._setRefreshList(context,None)
+        r._setRefreshList(context,None)
 
 #############################################################################
 

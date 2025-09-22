@@ -8,14 +8,14 @@ from LumensalisCP.Controllers.ConfigurableBase import ControllerConfigurableChil
 
 from LumensalisCP.Inputs import NamedLocalIdentifiable
 from LumensalisCP.Main.I2CProvider import I2CProvider
-
+import busio
 
 class ShieldBase(ControllerConfigurableChildBase):#,RfMxnActivatablePeriodic, Refreshable): # pylint: disable=abstract-method
     class KWDS(ControllerConfigurableChildBase.KWDS):#,RfMxnActivatablePeriodic.KWDS, Refreshable.KWDS):
         pass
         
     def __init__(self, **kwds:Unpack[KWDS] ) -> None:
-        main = kwds.get('main')
+        # main = kwds.get('main')
         #assert main is not None, "ShieldBase must be created with a main instance"
         #kwds.setdefault('autoList',main.refreshables)
         #Refreshable.__init__(self, mixinKwds=kwds )
@@ -23,7 +23,9 @@ class ShieldBase(ControllerConfigurableChildBase):#,RfMxnActivatablePeriodic, Re
         #assert self.main is not None, "ShieldBase must be created with a main instance"
         
         self.__componentsContainer:NliList[NamedLocalIdentifiable] = NliList("components", parent=self)
-        self.activate(main.getContext())
+        #assert isinstance(main, MainManager)
+        assert self.main is not None
+        self.activate(self.main.getContext())
 
     def nliGetContainers(self) -> NliGetContainersRVT:
         yield self.__componentsContainer
@@ -41,19 +43,27 @@ class ShieldBase(ControllerConfigurableChildBase):#,RfMxnActivatablePeriodic, Re
 
 class ShieldI2CMixin(I2CProvider):  # pylint: disable=abstract-method
     # pylint: disable=attribute-defined-outside-init
-    
+    i2c:busio.I2C
         
     def __init__(self, **kwds:Unpack[ShieldBase.KWDS] ):
-        I2CProvider.__init__( self, config=self.config, main=self.main )
+        config, main = self.config, self.main # type: ignore
+        #assert isinstance(config,ControllerConfig)
+        #assert isinstance(main,MainManager)
+        I2CProvider.__init__( self, config=config, main=main ) # type: ignore
 
-    def initI2C(self): 
-        i2c = self.config.option('i2c')
-        sdaPin = self.config.SDA
-        sclPin = self.config.SCL    
+    def initI2C(self):
+        config, main = self.providerConfig, self.providerMain 
+        #assert isinstance(config,ControllerConfig)
+        #assert isinstance(main,MainManager)
+        
+        i2c = config.option('i2c')
+        sdaPin = config.SDA
+        sclPin = config.SCL    
         
         if i2c is None :
             if sdaPin is None and sclPin is None:
-                i2c = self.main.defaultI2C
+                assert sdaPin is not None and sclPin is not None
+                i2c = main.defaultI2C # type: ignore
             else:
                 self.infoOut( "initializing busio.I2C, scl=%s, sda=%s", sclPin, sdaPin )
                 i2c =  self.addI2C( sdaPin, sclPin ) 
@@ -87,7 +97,7 @@ class ShieldI2CMixin(I2CProvider):  # pylint: disable=abstract-method
 
 __all__ = [
     'ShieldBase',
-    'ShieldI2CBase',
+    'ShieldI2CMixin',
 ]
 
 __sayImport.complete()

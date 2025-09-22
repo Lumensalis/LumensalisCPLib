@@ -11,8 +11,8 @@ from LumensalisCP.Eval.EvaluationContext import EvaluationContext
 class ProxyRGBLightsSource( LightSource ):
     
     def __init__( self,source:LightGroup, **kwds:Unpack[LightSource.KWDS] ) -> None:
-        self.__lights:List[ProxyRGBLight] = []
-        kwds.setdefault('lights', self.__lights)
+        self.__lights:list[ProxyRGBLight] = []
+        kwds.setdefault('lights', self.__lights) # type: ignore
         super().__init__( **kwds )
         for light in source.lights:
             self.__lights.append( self.makeProxy( len(self.__lights), light ) )
@@ -50,7 +50,7 @@ class ProxyRGBLight( RGBLight ):
     def lightType(self): return  LightType.LT_RGB
 
     def recalculateForwardValue( self, context: Optional[EvaluationContext] = None  ) -> Any:
-        return self.source.recalculateForwardValue( self, context )
+        return self.source.recalculateForwardValue( self, context ) # type: ignore
         
     def setValue(self,value:AnyRGBValue, context: Optional[EvaluationContext] = None ) -> None:
         if context is not None:
@@ -77,9 +77,14 @@ class DimmedLightsSource( ProxyRGBLightsSource ):
     def __init__( self,source:LightGroup, brightness:float=1.0, **kwargs:Unpack[ProxyRGBLightsSource.KWDS] ) -> None:
         super().__init__(source,**kwargs)
         self.__brightness = brightness
-        self.__black = RGB()
+        self.__dimmed = RGB()
         
         
-    def recalculateForwardValue( self, light:"ProxyRGBLight", context: Optional[EvaluationContext] = None ):
-        v = light.value
-        return self.__black.fadeTowards( v, self.__brightness )
+    def recalculateForwardValue( self, light:ProxyRGBLight, context: Optional[EvaluationContext] = None ) -> RGB:
+        #self.__dimmed
+        #self.__dimmed.setRGB( light.getRGB() )
+        self.__dimmed.setLight( light )
+        #v = light.value
+        self.__dimmed.brightness = self.__brightness 
+
+        return self.__dimmed

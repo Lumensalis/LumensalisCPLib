@@ -58,7 +58,7 @@ class Light(NamedOutputTarget):
     
     def getLightValue(self)-> LightValueBase: raise NotImplementedError  
     
-    def getRGB(self):
+    def getRGB(self) -> RGB:
         return self.getLightValue().asRGB
     
     @property

@@ -57,7 +57,7 @@ class SceneManager(NamedLocalIdentifiable):
         #self.__currentScene.runTasks(context)
 
     def nliGetContainers(self) -> NliGetContainersRVT:
-        if self._scenes is not None:
+        if self._scenes is not None: # type: ignore
             yield self._scenes
         else:
             yield from ()

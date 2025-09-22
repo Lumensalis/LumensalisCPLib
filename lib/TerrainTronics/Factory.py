@@ -21,10 +21,9 @@ class TerrainTronicsFactory(FactoryBase):
         """ add a Caernarfon Castle board - see http://lumensalis.com/ql/h2Caernarfon
         """
         from TerrainTronics.Caernarfon import CaernarfonCastle
-        
         return self.makeChild( CaernarfonCastle, **kwds ) # type: ignore
     
-    def addHarlech( self, **kwds ) -> HarlechCastle:
+    def addHarlech( self, **kwds:Unpack[HarlechCastle.KWDS] ) -> HarlechCastle:
         from TerrainTronics.Harlech import HarlechCastle
         return self.makeChild( HarlechCastle, **kwds ) # type: ignore
     
@@ -32,11 +31,11 @@ class TerrainTronicsFactory(FactoryBase):
         from TerrainTronics.Cilgerran import CilgerranCastle
         return self.makeChild( CilgerranCastle, **kwds )
 
-    def addCaerphilly( self, config=None, **kwds ):
+    def addCaerphilly( self, **kwds:Unpack[CaerphillyCastle.KWDS] ) -> CaerphillyCastle:
         from TerrainTronics.Caerphilly import CaerphillyCastle
-        return self.makeChild( CaerphillyCastle, config=config, **kwds ) # type: ignore
+        return self.makeChild( CaerphillyCastle, **kwds ) # type: ignore
 
-    def addHarlechXL( self, **kwds ):
+    def addHarlechXL( self, **kwds:Unpack[HarlechXLCastle.KWDS] ) -> HarlechXLCastle:
         from TerrainTronics.HarlechXL import HarlechXLCastle
         return self.makeChild( HarlechXLCastle, **kwds ) # type: ignore
 

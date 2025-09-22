@@ -18,6 +18,6 @@ def getName( name:str|None, instance:Any = None, depth:int=1):
     
     return name or "???"
     
-def testGetName( v, name:str|None = None ):
+def testGetName( v:Any, name:str|None = None ):
     name = getName(name)
     return { name:v }

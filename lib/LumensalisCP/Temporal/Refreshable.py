@@ -68,7 +68,7 @@ class Refreshable( RefreshableInterface, IDebuggable ):
         autoRefresh:NotRequired[bool]
         mixinKwds:NotRequired[StrAnyDict]
 
-    def __init__(self, autoRefresh:Optional[bool]=None, mixinKwds:Optional[StrAnyDict]=None ) -> None:
+    def __init__(self, autoRefresh:Optional[bool]=None, mixinKwds:Optional[StrAnyDict|Any]=None ) -> None:
 
         self.__refreshList:RefreshableListImplementation|None = None
         self.__nextRefresh:TimeInSeconds|None = None
@@ -84,7 +84,7 @@ class Refreshable( RefreshableInterface, IDebuggable ):
         if mixinKwds is not None:
             assert isinstance(mixinKwds, dict), "Mixin keywords must be a dictionary"
             if autoRefresh is None: 
-                autoRefresh = mixinKwds.pop('autoRefresh', self.RFD_autoRefresh)
+                autoRefresh = mixinKwds.pop('autoRefresh', self.RFD_autoRefresh) # type: ignore[assignment]
 
             self._mixins_init(mixinKwds) # type: ignore[call-arg]
         

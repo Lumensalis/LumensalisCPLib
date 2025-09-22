@@ -15,7 +15,7 @@ class NeoPixelLight( RGBLight ):
     def __init__(self, source:"NeoPixelSource", index:int = 0):
         super().__init__(source=source, index=index)
         self.__npiv = 0
-        
+        self.__rgb = RGB(0,0,0)
 
     def setValue(self,value:AnyRGBValue, context: Optional[EvaluationContext] = None ) ->None:
         if context is not None:
@@ -23,6 +23,7 @@ class NeoPixelLight( RGBLight ):
         v = LightValueNeoRGB.toNeoPixelRGBInt(value)
         if v != self.__npiv:
             self.__npiv = v
+            self.__rgb.setFromNeoPixelRGBInt(v)
             source:NeoPixelSource = self.source # type: ignore
             source.neopix[self.sourceIndex] = v # type: ignore
             source.lightChanged(self)
@@ -33,6 +34,10 @@ class NeoPixelLight( RGBLight ):
     def getLightValue( self ):
         return LightValueNeoRGB( self.__npiv )
     
+    def getRGB(self) -> RGB:
+        return self.__rgb
+    
+
 class  NeoPixelSourceKwds(TypedDict):
     pixelCount: NotRequired[int]
     brightness: NotRequired[float]

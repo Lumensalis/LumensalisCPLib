@@ -8,6 +8,7 @@ __saySimpleProfilingRLImport = getReloadableImportProfiler( "Simple.simpleProfil
 
 #from LumensalisCP.Demo.DemoCommon import *
 #from LumensalisCP.Main.PreMainConfig import pmc_gcManager
+from LumensalisCP.CPTyping import *
 from LumensalisCP.Main.Profiler import *
 import sys
 from collections import OrderedDict

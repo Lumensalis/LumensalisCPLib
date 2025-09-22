@@ -89,9 +89,9 @@ def _processInner( self:RefreshableListImplementation, context:EvaluationContext
         #self.__assertSorted()
         return
         
-    name = self.name
+    name = self.name # type: ignore
     assert isinstance(name,str) and len(name)>0
-    with context.subFrame('rListProcessInner', name) as activeFrame:
+    with context.subFrame('rListProcessInner', name) as activeFrame: # pyright: ignore[reportUnusedVariable]
         if self._dirtyCount > 0:
             self._sort(context,when)
         
@@ -121,7 +121,9 @@ def _processInner( self:RefreshableListImplementation, context:EvaluationContext
                         removed = self._refreshables.pop(0) 
                         assert removed is first, f"Removed item {removed} is not the top item {first}"
                         nextRefresh = self._refreshables[0].nextRefresh
-                        if first.nextRefresh >= self._refreshables[-1].nextRefresh:
+                        lastRefresh = self._refreshables[-1].nextRefresh
+                        assert lastRefresh is not None
+                        if first.nextRefresh >= lastRefresh:
                             # moving to end maintains sort
                             if show: self.infoOut("process nextRefresh %s moving to end", nextRefresh)
                             self._refreshables.append(first)
@@ -169,7 +171,7 @@ def addActive( self:RefreshableListImplementation, context:EvaluationContext, it
     if autoList is not None:
         assert autoList is self
     else:
-        item.__autoList = self
+        item.__autoList = self # type: ignore[attr-defined]
 
 @_RefreshableListImplementation.reloadableMethod()
 def add( self:RefreshableListImplementation, context:EvaluationContext, item:Refreshable, nextRefresh:Optional[TimeInSeconds]=None ) -> None:

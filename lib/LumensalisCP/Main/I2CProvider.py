@@ -9,6 +9,7 @@ import board
 
 from LumensalisCP.commonCP import *
 from LumensalisCP.Eval.common import *
+import microcontroller
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
@@ -65,10 +66,11 @@ class I2CProvider(Debuggable):
         sdaPin = config.SDA
         sclPin = config.SCL
         
-        if i2c is None and self is main:
+        if i2c is None and self is main: # type:ignore # only the main controller should create a default I2C bus
             if sdaPin is not None and sclPin is not None:
                 self.infoOut( "initializing busio.I2C, scl=%s, sda=%s", sclPin, sdaPin )
                 try:
+                    assert isinstance(self,MainManager), "only MainManager can create default I2C bus"
                     i2c =  self.addI2C( self.asPin(sdaPin), self.asPin(sclPin) ) 
         #
         #            if ENABLE_EEPROM_IDENTITY:
@@ -78,8 +80,8 @@ class I2CProvider(Debuggable):
                     SHOW_EXCEPTION( inst, "I2C identity exception ")
 
 
-    #def asPin(self, pin:Any ) -> microcontroller.Pin: 
-        # raise NotImplementedError
+    def asPin(self, pin:Any ) -> microcontroller.Pin: 
+        raise NotImplementedError
     
     @property
     def defaultI2C(self) -> busio.I2C: 

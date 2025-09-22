@@ -7,7 +7,7 @@ from LumensalisCP.Triggers.Timer import PeriodicTimer
 class SlotsTest( object ):
     __slots__ = "a", "b", "c"
     
-    def __init__(self, **kwds ):
+    def __init__(self, **kwds:Any ):
         for tag,val in kwds.items():
             setattr(self,tag,val)
             
@@ -135,17 +135,17 @@ class TreasureChest( DemoBase ):
             
         self.lidDrive.set( None )
 
-    def closeLid(self):
+    def closeLid(self) -> None:
         if self.main.scenes.currentScene.name == "dmxRemote": return
         self.main.scenes.setScene("closing")
         self.lidDrive.moveTo(self.lidClosedPosition,self.lidCloseSpeed)
 
-    def openLid(self):
+    def openLid(self) -> None:
         if self.main.scenes.currentScene.name == "dmxRemote": return
         self.main.scenes.setScene("opening")
         self.lidDrive.moveTo(self.lidOpenPosition,self.lidOpenSpeed)
             
-    def jogLid(self, delta):
+    def jogLid(self, delta:float=0.0) -> None:
         newAngle = self.lidDrive.lastSetAngle + delta
         print( f"lid to {newAngle}")
         self.lidDrive.set(newAngle)
@@ -174,7 +174,7 @@ class TreasureChest( DemoBase ):
         ir.onCode( "CH+", self.openLid )
         
         @ir.onCodeDef( "VOL+" )
-        def jogLidUp(): self.jogLid(-1)
+        def jogLidUp() -> None: self.jogLid(-1)
 
         @ir.onCodeDef( "VOL-" )
         def jogLidDown(): self.jogLid(1)

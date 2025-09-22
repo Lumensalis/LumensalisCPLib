@@ -8,6 +8,8 @@ from LumensalisCP.HTTP.BSR.common import *
 from LumensalisCP.util.Reloadable import ReloadableModule
 from LumensalisCP.util.TextIOHelpers import valToJson, v2jSimpleTypes
 
+# pyright: reportUnusedImport=false
+
 if TYPE_CHECKING:
     from .BasicServer import BasicServer
     from .WebsocketSession import WebsocketSession
@@ -24,7 +26,7 @@ _WebsocketSession = _sessionModule.reloadableClassMeta('WebsocketSession')
 @_WebsocketSession.reloadableMethod()
 def close(self:WebsocketSession) -> None:
     self.infoOut("CLOSING WebsocketSession")
-    if self.websocket is not None:
+    if self.websocket is not None: # type: ignore[reportAttributeAccessIssue]
         try:
             self.dbgOut("calling websocket.close()")
             self.websocket.close()

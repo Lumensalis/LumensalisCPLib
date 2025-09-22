@@ -17,7 +17,7 @@ class CaernarfonGateDemo( DemoBase ):
         #sampleExt, audioKwds = "2232.mp3", dict(useMixer = True, mixer_sample_rate = 22050, mixer_signed = True)
         sampleExt, audioKwds = "22u8.wav", dict(useMixer = True, mixer_sample_rate = 22050, mixer_signed = False, mixer_bits_per_sample=8)
         
-        audio = main.addI2SAudio( bit_clock=board.IO14,word_select= board.IO13, data=board.IO10, **audioKwds )
+        audio = main.addI2SAudio( bit_clock=board.IO14,word_select= board.IO13, data=board.IO10, **audioKwds ) # type: ignore
         audio.enableDbgOut = True
         audio.volume = 0.3
 

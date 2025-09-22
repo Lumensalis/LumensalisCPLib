@@ -17,7 +17,7 @@ from LumensalisCP.Tunable.TunableKWDS import *
 __profileImport.parsing()
 
 #############################################################################
-TUNABLE_SELF_T=TypeVar('TUNABLE_SELF_T', bound='Tunable')
+TUNABLE_SELF_T=TypeVar('TUNABLE_SELF_T', contravariant=True, bound='Tunable')
 
 @ProxyAccessibleClass()
 class TunableSetting(NamedLocalIdentifiable,OutputTarget,
@@ -48,7 +48,7 @@ class TunableSetting(NamedLocalIdentifiable,OutputTarget,
         EvaluatableT[TUNABLE_T].__init__(self)
 
         assert not tunable._tunableSettings.nliContains(self.name) , f"TunableSetting {self.name} is already registered"
-        tunable._addSetting(self) 
+        tunable._addSetting(self)  # type: ignore
 
         self.__value:TUNABLE_T = value # type: ignore
 

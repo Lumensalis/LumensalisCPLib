@@ -98,7 +98,7 @@ def RawPWMInputWrapper_getDerivedValue(self:RawPWMInputWrapper, context:Evaluati
                      bool(self.pulseIn) )
 
     try:
-        rlData['cycles'] = rlData.get('cycles',0) + 1
+        rlData['cycles'] = cast(int, rlData.get('cycles',0)) + 1
 
         if self.pulseIn.paused:
             self.infoOut( "clearing paused pulseIn" )
@@ -131,9 +131,7 @@ def RawPWMInputWrapper_getDerivedValue(self:RawPWMInputWrapper, context:Evaluati
         self.pulseIn.resume()
 
     
-
-
-
+        assert p1 is not None and p1 != 0
         assert p2 > 0
         rv = (p1 + p2 ) / p1
         self.pulseIn.clear()

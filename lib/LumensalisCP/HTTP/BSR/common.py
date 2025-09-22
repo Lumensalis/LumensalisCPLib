@@ -11,7 +11,7 @@ from LumensalisCP.HTTP._httpBits import *
 from LumensalisCP.pyCp.importlib import reload
 from LumensalisCP.Main.PreMainConfig import pmc_gcManager, pmc_mainLoopControl
 from LumensalisCP.util.Reloadable import ReloadableModule
-
+from LumensalisCP.util.ObjToDict import *
 
 if TYPE_CHECKING:
     from LumensalisCP.Main.Manager import MainManager
@@ -20,7 +20,6 @@ if TYPE_CHECKING:
 
 __sayImport.parsing()
 
-from LumensalisCP.Util.ObjToDict import *
 #############################################################################
 
 

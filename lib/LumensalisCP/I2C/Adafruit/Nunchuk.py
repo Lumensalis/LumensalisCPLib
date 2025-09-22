@@ -55,7 +55,7 @@ class Mapper :
     :return: Returns value mapped to new range
     :rtype: float
     """
-    def __init__(self,  in_min: float, in_max: float, out_min: float, out_max: float) -> float:
+    def __init__(self,  in_min: float, in_max: float, out_min: float, out_max: float) -> None:
         self.in_min = in_min
         self.in_max = in_max
         self.out_min = out_min

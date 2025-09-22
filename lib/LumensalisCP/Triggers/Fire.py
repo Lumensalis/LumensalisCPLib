@@ -15,9 +15,10 @@ from LumensalisCP.Eval.ExpressionTerm import rising, ExpressionTerm
 from LumensalisCP.Identity.Local import NliMakeValidName
 
 if TYPE_CHECKING:
-    from LumensalisCP.Triggers.Action import Action, ActionDoArg, ActionCB, ActionCBArg, ActionSelectBehavior
     from LumensalisCP.IOContext  import *
     from LumensalisCP.Eval.Expressions import Expression
+
+from LumensalisCP.Triggers.Action import Action, ActionDoArg, ActionCB, ActionCBArg, ActionSelectBehavior
 
 #############################################################################
 __sayImport.parsing()
@@ -42,8 +43,8 @@ def fireOnTrue( expression:Expression|ExpressionTerm,
             
         trigger = Trigger( name=name )
     cTrigger = trigger 
-
-    cTrigger.addAction( cb )
+    a = Action.makeAction( cb )
+    cTrigger.addAction( a )
     cTrigger.fireOnTrue( expression )
     #print( f"wrapped for {callable.__name__} = {wrapped}, class={wrapped.__class__}")
     return cTrigger
@@ -69,8 +70,8 @@ def fireOnTrueDef( expression:Expression|ExpressionTerm,
                 name = repr(cb)
             trigger = Trigger( name=name )
         cTrigger = trigger 
-
-        cTrigger.addAction( cb )
+        a = Action.makeAction( cb )
+        cTrigger.addAction( a )
         cTrigger.fireOnTrue( expression )
         #print( f"wrapped for {callable.__name__} = {wrapped}, class={wrapped.__class__}")
         return cTrigger

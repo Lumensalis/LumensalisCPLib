@@ -5,6 +5,7 @@ from LumensalisCP.ImportProfiler import getImportProfiler
 __profileImport = getImportProfiler(__name__, globals())
 
 #############################################################################
+
 import pwmio
 import digitalio
 from adafruit_bus_device import spi_device
@@ -46,9 +47,9 @@ class HarlechLED(NamedOutputTarget):
 
 class KeepAlive(Debuggable):
     def __init__(self, castle:"HarlechCastle", 
-                keepAlivePin:Optional[int]=None,
-                keepAliveCycle:TimeSpanInSeconds = 8.0,
-                keepAlivePulse:TimeSpanInSeconds = 1.0,
+                keepAlivePin:microcontroller.Pin,
+                keepAliveCycle:Optional[TimeSpanInSeconds] = 8.0,
+                keepAlivePulse:Optional[TimeSpanInSeconds] = 1.0,
             ):
         Debuggable.__init__(self)
         self.castle = castle
@@ -61,12 +62,13 @@ class KeepAlive(Debuggable):
         self.__state = False
         self.__keepAliveCycle = keepAliveCycle or 8.0
         self.__keepAlivePulse = keepAlivePulse or 1.0
-        self.__nextPulse:TimeInSeconds = 0
-        self.__nextPulseEnd:TimeInSeconds = 0
+        self.__nextPulse:TimeInSeconds = TimeInSeconds(0)
+        self.__nextPulseEnd:TimeInSeconds = TimeInSeconds(0)
+        self.__lastPulse:TimeInSeconds = TimeInSeconds(0)        
            
         self._keepAliveTimer = PeriodicTimer( self.__keepAlivePulse , manager=castle.main.timers, name=f"{castle.name}KeepAlive" )
         
-        def checkPulse(**kwds):
+        def checkPulse(context:Optional[EvaluationContext]=None, **kwds:Any):
             # print( "HKA check pulse...")
             self._timerHit(**kwds)
             
@@ -94,8 +96,8 @@ class KeepAlive(Debuggable):
             if self.enableDbgOut: self.dbgOut( "start pulse" )
             #print( "start pulse" )
             self._setKeepAlive( True )
-            self.__nextPulse = when + self.__keepAliveCycle
-            self.__nextPulseEnd = when + self.__keepAlivePulse
+            self.__nextPulse = when + self.__keepAliveCycle # type: ignore
+            self.__nextPulseEnd = when + self.__keepAlivePulse # type: ignore
         else:
             if self.__state:
                 if self.enableDbgOut: self.dbgOut( "end pulse" )
@@ -156,55 +158,62 @@ class HarlechCastle(D1MiniBoardBase):
         
         if addKeepAlive:
             self.keepAlive = KeepAlive(
-                self, keepAlivePin=self.asPin(keepAlivePin or KEEP_ALIVE), keepAliveCycle=keepAliveCycle, keepAlivePulse=keepAlivePulse
+                self, keepAlivePin=self.asPin(keepAlivePin or KEEP_ALIVE), 
+                keepAliveCycle=keepAliveCycle,
+                 keepAlivePulse=keepAlivePulse
             )
         
         self.__leds:List[HarlechLED|None] = [None,None,None,None,None,None,None,None]
         self._values:List[float] = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
         
         self.__version = version
+        oePinVal = None
         if oePin is None:
             if self.__version in [ "1p1", "1.1", 1.1 ]:
-                oePin = self.D7
+                oePinVal = self.D7
             if self.__version in [ "1p0", "1.0", 1.0 ]:
-                oePin = self.D4
+                oePinVal = self.D4
         elif type(oePin) is str:
-            oePin = getattr(self,oePin)
-
+            oePinVal = getattr(self,oePin)
+        
 
         self.__latch_pin = digitalio.DigitalInOut(HPC_LATCH.actualPin)
         
         self.__spi = busio.SPI(clock=HPC_CLOCK.actualPin, MOSI=HPC_DATA.actualPin )
         
-        self._device = spi_device.SPIDevice(self.__spi, self.__latch_pin, baudrate=baudrate )
+        self._device = spi_device.SPIDevice(self.__spi, self.__latch_pin, 
+                                            # baudrate=baudrate 
+                                            )
         
         self._gpio = bytearray(1)
         self._shiftWrites = 0
         
-        self.__ledRefreshRate = None if ledRefreshRate is None else float(ledRefreshRate)
+        self.__ledRefreshRate = ledRefreshRate 
         
   
-        def setOutput( pinProxy, value ):
+        def setOutput( pinProxy:D1MiniPinProxy, value:Any ): # type: ignore
             output =  digitalio.DigitalInOut(pinProxy.actualPin)
             output.switch_to_output(value=value)
             output.value = value
         
         self.__oeBrightnessEnabled = oeBrightness
 
-        def addOePWM( pin ):
-            pin = getattr( pin, 'actualPin', pin )
+        def addOePWM( pin:D1MiniPinProxy|microcontroller.Pin ) -> pwmio.PWMOut|digitalio.DigitalInOut:
+            if isinstance(pin, D1MiniPinProxy):
+                pin = getattr( pin, 'actualPin', pin )
+                assert isinstance( pin, microcontroller.Pin )
             
             if self.__oeBrightnessEnabled:
                 #return analogio.AnalogOut(pin)
                 return pwmio.PWMOut(pin=pin, frequency= HarlechCastle.OE_PWM_FREQUENCY,duty_cycle=0 ) # HarlechCastle.OE_DUTY_CYCLE)
             output =  digitalio.DigitalInOut(pin)
-            output.switch_to_output(value=1)
-            output.value = 1
+            output.switch_to_output(value=True)
+            output.value = True
             return output
         
-        self.__oePWMS:List[pwmio.PWMOut] = []
-        if oePin:
-            self.__oePWMS.append( addOePWM( oePin ) )
+        self.__oePWMS:List[pwmio.PWMOut|digitalio.DigitalInOut] = []
+        if oePinVal:
+            self.__oePWMS.append( addOePWM( self.asPin(oePinVal) ) )
         else:
             self.__oePWMS.append( addOePWM( self.D3 ) )
             self.__oePWMS.append( addOePWM( self.D4 ) )
@@ -242,16 +251,16 @@ class HarlechCastle(D1MiniBoardBase):
         
         if self.__oeBrightnessEnabled:
             for oe in self.__oePWMS:
-                oe.duty_cycle = duty_cycle
+                oe.duty_cycle = duty_cycle # type: ignore
                 #oe.value = duty_cycle
         
         
     @property
     def oePWMS(self): return iter( self.__oePWMS )
     
-    def doRefresh(self, context):
+    def doRefresh(self, context:EvaluationContext) -> None:
         #lc = self.__lastUpdate
-        if self.__ledRefreshRate is not None:
+        if self.__ledRefreshRate is not None: # type: ignore
             pwm_position = divmod(self.main.when, 1/self.__ledRefreshRate)[1]*self.__ledRefreshRate
         else:
             pwm_position = 0.1
@@ -266,19 +275,20 @@ class HarlechCastle(D1MiniBoardBase):
             #b = bytearray(1)
             self._gpio[0] = shift_v
             #print(f'SV {shift_v:2.2X} at {pwm_position:.3f} for {self._values}' )
-            with self._device as spi:
+            with self._device as spi: # type: ignore
+            #with self.__spi as spi: 
                 # pylint: disable=no-member
-                spi.write(self._gpio)
+                spi.write(self._gpio) # type: ignore
             self._shiftWrites += 1
         except Exception as inst:
             print( f"harlech update exception {inst}, shift_v={shift_v} pwm_position={pwm_position}")
             
-    def led(self,ledx:int, name:str = None ) -> HarlechLED:
-        rv = self.__leds[ledx]
+    def led(self,ledX:int, name:Optional[str] = None ) -> HarlechLED:
+        rv = self.__leds[ledX]
         if rv is None:
             assert name is not None
-            rv = HarlechLED( name=name, index = ledx, board = self)
-            self.__leds[ledx] = rv
+            rv = HarlechLED( name=name, index = ledX, board = self)
+            self.__leds[ledX] = rv
         else:
             assert name is None or name == rv.name
         return rv

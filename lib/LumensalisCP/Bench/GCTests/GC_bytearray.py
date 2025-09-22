@@ -31,7 +31,7 @@ def GC_bytearray():
     
     def testStatic(  sji:SIJContext, i:int, value:dict[str,Any] ) -> None:
         sji.reset()
-        sji.data.extend( b'23sdsdfsd wasdgs gfsdgsgsg')
+        sji.data.extend( b'23 abba casaba')
 
     def testStaticTwo(  sji:SIJContext, i:int, value:dict[str,Any] ) -> None:
         sji.reset()

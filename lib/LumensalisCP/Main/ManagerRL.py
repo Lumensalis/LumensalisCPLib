@@ -99,7 +99,7 @@ def handleWsChanges( self:MainManager, changes:StrAnyDict ):
         
         # print( f"handleWsChanges {changes}")
 
-        defaultPanel = self.controlPanels[0]
+        #defaultPanel = self.controlPanels[0]
         key = changes.get( 'name', None )
         if key is not None:
             val = changes['value']

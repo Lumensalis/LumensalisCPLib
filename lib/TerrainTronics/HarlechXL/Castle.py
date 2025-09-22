@@ -4,8 +4,10 @@ from LumensalisCP.common import *
 from LumensalisCP.I2C.I2CDevice import I2CDevice, UpdateContext
 from LumensalisCP.Lights.Light import *
 
+# pyright: reportPrivateUsage=false
 
 from TerrainTronics.HarlechXL.aw210xx import AW210xx, AW210xxOpenShortDetect
+from lumensaliscplib.lib.LumensalisCP.Eval.EvaluationContext import EvaluationContext
 
 
 class HarlechXL_LED( DimmableLight ):
@@ -13,52 +15,56 @@ class HarlechXL_LED( DimmableLight ):
 
     PWM_FREQUENCY = 20000
     DUTY_CYCLE_RANGE = 65535
-    
-    def __init__(self, name, source:"HarlechXLCastle", index:int, pin=None, **kwargs ):
-        super().__init__( name=name, source=source,**kwargs )
-        self.__index = index
-        self.__driver = source._ledDriver
-        self.__value = 0
+
+    def __init__(self,   **kwargs:Unpack[DimmableLight.KWDS]) -> None:
+        super().__init__( **kwargs )
+        
+        assert isinstance(self.source, HarlechXLCastle)
+        self.__driver = self.source._ledDriver
+        self.__value:AnyRGBValue = 0
         
     @property
-    def _driverValue(self):
-        raw = self.__value * self.source.brightness*255
-        v255 =  int(max(0,min(raw,255)))
+    def _driverValue(self) -> int:
+        raw = self.__value * self.source.brightness*255 # type: ignore
+        v255 =  int(max(0,min(raw,255))) # type: ignore
         return v255
     
-    def setValue(self,value:AnyRGBValue, context: UpdateContext = None ):
-        level = toZeroToOne(context.valueOf( value ) )
+    def setValue(self,value:AnyRGBValue, context: Optional[UpdateContext] = None ) -> None:
+        #level = toZeroToOne(context.valueOf( value ) )
         self.__value = value
         
-        self.__driver.br( self.__index, self._driverValue )
+        self.__driver.br( self.sourceIndex, self._driverValue )
         self.source.lightChanged(self)
     
     def _brightnessChanged(self):
-        self.__driver.br( self.__index, self._driverValue )
+        self.__driver.br( self.sourceIndex, self._driverValue )
 
-    def getValue(self, context: UpdateContext = None ) -> AnyRGBValue:
+    def getValue(self, context: Optional[EvaluationContext] = None ) -> AnyRGBValue:
         return self.__value
     
     def __repr__(self):
-        return f"CilgerranLED( {self.name}, {self.__index}, v={self.__value} )"
+        return f"CilgerranLED( {self.name}, {self.sourceIndex}, v={self.__value} )"
 
 
 class HarlechXLCastle(I2CDevice, LightSource ):
 
+    class KWDS(I2CDevice.KWDS, LightSource.KWDS):
+        pass
     def __init__( self, name:str|None =None, 
-                 maxLeds = 32,
-                 address=0x34,
-                 refreshRate = 0.1,
-                 **kwargs ):
+                 maxLeds:int = 32,
+                 address:int=0x34,
+                 refreshRate:TimeSpanInSecondsConfigArg = 0.1,
+                 **kwargs:Any ):
         
         name = name or "HarlechXLCastle"
-        self.__leds:List[HarlechXL_LED] = [None] * maxLeds
+        self.__fixedLeds:list[HarlechXL_LED|None] = [None] * maxLeds
+        self.__createdLeds:list[HarlechXL_LED] = []
         self.__maxLeds = maxLeds
         self.__brightness = 1.0
         self.__ledChanges = 0
 
         super().__init__(address=address, refreshRate=refreshRate, **kwargs)
-        LightSource.__init__(self, name=name, lights= self.__leds ),
+        LightSource.__init__(self, name=name, lights= self.__createdLeds )
 
 
         self._ledDriver = AW210xx( self.i2c,r_ext=3650, model="AW21036", address=address)
@@ -76,19 +82,19 @@ class HarlechXLCastle(I2CDevice, LightSource ):
         self.addLeds(maxLeds)
 
     @property
-    def brightness(self): return self.__brightness
+    def brightness(self) -> float: return self.__brightness
 
     @brightness.setter
     def brightness(self, level:float):
         level = toZeroToOne(level)
         self.__brightness = max(0.0, min( 1.0, level ) )
-        for led in self.__leds:
+        for led in self.__fixedLeds:
             if led is not None:
                 led._brightnessChanged(  )
 
     def addLeds(self,ledCount:int|str, **names:str ) -> List[HarlechXL_LED]:
-        rv = []
-        if type(ledCount) is str:
+        rv:list[HarlechXL_LED] = []
+        if isinstance(ledCount, str):
             rv.append( self.addLed(name=ledCount))
         else:
             for index in range(ledCount):
@@ -98,25 +104,25 @@ class HarlechXLCastle(I2CDevice, LightSource ):
         return rv
     
     
-    def addLed(self, ledNumber:int|None = None, name:str = None ) -> HarlechXL_LED:
+    def addLed(self, ledNumber:Optional[int] = None, name:Optional[str] = None ) -> HarlechXL_LED:
         #self.infoOut("addLed %r %r", ledNumber,  None )
         if ledNumber is None:
-            for i, led in enumerate( self.__leds ):
+            for i, led in enumerate( self.__fixedLeds ):
                 if led is None:
                     ledNumber = i
                     break
-            ensure( ledNumber is not None, "no remaining LEDs" )
+            assert ledNumber is not None, "no remaining LEDs" 
             
         ensure( ledNumber >= 0 and ledNumber < self.__maxLeds, "invalid LED index" )
         # zIndex = ledNumber 
-        ensure( self.__leds[ledNumber] is None, "LED %r already added", ledNumber )
-        rv = HarlechXL_LED( name=name, index = ledNumber, source=self )
-        self.__leds[ledNumber] = rv
+        ensure( self.__fixedLeds[ledNumber] is None, "LED %r already added", ledNumber )
+        rv = HarlechXL_LED(  index = ledNumber, source=self,name=name or f"LED{ledNumber}" )
+        self.__fixedLeds[ledNumber] = rv
         return rv
 
-    def led(self, ledIndex:int, name:str = None ) -> HarlechXL_LED:
-        ensure( ledIndex >= 0 and ledIndex < self.__maxLeds, "invalid LED index" )
-        rv = self.__leds[ledIndex]
+    def led(self, ledIndex:int, name:Optional[str] = None ) -> HarlechXL_LED:
+        assert  ledIndex >= 0 and ledIndex < self.__maxLeds, "invalid LED index" 
+        rv = self.__fixedLeds[ledIndex]
         if rv is None:
             return self.addLed( ledIndex, name=name)
         assert name is None or name == rv.name
@@ -133,7 +139,7 @@ class HarlechXLCastle(I2CDevice, LightSource ):
             print(f"{display_name}: no faults detected")
             return
 
-        faults = []
+        faults:list[Any] = []
         for i in range(leds.NUM_CHANNELS):
             if results & (1 << i) != 0:
                 faults.append(i)

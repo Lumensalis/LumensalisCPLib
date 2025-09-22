@@ -5,19 +5,19 @@ from collections import OrderedDict
 
 def objectToVal( obj:Any ) -> Any:
     if isinstance(obj, (str,bool,int,float,type(None))): return obj
-    if isinstance(obj, (list, tuple)): return [objectToVal(v) for v in obj]
+    if isinstance(obj, (list, tuple)): return [objectToVal(v) for v in obj]# type:ignore[return-value]
     if isinstance(obj, OrderedDict): 
         rv = OrderedDict()
-        for k, v in obj.items():
+        for k, v in obj.items(): # type: ignore
             rv[k] = objectToVal(v)
         return rv
     if isinstance(obj, dict):
         rv:dict[str,Any] = {}
-        for k, v in obj.items():
+        for k, v in obj.items(): # type: ignore
             if isinstance(k, str) and k.startswith('_'): continue
             rv[k] = objectToVal(v)
         return rv   
-    if isinstance(obj, set): return [objectToVal(v) for v in obj]
+    if isinstance(obj, set): return [objectToVal(v) for v in obj] # type: ignore
     if isinstance(obj, type ): return repr(obj)
 
     rv:dict[str,Any] = {} # type: ignore
@@ -33,7 +33,7 @@ def objectToVal( obj:Any ) -> Any:
     return rv
 
 def objectToDict( obj:Any ) -> dict[str,Any]|str:
-    if isinstance(obj, dict): return {k: objectToDict(v) for k, v in obj.items()}
+    if isinstance(obj, dict): return {k: objectToDict(v) for k, v in obj.items()} # type: ignore
     rv:dict[str,Any] = {} # type: ignore
     skip = []
     #if hasattr(obj, '__class__'):

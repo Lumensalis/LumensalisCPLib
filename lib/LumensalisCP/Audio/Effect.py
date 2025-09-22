@@ -160,8 +160,8 @@ class LiveBlockInputPropertyWrapper(Generic[_LCT,_LPT], Debuggable):
 
 if TYPE_CHECKING:
         
-    class LivePropertyEvSFXBlockInput( LiveWrappedPropertyDescriptor['SoundEffect',EvalSioBlockInput] ): pass
-    class LivePropertyEvLFOBlockInput( LiveWrappedPropertyDescriptor['EffectLFO',EvalSioBlockInput] ): pass
+    class LivePropertyEvSFXBlockInput( LiveWrappedPropertyDescriptor[ 'SoundEffect' ,EvalSioBlockInput] ): pass
+    class LivePropertyEvLFOBlockInput( LiveWrappedPropertyDescriptor[ 'EffectLFO' ,EvalSioBlockInput] ): pass
 
     class WrappedBlockInputProperty( LiveWrappedPropertyDescriptor[_LCT, EvalSioBlockInput] ):
         def __init__(self,  member:str, *args:Any, **kwds:Any ) -> None: ...
@@ -215,7 +215,7 @@ _filterModes:dict[str,Any] = dict( LOW_PASS=LOW_PASS,
                      HIGH_SHELF=HIGH_SHELF # type: ignore
                      )
 
-class EffectLFO(NamedLocalIdentifiable):
+class EffectLFO(NamedLocalIdentifiable, LivePropertyHolder):
 
     def __init__(self, **kwds: Unpack[NamedLocalIdentifiable.KWDS]) -> None:
         self.lfo = synthio.LFO()
@@ -238,7 +238,7 @@ class EffectLFO(NamedLocalIdentifiable):
         setattr(self.lfo, name, value)
 
     
-class SoundEffect(NamedLocalIdentifiable):
+class SoundEffect(NamedLocalIdentifiable, LivePropertyHolder):
 
     class KWDS(NamedLocalIdentifiable.KWDS):
         frequency: NotRequired[float] 

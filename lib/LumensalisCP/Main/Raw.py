@@ -42,7 +42,7 @@ class RawPinWrapper( NliInterface ):
         assert pin not in parent._pins, f"pin {pin} already in use"
         parent._pins[pin] = self
 
-    def matchesKwds( self, **kwargs:Unpack[KWDS] ) -> bool:
+    def matchesKwds( self, **kwargs:Any ) -> bool:
         return True
 
 class RawDigitalIOWrapper( RawPinWrapper ):
@@ -77,7 +77,7 @@ class RawDigitalIOInputWrapper( RawDigitalIOWrapper, InputSource ):
 
     def __init__(self, parent:RawAccess, pin: microcontroller.Pin, **kwargs:Unpack[KWDS]) -> None:
 
-        RawDigitalIOWrapper.__init__(self,  parent=parent, pin=pin, **kwargs)
+        RawDigitalIOWrapper.__init__(self,  parent=parent, pin=pin, **kwargs) # type: ignore
         kwargs.setdefault('temporaryName', f"{pin}")
         InputSource.__init__(self, **kwargs)
         
@@ -86,7 +86,7 @@ class RawDigitalIOInputWrapper( RawDigitalIOWrapper, InputSource ):
     def getDerivedValue(self, context:EvaluationContext) -> Any:
         return self._io.value
 
-    def matchesKwds( self, **kwargs:Unpack[KWDS] ) -> bool:
+    def matchesKwds( self, **kwargs:Any ) -> bool:
         return super().matchesKwds(**kwargs)
 
 class RawDigitalOutputWrapper( RawDigitalIOWrapper, NamedOutputTarget ):
@@ -95,7 +95,7 @@ class RawDigitalOutputWrapper( RawDigitalIOWrapper, NamedOutputTarget ):
 
     def __init__(self, parent:RawAccess, pin: microcontroller.Pin, **kwargs:Unpack[KWDS]) -> None:
 
-        RawDigitalIOWrapper.__init__(self,  parent=parent, pin=pin, **kwargs)
+        RawDigitalIOWrapper.__init__(self,  parent=parent, pin=pin, **kwargs) # type: ignore
         kwargs.setdefault('temporaryName', f"{pin}")
         NamedOutputTarget.__init__(self, **kwargs)
         
@@ -129,7 +129,7 @@ class RawPWMOutputWrapper( RawPinWrapper, NamedOutputTarget ):
         self.pKwds = pKwds
         self.infoOut( f"{self.__class__.__name__} on pin {pin}, pKwds: {pKwds}" )
         self.pin = pin 
-        self._io = pwmio.PWMOut(pin, **pKwds)
+        self._io = pwmio.PWMOut(pin, **pKwds) # type: ignore
 
     def set( self, value:Any, context:EvaluationContext ) -> None:
         
@@ -139,7 +139,7 @@ class RawPWMOutputWrapper( RawPinWrapper, NamedOutputTarget ):
         self._io.duty_cycle = duty_cycle
 
 
-    def matchesKwds( self, **kwargs:Unpack[KWDS] ) -> bool:
+    def matchesKwds( self, **kwargs:Any ) -> bool:
         duty_cycle = kwargs.get('duty_cycle', None)
         frequency = kwargs.get('frequency', None)
         variable_frequency = kwargs.get('variable_frequency', None)
@@ -233,6 +233,7 @@ class RawAnalogInputWrapper( RawPinWrapper, InputSource ):
     
 
 #############################################################################
+RPW_T=TypeVar('RPW_T', bound=RawPinWrapper)
 
 class RawAccess( MainChild ):
     """ deal directly with Controller IO
@@ -250,8 +251,8 @@ class RawAccess( MainChild ):
         #self._monitored:NliList[PanelMonitor[Any]] = NliList(name='monitored',parent=self)
         #self._triggers:NliList[PanelTrigger] = NliList(name='triggers',parent=self)
 
-    def _addIO( self, cls:type, pin:microcontroller.Pin,
-                         **kwargs:Unpack[RawPinWrapper.KWDS] ) -> RawPinWrapper :
+    def _addIO( self, cls:Type[RPW_T], pin:microcontroller.Pin,
+                         **kwargs:Unpack[RawPinWrapper.KWDS] ) -> RPW_T :
 
         io = self._pins.get(pin,None)
         if io is None:
@@ -335,13 +336,13 @@ class RawAccess( MainChild ):
     
     #########################################################################
 
-    def nliGetContainers(self) -> NliGetContainersRVT:
-        yield self._controlVariables
-        yield self._monitored
-        yield self._triggers
+    #def nliGetContainers(self) -> NliGetContainersRVT:
+    #    yield self._controlVariables
+    #    yield self._monitored
+    #    yield self._triggers
 
-    def nliHasContainers(self) -> bool:
-        return True
+    #def nliHasContainers(self) -> bool:
+    #    return True
 
         
 __all__ = [ 'RawAccess' ]

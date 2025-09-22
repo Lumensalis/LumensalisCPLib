@@ -47,12 +47,12 @@ class LightGroup(NamedLocalIdentifiable):
 class LightGroupList(LightGroup):
     
     class KWDS(NamedLocalIdentifiable.KWDS):
-        lights: NotRequired[list[Light]] 
+        lights: NotRequired[Sequence[Light]] 
         
-    def __init__(self, lights:List[Light]|None = None,**kwargs:Unpack[NamedLocalIdentifiable.KWDS]):
+    def __init__(self, lights:Sequence[Light]|None = None,**kwargs:Unpack[NamedLocalIdentifiable.KWDS]):
         super().__init__(**kwargs)
         assert lights is not None
-        self.__lights:List[Light] = lights
+        self.__lights:Sequence[Light] = lights
 
     @property
     def lightCount(self) -> int: return len(self.__lights)
@@ -94,7 +94,7 @@ class Strip(NextNLights): pass
 
 class AdHocLightGroup(LightGroupList):
     def __init__(self,**kwargs:Unpack[LightGroupList.KWDS]):
-        self.__adHocLights:List[Light] = kwargs.get('lights', [])
+        self.__adHocLights:list[Light] = kwargs.get('lights', []) # type: ignore
         kwargs['lights'] = self.__adHocLights
         super().__init__(**kwargs)
         

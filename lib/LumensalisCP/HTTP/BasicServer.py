@@ -164,6 +164,7 @@ class BasicServer(Server,MainAsyncChild):
         @self.route("/connect-websocket", GET) # type: ignore[reportUntypedFunctionDecorator,reportUnusedFunction]
         def connect_client(request: Request) -> Websocket: # pyright: ignore[reportUntypedFunctionDecorator,reportUnusedFunction]
             session = WebsocketSession(self, request)
+            assert session.websocket is not None
             return session.websocket
 
      

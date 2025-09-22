@@ -76,7 +76,7 @@ class InteractableGroup(IDebuggable):
 
         return variable
 
-    def _positionalArgs(self, controlCls: type, argOne:Any|None,  argTwo:str|None, kwds:StrAnyDict)->Tuple[Any]:
+    def _positionalArgs(self, controlCls: type, argOne:Any|None,  argTwo:str|None, kwds:StrAnyDict|Any)->Tuple[Any]:
         return tuple()
 
     #########################################################################

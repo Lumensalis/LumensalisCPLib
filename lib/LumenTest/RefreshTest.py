@@ -1,5 +1,5 @@
 from .MainStub import *
-import time
+
 main = MainStub()
 scene = main.addScene( ) 
 
@@ -41,14 +41,12 @@ if False:
 for x in range( 300 ):
     if x % 10 == 0:
         print( f"{main.getContext().when:.4f} step {x} advancing " )
-        for r in main._refreshables: 
+        for r in main.refreshables: 
             print( f"  {repr(r)} : nextRefresh={r.nextRefresh:.4f}" )
             if isinstance(r, Scene):
-                for r2 in r._sceneRefreshables:
+                for r2 in r._sceneRefreshables: # type: ignore
                     print( f"     {repr(r2)} : nextRefresh={r2.nextRefresh:.4f}" )
     main.step(next=0.01)
 
 print( f"t1Times = {t1}" )
 print( f"t2Times = {t2}" )
-import json 
-#print(  json.dumps( main.getProfilerData() ))

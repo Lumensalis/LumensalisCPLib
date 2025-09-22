@@ -46,7 +46,7 @@ class Analyst(MainChild):
         self._preProxyRlForward()
         return AnalystRL.Analyst_qsak(self, **kwds)
 
-    def getNamedLocals(self, root:Optional[NamedLocalIdentifiable]=None, **kwds:Any) -> Generator[NamedLocalIdentifiable]:
+    def getNamedLocals(self, root:Optional[NliInterface]=None, **kwds:Any) -> Generator[NamedLocalIdentifiable]:
         return AnalystRL.Analyst_getNamedLocals(self, root=root, **kwds)
 
     @proxyMethod()

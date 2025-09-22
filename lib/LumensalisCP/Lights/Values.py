@@ -30,8 +30,8 @@ class LightValueBase(CountedInstance):
     @property
     def asRGB(self) -> RGB: raise NotImplementedError
 
-    def setLight(self, value:AnyRGBValue) ->None: 
-        raise NotImplementedError
+    #def setLight(self, value:AnyRGBValue) ->None: 
+    #    raise NotImplementedError
 
 
 #############################################################################
@@ -50,9 +50,9 @@ class LightValueRGB(RGB, LightValueBase ):
 
         return RGB.toRGB( value )
         
-    def setLight(self, value:AnyRGBValue) -> None:
-        v = RGB.toRGB( value )
-        self._set_r_g_b( *v.rgbTuple() ) # pyright: ignore[reportPrivateUsage]
+    #def setLight(self, light:Light) -> None:
+    #    v = RGB.toRGB( value )
+   #     self._set_r_g_b( *v.rgbTuple() ) # pyright: ignore[reportPrivateUsage]
 
     @staticmethod
     def randomRGB( brightness:ZeroToOne=1) -> RGB:

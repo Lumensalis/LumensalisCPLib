@@ -16,13 +16,13 @@ class VCNL4040ConfigDescriptor:
     #    print( f"{self.__class__.__name__}.__set_name__ {name}" )
     #    self.attrName = name
 
-    def __get__(self, obj:VCNL4040, objType=None):
+    def __get__(self, obj:VCNL4040, objType:Any=None):
         value = getattr(obj.vcnl4040, self.attrName)
         #logging.info('Accessing %r giving %r', self.public_name, value)
         return value
 
-    def __set__(self, obj:'VCNL4040', value):
-        if obj.dbgOut: obj.dbgOut( 'Updating %r to %r', self.attrName, value )
+    def __set__(self, obj:VCNL4040, value:Any):
+        if obj.enableDbgOut: obj.dbgOut( 'Updating %r to %r', self.attrName, value )
         setattr(obj.vcnl4040, self.attrName, value)
 
 #############################################################################
@@ -54,22 +54,22 @@ class VCNL4040ReadableDescriptor:
         self.name = name
         self.inputName = "_i_" + name
         
-    def __set_name__(self, owner, name):
+    def __set_name__(self, owner:Any, name:str):
         print( f"__set_name__ {name}" )
         assert False
         self.name = name
 
-    def __get__(self, obj:'VCNL4040', objType=None):
+    def __get__(self, obj:VCNL4040, objType:Any=None):
         try:
             return  getattr(obj.vcnl4040, self.inputName)
         except:
             pass
         value = VCNL4040Input(obj,self.name)
         setattr(obj.vcnl4040, self.inputName, value)
-        obj.__ios.append(value)
+        obj.__ios.append(value) # pyright: ignore[reportPrivateUsage]
         return value
 
-    def __set__(self, obj:'VCNL4040', value) -> None:
+    def __set__(self, obj:VCNL4040, value:Any) -> None:
         assert False, '%r is read only' % self.name
         #setattr(obj.vcnl4040, self.public_name, value)        
 
@@ -82,7 +82,7 @@ class VCNL4040(I2CDevice):
         
         super().__init__(**kwds)
 
-        self.vcnl4040:adafruit_vcnl4040.VCNL4040 = adafruit_vcnl4040.VCNL4040( i2c=self.i2c )
+        self.vcnl4040:adafruit_vcnl4040.VCNL4040 = adafruit_vcnl4040.VCNL4040( i2c=self.i2c ) # type: ignore
         
         self.__ios:List[VCNL4040Input] = []
         self.__lastInputs = 0
@@ -100,19 +100,20 @@ class VCNL4040(I2CDevice):
     proximity_shutdown = VCNL4040ConfigDescriptor('proximity_shutdown')
     white_shutdown =  VCNL4040ConfigDescriptor('white_shutdown')
 
-    def __addInput(self, attr:str ):
-        io = VCNL4040Input(self,'light')
-        setattr( self, f"_{attr}", io )
-        self.__ios.append(io)
-        return io
+    #def __addInput(self, attr:str ): 
+    #    io = VCNL4040Input(self,'light')
+    #    setattr( self, f"_{attr}", io )
+    #    self.__ios.append(io)
+   #     return io
     
-    light:VCNL4040Input = VCNL4040ReadableDescriptor('light')
+    #light:VCNL4040Input = VCNL4040ReadableDescriptor('light')
+    light = VCNL4040ReadableDescriptor('light')
     """ ambient light sensor value, 0-65535 """
 
-    lux:VCNL4040Input = VCNL4040ReadableDescriptor('lux')
+    lux = VCNL4040ReadableDescriptor('lux')
     """ lux value, 0-65535 """
 
-    proximity:VCNL4040Input = VCNL4040ReadableDescriptor('proximity')
+    proximity = VCNL4040ReadableDescriptor('proximity')
     """  proximity sensor value, 0-65535 """
 
     white = VCNL4040ReadableDescriptor('white')
@@ -120,8 +121,8 @@ class VCNL4040(I2CDevice):
 
     def derivedUpdateDevice(self, context:EvaluationContext) -> bool:
         if self.enableDbgOut: self.dbgOut( "reading %r ios", len(self.__ios))
-        with context.subFrame('dUpdateDevice', self.name) as frame:
+        with context.subFrame('dUpdateDevice', self.name) as frame: # type: ignore[no-untyped-call]
             for input in self.__ios:
-                input._setFromHW( context )
+                input._setFromHW( context ) # type: ignore[reportPrivateUsage]
         return False
         

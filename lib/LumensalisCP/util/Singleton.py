@@ -13,8 +13,8 @@ class Singleton:
     __byClass:dict[str,Singleton] = {}
     
     def __init__(self, name:str, i:Any  = None):
-        self.__instance = None
-        self.__name = name
+        self.__instance:Any = None
+        self.__name: str  = name
         if i is not None:
             self.set(i)
     
@@ -27,14 +27,14 @@ class Singleton:
         assert self.__instance is not None
         return self.__instance
     
-    def set(self, instance) -> None:
+    def set(self, instance:Any) -> None:
         # only set once
         assert self.__instance is None
         
         self.__instance = instance
         
         # make sure only one exists for this class
-        cls = type(instance)
+        cls = type(instance) # type: ignore
         assert self.__byClass.get(cls.__name__) is None
         self.__byClass[cls.__name__] = self
         

@@ -283,7 +283,7 @@ class PanelTethered(RefreshableNAP):
         main = panel.main # or getMainManager()
         assert main is not None
         self.panel = panel
-        self.__timeout:TimeSpanInSeconds = TimeSpanInSeconds(kwds.pop('timeoutSeconds', 0.5))
+        self.__timeout:TimeSpanInSeconds = TimeSpanInSeconds(kwds.pop('timeoutSeconds', 0.5)) # type: ignore
         kwds.setdefault('autoList',main._refreshables ) # type: ignore[assignment]
         super().__init__(**kwds)
 
@@ -638,9 +638,6 @@ class ControlPanel( MainChild ):
         return variable
     
     #########################################################################
-    def monitorZeroToOne( self, input:NamedEvaluatableProtocol[ZeroToOne],**kwds:Unpack[IVT_ADD_KWDS[ZeroToOne]] ) -> PanelMonitor[ZeroToOne]:
-        """ add monitor for a value between 0 and 1, see  http://lumensalis.com/ql/h2PanelMonitor """
-        return self._addMonitor(  input, kind='ZeroToOne', kindMatch=float, **kwds )
 
     def monitorRGB( self, input:NamedEvaluatableProtocol[RGB],**kwds:Unpack[IVT_ADD_KWDS[RGB]] ) -> PanelMonitor[RGB]:
         """ add monitor for a RGB color value, see  http://lumensalis.com/ql/h2PanelMonitor """

@@ -254,7 +254,7 @@ class UIPage(UIPageSection):
         <div class="clientPage">
  
 """
-        joyTemp = """
+        if False: yield """
         <div class="noselect">
             <div class="container space-top">
                 <h1 class="center blue-text thin">Canvas Joystick</h1>

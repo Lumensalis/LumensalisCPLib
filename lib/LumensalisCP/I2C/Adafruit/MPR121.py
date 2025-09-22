@@ -39,7 +39,7 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
         self.__usedPinsMask = 0
         self.__updateUnusedPinMask()
 
-        self.__onUnusedCB = None
+        self.__onUnusedCB:Callable[...,Any]|None = None
         self.__latestUnused = 0
 
     @property
@@ -75,7 +75,10 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
                 pin, name = inArg
             else:
                 pin,name = inArg, None
-            rv.append( self.addInput(pin, name=name) )
+            if name is not None:
+                rv.append( self.addInput(pin, name=name) )
+            else:
+                rv.append( self.addInput(pin) )
         return rv
         
     
@@ -93,13 +96,15 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
         return activePins
 
     
-    def onUnused( self, cb:Callable):
+    def onUnused( self, cb:Callable[...,Any]) -> None:
         self.__onUnusedCB = cb
                     
     def derivedUpdateDevice(self, context:EvaluationContext) -> bool:
         with context.stubFrame('dUpdateDevice', self.name) as frame:
             frame.snap( "getTouched")
-            allTouched = self.touched()
+            
+            allTouched = self.touched() # type: ignore
+            assert isinstance(allTouched,int)
             frame.snap( "updateInternal")
 
             if self.__lastTouched != allTouched:
@@ -112,7 +117,7 @@ class MPR121(I2CDevice,adafruit_mpr121.MPR121):
                     frame.snap( "updateInputs")
                     for inputSource in self.__inputs:
                         if inputSource is not None:
-                            inputSource._setTouched( allTouched, context ) # pylint: disable=protected-access                    
+                            inputSource._setTouched( allTouched, context ) # type:ignore # pylint: disable=protected-access                    
                     
                 unused = allTouched & self.__unusedPinsMask
                 #self.dbgOut( "MPR121 = %X, unused=%X, upm=%X",  allTouched, unused, self.__unusedPinsMask )

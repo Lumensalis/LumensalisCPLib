@@ -62,12 +62,18 @@ class NliInterface(IDebuggable):
 #############################################################################
 class NliContainerInterface(NliInterface):
     @property
-    def containerName(self) -> str: ...
+    def containerName(self) -> str:
+        raise NotImplementedError
 
+    def values(self) -> Iterable[Any]: 
+        raise NotImplementedError
 
-    def values(self) -> Iterable[Any]: ...
-
-    def __getitem__(self, key:str|int) -> NamedLocalIdentifiable: ...
+    def __getitem__(self, key:str|int) -> NamedLocalIdentifiable: 
+        raise NotImplementedError
+    def __setitem__(self, key:str|int, val:NamedLocalIdentifiable) -> None: 
+        raise NotImplementedError
+    def __len__(self) -> int: 
+        raise NotImplementedError
 
 ############################################################################# 
 

@@ -70,7 +70,7 @@ def writeJsonOnTextIO( out:TextIO,  val:Any  ):
         out.write( _OPEN_BRACKET )
         if True:
             first = True
-            for item in val:
+            for item in val: # type: ignore
                 if not first:
                     out.write( _COMMA )
                 writeJsonOnTextIO(out, item)
@@ -100,11 +100,11 @@ def writeJsonOnTextIO( out:TextIO,  val:Any  ):
                 writeJsonOnTextIO(out, v2)
                 first = False
         else:
-            for key in val:
-                v2 = val[key]
+            for key in val: # type: ignore
+                v2 = val[key] # type: ignore
                 if not first:
                     out.write( _COMMA )
-                writeJsonStrOnTextIO(out, key)
+                writeJsonStrOnTextIO(out, key) # type: ignore
                 out.write( _COLON)
                 writeJsonOnTextIO(out, v2)
                 first = False

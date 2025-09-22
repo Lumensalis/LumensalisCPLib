@@ -59,7 +59,7 @@ class QFilter(Debuggable):
             return isinstance(nl,cls)
         
         self._addFilter( 'isa', isaTest )
-        self._addFilter( 'hasItems', lambda nl, v: nl.hasItems() )
+        self._addFilter( 'hasItems', lambda nl, v: nl.hasItems() ) # type: ignore
 
     def _addFilter( self, tag:str, f:Callable[[NamedLocalIdentifiable,Any], bool] ) -> None:
         self._filters.append((tag, f))
@@ -101,7 +101,7 @@ def Analyst_qsak(self:Analyst,
         #assert lid not in rv, f"Duplicate localId found: {lid} for {nl.name}"
         #rv[lid] = nl.name
         if nl.isContainer():
-            rv.append( ( f"{nl.__class__.__name__ }[{len(nl)}]",  nl.name, lid) )
+            rv.append( ( f"{nl.__class__.__name__ }[{len(nl)}]",  nl.name, lid) )  # type: ignore
         else:
             rv.append( ( nl.__class__.__name__, nl.name, lid ) )
     return rv
@@ -117,7 +117,7 @@ def Analyst_reportRefresh(self:Analyst, **kwds:Any) -> Any:
             continue
         if nl.latestRefreshComplete is None:
             continue
-        entry = OrderedDict()
+        entry:OrderedDict[str,Any] = OrderedDict()
         entry['name']=nl.name
         entry['localId']=nl.localId
         entry['kind']=nl.__class__.__name__
@@ -160,7 +160,7 @@ class GetNamedLocalsArgs:
         self.kwds = kwds
 
 def Analyst_getNamedLocals(self:Analyst,
-            root:Optional[NamedLocalIdentifiable]=None, 
+            root:Optional[NliInterface]=None, 
             gnl:Optional[GetNamedLocalsArgs]=None,
             #fItems:Optional[QFilter]=None,
             #fChildren:Optional[QFilter]=None,
@@ -169,6 +169,7 @@ def Analyst_getNamedLocals(self:Analyst,
     if root is None:
         root = self.main
     assert gnl is not None
+    assert isinstance(root, NamedLocalIdentifiable)
     if gnl.fItems is None:
         yield root
     elif gnl.fItems(root):

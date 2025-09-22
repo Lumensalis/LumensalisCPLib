@@ -29,7 +29,7 @@ def BSR_client(self:BasicServer, request: Request):
     print( "BSR CLIENT **************************************************" )
     page = UIPageHelpersRL.UIPage(self.main)
     for panel in self.main.controlPanels:
-        parts = UIPanelHelpersRL.PanelParts(page,panel)
+        parts = UIPanelHelpersRL.PanelParts(page,panel) # pyright: ignore[reportUnusedVariable]
     
 
     html = page.makeHtml()

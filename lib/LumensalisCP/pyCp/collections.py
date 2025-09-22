@@ -22,7 +22,7 @@ class GenericList(Generic[_ULT]): # type:  ignore # pylint: disable=function-red
             #if type(initList) == type(self.data):
             if isinstance(initList, list):
                 self.data[:] = initList
-            elif isinstance(initList, GenericList):
+            elif isinstance(initList, GenericList): # type: ignore
                 self.data[:] = initList.data[:]
             else:
                 self.data = list(initList)

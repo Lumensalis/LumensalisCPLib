@@ -19,6 +19,9 @@ from LumensalisCP.util.Convertor import Convertor
 from LumensalisCP.util.Setter import Setter
 from LumensalisCP.util.CountedInstance import CountedInstance
 
+if TYPE_CHECKING:
+    from LumensalisCP.Lights.Light import Light
+
 #############################################################################
 
 __profileImport.parsing()
@@ -70,7 +73,7 @@ class RGBInterface(Protocol):
     def setFromNeoPixelRGBInt( self, npi:NeoPixelRGBInt ) -> None: ...
     def setToColorString( self, color:str ) -> None: ...
     def fadeAB(self, a:RGB, b:RGB, ratio:ZeroToOne )->None: ...
-    
+    def setRGB(self, v:RGBInterface) -> None: ...
 
     @staticmethod
     def lookupColor( color:str )-> RGB|None: ...
@@ -137,7 +140,14 @@ class RGB(CountedInstance,RGBInterface):
             
     def _set_RGB(self, v:RGBInterface) -> None: 
         self._set_r_g_b( v.r, v.g, v.b ) 
-    
+
+    def setRGB(self, v:RGBInterface) -> None:
+        self._set_r_g_b( v.r, v.g, v.b ) 
+
+    def setLight(self, light:Light) -> None:
+        v =  light.getRGB()
+        self._set_r_g_b( v.r, v.g, v.b ) 
+
     @staticmethod
     def fromNeoPixelRGBInt( npi:NeoPixelRGBInt ) ->RGB:
         return RGB(
@@ -361,7 +371,7 @@ def _( v:RGB, target:RGB ) -> None:
 
 @RGB.Setters.defineRegisterSetter( int )
 def _( v:int, target:RGB ) -> None:
-    target.setFromNeoPixelRGBInt(v)
+    target.setFromNeoPixelRGBInt(v) # type: ignore
 
 @RGB.Setters.defineRegisterSetter( str )
 def _( v:str, target:RGB ) -> None:

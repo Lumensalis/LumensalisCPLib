@@ -41,11 +41,11 @@ class KWCallback(CountedInstance):
     requiredKwds = None
     
     @classmethod
-    def make( cls, cb:Callable, **kwds ):
+    def make( cls, cb:Callable[..., Any], **kwds:Any ) -> 'KWCallback':
         if isinstance( cb, cls ): return cb
         return cls( cb, **kwds )
-        
-    def __init__( self, cb:Callable, name:str|None = None, requiredKwds:List[str]|None = None ):
+
+    def __init__( self, cb:Callable[..., Any], name:str|None = None, requiredKwds:List[str]|None = None ):
         super().__init__()
         self.__cb = cb
         self.__name = name or getattr(cb,'__name__', repr(cb) )
@@ -53,14 +53,14 @@ class KWCallback(CountedInstance):
         if requiredKwds is not None:  # otherwise will use class level
             self.requiredKwds = requiredKwds
             
-        self.__skippedKwds = {}
+        self.__skippedKwds:StrAnyDict = {}
         self.__maxPositionals = None
     
     __ukaPre = "unexpected keyword argument '"
     __ukaPreLen = len(__ukaPre)
-    __uka = re.compile( "unexpected keyword argument '(.*)'$" )
-    __positionalArgs = re.compile( '^function takes (\d+) positional arguments but (\d+) were given$' )
-    __missingArg = re.compile( '^function missing required positional argument #(\d+)$' )
+    __uka = re.compile( r"unexpected keyword argument '(.*)'$" )
+    __positionalArgs = re.compile( r'^function takes (\d+) positional arguments but (\d+) were given$' ) 
+    __missingArg = re.compile( r'^function missing required positional argument #(\d+)$' )
     
     @property
     def name(self): return self.__name
@@ -68,7 +68,7 @@ class KWCallback(CountedInstance):
     def __repr__(self):
         return f"KWCallback({self.__name}[:{self.__maxPositionals}]!{self.__skippedKwds})"
     
-    def __call__( self, *args, **kwds ):
+    def __call__( self, *args:Any, **kwds:Any ):
         for k in self.__skippedKwds:
             if k in kwds:
                 del kwds[k]

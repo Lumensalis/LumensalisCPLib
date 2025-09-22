@@ -44,7 +44,7 @@ def getQueryResult( target:NamedLocalIdentifiable|NliContainerInterface, path:li
     if qConfig.includeId and hasattr(target,'localId'): rv["localId"] = target.localId # type: ignore
     oldRecurseChildren = qConfig.recurseChildren
     if target.isContainer(): # isinstance(target,NliContainerInterface):
-        rv['lenContainer'] = len(target)
+        rv['lenContainer'] = len(target) # type:ignore[reportUnknownMemberType]
         #rv['lenContainers'] = len(list(target.nliGetContainers()))
     try:
         if len(path) == 0 and qConfig.recurseChildren is None: qConfig.recurseChildren = True
@@ -96,7 +96,7 @@ def BSR_query(self:BasicServer, request:Request, name:str):
     try:
         qc = QueryConfig()
         if request.method != 'GET':
-            j:StrAnyDict|None = request.json()
+            j:StrAnyDict|None = request.json() # type: ignore[reportGeneralTypeIssues]
             if j is not None:
                 for tag,val in j.items(): # Process the JSON data
                     assert hasattr(qc, tag), f"unknown query config tag {tag}"

@@ -24,7 +24,7 @@ class ConfigurableBase(CountedInstance):
         defaults: NotRequired[dict[str, Any]]
         
     @staticmethod 
-    def extractInitArgs(kwds:dict[str,Any]|Any) -> dict[str,Any]:
+    def extractConfigurableInitArgs(kwds:dict[str,Any]|Any) -> dict[str,Any]:
         return {
             'config': kwds.pop('config', None),
             'defaults': kwds.pop('defaults', None)
@@ -54,7 +54,7 @@ class ConfigurableBase(CountedInstance):
         elif config is None:
             config = ControllerConfig()
         
-        assert isinstance(config, ControllerConfig), f"config must be ControllerConfig, not {type(config)}: {config}" 
+        assert isinstance(config, ControllerConfig), f"config must be ControllerConfig, not {type(config)}: {config}" #type: ignore
         if defaults is not None:
             kwds = dict(kwds)
             for tag,val in defaults.items():
@@ -81,9 +81,10 @@ class ControllerConfigurableChildBase(ConfigurableBase,MainChild):
     class KWDS( ConfigurableBase.KWDS, MainChild.KWDS ):
         pass        
     def __init__( self, **kwargs:Unpack[KWDS] ):
-        cfgKwds =  ConfigurableBase.extractInitArgs(kwargs)
+        cfgKwds =  ConfigurableBase.extractConfigurableInitArgs(kwargs)
         MainChild.__init__(self, **kwargs  )
         ConfigurableBase.__init__( self, **cfgKwds ) # type: ignore
         #print( f"ControllerConfigurableChildBase.__init__( name={name} kwargs={kwargs})")
+
 
 _sayConfigurableBaseImport.complete(globals())

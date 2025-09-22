@@ -1,20 +1,24 @@
+from __future__ import annotations
 
+from LumensalisCP.common import *
 # based on https://github.com/eosti/micropython-aw210xx/blob/main/src/aw210xx.py
 #from machine import I2C
 
-TYPE_CHECKING = False
 if TYPE_CHECKING:
     from enum import IntEnum
-    from typing import Optional
 else:
     IntEnum = object
-    Optional = object
 
-from LumensalisCP.common import *
+# cSpell: disable
+# pyright: reportConstantRedefinition=false, reportGeneralTypeIssues=false
+# pyright: reportUnknownMemberType=false, reportUnknownVariableType=false
+# pyright: reportUnknownArgumentType=false, reportUnknownParameterType=false
+# pyright: reportMissingParameterType=false, reportMissingTypeArgument=false
 
 __version__ = "1.0.0"
 
 from adafruit_bus_device import i2c_device
+import busio
 
 class AW210xxRegisters(IntEnum):
     """
@@ -167,7 +171,7 @@ class AW210xxBase(Debuggable):
     """Base class for AW210xx with init and R/W functions"""
 
     def __init__(
-        self, i2c, #: I2C
+        self, i2c: busio.I2C, #: I2C
          address: int = 0x30, model: str = "AW21024", r_ext: float = 4000
     ):
         super().__init__()
@@ -180,7 +184,7 @@ class AW210xxBase(Debuggable):
         if model == "AW21009":
             self.NUM_CHANNELS = 9
         elif model == "AW21012":
-            self.NUM_CHANNELS = 12
+            self.NUM_CHANNELS = 12 
         elif model == "AW21018":
             self.NUM_CHANNELS = 18
         elif model == "AW21024":

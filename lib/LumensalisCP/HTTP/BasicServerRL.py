@@ -1,8 +1,6 @@
 from LumensalisCP.ImportProfiler import getImportProfiler
 __sayHTTPBasicServerRLImport = getImportProfiler( "HTTP.BasicServerRL", globals(), reloadable=True )
 
-from LumensalisCP.ImportProfiler import ImportProfiler, ReloadableImportProfiler
-
 from LumensalisCP.HTTP.BSR.common import *
 
 from LumensalisCP.IOContext import *

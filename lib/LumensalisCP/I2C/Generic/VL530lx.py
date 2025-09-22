@@ -42,7 +42,7 @@ class VL53L0X(I2CDevice):
     
     
     def derivedUpdateDevice(self, context:EvaluationContext) -> bool:
-        if self.__readMode is None or self.__readMode  == 'startMeasurement':
+        if self.__readMode is None or self.__readMode  == 'startMeasurement': # type: ignore
             self._sensor.do_range_measurement()
             self.__readMode = "measuring"
         elif self.__readMode == "measuring":
@@ -50,6 +50,6 @@ class VL53L0X(I2CDevice):
                 r = self._sensor.range
                 self.__readMode = "startMeasurement"
                 #self.dbgOut( "ranger range = %s", range )
-                return self.__range._setRange(r, context=context) # pylint: disable=protected-access
+                return self.__range._setRange(r, context=context) # type: ignore
 
         return False

@@ -38,7 +38,7 @@ class EvalDescriptor(Generic[_EDT]):
     def __set__(self, instance:EvalDescriptorHolder, value:_EDT|Evaluatable[_EDT]) -> None:
         assert instance is not None,  f"Cannot set {self.name} "
         setattr( instance, self.attrName, value )
-        instance.onDescriptorSet(self.name, value)
+        instance.onDescriptorSet(self.name, value) # type: ignore
 
 class Oscillator( InputSource, EvalDescriptorHolder, RfMxnActivatablePeriodic, Refreshable ):
     """_summary_
